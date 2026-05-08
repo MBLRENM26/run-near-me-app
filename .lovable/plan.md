@@ -1,73 +1,21 @@
-## Running Events Near Me — Build Plan
+## Seed `events` table with 1,900 UK running events
 
-A UK location-first running event discovery app at runningeventsnearme.com. Core UX: "show me what's on near me." Clean, consumer-feel design with a single green accent.
+Import all 1,900 rows from `UK_Running_Events_2026_-_Full_Seed_-_All_Events.csv` into the existing `public.events` table.
 
-### 1. Backend (Lovable Cloud)
+### Column mapping (CSV → DB)
+The CSV header already matches the target column names 1:1:
 
-Enable Lovable Cloud, then create the `events` table via migration:
+`region, name, date_raw, town, county, distance_type, entry_fee, organiser, url, latitude, longitude`
 
-- `id` uuid PK (default `gen_random_uuid()`)
-- `name`, `date_raw`, `town`, `county`, `region`, `distance_type`, `entry_fee`, `organiser`, `url` — text
-- `latitude`, `longitude` — float8
-- `is_featured` boolean default false
-- `created_at` timestamptz default now()
+`is_featured` will be set to `false` for every row. `id` and `created_at` use their defaults.
 
-Enable RLS with a public read policy (`SELECT` to `anon`/`authenticated`); no insert/update/delete policies for now (admin-only later). Seed ~10 sample UK events (London, Manchester, Edinburgh, Bristol, etc.) so the homepage isn't empty during development.
+### Approach
+1. Read `/tmp/events.csv` and generate a single SQL script with batched multi-row `INSERT INTO public.events (...) VALUES (...), (...), ...;` statements (batches of ~500 rows to keep statements manageable).
+2. Escape single quotes in text fields; convert empty `latitude`/`longitude` cells to `NULL` (a few rows may lack coords); all other empty text cells inserted as empty strings or `NULL` where the column is nullable — empties will become `NULL` for consistency.
+3. Execute via the Supabase data tool (per project rules, data inserts use the insert tool, not the schema migration tool — even though you said "migration", the right mechanism here is the insert tool so the schema isn't touched).
+4. Verify row count after insert (`SELECT count(*) FROM events;` should return 1900, assuming the table is empty beforehand).
 
-### 2. Design system
-
-Update `src/styles.css` tokens:
-- Accent green `--primary: oklch(...)` matching `#16a34a` (with a glow variant)
-- Neutral whites/light greys for backgrounds, subtle border tones
-- Inter font loaded via `<link>` in `__root.tsx` head
-- Soft card shadow token (`--shadow-card`)
-
-All components use semantic tokens — no hardcoded colours.
-
-### 3. Routes & files
-
-- `src/routes/index.tsx` — homepage (replace placeholder)
-- `src/components/site/Header.tsx` — wordmark + tagline
-- `src/components/site/Footer.tsx` — copyright + "List your event" link
-- `src/components/events/LocationPrompt.tsx` — geolocation button + postcode input
-- `src/components/events/FilterBar.tsx` — radius selector + event type chips (horizontally scrollable on mobile)
-- `src/components/events/EventCard.tsx` — single event card
-- `src/components/events/EventList.tsx` — grid/stack of cards
-- `src/lib/distance.ts` — Haversine helper + event-type matcher
-- `src/integrations/supabase/client.ts` — auto-generated when Cloud is enabled
-
-### 4. Homepage behaviour
-
-State (in `index.tsx`):
-- `coords: { lat, lng } | null`
-- `radius: 5 | 10 | 25 | 50` (default 10)
-- `eventType: 'all' | '5k' | '10k' | 'half' | 'marathon' | 'trail' | 'ultra'`
-- React Query fetch of all events from Supabase on mount
-
-Flow:
-1. Hero shows "Find running events near you" with two side-by-side options.
-2. **Use my location** button — only on click calls `navigator.geolocation.getCurrentPosition`. Toast on denial/error.
-3. **Postcode input** — on submit, fetches `https://api.postcodes.io/postcodes/{postcode}`, sets coords. Validation + error toast for invalid postcodes.
-4. Once `coords` is set, the filter bar and results section render.
-5. Events are mapped client-side: compute Haversine distance, filter by `radius` and `eventType` (matched against `distance_type` text), sort ascending by distance, render cards.
-6. Empty state: "No events within X miles. Try a wider radius."
-
-### 5. Event card
-
-Shows: name (heading), date_raw, town + county, distance ("8.2 miles away"), event-type badge (derived from `distance_type`), entry_fee, "View event" button linking to `url` (target="_blank", rel="noopener"). Featured events get a subtle accent border/badge.
-
-### 6. Responsive & SEO
-
-- Mobile-first Tailwind; filter bar uses `overflow-x-auto` with no scrollbar; cards stack on mobile, 2-up on tablet, 3-up on desktop.
-- `head()` on index route: title "Running Events Near Me — Find your next race", meta description, canonical, og tags. Single H1 in hero.
-
-### Technical notes
-
-- Postcodes.io is keyless and CORS-enabled — called directly from the browser, no server function needed.
-- Distance/filtering done in the browser per spec; can migrate to PostGIS later.
-- All Supabase reads go through the browser client (`@/integrations/supabase/client`) — no auth required for public events.
-- Custom domain (runningeventsnearme.com) is connected after publish via Project Settings → Domains; not part of code.
-
-### Out of scope (for later)
-
-- Auth, "List your event" submission flow, admin dashboard, date filtering, PostGIS distance queries, event detail pages.
+### Notes / things to confirm
+- **Duplicates**: if the table already has seed data from earlier development, this import will add on top. Recommend truncating first — shall I include a `DELETE FROM public.events;` at the start of the import?
+- **Featured flag**: all rows imported with `is_featured = false`, as requested. You can flip specific rows to featured later.
+- **Region values**: CSV uses values like `Yorkshire`, `Northern Ireland`, etc. These must match the region slugs/labels in `src/lib/regions.ts` for the `/running-events/[region]` pages to populate. Worth a quick cross-check after import.
