@@ -161,6 +161,31 @@ function HomePage() {
             )}
           </section>
         )}
+
+        {/* Browse by region */}
+        <section className="mx-auto max-w-6xl px-4 pb-16">
+          <div className="border-t border-border pt-12">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+              Browse by region
+            </h2>
+            <p className="mt-2 text-muted-foreground">
+              Explore running events across the UK by region.
+            </p>
+            <div className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
+              {REGIONS.map((region) => (
+                <Link
+                  key={region.slug}
+                  to="/running-events/$slug"
+                  params={{ slug: region.slug }}
+                  className="group flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium text-foreground shadow-card hover:border-primary hover:shadow-card-hover transition-all"
+                >
+                  <span>{region.name}</span>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
       </main>
 
       <Footer />
