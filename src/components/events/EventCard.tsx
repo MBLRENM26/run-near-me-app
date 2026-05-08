@@ -13,7 +13,7 @@ export interface EventCardData {
   entry_fee: string | null;
   url: string | null;
   is_featured: boolean;
-  distanceMiles: number;
+  distanceMiles?: number;
 }
 
 export function EventCard({ event }: { event: EventCardData }) {
@@ -48,10 +48,12 @@ export function EventCard({ event }: { event: EventCardData }) {
           <MapPin className="h-4 w-4 shrink-0" />
           <span>
             {[event.town, event.county].filter(Boolean).join(", ") || "UK"}
-            <span className="text-foreground font-medium">
-              {" "}
-              · {formatDistance(event.distanceMiles)}
-            </span>
+            {event.distanceMiles !== undefined && (
+              <span className="text-foreground font-medium">
+                {" "}
+                · {formatDistance(event.distanceMiles)}
+              </span>
+            )}
           </span>
         </div>
         {event.distance_type && (
