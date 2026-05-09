@@ -29,6 +29,7 @@ export type Database = {
           name: string
           organiser: string | null
           region: string | null
+          sort_date: string | null
           town: string | null
           url: string | null
         }
@@ -46,6 +47,7 @@ export type Database = {
           name: string
           organiser?: string | null
           region?: string | null
+          sort_date?: string | null
           town?: string | null
           url?: string | null
         }
@@ -63,6 +65,7 @@ export type Database = {
           name?: string
           organiser?: string | null
           region?: string | null
+          sort_date?: string | null
           town?: string | null
           url?: string | null
         }

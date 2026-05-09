@@ -67,7 +67,7 @@ function RegionPage() {
           "id, name, date_raw, town, county, distance_type, entry_fee, url, is_featured",
         )
         .eq("region", region.name)
-        .order("name");
+        .order("sort_date", { ascending: true, nullsFirst: false });
       if (error) throw error;
       return data as EventCardData[];
     },
