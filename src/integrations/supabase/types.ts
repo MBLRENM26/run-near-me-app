@@ -23,6 +23,7 @@ export type Database = {
           entry_fee: string | null
           id: string
           is_featured: boolean
+          is_upcoming: boolean
           latitude: number | null
           longitude: number | null
           name: string
@@ -39,6 +40,7 @@ export type Database = {
           entry_fee?: string | null
           id?: string
           is_featured?: boolean
+          is_upcoming?: boolean
           latitude?: number | null
           longitude?: number | null
           name: string
@@ -55,6 +57,7 @@ export type Database = {
           entry_fee?: string | null
           id?: string
           is_featured?: boolean
+          is_upcoming?: boolean
           latitude?: number | null
           longitude?: number | null
           name?: string
