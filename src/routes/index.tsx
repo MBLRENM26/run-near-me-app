@@ -39,7 +39,7 @@ export const Route = createFileRoute("/")({
           "Discover UK running events near you, sorted by distance. 5K to ultra.",
       },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: HomePage,
