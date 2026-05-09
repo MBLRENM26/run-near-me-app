@@ -18,6 +18,15 @@ export function Header() {
             </span>
           </div>
         </Link>
+        <nav className="flex items-center gap-1">
+          <Link
+            to="/list-your-event"
+            className="text-sm font-medium text-foreground hover:text-primary transition-colors px-3 py-2 rounded-md"
+            activeProps={{ className: "text-primary" }}
+          >
+            List your event
+          </Link>
+        </nav>
       </div>
     </header>
   );
