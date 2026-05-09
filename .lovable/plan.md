@@ -1,41 +1,28 @@
-## Pre-launch checklist
+## Fix OG/meta validator issues
 
-Quick audit of the project against typical go-live requirements. Most things are in good shape — here's what's done, what's worth fixing before publish, and what can wait.
+Three small fixes in `src/routes/__root.tsx` plus regenerating the OG image.
 
-### ✅ Already in place
+### 1. Regenerate OG image at 1200×630
 
-- **Routing + SEO basics**: `/`, `/running-events/:slug` with per-route `head()` titles & descriptions
-- **`robots.txt`** + dynamic **`sitemap.xml`** (root + all region pages)
-- **Favicon set**: `favicon.svg`, `favicon.ico`, `favicon.png`, `apple-touch-icon.png`
-- **OG image**: 1200×630, branded, wired into root head
-- **Twitter cards**: `summary_large_image`
-- **Plausible analytics** loaded site-wide
-- **Error & 404 boundaries** on root route
-- **Database**: 1894/1900 events with `sort_date`, indexed
-- **Performance cap**: 2000-row events fetch (interim until PostGIS)
+Replace `public/og-image.png` with a fresh 1200×630 render using the existing branded design: white background, brand-green rounded square tile (~160×160) with white Footprints icon on the left, stacked text "Running Events Near Me" (~60px bold) and "Find your next race." (~34px) on the right. Use `imagegen--generate_image` at premium quality (text legibility) with `width: 1200, height: 640` (next multiple of 32 ≥ 630), then crop to exactly 1200×630 with ImageMagick.
 
-### ⚠️ Worth fixing before launch
+### 2. Title tag (50–60 chars)
 
-1. **OG image URLs are relative (`/og-image.png`)** — Facebook, LinkedIn, Slack and most scrapers require **absolute** URLs. Switch `og:image` and `twitter:image` to the full `https://…/og-image.png` once the production domain is known. If you publish to a `*.lovable.app` subdomain first, hardcode that; swap to the custom domain when it's connected.
+In `src/routes/__root.tsx`, update both `title` meta entries to:
+`"Running Events Near Me — Find Your Next Race in the UK"` (54 chars)
 
-2. **Canonical URL tags** — currently missing. Add `<link rel="canonical" href="…">` per route to prevent duplicate-content issues (preview URL vs production vs custom domain all serving the same HTML).
+Also update the `og:title` and `twitter:title` entries to match.
 
-3. **JSON-LD structured data** — add `WebSite` schema on the homepage and `Event` schema on event listings. Big SEO win for a directory site; helps Google show rich results.
+### 3. Meta description + og:description (full text)
 
-4. **`og:url` and `og:site_name`** — small but standard; improves how shares render.
+Currently the root file has duplicate `description` / `og:description` / `twitter:description` entries — the first set (69-char short version) is overriding what the validator picks up. Remove the duplicates and keep only the full text:
 
-### 💤 Can wait until after launch
+`"Find your next race. Discover 5Ks, 10Ks, half marathons, marathons and trail runs near you — 1,900+ running events across the UK in 2026."`
 
-- **PostGIS RPC** for radius search (currently capped at 2000 rows — fine at current scale)
-- **Per-region OG images** (root default is good enough for v1)
-- **Re-parsing the 6 events with NULL `sort_date`** (manual cleanup or extend the regex)
-- **Sitemap submission** to Google Search Console (do once published)
-- **Custom domain** (connect via Project Settings → Domains after first publish)
+Apply to `description`, `og:description`, and `twitter:description`.
 
-### 🔒 Security
+### Technical notes
 
-- Run a security scan (Cloud → Security) before publish to catch any RLS misses on the `events` table.
-
-### Recommendation
-
-Fix items 1–4 above (small, ~one short turn of work), then publish. Everything else is fine to ship as-is.
+- `src/routes/__root.tsx` currently has duplicated `og:image` / `twitter:image` entries (one pointing at `${SITE_URL}/og-image.png`, another at an old R2 URL). Remove the R2 duplicates so the validator sees a single, correct 1200×630 image.
+- No changes to `src/routes/index.tsx` or per-route heads needed — homepage `head()` doesn't override title/description with shorter values once root is fixed (it sets its own slightly different title, which is fine; if you want the validator-approved title everywhere, also update the homepage `head()` title and og:title to the same 54-char string).
+- After image regen, verify dimensions with `identify public/og-image.png` before finishing.
