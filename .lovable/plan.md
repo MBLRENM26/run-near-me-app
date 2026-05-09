@@ -1,38 +1,58 @@
-## Homepage layout reorder
+## Add sort_date column and order events chronologically
 
-All changes are in `src/routes/index.tsx`. No data/query changes — purely reordering JSX and adding one derived list.
+### Migration
 
-### Before location is set (no `coords`)
+Add nullable `sort_date date` column to `events`, then populate via a single UPDATE using a CASE expression with regex matching. Order matters — most specific patterns first.
 
-Render in this order:
+Parsing rules (applied in order):
 
-1. **Hero + LocationPrompt** (unchanged)
-2. **Browse by region** grid — move up directly below the hero. Drop the `border-t` divider since it's no longer separating it from a results section.
-3. **Discover events across the UK** — the existing upcoming-races section, with the heading renamed from "Upcoming races" to "Discover events across the UK". Subcopy stays ("A selection of races coming up across the UK.")
+1. **Date range starting with day** (e.g. `9-10 May 2026`, `30 Oct-01 Nov 2026`, `10-11 October 2026`) — extract leading day + first month/year encountered, parse via `to_date`.
+2. **Single day** `D Month YYYY` (e.g. `9 May 2026`) — `to_date(date_raw, 'FMDD Mon YYYY')` (Postgres `Mon`/`Month` accept both abbreviated and full month names with `FM`).
+3. **Month only** `Month YYYY` (e.g. `May 2026`, `October 2026`) — `to_date('1 ' || date_raw, 'FMDD Mon YYYY')`, giving the 1st of that month.
+4. **Anything else** (`TBC 2026`, `Late June / Early July 2026`, `May/June 2026`, `May–Dec 2026`) — leave NULL.
 
-### After location is set (`coords` truthy)
+Implementation sketch:
 
-Render in this order:
+```sql
+ALTER TABLE public.events ADD COLUMN sort_date date;
 
-1. **Events near you** — existing `visibleEvents` results grid with `FilterBar`, count, empty state. Unchanged behaviour.
-2. **Featured events near you** — new section. Derive from already-loaded `events`:
-   - filter `is_featured === true`
-   - require `latitude`/`longitude` present
-   - compute `haversineMiles` to `coords`
-   - keep those with `distanceMiles <= radius`
-   - sort by distance
-   - render only if `featuredNearby.length > 0`
-   - heading: "Featured events near you"
-   - reuses `EventCard` (already shows the Featured badge)
-3. **Browse by region** grid — same component, rendered below for further exploration. Keep the `border-t pt-12` divider in this branch since it now separates results from regions.
+UPDATE public.events
+SET sort_date = CASE
+  -- Range: leading day, then "<day>[-<day>] [<Mon>-]?<Mon> <YYYY>"
+  -- Capture leading day and the LAST month + year in the string
+  WHEN date_raw ~ '^\d{1,2}[-–]\d{1,2}\s+[A-Za-z]+\s+\d{4}$'
+    THEN to_date(
+      regexp_replace(date_raw, '^(\d{1,2})[-–]\d{1,2}\s+([A-Za-z]+)\s+(\d{4})$', '\1 \2 \3'),
+      'FMDD Mon YYYY')
+  -- Cross-month range e.g. "30 Oct-01 Nov 2026"
+  WHEN date_raw ~ '^\d{1,2}\s+[A-Za-z]+[-–]\d{1,2}\s+[A-Za-z]+\s+\d{4}$'
+    THEN to_date(
+      regexp_replace(date_raw, '^(\d{1,2}\s+[A-Za-z]+)[-–].*\s+(\d{4})$', '\1 \2'),
+      'FMDD Mon YYYY')
+  -- Single day "D Month YYYY"
+  WHEN date_raw ~ '^\d{1,2}\s+[A-Za-z]+\s+\d{4}$'
+    THEN to_date(date_raw, 'FMDD Mon YYYY')
+  -- Month only "Month YYYY"
+  WHEN date_raw ~ '^[A-Za-z]+\s+\d{4}$'
+    THEN to_date('1 ' || date_raw, 'FMDD Mon YYYY')
+  ELSE NULL
+END;
 
-### Implementation notes
+CREATE INDEX events_sort_date_idx ON public.events (sort_date);
+```
 
-- Add a `featuredNearby` `useMemo` next to `visibleEvents` with the same dependencies (`coords`, `events`, `radius`) — note it intentionally ignores `eventType` so the user always sees featured options near them.
-- Hide upcoming-races section when `coords` is set (already the case via `!coords` gate — keep it).
-- Browse-by-region block becomes conditional in styling only: render unconditionally, but its wrapper's top border is only needed in the "after location" branch. Simplest approach: keep one Browse-by-region block at the bottom of `<main>` (always visible), and remove the divider so it works in both states; the upcoming/featured sections above provide enough visual separation.
+`to_date` will accept both `Jul` and `July` with the `Mon` token in modern Postgres; if any rows fail to parse they'll surface as errors during the migration and we'll wrap problem cases in a safe `BEGIN/EXCEPTION` per-row via a one-shot DO block. Plan to use a DO block iterating rows so a single bad value can't fail the whole migration.
+
+### Frontend query updates
+
+All three Supabase queries get `.order('sort_date', { ascending: true, nullsFirst: false })`:
+
+- `src/routes/index.tsx` — main `['events']` query (near-me list).
+- `src/routes/index.tsx` — `['events','upcoming']` query: drop any random ordering, add the sort_date order. Keep `.eq('is_upcoming', true).limit(6)`. This now returns the 6 soonest upcoming events.
+- `src/routes/running-events.$slug.tsx` — region query.
 
 ### Out of scope
 
-- No query changes, no new DB calls, no schema changes.
-- PostGIS RPC migration still pending (tracked separately).
+- No schema changes beyond `sort_date` + index.
+- No changes to `is_upcoming` logic.
+- PostGIS work still deferred.
