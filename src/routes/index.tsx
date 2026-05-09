@@ -58,6 +58,7 @@ function HomePage() {
         .select(
           "id, name, date_raw, town, county, distance_type, entry_fee, url, latitude, longitude, is_featured",
         )
+        .order("sort_date", { ascending: true, nullsFirst: false })
         .limit(2000);
       if (error) throw error;
       return data;
@@ -73,6 +74,7 @@ function HomePage() {
           "id, name, date_raw, town, county, distance_type, entry_fee, url, is_featured",
         )
         .eq("is_upcoming", true)
+        .order("sort_date", { ascending: true, nullsFirst: false })
         .limit(6);
       if (error) throw error;
       return data;
