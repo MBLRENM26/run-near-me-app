@@ -1,35 +1,27 @@
-## Goal
+## Confirmed
 
-Replace the empty "Featured events" section on the homepage with an **"Upcoming races"** section populated by 6 randomly chosen events from June 2026 onwards. Keep `is_featured` for future paid premium listings, and introduce a parallel `is_upcoming` flag so the two are independent toggles.
+Yes — the same 1000-row PostgREST cap silently truncates the main events query too. Right now the "near me" radius search only sees the first 1000 of 1900 events, so any race past that cutoff is invisible regardless of distance. Same root cause as the missing upcoming races.
 
-## Database
+## Fix
 
-Add a new boolean column to `events`:
+Two changes in `src/routes/index.tsx`:
 
-- `is_upcoming boolean NOT NULL DEFAULT false`
+1. **Add a dedicated upcoming-races query** (the originally approved fix):
+   ```
+   supabase.from('events')
+     .select('id, name, date_raw, town, county, distance_type, entry_fee, url, is_featured')
+     .eq('is_upcoming', true)
+     .limit(6)
+   ```
+   Render the "Upcoming races" section from this query's data instead of filtering the main list. Drop `is_upcoming` from the main query select.
 
-Then seed it: pick 6 random events whose `date_raw` matches a month from June 2026 onward (June, July, August, September, October, November, December — also Jun, Jul, Sep, Oct shorthand) and set `is_upcoming = true`.
+2. **Lift the main events query cap to 2000** by appending `.limit(2000)` to the existing select. PostgREST honours an explicit `.limit()` above the default 1000 cap, so this returns the full current dataset (~1900 rows, ~200KB) in one request.
 
-`is_featured` stays as-is (unused for now, reserved for paid placements later).
+## Why both, not just the limit bump
 
-## Frontend
+Even with the limit at 2000 the upcoming section would technically work, but a dedicated 6-row query is dramatically cheaper for the section's purpose and stays correct as the dataset grows. The limit bump is purely the temporary unblock for radius search.
 
-In `src/routes/index.tsx`:
+## Out of scope (tracked for later)
 
-- Rename the existing "Featured events" section heading to **"Upcoming races"**.
-- Change the filter from `event.is_featured === true` to `event.is_upcoming === true`.
-- Keep the same layout (responsive grid, up to 6 cards, only shown when no user coordinates are set).
-- Leave the EventCard unchanged.
-
-No other pages change. No admin UI yet — we'll flip the flag in the database when we want to rotate races. (We can add a lightweight admin toggle later if you want.)
-
-## Why this shape
-
-- Two independent flags (`is_featured`, `is_upcoming`) means the day you start charging for premium placement, the upcoming-races section keeps working untouched and `is_featured` powers a separate "Featured / Sponsored" strip.
-- "Upcoming races" is honest neutral wording — no implied editorial endorsement, so you don't burn the "Featured" label before monetising it.
-
-## Out of scope (suggested follow-ups)
-
-- Admin UI to toggle `is_upcoming` / `is_featured` per event.
-- Auto-expire upcoming races once their month has passed (cron or scheduled function).
-- A separate "Featured" strip once the first paid listing lands.
+- Replace the 2000-row client-side fetch with a PostGIS RPC (`nearby_events(lat, lng, radius_miles)`) before traffic scales — server-side filtering by distance is the proper fix.
+- Same RPC pattern can power the region pages.

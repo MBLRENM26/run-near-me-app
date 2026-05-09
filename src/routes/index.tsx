@@ -56,8 +56,24 @@ function HomePage() {
       const { data, error } = await supabase
         .from("events")
         .select(
-          "id, name, date_raw, town, county, distance_type, entry_fee, url, latitude, longitude, is_featured, is_upcoming",
-        );
+          "id, name, date_raw, town, county, distance_type, entry_fee, url, latitude, longitude, is_featured",
+        )
+        .limit(2000);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: upcomingEvents } = useQuery({
+    queryKey: ["events", "upcoming"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("events")
+        .select(
+          "id, name, date_raw, town, county, distance_type, entry_fee, url, is_featured",
+        )
+        .eq("is_upcoming", true)
+        .limit(6);
       if (error) throw error;
       return data;
     },
@@ -163,7 +179,7 @@ function HomePage() {
         )}
 
         {/* Upcoming races (when no location set) */}
-        {!coords && events && events.some((e) => e.is_upcoming) && (
+        {!coords && upcomingEvents && upcomingEvents.length > 0 && (
           <section className="mx-auto max-w-6xl px-4 pb-12">
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
               Upcoming races
@@ -172,25 +188,22 @@ function HomePage() {
               A selection of races coming up across the UK.
             </p>
             <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {events
-                .filter((e) => e.is_upcoming)
-                .slice(0, 6)
-                .map((e) => (
-                  <EventCard
-                    key={e.id}
-                    event={{
-                      id: e.id,
-                      name: e.name,
-                      date_raw: e.date_raw,
-                      town: e.town,
-                      county: e.county,
-                      distance_type: e.distance_type,
-                      entry_fee: e.entry_fee,
-                      url: e.url,
-                      is_featured: e.is_featured,
-                    }}
-                  />
-                ))}
+              {upcomingEvents.map((e) => (
+                <EventCard
+                  key={e.id}
+                  event={{
+                    id: e.id,
+                    name: e.name,
+                    date_raw: e.date_raw,
+                    town: e.town,
+                    county: e.county,
+                    distance_type: e.distance_type,
+                    entry_fee: e.entry_fee,
+                    url: e.url,
+                    is_featured: e.is_featured,
+                  }}
+                />
+              ))}
             </div>
           </section>
         )}
