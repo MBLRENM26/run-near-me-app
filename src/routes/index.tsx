@@ -56,7 +56,7 @@ function HomePage() {
       const { data, error } = await supabase
         .from("events")
         .select(
-          "id, name, date_raw, town, county, distance_type, entry_fee, url, latitude, longitude, is_featured",
+          "id, name, date_raw, town, county, distance_type, entry_fee, url, latitude, longitude, is_featured, is_upcoming",
         );
       if (error) throw error;
       return data;
@@ -162,18 +162,18 @@ function HomePage() {
           </section>
         )}
 
-        {/* Featured events (when no location set) */}
-        {!coords && events && events.some((e) => e.is_featured) && (
+        {/* Upcoming races (when no location set) */}
+        {!coords && events && events.some((e) => e.is_upcoming) && (
           <section className="mx-auto max-w-6xl px-4 pb-12">
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-              Featured events
+              Upcoming races
             </h2>
             <p className="mt-2 text-muted-foreground">
-              Hand-picked races worth a look.
+              A selection of races coming up across the UK.
             </p>
             <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {events
-                .filter((e) => e.is_featured)
+                .filter((e) => e.is_upcoming)
                 .slice(0, 6)
                 .map((e) => (
                   <EventCard
