@@ -88,6 +88,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:image:alt", content: `${SITE_NAME} — Find your next race` },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:image", content: `${SITE_URL}/og-image.png` },
+      { property: "og:title", content: "Running Events Near Me — Find your next race" },
+      { name: "twitter:title", content: "Running Events Near Me — Find your next race" },
+      { name: "description", content: "Find your next race. Discover 5Ks, 10Ks, half marathons, marathons and trail runs near you — 1,900+ running events across the UK in 2026." },
+      { property: "og:description", content: "Find your next race. Discover 5Ks, 10Ks, half marathons, marathons and trail runs near you — 1,900+ running events across the UK in 2026." },
+      { name: "twitter:description", content: "Find your next race. Discover 5Ks, 10Ks, half marathons, marathons and trail runs near you — 1,900+ running events across the UK in 2026." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/01adcb03-cd60-4756-bd44-8e1aa54b48cb/id-preview-708cfd53--fa471d0b-8fb1-4a40-afd4-c20d7685abc1.lovable.app-1778340188017.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/01adcb03-cd60-4756-bd44-8e1aa54b48cb/id-preview-708cfd53--fa471d0b-8fb1-4a40-afd4-c20d7685abc1.lovable.app-1778340188017.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
