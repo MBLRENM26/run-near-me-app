@@ -71,6 +71,30 @@ export type Database = {
         }
         Relationships: []
       }
+      submissions: {
+        Row: {
+          email: string
+          event_details: string
+          id: string
+          is_reviewed: boolean
+          submitted_at: string
+        }
+        Insert: {
+          email: string
+          event_details: string
+          id?: string
+          is_reviewed?: boolean
+          submitted_at?: string
+        }
+        Update: {
+          email?: string
+          event_details?: string
+          id?: string
+          is_reviewed?: boolean
+          submitted_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
