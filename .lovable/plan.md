@@ -1,27 +1,38 @@
-## Confirmed
+## Homepage layout reorder
 
-Yes — the same 1000-row PostgREST cap silently truncates the main events query too. Right now the "near me" radius search only sees the first 1000 of 1900 events, so any race past that cutoff is invisible regardless of distance. Same root cause as the missing upcoming races.
+All changes are in `src/routes/index.tsx`. No data/query changes — purely reordering JSX and adding one derived list.
 
-## Fix
+### Before location is set (no `coords`)
 
-Two changes in `src/routes/index.tsx`:
+Render in this order:
 
-1. **Add a dedicated upcoming-races query** (the originally approved fix):
-   ```
-   supabase.from('events')
-     .select('id, name, date_raw, town, county, distance_type, entry_fee, url, is_featured')
-     .eq('is_upcoming', true)
-     .limit(6)
-   ```
-   Render the "Upcoming races" section from this query's data instead of filtering the main list. Drop `is_upcoming` from the main query select.
+1. **Hero + LocationPrompt** (unchanged)
+2. **Browse by region** grid — move up directly below the hero. Drop the `border-t` divider since it's no longer separating it from a results section.
+3. **Discover events across the UK** — the existing upcoming-races section, with the heading renamed from "Upcoming races" to "Discover events across the UK". Subcopy stays ("A selection of races coming up across the UK.")
 
-2. **Lift the main events query cap to 2000** by appending `.limit(2000)` to the existing select. PostgREST honours an explicit `.limit()` above the default 1000 cap, so this returns the full current dataset (~1900 rows, ~200KB) in one request.
+### After location is set (`coords` truthy)
 
-## Why both, not just the limit bump
+Render in this order:
 
-Even with the limit at 2000 the upcoming section would technically work, but a dedicated 6-row query is dramatically cheaper for the section's purpose and stays correct as the dataset grows. The limit bump is purely the temporary unblock for radius search.
+1. **Events near you** — existing `visibleEvents` results grid with `FilterBar`, count, empty state. Unchanged behaviour.
+2. **Featured events near you** — new section. Derive from already-loaded `events`:
+   - filter `is_featured === true`
+   - require `latitude`/`longitude` present
+   - compute `haversineMiles` to `coords`
+   - keep those with `distanceMiles <= radius`
+   - sort by distance
+   - render only if `featuredNearby.length > 0`
+   - heading: "Featured events near you"
+   - reuses `EventCard` (already shows the Featured badge)
+3. **Browse by region** grid — same component, rendered below for further exploration. Keep the `border-t pt-12` divider in this branch since it now separates results from regions.
 
-## Out of scope (tracked for later)
+### Implementation notes
 
-- Replace the 2000-row client-side fetch with a PostGIS RPC (`nearby_events(lat, lng, radius_miles)`) before traffic scales — server-side filtering by distance is the proper fix.
-- Same RPC pattern can power the region pages.
+- Add a `featuredNearby` `useMemo` next to `visibleEvents` with the same dependencies (`coords`, `events`, `radius`) — note it intentionally ignores `eventType` so the user always sees featured options near them.
+- Hide upcoming-races section when `coords` is set (already the case via `!coords` gate — keep it).
+- Browse-by-region block becomes conditional in styling only: render unconditionally, but its wrapper's top border is only needed in the "after location" branch. Simplest approach: keep one Browse-by-region block at the bottom of `<main>` (always visible), and remove the divider so it works in both states; the upcoming/featured sections above provide enough visual separation.
+
+### Out of scope
+
+- No query changes, no new DB calls, no schema changes.
+- PostGIS RPC migration still pending (tracked separately).
