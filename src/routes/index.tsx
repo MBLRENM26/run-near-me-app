@@ -56,7 +56,7 @@ function HomePage() {
       const { data, error } = await supabase
         .from("events")
         .select(
-          "id, name, date_raw, town, county, distance_type, entry_fee, url, latitude, longitude, is_featured",
+          "id, name, date_raw, town, county, distance_type, entry_fee, url, latitude, longitude, is_featured, is_upcoming",
         );
       if (error) throw error;
       return data;
