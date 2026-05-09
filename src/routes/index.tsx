@@ -79,7 +79,7 @@ function HomePage() {
     },
   });
 
-  const visibleEvents: EventCardData[] = useMemo(() => {
+  const eventsWithDistance: EventCardData[] = useMemo(() => {
     if (!coords || !events) return [];
     return events
       .filter((e) => e.latitude != null && e.longitude != null)
@@ -99,13 +99,24 @@ function HomePage() {
           e.latitude!,
           e.longitude!,
         ),
-      }))
+      }));
+  }, [coords, events]);
+
+  const visibleEvents: EventCardData[] = useMemo(() => {
+    return eventsWithDistance
       .filter(
         (e) =>
-          e.distanceMiles <= radius && matchesEventType(e.distance_type, eventType),
+          e.distanceMiles! <= radius &&
+          matchesEventType(e.distance_type, eventType),
       )
-      .sort((a, b) => a.distanceMiles - b.distanceMiles);
-  }, [coords, events, radius, eventType]);
+      .sort((a, b) => a.distanceMiles! - b.distanceMiles!);
+  }, [eventsWithDistance, radius, eventType]);
+
+  const featuredNearby: EventCardData[] = useMemo(() => {
+    return eventsWithDistance
+      .filter((e) => e.is_featured && e.distanceMiles! <= radius)
+      .sort((a, b) => a.distanceMiles! - b.distanceMiles!);
+  }, [eventsWithDistance, radius]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
