@@ -1,28 +1,45 @@
-## Fix invalid OG image URL
+## 1. Kent → South East redirect
 
-**Root cause:** `src/lib/site.ts` sets `SITE_URL = "https://runningeventsnearme.lovable.app"`, but that subdomain returns 404. The actual live domain is `https://runningeventsnearme.com`. So every absolute OG/canonical/JSON-LD URL the app emits points at a dead host, which is why the OpenGraph validator says the image is unreachable.
-
-Verified just now:
-- `https://runningeventsnearme.lovable.app/og-image.png` → 404
-- `https://runningeventsnearme.com/og-image.png` → 200 (image/png) ✅
-- `https://run-near-me-app.lovable.app/og-image.png` → 302 → `runningeventsnearme.com`
-
-### Fix
-
-One-line change in `src/lib/site.ts`:
+In `src/routes/running-events.$slug.tsx`, update the `beforeLoad` to redirect known legacy/county slugs to their region. Use TanStack Router's `redirect()` with status 301:
 
 ```ts
-export const SITE_URL = "https://runningeventsnearme.com";
+import { redirect } from "@tanstack/react-router";
+
+const SLUG_REDIRECTS: Record<string, string> = {
+  kent: "south-east",
+};
+
+beforeLoad: ({ params }) => {
+  const target = SLUG_REDIRECTS[params.slug];
+  if (target) {
+    throw redirect({
+      to: "/running-events/$slug",
+      params: { slug: target },
+      statusCode: 301,
+    });
+  }
+  if (!slugToRegion(params.slug)) throw notFound();
+},
 ```
 
-This automatically corrects:
-- `og:image` / `twitter:image` (root)
-- `og:url` (root + homepage + region pages)
-- `canonical` link on homepage and region pages
-- `WebSite` and `CollectionPage` JSON-LD `url` fields
+This makes `/running-events/kent` 301 → `/running-events/south-east` server-side and is easy to extend for other counties later.
 
-### Validation
+## 2. Homepage meta description (exact copy)
 
-After publish, re-run the OpenGraph validator against `https://runningeventsnearme.com/`. Image should resolve and meta tags should match.
+In `src/routes/__root.tsx`, replace the description text on:
 
-No other code changes needed.
+- `name="description"`
+- `property="og:description"`
+- `name="twitter:description"`
+
+New text added:
+
+> Find your next race as a beginner, amateur or a Pro. Discover 5Ks, 10Ks, half marathons, marathons and trail runs near you! 1,900+ running events across the UK in 2026 and more added each day.
+
+Title tags change. Title Changes to: "Running Events Near Me - Find Your Next Race in Any Region of the UK at Any Distance"  
+  
+OG image, dimensions, etc. stay as-is.
+
+## Notes
+
+- After publishing, re-run the OG validator to confirm.
