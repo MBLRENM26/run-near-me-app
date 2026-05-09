@@ -1,44 +1,41 @@
-## Add favicon + OG image using the brand mark
+## Pre-launch checklist
 
-Generate brand assets matching the existing header logo (Lucide `Footprints` icon, white on green primary `oklch(0.62 0.17 145)` ≈ `#2e9b3f`, rounded square), then wire them into the document head.
+Quick audit of the project against typical go-live requirements. Most things are in good shape — here's what's done, what's worth fixing before publish, and what can wait.
 
-### Assets to generate
+### ✅ Already in place
 
-Write all to `public/` so they're served at the site root:
+- **Routing + SEO basics**: `/`, `/running-events/:slug` with per-route `head()` titles & descriptions
+- **`robots.txt`** + dynamic **`sitemap.xml`** (root + all region pages)
+- **Favicon set**: `favicon.svg`, `favicon.ico`, `favicon.png`, `apple-touch-icon.png`
+- **OG image**: 1200×630, branded, wired into root head
+- **Twitter cards**: `summary_large_image`
+- **Plausible analytics** loaded site-wide
+- **Error & 404 boundaries** on root route
+- **Database**: 1894/1900 events with `sort_date`, indexed
+- **Performance cap**: 2000-row events fetch (interim until PostGIS)
 
-1. **`public/favicon.svg`** — hand-authored SVG: rounded-square (radius ~20%) filled with brand green, white Lucide Footprints glyph centered. Vector source for crisp rendering at all sizes.
-2. **`public/favicon.png`** — 512×512 PNG rasterized from the SVG (via ImageMagick / `nix run nixpkgs#imagemagick`).
-3. **`public/favicon.ico`** — multi-size ICO (16, 32, 48) from the PNG.
-4. **`public/apple-touch-icon.png`** — 180×180 PNG (iOS home screen).
-5. **`public/og-image.png`** — 1200×630 share card. Composition:
-   - Solid white background (`oklch(0.995 0 0)` ≈ `#fdfdfd`)
-   - Brand-green rounded-square logo tile (~140px) on the left
-   - To its right, stacked text:
-     - **"Running Events Near Me"** — bold, ~64px, near-black foreground
-     - **"Find your next race."** — regular, ~36px, muted grey
-   - Generated via a Node/sharp or ImageMagick script composing the SVG + text. Inter font (already used in app) loaded from Google Fonts or system fallback.
+### ⚠️ Worth fixing before launch
 
-### Head wiring
+1. **OG image URLs are relative (`/og-image.png`)** — Facebook, LinkedIn, Slack and most scrapers require **absolute** URLs. Switch `og:image` and `twitter:image` to the full `https://…/og-image.png` once the production domain is known. If you publish to a `*.lovable.app` subdomain first, hardcode that; swap to the custom domain when it's connected.
 
-In `src/routes/__root.tsx`, extend `head().links` and `head().meta`:
+2. **Canonical URL tags** — currently missing. Add `<link rel="canonical" href="…">` per route to prevent duplicate-content issues (preview URL vs production vs custom domain all serving the same HTML).
 
-- `links`:
-  - `{ rel: "icon", href: "/favicon.svg", type: "image/svg+xml" }`
-  - `{ rel: "icon", href: "/favicon.ico", sizes: "any" }`
-  - `{ rel: "apple-touch-icon", href: "/apple-touch-icon.png" }`
-- `meta` additions:
-  - `{ property: "og:image", content: "/og-image.png" }`
-  - `{ property: "og:image:width", content: "1200" }`
-  - `{ property: "og:image:height", content: "630" }`
-  - `{ name: "twitter:card", content: "summary_large_image" }` (upgrade from existing `summary`)
-  - `{ name: "twitter:image", content: "/og-image.png" }`
+3. **JSON-LD structured data** — add `WebSite` schema on the homepage and `Event` schema on event listings. Big SEO win for a directory site; helps Google show rich results.
 
-Existing `og:title`, `og:description`, `og:type` stay as-is.
+4. **`og:url` and `og:site_name`** — small but standard; improves how shares render.
 
-### QA
+### 💤 Can wait until after launch
 
-After generation, view each PNG to confirm: logo crisp, text not clipped, colors match brand, no overlap. Iterate if needed.
+- **PostGIS RPC** for radius search (currently capped at 2000 rows — fine at current scale)
+- **Per-region OG images** (root default is good enough for v1)
+- **Re-parsing the 6 events with NULL `sort_date`** (manual cleanup or extend the regex)
+- **Sitemap submission** to Google Search Console (do once published)
+- **Custom domain** (connect via Project Settings → Domains after first publish)
 
-### Out of scope
+### 🔒 Security
 
-Per-route `og:image` overrides (region pages) — root-level default only for now.
+- Run a security scan (Cloud → Security) before publish to catch any RLS misses on the `events` table.
+
+### Recommendation
+
+Fix items 1–4 above (small, ~one short turn of work), then publish. Everything else is fine to ship as-is.
