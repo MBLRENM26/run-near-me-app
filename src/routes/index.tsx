@@ -56,8 +56,24 @@ function HomePage() {
       const { data, error } = await supabase
         .from("events")
         .select(
-          "id, name, date_raw, town, county, distance_type, entry_fee, url, latitude, longitude, is_featured, is_upcoming",
-        );
+          "id, name, date_raw, town, county, distance_type, entry_fee, url, latitude, longitude, is_featured",
+        )
+        .limit(2000);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: upcomingEvents } = useQuery({
+    queryKey: ["events", "upcoming"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("events")
+        .select(
+          "id, name, date_raw, town, county, distance_type, entry_fee, url, is_featured",
+        )
+        .eq("is_upcoming", true)
+        .limit(6);
       if (error) throw error;
       return data;
     },
