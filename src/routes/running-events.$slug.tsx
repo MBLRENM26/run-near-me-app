@@ -7,6 +7,7 @@ import { Footer } from "@/components/site/Footer";
 import { EventCard, type EventCardData } from "@/components/events/EventCard";
 import { Toaster } from "@/components/ui/sonner";
 import { slugToRegion } from "@/lib/regions";
+import { SITE_URL } from "@/lib/site";
 
 export const Route = createFileRoute("/running-events/$slug")({
   beforeLoad: ({ params }) => {
@@ -15,6 +16,7 @@ export const Route = createFileRoute("/running-events/$slug")({
   head: ({ params }) => {
     const region = slugToRegion(params.slug);
     const name = region?.name ?? "UK";
+    const canonical = `${SITE_URL}/running-events/${params.slug}`;
     return {
       meta: [
         { title: `Running Events in ${name} — UK Race Finder` },
@@ -28,13 +30,9 @@ export const Route = createFileRoute("/running-events/$slug")({
           content: `Find your next race in ${name} — UK running events near you.`,
         },
         { property: "og:type", content: "website" },
+        { property: "og:url", content: canonical },
       ],
-      links: [
-        {
-          rel: "canonical",
-          href: `/running-events/${params.slug}`,
-        },
-      ],
+      links: [{ rel: "canonical", href: canonical }],
       scripts: [
         {
           type: "application/ld+json",
@@ -43,6 +41,7 @@ export const Route = createFileRoute("/running-events/$slug")({
             "@type": "CollectionPage",
             name: `Running Events in ${name}`,
             description: `Upcoming running events in ${name}, UK.`,
+            url: canonical,
             about: { "@type": "Place", name },
           }),
         },
