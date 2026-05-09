@@ -27,6 +27,25 @@ export const Route = createFileRoute("/running-events/$slug")({
           property: "og:description",
           content: `Find your next race in ${name} — UK running events near you.`,
         },
+        { property: "og:type", content: "website" },
+      ],
+      links: [
+        {
+          rel: "canonical",
+          href: `/running-events/${params.slug}`,
+        },
+      ],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            name: `Running Events in ${name}`,
+            description: `Upcoming running events in ${name}, UK.`,
+            about: { "@type": "Place", name },
+          }),
+        },
       ],
     };
   },
