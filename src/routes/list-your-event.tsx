@@ -101,8 +101,8 @@ function ListYourEventPage() {
                   <CheckCircle2 className="h-6 w-6 text-primary" />
                 </div>
                 <p className="mt-4 text-lg font-medium text-foreground">
-                  Thanks! We'll be in touch within 48 hours with your listing
-                  preview.
+                  Received. We'll send you a preview of your listing within 48
+                  hours.
                 </p>
               </div>
             ) : (
@@ -114,19 +114,22 @@ function ListYourEventPage() {
                     required
                     rows={6}
                     maxLength={2000}
-                    placeholder="e.g. Parkrun Preston, 14 May 2026, parkrun.org.uk/preston — include race name, date and your website URL"
+                    placeholder="Race name, date and registration URL"
                     value={eventDetails}
                     onChange={(e) => setEventDetails(e.target.value)}
                   />
+                  <p className="text-sm text-muted-foreground">
+                    Include as much or as little as you have — we'll do the rest.
+                  </p>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Your email address</Label>
+                  <Label htmlFor="email">Your email</Label>
                   <Input
                     id="email"
                     type="email"
                     required
                     maxLength={255}
-                    placeholder="so we can send you your listing preview"
+                    placeholder="your@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
@@ -136,7 +139,7 @@ function ListYourEventPage() {
                   className="w-full"
                   disabled={submitting}
                 >
-                  {submitting ? "Submitting…" : "Submit your event"}
+                  {submitting ? "Submitting…" : "Submit event"}
                 </Button>
               </form>
             )}
