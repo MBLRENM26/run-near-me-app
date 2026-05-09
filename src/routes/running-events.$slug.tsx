@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, redirect, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,8 +9,20 @@ import { Toaster } from "@/components/ui/sonner";
 import { slugToRegion } from "@/lib/regions";
 import { SITE_URL } from "@/lib/site";
 
+const SLUG_REDIRECTS: Record<string, string> = {
+  kent: "south-east",
+};
+
 export const Route = createFileRoute("/running-events/$slug")({
   beforeLoad: ({ params }) => {
+    const target = SLUG_REDIRECTS[params.slug];
+    if (target) {
+      throw redirect({
+        to: "/running-events/$slug",
+        params: { slug: target },
+        statusCode: 301,
+      });
+    }
     if (!slugToRegion(params.slug)) throw notFound();
   },
   head: ({ params }) => {
