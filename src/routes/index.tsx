@@ -162,6 +162,39 @@ function HomePage() {
           </section>
         )}
 
+        {/* Featured events (when no location set) */}
+        {!coords && events && events.some((e) => e.is_featured) && (
+          <section className="mx-auto max-w-6xl px-4 pb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+              Featured events
+            </h2>
+            <p className="mt-2 text-muted-foreground">
+              Hand-picked races worth a look.
+            </p>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {events
+                .filter((e) => e.is_featured)
+                .slice(0, 6)
+                .map((e) => (
+                  <EventCard
+                    key={e.id}
+                    event={{
+                      id: e.id,
+                      name: e.name,
+                      date_raw: e.date_raw,
+                      town: e.town,
+                      county: e.county,
+                      distance_type: e.distance_type,
+                      entry_fee: e.entry_fee,
+                      url: e.url,
+                      is_featured: e.is_featured,
+                    }}
+                  />
+                ))}
+            </div>
+          </section>
+        )}
+
         {/* Browse by region */}
         <section className="mx-auto max-w-6xl px-4 pb-16">
           <div className="border-t border-border pt-12">
