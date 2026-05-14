@@ -98,43 +98,32 @@ function HomePage() {
   });
 
   const eventsWithDistance: EventCardData[] = useMemo(() => {
-    if (!coords || !events) return [];
-    return events
-      .filter((e) => e.latitude != null && e.longitude != null)
-      .map((e) => ({
-        id: e.id,
-        name: e.name,
-        date_raw: e.date_raw,
-        town: e.town,
-        county: e.county,
-        distance_type: e.distance_type,
-        entry_fee: e.entry_fee,
-        url: e.url,
-        is_featured: e.is_featured,
-        distanceMiles: haversineMiles(
-          coords.lat,
-          coords.lng,
-          e.latitude!,
-          e.longitude!,
-        ),
-      }));
-  }, [coords, events]);
+    if (!nearbyEvents) return [];
+    return nearbyEvents.map((e) => ({
+      id: e.id,
+      name: e.name,
+      date_raw: e.date_raw,
+      town: e.town,
+      county: e.county,
+      distance_type: e.distance_type,
+      entry_fee: e.entry_fee,
+      url: e.url,
+      is_featured: e.is_featured,
+      distanceMiles: e.distance_miles,
+    }));
+  }, [nearbyEvents]);
 
   const visibleEvents: EventCardData[] = useMemo(() => {
     return eventsWithDistance
-      .filter(
-        (e) =>
-          e.distanceMiles! <= radius &&
-          matchesEventType(e.distance_type, eventType),
-      )
+      .filter((e) => matchesEventType(e.distance_type, eventType))
       .sort((a, b) => a.distanceMiles! - b.distanceMiles!);
-  }, [eventsWithDistance, radius, eventType]);
+  }, [eventsWithDistance, eventType]);
 
   const featuredNearby: EventCardData[] = useMemo(() => {
     return eventsWithDistance
-      .filter((e) => e.is_featured && e.distanceMiles! <= radius)
+      .filter((e) => e.is_featured)
       .sort((a, b) => a.distanceMiles! - b.distanceMiles!);
-  }, [eventsWithDistance, radius]);
+  }, [eventsWithDistance]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
