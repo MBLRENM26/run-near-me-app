@@ -100,7 +100,26 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      events_within_radius: {
+        Args: {
+          p_lat: number
+          p_lng: number
+          p_max_results?: number
+          p_radius_miles: number
+        }
+        Returns: {
+          county: string
+          date_raw: string
+          distance_miles: number
+          distance_type: string
+          entry_fee: string
+          id: string
+          is_featured: boolean
+          name: string
+          town: string
+          url: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
