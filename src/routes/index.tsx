@@ -20,20 +20,20 @@ import { MapPin } from "lucide-react";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Running Events Near Me — Find your next race in the UK" },
+      { title: "Find Running Events Near You — UK Race Finder" },
       {
         name: "description",
         content:
-          "Discover running events near you across the UK. 5K, 10K, half marathons, marathons, trail and ultra races — sorted by distance from your location.",
+          "Discover 5K, 10K, half marathons, marathons and trail races across the UK — sorted by distance from your location.",
       },
       {
         property: "og:title",
-        content: "Running Events Near Me — Find your next race",
+        content: "Find Running Events Near You — UK Race Finder",
       },
       {
         property: "og:description",
         content:
-          "Discover UK running events near you, sorted by distance. 5K to ultra.",
+          "Discover 5K, 10K, half marathons, marathons and trail races across the UK — sorted by distance from your location.",
       },
       { property: "og:type", content: "website" },
       { property: "og:url", content: `${SITE_URL}/` },

@@ -1,17 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { REGIONS } from "@/lib/regions";
+import { SITE_URL } from "@/lib/site";
 
 export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        const origin = new URL(request.url).origin;
+      GET: async () => {
         const today = new Date().toISOString().slice(0, 10);
 
         const urls = [
-          { loc: `${origin}/`, priority: "1.0", changefreq: "daily" },
+          { loc: `${SITE_URL}/`, priority: "1.0", changefreq: "daily" },
+          {
+            loc: `${SITE_URL}/list-your-event`,
+            priority: "0.5",
+            changefreq: "monthly",
+          },
           ...REGIONS.map((r) => ({
-            loc: `${origin}/running-events/${r.slug}`,
+            loc: `${SITE_URL}/running-events/${r.slug}`,
             priority: "0.8",
             changefreq: "weekly",
           })),
