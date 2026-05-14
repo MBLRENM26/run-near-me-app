@@ -125,6 +125,9 @@ function RegionPage() {
             </div>
           ) : (
             <>
+              <h2 className="text-xl font-semibold text-foreground mb-2">
+                Upcoming events
+              </h2>
               <p className="text-sm text-muted-foreground mb-4">
                 {events.length} {events.length === 1 ? "event" : "events"}
               </p>

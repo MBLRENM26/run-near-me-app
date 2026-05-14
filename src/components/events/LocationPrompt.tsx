@@ -86,7 +86,11 @@ export function LocationPrompt({ onLocate }: Props) {
       </Button>
 
       <form onSubmit={submitPostcode} className="flex gap-2">
+        <label htmlFor="postcode-input" className="sr-only">
+          Enter a UK postcode
+        </label>
         <Input
+          id="postcode-input"
           value={postcode}
           onChange={(e) => setPostcode(e.target.value)}
           placeholder="Enter a postcode (e.g. SW1A 1AA)"
