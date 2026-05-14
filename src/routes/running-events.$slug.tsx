@@ -72,15 +72,23 @@ function RegionPage() {
   const { data: events, isLoading } = useQuery({
     queryKey: ["events", "region", region.name],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("events")
-        .select(
-          "id, name, date_raw, town, county, distance_type, entry_fee, url, is_featured",
-        )
-        .eq("region", region.name)
-        .order("sort_date", { ascending: true, nullsFirst: false });
-      if (error) throw error;
-      return data as EventCardData[];
+      const pageSize = 1000;
+      const all: EventCardData[] = [];
+      for (let from = 0; ; from += pageSize) {
+        const { data, error } = await supabase
+          .from("events")
+          .select(
+            "id, name, date_raw, town, county, distance_type, entry_fee, url, is_featured",
+          )
+          .eq("region", region.name)
+          .order("sort_date", { ascending: true, nullsFirst: false })
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        all.push(...(data as EventCardData[]));
+        if (data.length < pageSize) break;
+      }
+      return all;
     },
   });
 
