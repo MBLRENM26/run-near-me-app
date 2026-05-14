@@ -14,11 +14,7 @@ import {
 import { FilterBar, type Radius } from "@/components/events/FilterBar";
 import { EventCard, type EventCardData } from "@/components/events/EventCard";
 import { Toaster } from "@/components/ui/sonner";
-import {
-  haversineMiles,
-  matchesEventType,
-  type EventType,
-} from "@/lib/distance";
+import { matchesEventType, type EventType } from "@/lib/distance";
 import { MapPin } from "lucide-react";
 
 export const Route = createFileRoute("/")({
