@@ -66,16 +66,16 @@ function HomePage() {
   const [radius, setRadius] = useState<Radius>(10);
   const [eventType, setEventType] = useState<EventType>("all");
 
-  const { data: events, isLoading } = useQuery({
-    queryKey: ["events"],
+  const { data: nearbyEvents, isLoading } = useQuery({
+    queryKey: ["events", "nearby", coords?.lat, coords?.lng, radius],
+    enabled: !!coords,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("events")
-        .select(
-          "id, name, date_raw, town, county, distance_type, entry_fee, url, latitude, longitude, is_featured",
-        )
-        .order("sort_date", { ascending: true, nullsFirst: false })
-        .limit(2000);
+      const { data, error } = await supabase.rpc("events_within_radius", {
+        p_lat: coords!.lat,
+        p_lng: coords!.lng,
+        p_radius_miles: radius,
+        p_max_results: 500,
+      });
       if (error) throw error;
       return data;
     },
