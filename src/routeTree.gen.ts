@@ -14,6 +14,7 @@ import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as ListYourEventRouteImport } from './routes/list-your-event'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RunningEventsSlugRouteImport } from './routes/running-events.$slug'
+import { Route as ApiPublicImportEventsRouteImport } from './routes/api/public/import-events'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -40,6 +41,11 @@ const RunningEventsSlugRoute = RunningEventsSlugRouteImport.update({
   path: '/running-events/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicImportEventsRoute = ApiPublicImportEventsRouteImport.update({
+  id: '/api/public/import-events',
+  path: '/api/public/import-events',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -47,6 +53,7 @@ export interface FileRoutesByFullPath {
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/running-events/$slug': typeof RunningEventsSlugRoute
+  '/api/public/import-events': typeof ApiPublicImportEventsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +61,7 @@ export interface FileRoutesByTo {
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/running-events/$slug': typeof RunningEventsSlugRoute
+  '/api/public/import-events': typeof ApiPublicImportEventsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,6 +70,7 @@ export interface FileRoutesById {
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/running-events/$slug': typeof RunningEventsSlugRoute
+  '/api/public/import-events': typeof ApiPublicImportEventsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -71,6 +80,7 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/sitemap.xml'
     | '/running-events/$slug'
+    | '/api/public/import-events'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -78,6 +88,7 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/sitemap.xml'
     | '/running-events/$slug'
+    | '/api/public/import-events'
   id:
     | '__root__'
     | '/'
@@ -85,6 +96,7 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/sitemap.xml'
     | '/running-events/$slug'
+    | '/api/public/import-events'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -93,6 +105,7 @@ export interface RootRouteChildren {
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   RunningEventsSlugRoute: typeof RunningEventsSlugRoute
+  ApiPublicImportEventsRoute: typeof ApiPublicImportEventsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -132,6 +145,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RunningEventsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/import-events': {
+      id: '/api/public/import-events'
+      path: '/api/public/import-events'
+      fullPath: '/api/public/import-events'
+      preLoaderRoute: typeof ApiPublicImportEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -141,6 +161,7 @@ const rootRouteChildren: RootRouteChildren = {
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   RunningEventsSlugRoute: RunningEventsSlugRoute,
+  ApiPublicImportEventsRoute: ApiPublicImportEventsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
