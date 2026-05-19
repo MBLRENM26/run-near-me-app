@@ -72,6 +72,7 @@ function RegionPage() {
   const { data: events, isLoading } = useQuery({
     queryKey: ["events", "region", region.name],
     queryFn: async () => {
+      const today = new Date().toISOString().slice(0, 10);
       const pageSize = 1000;
       const all: EventCardData[] = [];
       for (let from = 0; ; from += pageSize) {
@@ -82,6 +83,7 @@ function RegionPage() {
           )
           .eq("region", region.name)
           .eq("status", "ACTIVE")
+          .or(`sort_date.gte.${today},sort_date.is.null`)
           .order("sort_date", { ascending: true, nullsFirst: false })
           .range(from, from + pageSize - 1);
         if (error) throw error;
