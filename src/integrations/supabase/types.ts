@@ -16,58 +16,100 @@ export type Database = {
     Tables: {
       events: {
         Row: {
+          country: string | null
           county: string | null
           created_at: string
+          date_from: string | null
           date_raw: string | null
-          distance_type: string | null
+          date_to: string | null
+          discipline: string | null
+          distances: string | null
           entry_fee: string | null
+          entry_url: string | null
           id: string
           is_featured: boolean
+          is_recurring: boolean
           is_upcoming: boolean
-          latitude: number | null
-          longitude: number | null
+          lat: number | null
+          licensed: string | null
+          lng: number | null
+          location_raw: string | null
           name: string
+          norm_created_at: string | null
+          norm_id: string | null
           organiser: string | null
+          organiser_url: string | null
           region: string | null
+          slug: string | null
           sort_date: string | null
+          source: string | null
+          source_url: string | null
+          status: string
           town: string | null
-          url: string | null
         }
         Insert: {
+          country?: string | null
           county?: string | null
           created_at?: string
+          date_from?: string | null
           date_raw?: string | null
-          distance_type?: string | null
+          date_to?: string | null
+          discipline?: string | null
+          distances?: string | null
           entry_fee?: string | null
+          entry_url?: string | null
           id?: string
           is_featured?: boolean
+          is_recurring?: boolean
           is_upcoming?: boolean
-          latitude?: number | null
-          longitude?: number | null
+          lat?: number | null
+          licensed?: string | null
+          lng?: number | null
+          location_raw?: string | null
           name: string
+          norm_created_at?: string | null
+          norm_id?: string | null
           organiser?: string | null
+          organiser_url?: string | null
           region?: string | null
+          slug?: string | null
           sort_date?: string | null
+          source?: string | null
+          source_url?: string | null
+          status?: string
           town?: string | null
-          url?: string | null
         }
         Update: {
+          country?: string | null
           county?: string | null
           created_at?: string
+          date_from?: string | null
           date_raw?: string | null
-          distance_type?: string | null
+          date_to?: string | null
+          discipline?: string | null
+          distances?: string | null
           entry_fee?: string | null
+          entry_url?: string | null
           id?: string
           is_featured?: boolean
+          is_recurring?: boolean
           is_upcoming?: boolean
-          latitude?: number | null
-          longitude?: number | null
+          lat?: number | null
+          licensed?: string | null
+          lng?: number | null
+          location_raw?: string | null
           name?: string
+          norm_created_at?: string | null
+          norm_id?: string | null
           organiser?: string | null
+          organiser_url?: string | null
           region?: string | null
+          slug?: string | null
           sort_date?: string | null
+          source?: string | null
+          source_url?: string | null
+          status?: string
           town?: string | null
-          url?: string | null
         }
         Relationships: []
       }
