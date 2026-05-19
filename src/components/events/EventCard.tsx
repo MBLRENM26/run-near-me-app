@@ -1,10 +1,12 @@
-import { Calendar, MapPin, Tag, ExternalLink, Star } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Calendar, MapPin, Tag, ExternalLink, Star, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDistance } from "@/lib/distance";
 import { cn } from "@/lib/utils";
 
 export interface EventCardData {
   id: string;
+  slug: string | null;
   name: string;
   date_raw: string | null;
   town: string | null;
@@ -38,6 +40,7 @@ function pickFee(fee: string | null): string | null {
 export function EventCard({ event }: { event: EventCardData }) {
   const viewUrl = pickViewUrl(event);
   const fee = pickFee(event.entry_fee);
+  const hasExternalCta = !!(event.entry_url?.trim() || event.organiser_url?.trim());
 
   return (
     <article
@@ -49,7 +52,17 @@ export function EventCard({ event }: { event: EventCardData }) {
     >
       <div className="flex items-start justify-between gap-2">
         <h3 className="font-semibold text-lg text-foreground leading-snug">
-          {event.name}
+          {event.slug ? (
+            <Link
+              to="/events/$slug"
+              params={{ slug: event.slug }}
+              className="hover:text-primary transition-colors"
+            >
+              {event.name}
+            </Link>
+          ) : (
+            event.name
+          )}
         </h3>
         {event.is_featured && (
           <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground">
@@ -86,23 +99,30 @@ export function EventCard({ event }: { event: EventCardData }) {
         )}
       </div>
 
-      {(fee || viewUrl) && (
-        <div className="mt-auto flex items-center justify-between pt-2">
-          {fee ? (
-            <span className="text-sm font-medium text-foreground">{fee}</span>
-          ) : (
-            <span />
-          )}
-          {viewUrl && (
-            <Button asChild size="sm" variant="default">
-              <a href={viewUrl} target="_blank" rel="noopener noreferrer">
-                View event
-                <ExternalLink className="h-3.5 w-3.5" />
-              </a>
-            </Button>
-          )}
-        </div>
-      )}
+      <div className="mt-auto flex items-center justify-between pt-2 gap-2">
+        {fee ? (
+          <span className="text-sm font-medium text-foreground">{fee}</span>
+        ) : (
+          <span />
+        )}
+        {hasExternalCta && viewUrl ? (
+          <Button asChild size="sm" variant="default">
+            <a href={viewUrl} target="_blank" rel="noopener noreferrer">
+              View event
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          </Button>
+        ) : event.slug ? (
+          <Link
+            to="/events/$slug"
+            params={{ slug: event.slug }}
+            className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+          >
+            View details
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        ) : null}
+      </div>
     </article>
   );
 }
