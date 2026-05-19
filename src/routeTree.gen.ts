@@ -14,6 +14,7 @@ import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as ListYourEventRouteImport } from './routes/list-your-event'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RunningEventsSlugRouteImport } from './routes/running-events.$slug'
+import { Route as EventsSlugRouteImport } from './routes/events.$slug'
 import { Route as ApiPublicImportEventsRouteImport } from './routes/api/public/import-events'
 import { Route as ApiPublicAdminFixEventUrlsRouteImport } from './routes/api/public/admin/fix-event-urls'
 
@@ -42,6 +43,11 @@ const RunningEventsSlugRoute = RunningEventsSlugRouteImport.update({
   path: '/running-events/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EventsSlugRoute = EventsSlugRouteImport.update({
+  id: '/events/$slug',
+  path: '/events/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicImportEventsRoute = ApiPublicImportEventsRouteImport.update({
   id: '/api/public/import-events',
   path: '/api/public/import-events',
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/list-your-event': typeof ListYourEventRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/events/$slug': typeof EventsSlugRoute
   '/running-events/$slug': typeof RunningEventsSlugRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
@@ -68,6 +75,7 @@ export interface FileRoutesByTo {
   '/list-your-event': typeof ListYourEventRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/events/$slug': typeof EventsSlugRoute
   '/running-events/$slug': typeof RunningEventsSlugRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
@@ -78,6 +86,7 @@ export interface FileRoutesById {
   '/list-your-event': typeof ListYourEventRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/events/$slug': typeof EventsSlugRoute
   '/running-events/$slug': typeof RunningEventsSlugRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
@@ -89,6 +98,7 @@ export interface FileRouteTypes {
     | '/list-your-event'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/events/$slug'
     | '/running-events/$slug'
     | '/api/public/import-events'
     | '/api/public/admin/fix-event-urls'
@@ -98,6 +108,7 @@ export interface FileRouteTypes {
     | '/list-your-event'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/events/$slug'
     | '/running-events/$slug'
     | '/api/public/import-events'
     | '/api/public/admin/fix-event-urls'
@@ -107,6 +118,7 @@ export interface FileRouteTypes {
     | '/list-your-event'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/events/$slug'
     | '/running-events/$slug'
     | '/api/public/import-events'
     | '/api/public/admin/fix-event-urls'
@@ -117,6 +129,7 @@ export interface RootRouteChildren {
   ListYourEventRoute: typeof ListYourEventRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  EventsSlugRoute: typeof EventsSlugRoute
   RunningEventsSlugRoute: typeof RunningEventsSlugRoute
   ApiPublicImportEventsRoute: typeof ApiPublicImportEventsRoute
   ApiPublicAdminFixEventUrlsRoute: typeof ApiPublicAdminFixEventUrlsRoute
@@ -159,6 +172,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RunningEventsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/events/$slug': {
+      id: '/events/$slug'
+      path: '/events/$slug'
+      fullPath: '/events/$slug'
+      preLoaderRoute: typeof EventsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/import-events': {
       id: '/api/public/import-events'
       path: '/api/public/import-events'
@@ -181,6 +201,7 @@ const rootRouteChildren: RootRouteChildren = {
   ListYourEventRoute: ListYourEventRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  EventsSlugRoute: EventsSlugRoute,
   RunningEventsSlugRoute: RunningEventsSlugRoute,
   ApiPublicImportEventsRoute: ApiPublicImportEventsRoute,
   ApiPublicAdminFixEventUrlsRoute: ApiPublicAdminFixEventUrlsRoute,

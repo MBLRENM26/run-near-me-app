@@ -160,10 +160,12 @@ export type Database = {
           is_featured: boolean
           name: string
           organiser_url: string
+          slug: string
           source_url: string
           town: string
         }[]
       }
+      slugify: { Args: { input: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never

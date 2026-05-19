@@ -84,7 +84,7 @@ function HomePage() {
       const { data, error } = await supabase
         .from("events")
         .select(
-          "id, name, date_raw, town, county, distance_type:distances, entry_fee, entry_url, organiser_url, source_url, is_featured",
+          "id, slug, name, date_raw, town, county, distance_type:distances, entry_fee, entry_url, organiser_url, source_url, is_featured",
         )
         .eq("status", "ACTIVE")
         .or(`sort_date.gte.${today},sort_date.is.null`)
@@ -99,6 +99,7 @@ function HomePage() {
     if (!nearbyEvents) return [];
     return nearbyEvents.map((e) => ({
       id: e.id,
+      slug: e.slug,
       name: e.name,
       date_raw: e.date_raw,
       town: e.town,
@@ -248,6 +249,7 @@ function HomePage() {
                   key={e.id}
                   event={{
                     id: e.id,
+                    slug: e.slug,
                     name: e.name,
                     date_raw: e.date_raw,
                     town: e.town,
