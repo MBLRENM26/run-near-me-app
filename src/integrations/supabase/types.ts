@@ -155,11 +155,13 @@ export type Database = {
           distance_miles: number
           distance_type: string
           entry_fee: string
+          entry_url: string
           id: string
           is_featured: boolean
           name: string
+          organiser_url: string
+          source_url: string
           town: string
-          url: string
         }[]
       }
     }
