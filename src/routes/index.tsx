@@ -80,13 +80,14 @@ function HomePage() {
   const { data: upcomingEvents } = useQuery({
     queryKey: ["events", "upcoming"],
     queryFn: async () => {
+      const today = new Date().toISOString().slice(0, 10);
       const { data, error } = await supabase
         .from("events")
         .select(
           "id, name, date_raw, town, county, distance_type:distances, entry_fee, url:entry_url, is_featured",
         )
         .eq("status", "ACTIVE")
-        .eq("is_upcoming", true)
+        .or(`sort_date.gte.${today},sort_date.is.null`)
         .order("sort_date", { ascending: true, nullsFirst: false })
         .limit(6);
       if (error) throw error;
