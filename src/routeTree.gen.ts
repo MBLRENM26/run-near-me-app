@@ -15,6 +15,7 @@ import { Route as ListYourEventRouteImport } from './routes/list-your-event'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RunningEventsSlugRouteImport } from './routes/running-events.$slug'
 import { Route as ApiPublicImportEventsRouteImport } from './routes/api/public/import-events'
+import { Route as ApiPublicAdminFixEventUrlsRouteImport } from './routes/api/public/admin/fix-event-urls'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -46,6 +47,12 @@ const ApiPublicImportEventsRoute = ApiPublicImportEventsRouteImport.update({
   path: '/api/public/import-events',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAdminFixEventUrlsRoute =
+  ApiPublicAdminFixEventUrlsRouteImport.update({
+    id: '/api/public/admin/fix-event-urls',
+    path: '/api/public/admin/fix-event-urls',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -54,6 +61,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/running-events/$slug': typeof RunningEventsSlugRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
+  '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +70,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/running-events/$slug': typeof RunningEventsSlugRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
+  '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,6 +80,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/running-events/$slug': typeof RunningEventsSlugRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
+  '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -81,6 +91,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/running-events/$slug'
     | '/api/public/import-events'
+    | '/api/public/admin/fix-event-urls'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -89,6 +100,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/running-events/$slug'
     | '/api/public/import-events'
+    | '/api/public/admin/fix-event-urls'
   id:
     | '__root__'
     | '/'
@@ -97,6 +109,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/running-events/$slug'
     | '/api/public/import-events'
+    | '/api/public/admin/fix-event-urls'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -106,6 +119,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   RunningEventsSlugRoute: typeof RunningEventsSlugRoute
   ApiPublicImportEventsRoute: typeof ApiPublicImportEventsRoute
+  ApiPublicAdminFixEventUrlsRoute: typeof ApiPublicAdminFixEventUrlsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -152,6 +166,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicImportEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/admin/fix-event-urls': {
+      id: '/api/public/admin/fix-event-urls'
+      path: '/api/public/admin/fix-event-urls'
+      fullPath: '/api/public/admin/fix-event-urls'
+      preLoaderRoute: typeof ApiPublicAdminFixEventUrlsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -162,7 +183,18 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   RunningEventsSlugRoute: RunningEventsSlugRoute,
   ApiPublicImportEventsRoute: ApiPublicImportEventsRoute,
+  ApiPublicAdminFixEventUrlsRoute: ApiPublicAdminFixEventUrlsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
