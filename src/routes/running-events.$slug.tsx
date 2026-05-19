@@ -79,11 +79,15 @@ function RegionPage() {
         const { data, error } = await supabase
           .from("events")
           .select(
-            "id, name, date_raw, town, county, distance_type:distances, entry_fee, url:entry_url, is_featured",
+            "id, name, date_raw, town, county, distance_type:distances, entry_fee, entry_url, organiser_url, source_url, is_featured",
           )
           .eq("region", region.name)
           .eq("status", "ACTIVE")
           .or(`sort_date.gte.${today},sort_date.is.null`)
+          .gte("lat", 49.9)
+          .lte("lat", 60.9)
+          .gte("lng", -8.6)
+          .lte("lng", 1.8)
           .order("sort_date", { ascending: true, nullsFirst: false })
           .range(from, from + pageSize - 1);
         if (error) throw error;

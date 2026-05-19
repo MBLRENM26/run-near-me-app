@@ -84,7 +84,7 @@ function HomePage() {
       const { data, error } = await supabase
         .from("events")
         .select(
-          "id, name, date_raw, town, county, distance_type:distances, entry_fee, url:entry_url, is_featured",
+          "id, name, date_raw, town, county, distance_type:distances, entry_fee, entry_url, organiser_url, source_url, is_featured",
         )
         .eq("status", "ACTIVE")
         .or(`sort_date.gte.${today},sort_date.is.null`)
@@ -105,7 +105,9 @@ function HomePage() {
       county: e.county,
       distance_type: e.distance_type,
       entry_fee: e.entry_fee,
-      url: e.url,
+      entry_url: e.entry_url,
+      organiser_url: e.organiser_url,
+      source_url: e.source_url,
       is_featured: e.is_featured,
       distanceMiles: e.distance_miles,
     }));
@@ -252,7 +254,9 @@ function HomePage() {
                     county: e.county,
                     distance_type: e.distance_type,
                     entry_fee: e.entry_fee,
-                    url: e.url,
+                    entry_url: e.entry_url,
+                    organiser_url: e.organiser_url,
+                    source_url: e.source_url,
                     is_featured: e.is_featured,
                   }}
                 />
