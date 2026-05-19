@@ -11,12 +11,34 @@ export interface EventCardData {
   county: string | null;
   distance_type: string | null;
   entry_fee: string | null;
-  url: string | null;
+  entry_url: string | null;
+  organiser_url: string | null;
+  source_url: string | null;
   is_featured: boolean;
   distanceMiles?: number;
 }
 
+const NON_FEE = new Set(["", "free", "tbc", "0", "n/a", "na"]);
+
+function pickViewUrl(e: EventCardData): string | null {
+  for (const u of [e.entry_url, e.organiser_url, e.source_url]) {
+    const v = u?.trim();
+    if (v) return v;
+  }
+  return null;
+}
+
+function pickFee(fee: string | null): string | null {
+  if (!fee) return null;
+  const trimmed = fee.trim();
+  if (NON_FEE.has(trimmed.toLowerCase())) return null;
+  return trimmed;
+}
+
 export function EventCard({ event }: { event: EventCardData }) {
+  const viewUrl = pickViewUrl(event);
+  const fee = pickFee(event.entry_fee);
+
   return (
     <article
       className={cn(
@@ -64,19 +86,23 @@ export function EventCard({ event }: { event: EventCardData }) {
         )}
       </div>
 
-      <div className="mt-auto flex items-center justify-between pt-2">
-        <span className="text-sm font-medium text-foreground">
-          {event.entry_fee || "Free"}
-        </span>
-        {event.url && (
-          <Button asChild size="sm" variant="default">
-            <a href={event.url} target="_blank" rel="noopener noreferrer">
-              View event
-              <ExternalLink className="h-3.5 w-3.5" />
-            </a>
-          </Button>
-        )}
-      </div>
+      {(fee || viewUrl) && (
+        <div className="mt-auto flex items-center justify-between pt-2">
+          {fee ? (
+            <span className="text-sm font-medium text-foreground">{fee}</span>
+          ) : (
+            <span />
+          )}
+          {viewUrl && (
+            <Button asChild size="sm" variant="default">
+              <a href={viewUrl} target="_blank" rel="noopener noreferrer">
+                View event
+                <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+            </Button>
+          )}
+        </div>
+      )}
     </article>
   );
 }
