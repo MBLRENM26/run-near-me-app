@@ -18,13 +18,16 @@ const EventRowSchema = z.object({
   lng: z.number().min(-180).max(180).nullish(),
   distances: z.string().max(500).nullish(),
   discipline: z.string().max(255).nullish(),
-  entry_url: z.string().url().max(2000).nullish(),
-  organiser_url: z.string().url().max(2000).nullish(),
+  entry_url: z.string().max(2000).nullish(),
+  organiser_url: z.string().max(2000).nullish(),
   organiser: z.string().max(500).nullish(),
   entry_fee: z.string().max(255).nullish(),
   source: z.string().max(255).nullish(),
-  source_url: z.string().url().max(2000).nullish(),
-  licensed: z.string().max(255).nullish(),
+  source_url: z.string().max(2000).nullish(),
+  licensed: z
+    .union([z.string().max(255), z.boolean()])
+    .transform((v) => (typeof v === "boolean" ? String(v) : v))
+    .nullish(),
   status: z.string().max(50).optional().default("ACTIVE"),
   date_raw: z.string().max(500).nullish(),
   norm_created_at: z.string().datetime().nullish(),
