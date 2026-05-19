@@ -84,10 +84,9 @@ function RegionPage() {
           .eq("region", region.name)
           .eq("status", "ACTIVE")
           .or(`sort_date.gte.${today},sort_date.is.null`)
-          .gte("lat", 49.9)
-          .lte("lat", 60.9)
-          .gte("lng", -8.6)
-          .lte("lng", 1.8)
+          .or(
+            "lat.is.null,and(lat.gte.49.9,lat.lte.60.9,lng.gte.-8.6,lng.lte.1.8)",
+          )
           .order("sort_date", { ascending: true, nullsFirst: false })
           .range(from, from + pageSize - 1);
         if (error) throw error;
