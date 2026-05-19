@@ -20,22 +20,26 @@ const TIMEOUT_MS = 5000;
 type ProbeResult = { id: string; alive: boolean };
 
 async function probeUrl(id: string, url: string): Promise<ProbeResult> {
-  const attempt = async (method: "HEAD" | "GET") => {
-    return await fetch(url, {
-      method,
+  try {
+    const res = await fetch(url, {
+      method: "GET",
       signal: AbortSignal.timeout(TIMEOUT_MS),
       redirect: "follow",
     });
-  };
-
-  try {
-    let res = await attempt("HEAD");
-    if (res.status === 405 || res.status === 501) {
-      res = await attempt("GET");
-    }
     const s = res.status;
-    const dead = s === 404 || s === 410 || (s >= 500 && s < 600);
-    return { id, alive: !dead };
+    if (s === 404 || s === 410 || (s >= 500 && s < 600)) {
+      return { id, alive: false };
+    }
+    // RunABC soft-404: redirects unknown slugs to /404 with HTTP 200
+    try {
+      const finalPath = new URL(res.url).pathname.replace(/\/+$/, "");
+      if (finalPath.endsWith("/404")) {
+        return { id, alive: false };
+      }
+    } catch {
+      // ignore URL parse errors
+    }
+    return { id, alive: true };
   } catch {
     return { id, alive: false };
   }
