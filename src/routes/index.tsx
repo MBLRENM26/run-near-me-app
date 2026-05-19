@@ -83,8 +83,9 @@ function HomePage() {
       const { data, error } = await supabase
         .from("events")
         .select(
-          "id, name, date_raw, town, county, distance_type, entry_fee, url, is_featured",
+          "id, name, date_raw, town, county, distance_type:distances, entry_fee, url:entry_url, is_featured",
         )
+        .eq("status", "ACTIVE")
         .eq("is_upcoming", true)
         .order("sort_date", { ascending: true, nullsFirst: false })
         .limit(6);

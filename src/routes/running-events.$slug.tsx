@@ -78,9 +78,10 @@ function RegionPage() {
         const { data, error } = await supabase
           .from("events")
           .select(
-            "id, name, date_raw, town, county, distance_type, entry_fee, url, is_featured",
+            "id, name, date_raw, town, county, distance_type:distances, entry_fee, url:entry_url, is_featured",
           )
           .eq("region", region.name)
+          .eq("status", "ACTIVE")
           .order("sort_date", { ascending: true, nullsFirst: false })
           .range(from, from + pageSize - 1);
         if (error) throw error;
