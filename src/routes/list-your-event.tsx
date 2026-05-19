@@ -26,7 +26,12 @@ const submissionSchema = z.object({
     .max(255),
 });
 
+const searchSchema = z.object({
+  claim: z.string().trim().min(1).max(255).optional(),
+});
+
 export const Route = createFileRoute("/list-your-event")({
+  validateSearch: searchSchema,
   head: () => {
     const canonical = `${SITE_URL}/list-your-event`;
     return {
@@ -53,10 +58,20 @@ export const Route = createFileRoute("/list-your-event")({
 });
 
 function ListYourEventPage() {
-  const [eventDetails, setEventDetails] = useState("");
+  const { claim } = Route.useSearch();
+  const [eventDetails, setEventDetails] = useState(
+    claim ? `Claiming listing: ${claim}\n\n` : "",
+  );
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    if (claim && eventDetails === "") {
+      setEventDetails(`Claiming listing: ${claim}\n\n`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [claim]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
