@@ -13,17 +13,21 @@ import { Route as UltraMarathonsRouteImport } from './routes/ultra-marathons'
 import { Route as TrailRunningEventsRouteImport } from './routes/trail-running-events'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ParkrunEventsRouteImport } from './routes/parkrun-events'
 import { Route as MarathonsRouteImport } from './routes/marathons'
 import { Route as ListYourEventRouteImport } from './routes/list-your-event'
 import { Route as JuniorParkrunEventsRouteImport } from './routes/junior-parkrun-events'
 import { Route as HalfMarathonsRouteImport } from './routes/half-marathons'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as R5kRacesRouteImport } from './routes/5k-races'
 import { Route as R10kRacesRouteImport } from './routes/10k-races'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RunningEventsSlugRouteImport } from './routes/running-events.$slug'
 import { Route as ParkrunEventsSlugRouteImport } from './routes/parkrun-events.$slug'
 import { Route as EventsSlugRouteImport } from './routes/events.$slug'
+import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as AdminClaimsRouteImport } from './routes/admin.claims'
 import { Route as ParkrunEventsRegionRegionRouteImport } from './routes/parkrun-events.region.$region'
 import { Route as ApiPublicImportEventsRouteImport } from './routes/api/public/import-events'
 import { Route as ApiPublicAdminFixEventUrlsRouteImport } from './routes/api/public/admin/fix-event-urls'
@@ -46,6 +50,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
   id: '/robots.txt',
   path: '/robots.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ParkrunEventsRoute = ParkrunEventsRouteImport.update({
@@ -71,6 +80,11 @@ const JuniorParkrunEventsRoute = JuniorParkrunEventsRouteImport.update({
 const HalfMarathonsRoute = HalfMarathonsRouteImport.update({
   id: '/half-marathons',
   path: '/half-marathons',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const R5kRacesRoute = R5kRacesRouteImport.update({
@@ -103,6 +117,16 @@ const EventsSlugRoute = EventsSlugRouteImport.update({
   path: '/events/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminClaimsRoute = AdminClaimsRouteImport.update({
+  id: '/claims',
+  path: '/claims',
+  getParentRoute: () => AdminRoute,
+} as any)
 const ParkrunEventsRegionRegionRoute =
   ParkrunEventsRegionRegionRouteImport.update({
     id: '/region/$region',
@@ -125,15 +149,19 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/10k-races': typeof R10kRacesRoute
   '/5k-races': typeof R5kRacesRoute
+  '/admin': typeof AdminRouteWithChildren
   '/half-marathons': typeof HalfMarathonsRoute
   '/junior-parkrun-events': typeof JuniorParkrunEventsRoute
   '/list-your-event': typeof ListYourEventRoute
   '/marathons': typeof MarathonsRoute
   '/parkrun-events': typeof ParkrunEventsRouteWithChildren
+  '/privacy': typeof PrivacyRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/trail-running-events': typeof TrailRunningEventsRoute
   '/ultra-marathons': typeof UltraMarathonsRoute
+  '/admin/claims': typeof AdminClaimsRoute
+  '/admin/login': typeof AdminLoginRoute
   '/events/$slug': typeof EventsSlugRoute
   '/parkrun-events/$slug': typeof ParkrunEventsSlugRoute
   '/running-events/$slug': typeof RunningEventsSlugRoute
@@ -145,15 +173,19 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/10k-races': typeof R10kRacesRoute
   '/5k-races': typeof R5kRacesRoute
+  '/admin': typeof AdminRouteWithChildren
   '/half-marathons': typeof HalfMarathonsRoute
   '/junior-parkrun-events': typeof JuniorParkrunEventsRoute
   '/list-your-event': typeof ListYourEventRoute
   '/marathons': typeof MarathonsRoute
   '/parkrun-events': typeof ParkrunEventsRouteWithChildren
+  '/privacy': typeof PrivacyRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/trail-running-events': typeof TrailRunningEventsRoute
   '/ultra-marathons': typeof UltraMarathonsRoute
+  '/admin/claims': typeof AdminClaimsRoute
+  '/admin/login': typeof AdminLoginRoute
   '/events/$slug': typeof EventsSlugRoute
   '/parkrun-events/$slug': typeof ParkrunEventsSlugRoute
   '/running-events/$slug': typeof RunningEventsSlugRoute
@@ -166,15 +198,19 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/10k-races': typeof R10kRacesRoute
   '/5k-races': typeof R5kRacesRoute
+  '/admin': typeof AdminRouteWithChildren
   '/half-marathons': typeof HalfMarathonsRoute
   '/junior-parkrun-events': typeof JuniorParkrunEventsRoute
   '/list-your-event': typeof ListYourEventRoute
   '/marathons': typeof MarathonsRoute
   '/parkrun-events': typeof ParkrunEventsRouteWithChildren
+  '/privacy': typeof PrivacyRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/trail-running-events': typeof TrailRunningEventsRoute
   '/ultra-marathons': typeof UltraMarathonsRoute
+  '/admin/claims': typeof AdminClaimsRoute
+  '/admin/login': typeof AdminLoginRoute
   '/events/$slug': typeof EventsSlugRoute
   '/parkrun-events/$slug': typeof ParkrunEventsSlugRoute
   '/running-events/$slug': typeof RunningEventsSlugRoute
@@ -188,15 +224,19 @@ export interface FileRouteTypes {
     | '/'
     | '/10k-races'
     | '/5k-races'
+    | '/admin'
     | '/half-marathons'
     | '/junior-parkrun-events'
     | '/list-your-event'
     | '/marathons'
     | '/parkrun-events'
+    | '/privacy'
     | '/robots.txt'
     | '/sitemap.xml'
     | '/trail-running-events'
     | '/ultra-marathons'
+    | '/admin/claims'
+    | '/admin/login'
     | '/events/$slug'
     | '/parkrun-events/$slug'
     | '/running-events/$slug'
@@ -208,15 +248,19 @@ export interface FileRouteTypes {
     | '/'
     | '/10k-races'
     | '/5k-races'
+    | '/admin'
     | '/half-marathons'
     | '/junior-parkrun-events'
     | '/list-your-event'
     | '/marathons'
     | '/parkrun-events'
+    | '/privacy'
     | '/robots.txt'
     | '/sitemap.xml'
     | '/trail-running-events'
     | '/ultra-marathons'
+    | '/admin/claims'
+    | '/admin/login'
     | '/events/$slug'
     | '/parkrun-events/$slug'
     | '/running-events/$slug'
@@ -228,15 +272,19 @@ export interface FileRouteTypes {
     | '/'
     | '/10k-races'
     | '/5k-races'
+    | '/admin'
     | '/half-marathons'
     | '/junior-parkrun-events'
     | '/list-your-event'
     | '/marathons'
     | '/parkrun-events'
+    | '/privacy'
     | '/robots.txt'
     | '/sitemap.xml'
     | '/trail-running-events'
     | '/ultra-marathons'
+    | '/admin/claims'
+    | '/admin/login'
     | '/events/$slug'
     | '/parkrun-events/$slug'
     | '/running-events/$slug'
@@ -249,11 +297,13 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   R10kRacesRoute: typeof R10kRacesRoute
   R5kRacesRoute: typeof R5kRacesRoute
+  AdminRoute: typeof AdminRouteWithChildren
   HalfMarathonsRoute: typeof HalfMarathonsRoute
   JuniorParkrunEventsRoute: typeof JuniorParkrunEventsRoute
   ListYourEventRoute: typeof ListYourEventRoute
   MarathonsRoute: typeof MarathonsRoute
   ParkrunEventsRoute: typeof ParkrunEventsRouteWithChildren
+  PrivacyRoute: typeof PrivacyRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TrailRunningEventsRoute: typeof TrailRunningEventsRoute
@@ -294,6 +344,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RobotsDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/parkrun-events': {
       id: '/parkrun-events'
       path: '/parkrun-events'
@@ -327,6 +384,13 @@ declare module '@tanstack/react-router' {
       path: '/half-marathons'
       fullPath: '/half-marathons'
       preLoaderRoute: typeof HalfMarathonsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/5k-races': {
@@ -371,6 +435,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EventsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/claims': {
+      id: '/admin/claims'
+      path: '/claims'
+      fullPath: '/admin/claims'
+      preLoaderRoute: typeof AdminClaimsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/parkrun-events/region/$region': {
       id: '/parkrun-events/region/$region'
       path: '/region/$region'
@@ -395,6 +473,18 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteChildren {
+  AdminClaimsRoute: typeof AdminClaimsRoute
+  AdminLoginRoute: typeof AdminLoginRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminClaimsRoute: AdminClaimsRoute,
+  AdminLoginRoute: AdminLoginRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 interface ParkrunEventsRouteChildren {
   ParkrunEventsSlugRoute: typeof ParkrunEventsSlugRoute
   ParkrunEventsRegionRegionRoute: typeof ParkrunEventsRegionRegionRoute
@@ -413,11 +503,13 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   R10kRacesRoute: R10kRacesRoute,
   R5kRacesRoute: R5kRacesRoute,
+  AdminRoute: AdminRouteWithChildren,
   HalfMarathonsRoute: HalfMarathonsRoute,
   JuniorParkrunEventsRoute: JuniorParkrunEventsRoute,
   ListYourEventRoute: ListYourEventRoute,
   MarathonsRoute: MarathonsRoute,
   ParkrunEventsRoute: ParkrunEventsRouteWithChildren,
+  PrivacyRoute: PrivacyRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TrailRunningEventsRoute: TrailRunningEventsRoute,

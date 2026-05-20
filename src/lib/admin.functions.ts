@@ -125,7 +125,11 @@ export const updateSubmission = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     requireAdminOrThrow();
 
-    const patch: Record<string, unknown> = {};
+    const patch: {
+      status?: (typeof STATUSES)[number];
+      reviewed_at?: string;
+      admin_note?: string | null;
+    } = {};
     if (data.status !== undefined) {
       patch.status = data.status;
       if (data.status !== "new") patch.reviewed_at = new Date().toISOString();
@@ -204,7 +208,7 @@ export const submitListing = createServerFn({ method: "POST" })
     sendNewSubmissionNotification({
       id: inserted.id,
       email: inserted.email,
-      kind: inserted.kind,
+      kind: inserted.kind as "claim" | "listing",
       claim_slug: inserted.claim_slug,
       submitted_at: inserted.submitted_at,
     }).catch((err) => console.warn("[submitListing] notify failed", err));
