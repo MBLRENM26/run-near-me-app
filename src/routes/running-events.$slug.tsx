@@ -1,20 +1,30 @@
-import { createFileRoute, Link, notFound, redirect, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, redirect, useNavigate, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { EventCard, type EventCardData } from "@/components/events/EventCard";
+import { MonthFilter } from "@/components/events/MonthFilter";
 import { Toaster } from "@/components/ui/sonner";
 import { slugToRegion } from "@/lib/regions";
 import { SITE_URL } from "@/lib/site";
 import { DistanceNav } from "@/components/distance/DistanceNav";
+import {
+  availableMonths,
+  filterByMonth,
+  formatMonthLabelLong,
+  monthSearchValidator,
+  type MonthKey,
+  type MonthSearch,
+} from "@/lib/month-filter";
 
 const SLUG_REDIRECTS: Record<string, string> = {
   kent: "south-east",
 };
 
 export const Route = createFileRoute("/running-events/$slug")({
+  validateSearch: monthSearchValidator,
   beforeLoad: ({ params }) => {
     const target = SLUG_REDIRECTS[params.slug];
     if (target) {
