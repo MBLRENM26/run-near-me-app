@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { REGIONS } from "@/lib/regions";
 import { SITE_URL } from "@/lib/site";
-import { getAllActiveSlugs } from "@/lib/events.functions";
+import {
+  getAllActiveSlugs,
+  getRegionDistanceMatrix,
+} from "@/lib/events.functions";
 import { getParkrunList } from "@/lib/parkrun.functions";
 import { DISTANCE_PAGE_LIST } from "@/lib/distance-filters";
 
