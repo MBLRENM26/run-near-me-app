@@ -33,6 +33,19 @@ export const Route = createFileRoute("/sitemap.xml")({
           console.error("Sitemap: failed to load parkrun slugs", err);
         }
 
+        let comboEntries: { regionSlug: string; distanceSlug: string }[] = [];
+        try {
+          const matrix = await getRegionDistanceMatrix();
+          comboEntries = matrix
+            .filter((m) => m.total >= 3)
+            .map((m) => ({
+              regionSlug: m.regionSlug,
+              distanceSlug: m.distanceSlug,
+            }));
+        } catch (err) {
+          console.error("Sitemap: failed to load region×distance matrix", err);
+        }
+
         const urls = [
           { loc: `${SITE_URL}/`, lastmod: today, priority: "1.0", changefreq: "daily" },
           {
