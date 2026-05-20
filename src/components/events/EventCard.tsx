@@ -17,6 +17,7 @@ export interface EventCardData {
   organiser_url: string | null;
   source_url: string | null;
   is_featured: boolean;
+  sort_date?: string | null;
   distanceMiles?: number;
 }
 
