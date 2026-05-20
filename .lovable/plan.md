@@ -1,46 +1,45 @@
-## Diagnosis
+## Problem
 
-Network + replay show the login server function succeeds (the client navigates to `/admin/claims`), but a moment later `adminCheckSession` returns `authenticated: false` and the page bounces back to `/admin/login`. So the password is correct — the **session cookie is not coming back on the next request**.
+Two related routing bugs in the admin section:
 
-Almost certain root cause: the preview runs inside the Lovable editor as a **cross-site iframe**. The admin session cookie is currently set with:
-
-```ts
-sameSite: "lax", secure: true
-```
-
-`SameSite=Lax` cookies are blocked in cross-site iframe contexts by Chrome/Safari, so subsequent `fetch` calls from the iframe (including `adminCheckSession`) go out without the cookie. That perfectly matches the symptom — login response sets the cookie, browser drops it, next call sees no session. The "incorrect password" message on the second attempt is just the same cookie loss after a successful sign-in.
-
-(On the published custom domain `runningeventsnearme.com` it would actually work today because it's not in an iframe — but it's broken everywhere we use the editor preview, which is where you tested.)
+1. **`/admin/login` shows the admin header (with the "Submissions" button)** — because `src/routes/admin.tsx` is both the `/admin` route *and* the parent layout for every `admin.*.tsx` file, including `admin.login.tsx`. The login screen is being wrapped in the authenticated chrome.
+2. **`/admin` renders only the empty shell** — there is no `admin.index.tsx`, so visiting `/admin` shows the header but no body and no redirect.
 
 ## Fix
 
-### 1. `src/lib/admin-session.server.ts`
-Change the cookie to be iframe-safe:
+Use a TanStack pathless layout so only authenticated admin pages inherit the header, and give `/admin` an explicit redirect.
 
-- `sameSite: "none"` (required for cross-site iframe)
-- `secure: true` (already set; required by `SameSite=None`)
-- Keep `httpOnly`, `path: "/"`, `maxAge` as-is
-- Apply to both `issueAdminSession` and `clearAdminSession`
+### File changes
 
-No other behavior changes — HMAC signing, expiry, and verification stay identical.
+1. **Create `src/routes/_adminShell.tsx`** (pathless layout, underscore prefix → no URL segment).
+   - Move the entire header/layout JSX currently in `admin.tsx` here.
+   - Renders `<Outlet />` for child routes.
 
-### 2. `src/routes/admin.login.tsx` — password visibility toggle
-- Add a local `showPassword` boolean state
-- Wrap the `<Input>` in a relative container with an inline `<button type="button">` on the right
-- Toggle button switches input `type` between `"password"` and `"text"`
-- Use a lucide `Eye` / `EyeOff` icon, accessible label (`aria-label="Show password"` / `"Hide password"`)
-- No change to submit logic
+2. **Rename `src/routes/admin.claims.tsx` → `src/routes/_adminShell.admin.claims.tsx`**.
+   - No code changes inside; the file just gets nested under the pathless layout so it still resolves to `/admin/claims` but now renders inside `_adminShell`.
 
-### 3. Verification
-After the change, sign in again from the preview:
-- Login succeeds → redirect to `/admin/claims`
-- Page stays on `/admin/claims` and lists submissions (your earlier test claim should be visible)
-- Reloading `/admin/claims` keeps you signed in
+3. **Replace `src/routes/admin.tsx` with `src/routes/admin.index.tsx`**.
+   - Delete the old layout file (its contents moved to `_adminShell.tsx`).
+   - New `admin.index.tsx` is a tiny component that calls `adminCheckSession` and `navigate({ to: res.authenticated ? "/admin/claims" : "/admin/login" })`. Shows "Loading…" while the check runs.
 
-If for any reason it still fails after the SameSite change, the next step would be to inspect the response with logging in `adminCheckSession` to confirm whether the cookie header is arriving — but I don't expect to need that.
+4. **`src/routes/admin.login.tsx`** — no edits. Because it is no longer a child of `admin.tsx` (deleted) and not under `_adminShell`, it renders standalone with no admin header. Password show/hide toggle already in place.
 
-## Out of scope
-- No changes to admin auth model (still shared password + HMAC cookie)
-- No changes to email/notifications
-- No changes to the submissions UI itself
-- Job 3 (region × distance combos) stays queued until you confirm the login works
+### Resulting routes
+
+```
+/admin           → admin.index.tsx (redirects based on session)
+/admin/login     → admin.login.tsx (standalone, no header)
+/admin/claims    → _adminShell.admin.claims.tsx (inside admin header)
+```
+
+### Verification
+
+- Visit `/admin/login` while logged out → bare login card, no "Submissions" link.
+- Visit `/admin` while logged out → redirects to `/admin/login`.
+- Visit `/admin` while logged in → redirects to `/admin/claims`.
+- Visit `/admin/claims` while logged in → header + submissions list (unchanged).
+- `routeTree.gen.ts` regenerates automatically on dev/build.
+
+### Out of scope
+
+No backend, session, email, or submissions-logic changes. Job 3 (region × distance combos) still pending separately.

@@ -25,7 +25,7 @@ const searchSchema = z.object({
   status: z.enum(STATUSES).optional(),
 });
 
-export const Route = createFileRoute("/admin/claims")({
+export const Route = createFileRoute("/_adminShell/admin/claims")({
   validateSearch: searchSchema,
   head: () => ({
     meta: [
