@@ -16,6 +16,7 @@ import { EventCard, type EventCardData } from "@/components/events/EventCard";
 import { Toaster } from "@/components/ui/sonner";
 import { matchesEventType, type EventType } from "@/lib/distance";
 import { MapPin } from "lucide-react";
+import { DistanceNav } from "@/components/distance/DistanceNav";
 
 export const Route = createFileRoute("/")({
   head: () => ({
