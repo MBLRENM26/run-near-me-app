@@ -30,6 +30,7 @@ import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminClaimsRouteImport } from './routes/admin.claims'
 import { Route as ParkrunEventsRegionRegionRouteImport } from './routes/parkrun-events.region.$region'
 import { Route as ApiPublicImportEventsRouteImport } from './routes/api/public/import-events'
+import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicAdminFixEventUrlsRouteImport } from './routes/api/public/admin/fix-event-urls'
 
 const UltraMarathonsRoute = UltraMarathonsRouteImport.update({
@@ -138,6 +139,12 @@ const ApiPublicImportEventsRoute = ApiPublicImportEventsRouteImport.update({
   path: '/api/public/import-events',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LovableEmailQueueProcessRoute =
+  LovableEmailQueueProcessRouteImport.update({
+    id: '/lovable/email/queue/process',
+    path: '/lovable/email/queue/process',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicAdminFixEventUrlsRoute =
   ApiPublicAdminFixEventUrlsRouteImport.update({
     id: '/api/public/admin/fix-event-urls',
@@ -168,6 +175,7 @@ export interface FileRoutesByFullPath {
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
   '/parkrun-events/region/$region': typeof ParkrunEventsRegionRegionRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -192,6 +200,7 @@ export interface FileRoutesByTo {
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
   '/parkrun-events/region/$region': typeof ParkrunEventsRegionRegionRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -217,6 +226,7 @@ export interface FileRoutesById {
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
   '/parkrun-events/region/$region': typeof ParkrunEventsRegionRegionRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -243,6 +253,7 @@ export interface FileRouteTypes {
     | '/api/public/import-events'
     | '/parkrun-events/region/$region'
     | '/api/public/admin/fix-event-urls'
+    | '/lovable/email/queue/process'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -267,6 +278,7 @@ export interface FileRouteTypes {
     | '/api/public/import-events'
     | '/parkrun-events/region/$region'
     | '/api/public/admin/fix-event-urls'
+    | '/lovable/email/queue/process'
   id:
     | '__root__'
     | '/'
@@ -291,6 +303,7 @@ export interface FileRouteTypes {
     | '/api/public/import-events'
     | '/parkrun-events/region/$region'
     | '/api/public/admin/fix-event-urls'
+    | '/lovable/email/queue/process'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -312,6 +325,7 @@ export interface RootRouteChildren {
   RunningEventsSlugRoute: typeof RunningEventsSlugRoute
   ApiPublicImportEventsRoute: typeof ApiPublicImportEventsRoute
   ApiPublicAdminFixEventUrlsRoute: typeof ApiPublicAdminFixEventUrlsRoute
+  LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -463,6 +477,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicImportEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/email/queue/process': {
+      id: '/lovable/email/queue/process'
+      path: '/lovable/email/queue/process'
+      fullPath: '/lovable/email/queue/process'
+      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/admin/fix-event-urls': {
       id: '/api/public/admin/fix-event-urls'
       path: '/api/public/admin/fix-event-urls'
@@ -518,6 +539,7 @@ const rootRouteChildren: RootRouteChildren = {
   RunningEventsSlugRoute: RunningEventsSlugRoute,
   ApiPublicImportEventsRoute: ApiPublicImportEventsRoute,
   ApiPublicAdminFixEventUrlsRoute: ApiPublicAdminFixEventUrlsRoute,
+  LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
