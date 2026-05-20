@@ -266,6 +266,31 @@ function pluralNoun(cfg: DistancePageConfig): string {
   }
 }
 
+function DistanceHomeLink({
+  cfg,
+  children,
+}: {
+  cfg: DistancePageConfig;
+  children: React.ReactNode;
+}) {
+  const cls =
+    "inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90";
+  switch (cfg.key) {
+    case "5k":
+      return <Link to="/5k-races" className={cls}>{children}</Link>;
+    case "10k":
+      return <Link to="/10k-races" className={cls}>{children}</Link>;
+    case "half-marathon":
+      return <Link to="/half-marathons" className={cls}>{children}</Link>;
+    case "marathon":
+      return <Link to="/marathons" className={cls}>{children}</Link>;
+    case "trail":
+      return <Link to="/trail-running-events" className={cls}>{children}</Link>;
+    case "ultra":
+      return <Link to="/ultra-marathons" className={cls}>{children}</Link>;
+  }
+}
+
 interface BuildHeadArgs {
   cfg: DistancePageConfig;
   region: Region;
