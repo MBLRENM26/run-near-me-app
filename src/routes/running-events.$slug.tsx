@@ -121,9 +121,9 @@ function RegionPage() {
 
         <section className="mx-auto max-w-6xl px-4 pb-6">
           <h2 className="text-sm font-medium text-muted-foreground mb-3">
-            Browse by distance
+            Browse by distance in {region.name}
           </h2>
-          <DistanceNav />
+          <DistanceNav regionSlug={slug} />
           <p className="mt-4 text-sm">
             <Link
               to="/parkrun-events/region/$region"

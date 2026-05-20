@@ -4,9 +4,11 @@ import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import {
   DISTANCE_PAGES,
+  DISTANCE_PAGE_LIST,
   matchesDistance,
   type DistanceKey,
 } from "@/lib/distance-filters";
+import { REGIONS, slugToRegion } from "@/lib/regions";
 
 const slugSchema = z.object({
   slug: z.string().trim().min(1).max(255).regex(/^[a-z0-9-]+$/),
@@ -171,4 +173,165 @@ export const getEventsByDistance = createServerFn({ method: "GET" })
       regionCounts,
       total: all.length,
     };
+  });
+
+// ----- Region × distance combo pages -----
+
+const regionDistanceSchema = z.object({
+  regionSlug: z.string().trim().min(1).max(64).regex(/^[a-z0-9-]+$/),
+  distanceKey: z.enum([
+    "5k",
+    "10k",
+    "half-marathon",
+    "marathon",
+    "trail",
+    "ultra",
+  ]),
+});
+
+export type RegionDistancePageData = {
+  events: DistanceEvent[]; // capped for display
+  total: number;
+  // Counts for the other 5 distances in the SAME region (drives the
+  // "other distances in {region}" panel).
+  otherDistanceCounts: Record<DistanceKey, number>;
+};
+
+export const getEventsByRegionAndDistance = createServerFn({ method: "GET" })
+  .inputValidator((input: unknown) => regionDistanceSchema.parse(input))
+  .handler(async ({ data }): Promise<RegionDistancePageData> => {
+    const region = slugToRegion(data.regionSlug);
+    if (!region) throw notFound();
+    const cfg = DISTANCE_PAGES[data.distanceKey as DistanceKey];
+    const today = new Date().toISOString().slice(0, 10);
+
+    // Pull all active future events for this region with a non-null
+    // distances field — volume per region is small.
+    const pageSize = 1000;
+    const all: DistanceEvent[] = [];
+    for (let from = 0; ; from += pageSize) {
+      const { data: rows, error } = await supabaseAdmin
+        .from("events")
+        .select(
+          "id, slug, name, date_raw, sort_date, town, county, region, distances, entry_fee, entry_url, organiser_url, source_url, is_featured",
+        )
+        .eq("status", "ACTIVE")
+        .eq("region", region.name)
+        .not("distances", "is", null)
+        .or(`sort_date.gte.${today},sort_date.is.null`)
+        .or(
+          "lat.is.null,and(lat.gte.49.9,lat.lte.60.9,lng.gte.-8.6,lng.lte.1.8)",
+        )
+        .order("sort_date", { ascending: true, nullsFirst: false })
+        .range(from, from + pageSize - 1);
+      if (error) throw new Error(error.message);
+      if (!rows || rows.length === 0) break;
+      for (const r of rows) {
+        all.push({
+          id: r.id as string,
+          slug: r.slug as string | null,
+          name: r.name as string,
+          date_raw: r.date_raw as string | null,
+          sort_date: r.sort_date as string | null,
+          town: r.town as string | null,
+          county: r.county as string | null,
+          region: r.region as string | null,
+          distance_type: r.distances as string | null,
+          entry_fee: r.entry_fee as string | null,
+          entry_url: r.entry_url as string | null,
+          organiser_url: r.organiser_url as string | null,
+          source_url: r.source_url as string | null,
+          is_featured: !!r.is_featured,
+        });
+      }
+      if (rows.length < pageSize) break;
+    }
+
+    // Bucket the same fetched rows by every distance for the
+    // "other distances in this region" panel.
+    const otherDistanceCounts: Record<DistanceKey, number> = {
+      "5k": 0,
+      "10k": 0,
+      "half-marathon": 0,
+      marathon: 0,
+      trail: 0,
+      ultra: 0,
+    };
+    for (const e of all) {
+      for (const p of DISTANCE_PAGE_LIST) {
+        if (matchesDistance(e.distance_type, p)) {
+          otherDistanceCounts[p.key]++;
+        }
+      }
+    }
+
+    const matched = all.filter((e) => matchesDistance(e.distance_type, cfg));
+
+    return {
+      events: matched.slice(0, 60),
+      total: matched.length,
+      otherDistanceCounts,
+    };
+  });
+
+export type RegionDistanceMatrixRow = {
+  regionSlug: string;
+  regionName: string;
+  distanceKey: DistanceKey;
+  distanceSlug: string;
+  total: number;
+};
+
+export const getRegionDistanceMatrix = createServerFn({ method: "GET" })
+  .handler(async (): Promise<RegionDistanceMatrixRow[]> => {
+    const today = new Date().toISOString().slice(0, 10);
+    const pageSize = 1000;
+
+    // Pull every active future event with a region + distances in one pass.
+    const rows: { region: string; distances: string }[] = [];
+    for (let from = 0; ; from += pageSize) {
+      const { data, error } = await supabaseAdmin
+        .from("events")
+        .select("region, distances")
+        .eq("status", "ACTIVE")
+        .not("distances", "is", null)
+        .not("region", "is", null)
+        .or(`sort_date.gte.${today},sort_date.is.null`)
+        .or(
+          "lat.is.null,and(lat.gte.49.9,lat.lte.60.9,lng.gte.-8.6,lng.lte.1.8)",
+        )
+        .range(from, from + pageSize - 1);
+      if (error) throw new Error(error.message);
+      if (!data || data.length === 0) break;
+      for (const r of data) {
+        if (r.region && r.distances) {
+          rows.push({ region: r.region as string, distances: r.distances as string });
+        }
+      }
+      if (data.length < pageSize) break;
+    }
+
+    const counts = new Map<string, number>();
+    for (const r of rows) {
+      for (const p of DISTANCE_PAGE_LIST) {
+        if (matchesDistance(r.distances, p)) {
+          const key = `${r.region}::${p.key}`;
+          counts.set(key, (counts.get(key) ?? 0) + 1);
+        }
+      }
+    }
+
+    const out: RegionDistanceMatrixRow[] = [];
+    for (const region of REGIONS) {
+      for (const p of DISTANCE_PAGE_LIST) {
+        out.push({
+          regionSlug: region.slug,
+          regionName: region.name,
+          distanceKey: p.key,
+          distanceSlug: p.slug,
+          total: counts.get(`${region.name}::${p.key}`) ?? 0,
+        });
+      }
+    }
+    return out;
   });

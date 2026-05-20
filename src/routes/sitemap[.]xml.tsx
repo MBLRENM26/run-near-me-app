@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { REGIONS } from "@/lib/regions";
 import { SITE_URL } from "@/lib/site";
-import { getAllActiveSlugs } from "@/lib/events.functions";
+import {
+  getAllActiveSlugs,
+  getRegionDistanceMatrix,
+} from "@/lib/events.functions";
 import { getParkrunList } from "@/lib/parkrun.functions";
 import { DISTANCE_PAGE_LIST } from "@/lib/distance-filters";
 
@@ -28,6 +31,19 @@ export const Route = createFileRoute("/sitemap.xml")({
           parkrunSlugs = list.locations.map((l) => l.slug);
         } catch (err) {
           console.error("Sitemap: failed to load parkrun slugs", err);
+        }
+
+        let comboEntries: { regionSlug: string; distanceSlug: string }[] = [];
+        try {
+          const matrix = await getRegionDistanceMatrix();
+          comboEntries = matrix
+            .filter((m) => m.total >= 3)
+            .map((m) => ({
+              regionSlug: m.regionSlug,
+              distanceSlug: m.distanceSlug,
+            }));
+        } catch (err) {
+          console.error("Sitemap: failed to load region×distance matrix", err);
         }
 
         const urls = [
@@ -66,6 +82,12 @@ export const Route = createFileRoute("/sitemap.xml")({
             loc: `${SITE_URL}/running-events/${r.slug}`,
             lastmod: today,
             priority: "0.8",
+            changefreq: "weekly",
+          })),
+          ...comboEntries.map((c) => ({
+            loc: `${SITE_URL}/running-events/${c.regionSlug}/${c.distanceSlug}`,
+            lastmod: today,
+            priority: "0.7",
             changefreq: "weekly",
           })),
           ...REGIONS.map((r) => ({

@@ -133,8 +133,8 @@ export function DistancePage({ cfg, data }: DistancePageProps) {
                 return (
                   <Link
                     key={region.slug}
-                    to="/running-events/$slug"
-                    params={{ slug: region.slug }}
+                    to="/running-events/$slug/$distance"
+                    params={{ slug: region.slug, distance: cfg.slug }}
                     className="group flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium text-foreground shadow-card hover:border-primary hover:shadow-card-hover transition-all"
                   >
                     <span>
