@@ -1,19 +1,36 @@
-# Month filter — done
+# Persist month filter across distance navigation
 
-Shipped query-param month filtering on:
-- 6 distance pages (`/5k-races`, `/10k-races`, `/half-marathons`, `/marathons`, `/trail-running-events`, `/ultra-marathons`)
-- region pages (`/running-events/{region}`)
-- region × distance combo pages (`/running-events/{region}/{distance}`)
+## Problem
 
-URL format: `?month=YYYY-MM`. Pills show only months that have ≥1 event (next 12 months max). Canonical, title, h1 unchanged when filter is active. No new routes, no sitemap changes.
+On a region × distance page (e.g. `/running-events/south-west/10k-races?month=2026-12`), clicking another distance pill in `DistanceNav` navigates to the new combo page but drops `?month=2026-12`. The user then has to re-pick December. Same issue on region pages and top-level distance pages — any time `DistanceNav` is used while a month filter is active, the filter is lost on click.
 
-Files:
-- new `src/lib/month-filter.ts` (helpers + `monthSearchValidator`)
-- new `src/components/events/MonthFilter.tsx`
-- `src/components/distance/DistancePage.tsx`, `RegionDistancePage.tsx` — render filter + apply
-- `src/routes/running-events.$slug.tsx` — inline RegionPage updated, fetches `sort_date`
-- `src/components/events/EventCard.tsx` — `sort_date?` added to `EventCardData`
-- 8 route files (`*-races.tsx`, `half-marathons.tsx`, `marathons.tsx`, `trail-running-events.tsx`, `ultra-marathons.tsx`, `running-events.$slug.tsx`, `running-events.$slug_.$distance.tsx`) — added `validateSearch: monthSearchValidator`
-- `src/lib/events.functions.ts` — bumped distance display cap from 60 → 500 so client-side filter has events to work with
+Expected behaviour: if the user has narrowed by month, switching distance should keep that month. If the new (region × distance) combo has no events in that month, the existing empty state already prompts "Show all months", so there's a safe escape hatch.
 
-Hybrid path stays open: if GSC later shows specific month combos earn traffic, promote those to static routes; everything else stays on query params.
+## Fix
+
+Make every `<Link>` in `src/components/distance/DistanceNav.tsx` forward the current `month` search param to its destination.
+
+TanStack's `<Link search={(prev) => ...}>` function form preserves existing search params and is type-safe per destination. Since the destination routes (`/5k-races`, `/10k-races`, …, `/running-events/$slug/$distance`) all already register `monthSearchValidator`, the param is valid on the receiving end.
+
+### Change
+
+In `DistanceNav.tsx`, for both the `regionSlug` branch and each of the six top-level distance `<Link>`s, add:
+
+```tsx
+search={(prev: { month?: string }) => ({ month: prev?.month })}
+```
+
+That's the only code change. No new files, no route changes, no SEO impact (canonical and metadata stay unfiltered as already implemented).
+
+### Out of scope
+
+- The parkrun region link below the distance nav (different route family, no month filter there).
+- The homepage "Back to all events" link — intentional reset.
+- Region selector elsewhere on the page (regions don't share month context — switching region is a bigger context switch).
+
+## Verification
+
+1. Visit `/running-events/south-west/10k-races?month=2026-12`, click **5K** pill → URL becomes `/running-events/south-west/5k-races?month=2026-12`, list is filtered to December.
+2. From the same page, click **Half marathon** → month persists; if no December half marathons in South West, empty state offers "Show all months".
+3. From `/10k-races?month=2026-12`, click **5K** pill → `/5k-races?month=2026-12` with December filter applied.
+4. Region page `/running-events/south-west?month=2026-12`, click any distance pill → month persists.
