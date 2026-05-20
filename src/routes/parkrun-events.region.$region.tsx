@@ -69,7 +69,7 @@ function ParkrunRegionPage() {
 
         <section className="mx-auto max-w-6xl px-4 pb-16">
           <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {data.locations.map((l) => (
+            {data.locations.map((l: typeof data.locations[number]) => (
               <li key={l.id}>
                 <Link
                   to="/parkrun-events/$slug"
