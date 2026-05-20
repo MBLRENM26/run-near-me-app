@@ -107,12 +107,12 @@ function HomePage() {
 
   const setCoords = (c: Coords) =>
     navigate({
-      search: (prev) => ({ ...prev, lat: c.lat, lng: c.lng, label: c.label }),
+      search: (prev: HomeSearch) => ({ ...prev, lat: c.lat, lng: c.lng, label: c.label }),
     });
   const setRadius = (r: Radius) =>
-    navigate({ search: (prev) => ({ ...prev, radius: r }) });
+    navigate({ search: (prev: HomeSearch) => ({ ...prev, radius: r }) });
   const setEventType = (t: EventType) =>
-    navigate({ search: (prev) => ({ ...prev, type: t }) });
+    navigate({ search: (prev: HomeSearch) => ({ ...prev, type: t }) });
 
   const { data: nearbyEvents, isLoading } = useQuery({
     queryKey: ["events", "nearby", coords?.lat, coords?.lng, radius],
