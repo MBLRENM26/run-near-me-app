@@ -1,8 +1,9 @@
-import { Link } from "@tanstack/react-router";
-import { ArrowLeft, ChevronRight } from "lucide-react";
+import { Link, useNavigate, useSearch } from "@tanstack/react-router";
+import { ArrowLeft, ChevronRight, X } from "lucide-react";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { EventCard, type EventCardData } from "@/components/events/EventCard";
+import { MonthFilter } from "@/components/events/MonthFilter";
 import {
   Accordion,
   AccordionContent,
@@ -21,6 +22,12 @@ import type {
   DistanceEvent,
   RegionDistancePageData,
 } from "@/lib/events.functions";
+import {
+  availableMonths,
+  filterByMonth,
+  formatMonthLabelLong,
+  type MonthKey,
+} from "@/lib/month-filter";
 import { CURRENT_YEAR } from "@/lib/site";
 
 function toEventCardData(e: DistanceEvent): EventCardData {
