@@ -124,6 +124,15 @@ function RegionPage() {
             Browse by distance
           </h2>
           <DistanceNav />
+          <p className="mt-4 text-sm">
+            <Link
+              to="/parkrun-events/region/$region"
+              params={{ region: slug }}
+              className="font-medium text-primary hover:underline"
+            >
+              Find a parkrun in {region.name} →
+            </Link>
+          </p>
         </section>
 
         <section className="mx-auto max-w-6xl px-4 pb-16">
