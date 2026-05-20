@@ -19,6 +19,7 @@ export const Route = createFileRoute("/admin/login")({
 
 function AdminLoginPage() {
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
