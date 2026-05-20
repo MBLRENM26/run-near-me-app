@@ -145,7 +145,7 @@ function ParkrunLocationPage() {
                 Nearby parkruns
               </h2>
               <ul className="space-y-2">
-                {p.nearby.map((n) => (
+                {p.nearby.map((n: typeof p.nearby[number]) => (
                   <li key={n.id}>
                     <Link
                       to="/parkrun-events/$slug"

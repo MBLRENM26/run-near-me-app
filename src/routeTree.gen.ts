@@ -24,6 +24,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as RunningEventsSlugRouteImport } from './routes/running-events.$slug'
 import { Route as ParkrunEventsSlugRouteImport } from './routes/parkrun-events.$slug'
 import { Route as EventsSlugRouteImport } from './routes/events.$slug'
+import { Route as ParkrunEventsRegionRegionRouteImport } from './routes/parkrun-events.region.$region'
 import { Route as ApiPublicImportEventsRouteImport } from './routes/api/public/import-events'
 import { Route as ApiPublicAdminFixEventUrlsRouteImport } from './routes/api/public/admin/fix-event-urls'
 
@@ -102,6 +103,12 @@ const EventsSlugRoute = EventsSlugRouteImport.update({
   path: '/events/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ParkrunEventsRegionRegionRoute =
+  ParkrunEventsRegionRegionRouteImport.update({
+    id: '/region/$region',
+    path: '/region/$region',
+    getParentRoute: () => ParkrunEventsRoute,
+  } as any)
 const ApiPublicImportEventsRoute = ApiPublicImportEventsRouteImport.update({
   id: '/api/public/import-events',
   path: '/api/public/import-events',
@@ -131,6 +138,7 @@ export interface FileRoutesByFullPath {
   '/parkrun-events/$slug': typeof ParkrunEventsSlugRoute
   '/running-events/$slug': typeof RunningEventsSlugRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
+  '/parkrun-events/region/$region': typeof ParkrunEventsRegionRegionRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
 }
 export interface FileRoutesByTo {
@@ -150,6 +158,7 @@ export interface FileRoutesByTo {
   '/parkrun-events/$slug': typeof ParkrunEventsSlugRoute
   '/running-events/$slug': typeof RunningEventsSlugRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
+  '/parkrun-events/region/$region': typeof ParkrunEventsRegionRegionRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
 }
 export interface FileRoutesById {
@@ -170,6 +179,7 @@ export interface FileRoutesById {
   '/parkrun-events/$slug': typeof ParkrunEventsSlugRoute
   '/running-events/$slug': typeof RunningEventsSlugRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
+  '/parkrun-events/region/$region': typeof ParkrunEventsRegionRegionRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
 }
 export interface FileRouteTypes {
@@ -191,6 +201,7 @@ export interface FileRouteTypes {
     | '/parkrun-events/$slug'
     | '/running-events/$slug'
     | '/api/public/import-events'
+    | '/parkrun-events/region/$region'
     | '/api/public/admin/fix-event-urls'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -210,6 +221,7 @@ export interface FileRouteTypes {
     | '/parkrun-events/$slug'
     | '/running-events/$slug'
     | '/api/public/import-events'
+    | '/parkrun-events/region/$region'
     | '/api/public/admin/fix-event-urls'
   id:
     | '__root__'
@@ -229,6 +241,7 @@ export interface FileRouteTypes {
     | '/parkrun-events/$slug'
     | '/running-events/$slug'
     | '/api/public/import-events'
+    | '/parkrun-events/region/$region'
     | '/api/public/admin/fix-event-urls'
   fileRoutesById: FileRoutesById
 }
@@ -358,6 +371,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EventsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/parkrun-events/region/$region': {
+      id: '/parkrun-events/region/$region'
+      path: '/region/$region'
+      fullPath: '/parkrun-events/region/$region'
+      preLoaderRoute: typeof ParkrunEventsRegionRegionRouteImport
+      parentRoute: typeof ParkrunEventsRoute
+    }
     '/api/public/import-events': {
       id: '/api/public/import-events'
       path: '/api/public/import-events'
@@ -377,10 +397,12 @@ declare module '@tanstack/react-router' {
 
 interface ParkrunEventsRouteChildren {
   ParkrunEventsSlugRoute: typeof ParkrunEventsSlugRoute
+  ParkrunEventsRegionRegionRoute: typeof ParkrunEventsRegionRegionRoute
 }
 
 const ParkrunEventsRouteChildren: ParkrunEventsRouteChildren = {
   ParkrunEventsSlugRoute: ParkrunEventsSlugRoute,
+  ParkrunEventsRegionRegionRoute: ParkrunEventsRegionRegionRoute,
 }
 
 const ParkrunEventsRouteWithChildren = ParkrunEventsRoute._addFileChildren(
