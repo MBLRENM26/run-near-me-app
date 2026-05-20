@@ -232,6 +232,12 @@ export const DISTANCE_PAGE_LIST: DistancePageConfig[] = [
   DISTANCE_PAGES.ultra,
 ];
 
+/** Resolve a URL slug like "half-marathons" back to its DistanceKey. */
+export function slugToDistanceKey(slug: string): DistanceKey | null {
+  const hit = DISTANCE_PAGE_LIST.find((p) => p.slug === slug);
+  return hit ? hit.key : null;
+}
+
 /**
  * Apply distance matcher to a single `distances` free-text value.
  * Lowercases once, then checks include / exclude substring lists.
