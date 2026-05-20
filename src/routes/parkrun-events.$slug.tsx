@@ -79,7 +79,7 @@ export const Route = createFileRoute("/parkrun-events/$slug")({
 });
 
 function ParkrunLocationPage() {
-  const p = Route.useLoaderData();
+  const p: import("@/lib/parkrun.functions").ParkrunDetail = Route.useLoaderData();
   const isJunior = p.variant === "junior";
   const schedule = isJunior
     ? "Every Sunday at 9:30am"
@@ -145,7 +145,7 @@ function ParkrunLocationPage() {
                 Nearby parkruns
               </h2>
               <ul className="space-y-2">
-                {p.nearby.map((n: typeof p.nearby[number]) => (
+                {p.nearby.map((n) => (
                   <li key={n.id}>
                     <Link
                       to="/parkrun-events/$slug"
