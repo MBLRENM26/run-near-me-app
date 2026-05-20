@@ -13,7 +13,7 @@ import {
 } from "@/components/distance/RegionDistancePage";
 import { SITE_URL } from "@/lib/site";
 
-export const Route = createFileRoute("/running-events/$slug/$distance")({
+export const Route = createFileRoute("/running-events/$slug_/$distance")({
   beforeLoad: ({ params }) => {
     if (!slugToRegion(params.slug)) throw notFound();
     if (!slugToDistanceKey(params.distance)) throw notFound();
