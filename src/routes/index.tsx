@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMemo } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { SITE_URL, SITE_NAME } from "@/lib/site";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,7 +18,44 @@ import { matchesEventType, type EventType } from "@/lib/distance";
 import { MapPin } from "lucide-react";
 import { DistanceNav } from "@/components/distance/DistanceNav";
 
+type HomeSearch = {
+  lat?: number;
+  lng?: number;
+  label?: string;
+  radius?: Radius;
+  type?: EventType;
+};
+
+const VALID_RADII: readonly Radius[] = [5, 10, 25, 50];
+const VALID_TYPES: readonly EventType[] = [
+  "all",
+  "5k",
+  "10k",
+  "half",
+  "marathon",
+  "trail",
+  "ultra",
+];
+
 export const Route = createFileRoute("/")({
+  validateSearch: (raw: Record<string, unknown>): HomeSearch => {
+    const out: HomeSearch = {};
+    const lat = Number(raw.lat);
+    const lng = Number(raw.lng);
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      out.lat = lat;
+      out.lng = lng;
+      if (typeof raw.label === "string" && raw.label.length > 0 && raw.label.length < 200) {
+        out.label = raw.label;
+      }
+    }
+    const r = Number(raw.radius);
+    if (VALID_RADII.includes(r as Radius)) out.radius = r as Radius;
+    if (typeof raw.type === "string" && VALID_TYPES.includes(raw.type as EventType)) {
+      out.type = raw.type as EventType;
+    }
+    return out;
+  },
   head: () => ({
     meta: [
       { title: "Find Running Events Near You — UK Race Finder" },
@@ -59,9 +96,23 @@ export const Route = createFileRoute("/")({
 });
 
 function HomePage() {
-  const [coords, setCoords] = useState<Coords | null>(null);
-  const [radius, setRadius] = useState<Radius>(10);
-  const [eventType, setEventType] = useState<EventType>("all");
+  const search = Route.useSearch();
+  const navigate = useNavigate({ from: "/" });
+  const coords: Coords | null =
+    search.lat != null && search.lng != null
+      ? { lat: search.lat, lng: search.lng, label: search.label }
+      : null;
+  const radius: Radius = search.radius ?? 10;
+  const eventType: EventType = search.type ?? "all";
+
+  const setCoords = (c: Coords) =>
+    navigate({
+      search: (prev: HomeSearch) => ({ ...prev, lat: c.lat, lng: c.lng, label: c.label }),
+    });
+  const setRadius = (r: Radius) =>
+    navigate({ search: (prev: HomeSearch) => ({ ...prev, radius: r }) });
+  const setEventType = (t: EventType) =>
+    navigate({ search: (prev: HomeSearch) => ({ ...prev, type: t }) });
 
   const { data: nearbyEvents, isLoading } = useQuery({
     queryKey: ["events", "nearby", coords?.lat, coords?.lng, radius],
