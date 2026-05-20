@@ -1,38 +1,46 @@
-Domain `notify.runningeventsnearme.com` is verified. Two things still need to happen before admin notification emails actually land in your inbox.
+## Diagnosis
 
-## 1. Activate the email queue (cron job)
+Network + replay show the login server function succeeds (the client navigates to `/admin/claims`), but a moment later `adminCheckSession` returns `authenticated: false` and the page bounces back to `/admin/login`. So the password is correct — the **session cookie is not coming back on the next request**.
 
-The queue dispatcher route and database tables were set up in the previous turn, but the cron job that drains the queue every 5 seconds couldn't be activated yet — the preview build needs the route to be reachable. I'll:
+Almost certain root cause: the preview runs inside the Lovable editor as a **cross-site iframe**. The admin session cookie is currently set with:
 
-- Re-run email infrastructure setup so the cron job gets registered against the now-deployed `/lovable/email/queue/process` route.
-- Confirm the `process-email-queue` cron job exists in the database.
+```ts
+sameSite: "lax", secure: true
+```
 
-Until the cron job is running, anything enqueued just sits there.
+`SameSite=Lax` cookies are blocked in cross-site iframe contexts by Chrome/Safari, so subsequent `fetch` calls from the iframe (including `adminCheckSession`) go out without the cookie. That perfectly matches the symptom — login response sets the cookie, browser drops it, next call sees no session. The "incorrect password" message on the second attempt is just the same cookie loss after a successful sign-in.
 
-## 2. Replace the notification stub with a real transactional email
+(On the published custom domain `runningeventsnearme.com` it would actually work today because it's not in an iframe — but it's broken everywhere we use the editor preview, which is where you tested.)
 
-Right now `src/lib/notify.server.ts` calls a placeholder URL and logs to the console. I'll swap it for the real flow:
+## Fix
 
-- Add a transactional email template `admin-new-submission` (plain, branded, sender = `notify@runningeventsnearme.com`, recipient = `mike@hithe19.com`) containing: submitter email, kind (claim/listing), claim slug, submitted date, and a link to `/admin/claims`.
-- Register it in `src/lib/email-templates/registry.ts`.
-- Scaffold the transactional send route (`/lovable/email/transactional/send`) plus the unsubscribe + suppression routes.
-- Create a tiny server-side helper that enqueues the email using the service role key (the public form is unauthenticated, so we can't go through the JWT-guarded client helper).
-- Update `notify.server.ts` to call that helper instead of the stub. Errors stay swallowed so submissions never fail because of email problems.
+### 1. `src/lib/admin-session.server.ts`
+Change the cookie to be iframe-safe:
 
-## 3. Smoke test
+- `sameSite: "none"` (required for cross-site iframe)
+- `secure: true` (already set; required by `SameSite=None`)
+- Keep `httpOnly`, `path: "/"`, `maxAge` as-is
+- Apply to both `issueAdminSession` and `clearAdminSession`
 
-- Submit a test claim via `/list-your-event?claim=…`.
-- Confirm a row appears in `email_send_log` with status `sent`.
-- Confirm the email arrives at `mike@hithe19.com`.
+No other behavior changes — HMAC signing, expiry, and verification stay identical.
+
+### 2. `src/routes/admin.login.tsx` — password visibility toggle
+- Add a local `showPassword` boolean state
+- Wrap the `<Input>` in a relative container with an inline `<button type="button">` on the right
+- Toggle button switches input `type` between `"password"` and `"text"`
+- Use a lucide `Eye` / `EyeOff` icon, accessible label (`aria-label="Show password"` / `"Hide password"`)
+- No change to submit logic
+
+### 3. Verification
+After the change, sign in again from the preview:
+- Login succeeds → redirect to `/admin/claims`
+- Page stays on `/admin/claims` and lists submissions (your earlier test claim should be visible)
+- Reloading `/admin/claims` keeps you signed in
+
+If for any reason it still fails after the SameSite change, the next step would be to inspect the response with logging in `adminCheckSession` to confirm whether the cookie header is arriving — but I don't expect to need that.
 
 ## Out of scope
-
-- No changes to the admin queue UI, auth, or privacy page.
-- Not touching auth emails (signup/password reset) — those still use Lovable defaults and are fine for now. Happy to brand them separately later if you want.
-- Not scaffolding an `/unsubscribe` page yet, since the only recipient is you and the footer unsubscribe link is system-managed; we can add the branded page when we start sending to end users.
-
-## Technical notes
-
-- Sender domain constant in the send route will be `notify.runningeventsnearme.com` (the verified subdomain), with the From header showing `notify@runningeventsnearme.com`.
-- The TS workaround in `process.ts` (`supabase: any`) stays until `types.ts` regenerates with the new email tables — purely a typing concession, no runtime impact.
-- `submitListing` already fires `sendNewSubmissionNotification` fire-and-forget, so no changes needed to the submission server function itself.
+- No changes to admin auth model (still shared password + HMAC cookie)
+- No changes to email/notifications
+- No changes to the submissions UI itself
+- Job 3 (region × distance combos) stays queued until you confirm the login works
