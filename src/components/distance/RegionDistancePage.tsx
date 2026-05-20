@@ -59,9 +59,21 @@ export function RegionDistancePage({
   data,
 }: RegionDistancePageProps) {
   const { events, total, otherDistanceCounts } = data;
-  const showing = events.length;
+  const search = useSearch({ strict: false }) as { month?: MonthKey };
+  const navigate = useNavigate();
+  const month = search.month;
+  const months = availableMonths(events);
+  const filtered = filterByMonth(events, month);
+  const showing = filtered.length;
   const h1 = `${headingDistance(cfg)} in ${region.name} ${CURRENT_YEAR}`;
   const noun = pluralNoun(cfg);
+
+  const setMonth = (m: MonthKey | undefined) =>
+    navigate({
+      to: ".",
+      search: (prev: Record<string, unknown>) => ({ ...prev, month: m }),
+      replace: true,
+    });
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -119,15 +131,47 @@ export function RegionDistancePage({
         </section>
 
         <section className="mx-auto max-w-6xl px-4 pb-12">
-          {events.length === 0 ? (
+          {months.length >= 2 && (
+            <div className="mb-4">
+              <MonthFilter months={months} value={month} onChange={setMonth} />
+            </div>
+          )}
+          {month && (
+            <p className="mb-4 inline-flex items-center gap-2 text-sm text-muted-foreground">
+              Showing events in{" "}
+              <span className="font-medium text-foreground">
+                {formatMonthLabelLong(month)}
+              </span>
+              <button
+                type="button"
+                onClick={() => setMonth(undefined)}
+                className="inline-flex items-center gap-1 text-primary hover:underline"
+              >
+                <X className="h-3.5 w-3.5" />
+                clear
+              </button>
+            </p>
+          )}
+          {filtered.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-border bg-muted/30 p-8 text-center">
               <p className="text-lg font-medium text-foreground">
-                No {noun} listed in {region.name} yet
+                {month
+                  ? `No ${noun} in ${region.name} in ${formatMonthLabelLong(month)} yet`
+                  : `No ${noun} listed in ${region.name} yet`}
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Try expanding your search.
+                {month ? "Try a different month or widen your search." : "Try expanding your search."}
               </p>
               <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+                {month && (
+                  <button
+                    type="button"
+                    onClick={() => setMonth(undefined)}
+                    className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                  >
+                    Show all months
+                  </button>
+                )}
                 <DistanceHomeLink cfg={cfg}>
                   See all {noun} in the UK
                 </DistanceHomeLink>
@@ -145,7 +189,7 @@ export function RegionDistancePage({
               <h2 className="text-xl font-semibold text-foreground mb-2">
                 Upcoming {noun} in {region.name}
               </h2>
-              {total > showing ? (
+              {!month && total > showing ? (
                 <p className="text-sm text-muted-foreground mb-4">
                   Showing the next {showing} of {total.toLocaleString()}.
                 </p>
@@ -155,13 +199,14 @@ export function RegionDistancePage({
                 </p>
               )}
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {events.map((e) => (
+                {filtered.map((e) => (
                   <EventCard key={e.id} event={toEventCardData(e)} />
                 ))}
               </div>
             </>
           )}
         </section>
+
 
         <section className="mx-auto max-w-6xl px-4 pb-12">
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
