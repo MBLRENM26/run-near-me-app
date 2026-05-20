@@ -40,7 +40,7 @@ export const Route = createFileRoute("/parkrun-events/region/$region")({
 function ParkrunRegionPage() {
   const { region: regionSlug } = Route.useParams();
   const region = slugToRegion(regionSlug)!;
-  const data = Route.useLoaderData();
+  const data: import("@/lib/parkrun.functions").ParkrunListData = Route.useLoaderData();
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -69,7 +69,7 @@ function ParkrunRegionPage() {
 
         <section className="mx-auto max-w-6xl px-4 pb-16">
           <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {data.locations.map((l: typeof data.locations[number]) => (
+            {data.locations.map((l) => (
               <li key={l.id}>
                 <Link
                   to="/parkrun-events/$slug"
