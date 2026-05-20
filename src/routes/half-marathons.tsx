@@ -9,7 +9,10 @@ import { SITE_URL } from "@/lib/site";
 
 const CFG = DISTANCE_PAGES["half-marathon"];
 
+import { monthSearchValidator } from "@/lib/month-filter";
+
 export const Route = createFileRoute("/half-marathons")({
+  validateSearch: monthSearchValidator,
   loader: () =>
     getEventsByDistance({ data: { distanceKey: "half-marathon" } }),
   head: ({ loaderData }) =>

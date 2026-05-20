@@ -1,20 +1,30 @@
-import { createFileRoute, Link, notFound, redirect, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, redirect, useNavigate, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { EventCard, type EventCardData } from "@/components/events/EventCard";
+import { MonthFilter } from "@/components/events/MonthFilter";
 import { Toaster } from "@/components/ui/sonner";
 import { slugToRegion } from "@/lib/regions";
 import { SITE_URL } from "@/lib/site";
 import { DistanceNav } from "@/components/distance/DistanceNav";
+import {
+  availableMonths,
+  filterByMonth,
+  formatMonthLabelLong,
+  monthSearchValidator,
+  type MonthKey,
+  type MonthSearch,
+} from "@/lib/month-filter";
 
 const SLUG_REDIRECTS: Record<string, string> = {
   kent: "south-east",
 };
 
 export const Route = createFileRoute("/running-events/$slug")({
+  validateSearch: monthSearchValidator,
   beforeLoad: ({ params }) => {
     const target = SLUG_REDIRECTS[params.slug];
     if (target) {
@@ -69,6 +79,15 @@ export const Route = createFileRoute("/running-events/$slug")({
 function RegionPage() {
   const { slug } = Route.useParams();
   const region = slugToRegion(slug)!;
+  const search = Route.useSearch() as MonthSearch;
+  const navigate = useNavigate({ from: "/running-events/$slug" });
+  const month = search.month;
+
+  const setMonth = (m: MonthKey | undefined) =>
+    navigate({
+      search: (prev: MonthSearch) => ({ ...prev, month: m }),
+      replace: true,
+    });
 
   const { data: events, isLoading } = useQuery({
     queryKey: ["events", "region", region.name],
@@ -80,7 +99,7 @@ function RegionPage() {
         const { data, error } = await supabase
           .from("events")
           .select(
-            "id, slug, name, date_raw, town, county, distance_type:distances, entry_fee, entry_url, organiser_url, source_url, is_featured",
+            "id, slug, name, date_raw, sort_date, town, county, distance_type:distances, entry_fee, entry_url, organiser_url, source_url, is_featured",
           )
           .eq("region", region.name)
           .eq("status", "ACTIVE")
@@ -98,6 +117,9 @@ function RegionPage() {
       return all;
     },
   });
+
+  const months = events ? availableMonths(events) : [];
+  const filtered = events ? filterByMonth(events, month) : [];
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -136,6 +158,27 @@ function RegionPage() {
         </section>
 
         <section className="mx-auto max-w-6xl px-4 pb-16">
+          {months.length >= 2 && (
+            <div className="mb-4">
+              <MonthFilter months={months} value={month} onChange={setMonth} />
+            </div>
+          )}
+          {month && (
+            <p className="mb-4 inline-flex items-center gap-2 text-sm text-muted-foreground">
+              Showing events in{" "}
+              <span className="font-medium text-foreground">
+                {formatMonthLabelLong(month)}
+              </span>
+              <button
+                type="button"
+                onClick={() => setMonth(undefined)}
+                className="inline-flex items-center gap-1 text-primary hover:underline"
+              >
+                <X className="h-3.5 w-3.5" />
+                clear
+              </button>
+            </p>
+          )}
           {isLoading ? (
             <p className="text-center text-muted-foreground py-12">
               Loading events…
@@ -146,16 +189,29 @@ function RegionPage() {
                 No events listed yet for {region.name}
               </p>
             </div>
+          ) : filtered.length === 0 ? (
+            <div className="text-center py-16 rounded-2xl border border-dashed border-border bg-muted/30">
+              <p className="text-lg font-medium text-foreground">
+                No events in {region.name} in {month ? formatMonthLabelLong(month) : "this month"} yet
+              </p>
+              <button
+                type="button"
+                onClick={() => setMonth(undefined)}
+                className="mt-3 text-sm text-primary hover:underline"
+              >
+                Show all months
+              </button>
+            </div>
           ) : (
             <>
               <h2 className="text-xl font-semibold text-foreground mb-2">
                 Upcoming events
               </h2>
               <p className="text-sm text-muted-foreground mb-4">
-                {events.length} {events.length === 1 ? "event" : "events"}
+                {filtered.length} {filtered.length === 1 ? "event" : "events"}
               </p>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {events.map((event) => (
+                {filtered.map((event) => (
                   <EventCard key={event.id} event={event} />
                 ))}
               </div>

@@ -107,7 +107,8 @@ export type DistancePageData = {
   total: number;
 };
 
-const DISPLAY_LIMIT = 60;
+// Cap kept generous so client-side month filtering has events to work with.
+const DISPLAY_LIMIT = 500;
 
 export const getEventsByDistance = createServerFn({ method: "GET" })
   .inputValidator((input: unknown) => distanceKeySchema.parse(input))
@@ -268,7 +269,7 @@ export const getEventsByRegionAndDistance = createServerFn({ method: "GET" })
     const matched = all.filter((e) => matchesDistance(e.distance_type, cfg));
 
     return {
-      events: matched.slice(0, 60),
+      events: matched.slice(0, DISPLAY_LIMIT),
       total: matched.length,
       otherDistanceCounts,
     };

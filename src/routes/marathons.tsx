@@ -9,7 +9,10 @@ import { SITE_URL } from "@/lib/site";
 
 const CFG = DISTANCE_PAGES.marathon;
 
+import { monthSearchValidator } from "@/lib/month-filter";
+
 export const Route = createFileRoute("/marathons")({
+  validateSearch: monthSearchValidator,
   loader: () => getEventsByDistance({ data: { distanceKey: "marathon" } }),
   head: ({ loaderData }) =>
     buildDistanceHead(CFG, loaderData, `/${CFG.slug}`, SITE_URL),

@@ -1,42 +1,19 @@
-## Problem
+# Month filter — done
 
-The header logo is a `Link to="/"`. When you're already on `/` and click it, TanStack Router treats it as a no-op navigation — the `HomePage` component doesn't unmount, so the location, radius filter, and distance filter all stay set. Result: the logo appears to do nothing and you're stuck on the filtered view.
+Shipped query-param month filtering on:
+- 6 distance pages (`/5k-races`, `/10k-races`, `/half-marathons`, `/marathons`, `/trail-running-events`, `/ultra-marathons`)
+- region pages (`/running-events/{region}`)
+- region × distance combo pages (`/running-events/{region}/{distance}`)
 
-This also affects every other page indirectly: from any sub-page, clicking the logo navigates home, but if you'd previously set a location the home page would re-show the old filtered state from the in-memory state... actually that state is per-mount, so the only broken case is **clicking the logo while already on `/`**.
+URL format: `?month=YYYY-MM`. Pills show only months that have ≥1 event (next 12 months max). Canonical, title, h1 unchanged when filter is active. No new routes, no sitemap changes.
 
-## Fix
+Files:
+- new `src/lib/month-filter.ts` (helpers + `monthSearchValidator`)
+- new `src/components/events/MonthFilter.tsx`
+- `src/components/distance/DistancePage.tsx`, `RegionDistancePage.tsx` — render filter + apply
+- `src/routes/running-events.$slug.tsx` — inline RegionPage updated, fetches `sort_date`
+- `src/components/events/EventCard.tsx` — `sort_date?` added to `EventCardData`
+- 8 route files (`*-races.tsx`, `half-marathons.tsx`, `marathons.tsx`, `trail-running-events.tsx`, `ultra-marathons.tsx`, `running-events.$slug.tsx`, `running-events.$slug_.$distance.tsx`) — added `validateSearch: monthSearchValidator`
+- `src/lib/events.functions.ts` — bumped distance display cap from 60 → 500 so client-side filter has events to work with
 
-Lift the homepage filter state into URL search params, and have the logo navigate to `/` with empty search. That way:
-
-- Clicking the logo from `/` with filters active → URL changes from `/?lat=…&lng=…&radius=5&type=5k` to `/` → state resets, filtered view clears, hero + location prompt return.
-- Clicking the logo from any other route → unchanged, still works.
-- Bonus: filtered home state becomes shareable / back-button friendly.
-
-### Implementation
-
-1. **`src/routes/index.tsx`** — add a `validateSearch` (zod or hand-rolled) for optional `lat`, `lng`, `label`, `radius`, `type`. Read them with `Route.useSearch()` instead of `useState`. Update them via `navigate({ to: "/", search: (prev) => ({ ...prev, radius: 10 }) })` from `FilterBar` / `LocationPrompt` callbacks. Keep the existing query keys driven from these values.
-
-2. **`src/components/site/Header.tsx`** — change the logo Link to explicitly clear search:
-   ```tsx
-   <Link to="/" search={{}} resetScroll>
-   ```
-   This forces a fresh `/` with no params, which resets all filter state.
-
-### Lighter-touch alternative (if you'd rather not refactor to search params)
-
-Keep state in `useState` but make the logo nuke it:
-
-- Export a tiny zustand store (or use a ref + custom event) holding `resetHomeFilters`.
-- Header logo `onClick` calls `resetHomeFilters()` before/after the Link navigates.
-- `HomePage` registers the reset function on mount.
-
-This is smaller but uglier — state lives outside the route, no URL sharing, and we add a store just for one button.
-
-## Recommendation
-
-Go with **option 1 (search params)**. It's the idiomatic TanStack Start fix, makes the filtered homepage linkable, and the logo Link with `search={{}}` becomes self-documenting. ~30 lines of churn in `index.tsx`, 1 line in `Header.tsx`.
-
-## Out of scope
-
-- No changes to combo pages, region pages, or any data-fetching logic.
-- No visual/design changes to the header or homepage.
+Hybrid path stays open: if GSC later shows specific month combos earn traffic, promote those to static routes; everything else stays on query params.

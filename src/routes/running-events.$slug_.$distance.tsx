@@ -13,7 +13,10 @@ import {
 } from "@/components/distance/RegionDistancePage";
 import { SITE_URL } from "@/lib/site";
 
+import { monthSearchValidator } from "@/lib/month-filter";
+
 export const Route = createFileRoute("/running-events/$slug_/$distance")({
+  validateSearch: monthSearchValidator,
   beforeLoad: ({ params }) => {
     if (!slugToRegion(params.slug)) throw notFound();
     if (!slugToDistanceKey(params.distance)) throw notFound();
