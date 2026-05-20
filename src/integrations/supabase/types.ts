@@ -115,24 +115,39 @@ export type Database = {
       }
       submissions: {
         Row: {
+          admin_note: string | null
+          claim_slug: string | null
           email: string
           event_details: string
           id: string
           is_reviewed: boolean
+          kind: string
+          reviewed_at: string | null
+          status: string
           submitted_at: string
         }
         Insert: {
+          admin_note?: string | null
+          claim_slug?: string | null
           email: string
           event_details: string
           id?: string
           is_reviewed?: boolean
+          kind?: string
+          reviewed_at?: string | null
+          status?: string
           submitted_at?: string
         }
         Update: {
+          admin_note?: string | null
+          claim_slug?: string | null
           email?: string
           event_details?: string
           id?: string
           is_reviewed?: boolean
+          kind?: string
+          reviewed_at?: string | null
+          status?: string
           submitted_at?: string
         }
         Relationships: []
