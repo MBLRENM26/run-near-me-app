@@ -29,7 +29,7 @@ import { Route as ParkrunEventsSlugRouteImport } from './routes/parkrun-events.$
 import { Route as EventsSlugRouteImport } from './routes/events.$slug'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
-import { Route as RunningEventsSlugDistanceRouteImport } from './routes/running-events.$slug.$distance'
+import { Route as RunningEventsSlugDistanceRouteImport } from './routes/running-events.$slug_.$distance'
 import { Route as ParkrunEventsRegionRegionRouteImport } from './routes/parkrun-events.region.$region'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as ApiPublicImportEventsRouteImport } from './routes/api/public/import-events'
@@ -140,9 +140,9 @@ const AdminLoginRoute = AdminLoginRouteImport.update({
 } as any)
 const RunningEventsSlugDistanceRoute =
   RunningEventsSlugDistanceRouteImport.update({
-    id: '/$distance',
-    path: '/$distance',
-    getParentRoute: () => RunningEventsSlugRoute,
+    id: '/running-events/$slug_/$distance',
+    path: '/running-events/$slug/$distance',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const ParkrunEventsRegionRegionRoute =
   ParkrunEventsRegionRegionRouteImport.update({
@@ -208,7 +208,7 @@ export interface FileRoutesByFullPath {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/events/$slug': typeof EventsSlugRoute
   '/parkrun-events/$slug': typeof ParkrunEventsSlugRoute
-  '/running-events/$slug': typeof RunningEventsSlugRouteWithChildren
+  '/running-events/$slug': typeof RunningEventsSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/claims': typeof AdminShellAdminClaimsRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
@@ -238,7 +238,7 @@ export interface FileRoutesByTo {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/events/$slug': typeof EventsSlugRoute
   '/parkrun-events/$slug': typeof ParkrunEventsSlugRoute
-  '/running-events/$slug': typeof RunningEventsSlugRouteWithChildren
+  '/running-events/$slug': typeof RunningEventsSlugRoute
   '/admin': typeof AdminIndexRoute
   '/admin/claims': typeof AdminShellAdminClaimsRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
@@ -270,13 +270,13 @@ export interface FileRoutesById {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/events/$slug': typeof EventsSlugRoute
   '/parkrun-events/$slug': typeof ParkrunEventsSlugRoute
-  '/running-events/$slug': typeof RunningEventsSlugRouteWithChildren
+  '/running-events/$slug': typeof RunningEventsSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/_adminShell/admin/claims': typeof AdminShellAdminClaimsRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/parkrun-events/region/$region': typeof ParkrunEventsRegionRegionRoute
-  '/running-events/$slug/$distance': typeof RunningEventsSlugDistanceRoute
+  '/running-events/$slug_/$distance': typeof RunningEventsSlugDistanceRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -369,7 +369,7 @@ export interface FileRouteTypes {
     | '/api/public/import-events'
     | '/lovable/email/suppression'
     | '/parkrun-events/region/$region'
-    | '/running-events/$slug/$distance'
+    | '/running-events/$slug_/$distance'
     | '/api/public/admin/fix-event-urls'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
@@ -394,10 +394,11 @@ export interface RootRouteChildren {
   AdminLoginRoute: typeof AdminLoginRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   EventsSlugRoute: typeof EventsSlugRoute
-  RunningEventsSlugRoute: typeof RunningEventsSlugRouteWithChildren
+  RunningEventsSlugRoute: typeof RunningEventsSlugRoute
   AdminIndexRoute: typeof AdminIndexRoute
   ApiPublicImportEventsRoute: typeof ApiPublicImportEventsRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
+  RunningEventsSlugDistanceRoute: typeof RunningEventsSlugDistanceRoute
   ApiPublicAdminFixEventUrlsRoute: typeof ApiPublicAdminFixEventUrlsRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
@@ -546,12 +547,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/running-events/$slug/$distance': {
-      id: '/running-events/$slug/$distance'
-      path: '/$distance'
+    '/running-events/$slug_/$distance': {
+      id: '/running-events/$slug_/$distance'
+      path: '/running-events/$slug/$distance'
       fullPath: '/running-events/$slug/$distance'
       preLoaderRoute: typeof RunningEventsSlugDistanceRouteImport
-      parentRoute: typeof RunningEventsSlugRoute
+      parentRoute: typeof rootRouteImport
     }
     '/parkrun-events/region/$region': {
       id: '/parkrun-events/region/$region'
@@ -638,17 +639,6 @@ const ParkrunEventsRouteWithChildren = ParkrunEventsRoute._addFileChildren(
   ParkrunEventsRouteChildren,
 )
 
-interface RunningEventsSlugRouteChildren {
-  RunningEventsSlugDistanceRoute: typeof RunningEventsSlugDistanceRoute
-}
-
-const RunningEventsSlugRouteChildren: RunningEventsSlugRouteChildren = {
-  RunningEventsSlugDistanceRoute: RunningEventsSlugDistanceRoute,
-}
-
-const RunningEventsSlugRouteWithChildren =
-  RunningEventsSlugRoute._addFileChildren(RunningEventsSlugRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   R10kRacesRoute: R10kRacesRoute,
@@ -667,10 +657,11 @@ const rootRouteChildren: RootRouteChildren = {
   AdminLoginRoute: AdminLoginRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   EventsSlugRoute: EventsSlugRoute,
-  RunningEventsSlugRoute: RunningEventsSlugRouteWithChildren,
+  RunningEventsSlugRoute: RunningEventsSlugRoute,
   AdminIndexRoute: AdminIndexRoute,
   ApiPublicImportEventsRoute: ApiPublicImportEventsRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
+  RunningEventsSlugDistanceRoute: RunningEventsSlugDistanceRoute,
   ApiPublicAdminFixEventUrlsRoute: ApiPublicAdminFixEventUrlsRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
@@ -679,13 +670,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
