@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { adminLogout } from "@/lib/admin.functions";
 import { Button } from "@/components/ui/button";
 
-export const Route = createFileRoute("/admin")({
+export const Route = createFileRoute("/_adminShell")({
   head: () => ({
     meta: [
       { title: "Admin — Running Events Near Me" },
