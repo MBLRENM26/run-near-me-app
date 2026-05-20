@@ -23,6 +23,7 @@ import { Route as AdminShellRouteImport } from './routes/_adminShell'
 import { Route as R5kRacesRouteImport } from './routes/5k-races'
 import { Route as R10kRacesRouteImport } from './routes/10k-races'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as RunningEventsSlugRouteImport } from './routes/running-events.$slug'
 import { Route as ParkrunEventsSlugRouteImport } from './routes/parkrun-events.$slug'
 import { Route as EventsSlugRouteImport } from './routes/events.$slug'
@@ -104,6 +105,11 @@ const R10kRacesRoute = R10kRacesRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RunningEventsSlugRoute = RunningEventsSlugRouteImport.update({
@@ -196,6 +202,7 @@ export interface FileRoutesByFullPath {
   '/events/$slug': typeof EventsSlugRoute
   '/parkrun-events/$slug': typeof ParkrunEventsSlugRoute
   '/running-events/$slug': typeof RunningEventsSlugRoute
+  '/admin/': typeof AdminIndexRoute
   '/admin/claims': typeof AdminShellAdminClaimsRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -224,6 +231,7 @@ export interface FileRoutesByTo {
   '/events/$slug': typeof EventsSlugRoute
   '/parkrun-events/$slug': typeof ParkrunEventsSlugRoute
   '/running-events/$slug': typeof RunningEventsSlugRoute
+  '/admin': typeof AdminIndexRoute
   '/admin/claims': typeof AdminShellAdminClaimsRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -254,6 +262,7 @@ export interface FileRoutesById {
   '/events/$slug': typeof EventsSlugRoute
   '/parkrun-events/$slug': typeof ParkrunEventsSlugRoute
   '/running-events/$slug': typeof RunningEventsSlugRoute
+  '/admin/': typeof AdminIndexRoute
   '/_adminShell/admin/claims': typeof AdminShellAdminClaimsRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -284,6 +293,7 @@ export interface FileRouteTypes {
     | '/events/$slug'
     | '/parkrun-events/$slug'
     | '/running-events/$slug'
+    | '/admin/'
     | '/admin/claims'
     | '/api/public/import-events'
     | '/lovable/email/suppression'
@@ -312,6 +322,7 @@ export interface FileRouteTypes {
     | '/events/$slug'
     | '/parkrun-events/$slug'
     | '/running-events/$slug'
+    | '/admin'
     | '/admin/claims'
     | '/api/public/import-events'
     | '/lovable/email/suppression'
@@ -341,6 +352,7 @@ export interface FileRouteTypes {
     | '/events/$slug'
     | '/parkrun-events/$slug'
     | '/running-events/$slug'
+    | '/admin/'
     | '/_adminShell/admin/claims'
     | '/api/public/import-events'
     | '/lovable/email/suppression'
@@ -370,6 +382,7 @@ export interface RootRouteChildren {
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   EventsSlugRoute: typeof EventsSlugRoute
   RunningEventsSlugRoute: typeof RunningEventsSlugRoute
+  AdminIndexRoute: typeof AdminIndexRoute
   ApiPublicImportEventsRoute: typeof ApiPublicImportEventsRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicAdminFixEventUrlsRoute: typeof ApiPublicAdminFixEventUrlsRoute
@@ -476,6 +489,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/running-events/$slug': {
@@ -617,6 +637,7 @@ const rootRouteChildren: RootRouteChildren = {
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   EventsSlugRoute: EventsSlugRoute,
   RunningEventsSlugRoute: RunningEventsSlugRoute,
+  AdminIndexRoute: AdminIndexRoute,
   ApiPublicImportEventsRoute: ApiPublicImportEventsRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicAdminFixEventUrlsRoute: ApiPublicAdminFixEventUrlsRoute,
