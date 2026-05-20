@@ -114,10 +114,7 @@ export function ParkrunHub({ cfg, data }: Props) {
                   data.regionCounts.find((rc) => rc.regionSlug === region.slug)
                     ?.count ?? 0;
                 if (c === 0) return null;
-                const href =
-                  cfg.variant === "junior"
-                    ? `/junior-parkrun-events/region/${region.slug}`
-                    : `/parkrun-events/region/${region.slug}`;
+                const href = `/parkrun-events/region/${region.slug}`;
                 return (
                   <a
                     key={region.slug}
