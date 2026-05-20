@@ -9,7 +9,10 @@ import { SITE_URL } from "@/lib/site";
 
 const CFG = DISTANCE_PAGES.ultra;
 
+import { monthSearchValidator } from "@/lib/month-filter";
+
 export const Route = createFileRoute("/ultra-marathons")({
+  validateSearch: monthSearchValidator,
   loader: () => getEventsByDistance({ data: { distanceKey: "ultra" } }),
   head: ({ loaderData }) =>
     buildDistanceHead(CFG, loaderData, `/${CFG.slug}`, SITE_URL),
