@@ -1,42 +1,95 @@
-## Problem
+# Month Filtering — Implementation Plan
 
-The header logo is a `Link to="/"`. When you're already on `/` and click it, TanStack Router treats it as a no-op navigation — the `HomePage` component doesn't unmount, so the location, radius filter, and distance filter all stay set. Result: the logo appears to do nothing and you're stuck on the filtered view.
+## Approach
 
-This also affects every other page indirectly: from any sub-page, clicking the logo navigates home, but if you'd previously set a location the home page would re-show the old filtered state from the in-memory state... actually that state is per-mount, so the only broken case is **clicking the logo while already on `/`**.
+Query-param month filtering on the three existing page types. No new routes, no sitemap changes, no SEO surface added. Filtered views set their canonical to the unfiltered URL so they never compete with the indexable page.
 
-## Fix
+Defer programmatic month-routes (Option B) until GSC data proves specific combos deserve their own pages.
 
-Lift the homepage filter state into URL search params, and have the logo navigate to `/` with empty search. That way:
+## Scope
 
-- Clicking the logo from `/` with filters active → URL changes from `/?lat=…&lng=…&radius=5&type=5k` to `/` → state resets, filtered view clears, hero + location prompt return.
-- Clicking the logo from any other route → unchanged, still works.
-- Bonus: filtered home state becomes shareable / back-button friendly.
+Add `?month=YYYY-MM` to:
 
-### Implementation
+- `/{distance}-races` and friends — `src/routes/5k-races.tsx`, `10k-races.tsx`, `half-marathons.tsx`, `marathons.tsx`, `trail-running-events.tsx`, `ultra-marathons.tsx`
+- `/running-events/{region}` — `src/routes/running-events.$slug.tsx`
+- `/running-events/{region}/{distance}` — `src/routes/running-events.$slug_.$distance.tsx`
 
-1. **`src/routes/index.tsx`** — add a `validateSearch` (zod or hand-rolled) for optional `lat`, `lng`, `label`, `radius`, `type`. Read them with `Route.useSearch()` instead of `useState`. Update them via `navigate({ to: "/", search: (prev) => ({ ...prev, radius: 10 }) })` from `FilterBar` / `LocationPrompt` callbacks. Keep the existing query keys driven from these values.
+Out of scope:
+- Homepage (already has its own location-based flow)
+- Parkrun pages (weekly events, month makes no sense)
+- New static month routes
+- Sitemap changes
 
-2. **`src/components/site/Header.tsx`** — change the logo Link to explicitly clear search:
-   ```tsx
-   <Link to="/" search={{}} resetScroll>
-   ```
-   This forces a fresh `/` with no params, which resets all filter state.
+## Pieces to build
 
-### Lighter-touch alternative (if you'd rather not refactor to search params)
+### 1. Shared helpers — `src/lib/distance-filters.ts`
 
-Keep state in `useState` but make the logo nuke it:
+```ts
+export type MonthKey = `${number}-${string}`; // "2026-11"
 
-- Export a tiny zustand store (or use a ref + custom event) holding `resetHomeFilters`.
-- Header logo `onClick` calls `resetHomeFilters()` before/after the Link navigates.
-- `HomePage` registers the reset function on mount.
+export function eventMonthKey(e: { sort_date?: string | null }): MonthKey | null;
+export function filterByMonth<T>(events: T[], month: MonthKey | undefined): T[];
+export function availableMonths(events: { sort_date?: string | null }[]): MonthKey[]; // sorted, deduped, only months ≥ today, capped at next 12
+export function formatMonthLabel(m: MonthKey): string; // "Nov 2026"
+```
 
-This is smaller but uglier — state lives outside the route, no URL sharing, and we add a store just for one button.
+### 2. New component — `src/components/events/MonthFilter.tsx`
 
-## Recommendation
+Pill row, same styling as `FilterBar`. Props:
+```ts
+{ months: MonthKey[]; value?: MonthKey; onChange: (m: MonthKey | undefined) => void }
+```
+First pill = "All months" (clears filter). Component renders nothing if `months.length < 2` (no point filtering one month).
 
-Go with **option 1 (search params)**. It's the idiomatic TanStack Start fix, makes the filtered homepage linkable, and the logo Link with `search={{}}` becomes self-documenting. ~30 lines of churn in `index.tsx`, 1 line in `Header.tsx`.
+### 3. Search-param hook — `src/lib/use-month-search.ts`
 
-## Out of scope
+Tiny wrapper to keep the three route files DRY:
+```ts
+type MonthSearch = { month?: MonthKey };
+export const monthSearchValidator = (raw): MonthSearch => { /* YYYY-MM regex check */ };
+```
 
-- No changes to combo pages, region pages, or any data-fetching logic.
-- No visual/design changes to the header or homepage.
+Each route adds:
+```ts
+validateSearch: monthSearchValidator,
+```
+and the component uses `Route.useSearch()` + `useNavigate()` to read/write `month` — same pattern as the homepage refactor.
+
+### 4. Wire into the three page components
+
+- `DistancePage.tsx`, `RegionPage` (already inside `running-events.$slug.tsx`), `RegionDistancePage.tsx`:
+  - Compute `availableMonths(events)` from the loader data
+  - Render `<MonthFilter>` above the event grid
+  - Apply `filterByMonth(events, month)` before rendering
+  - Empty state: "No {distance} in {region} in {Month Year} yet — show all months"
+
+### 5. SEO — canonical stays unfiltered
+
+In each route's `head()`, the canonical `<link>` is always the bare path. No change needed to existing head builders other than confirming they don't echo search params (they don't).
+
+Do NOT mutate `<title>` or `<h1>` based on the month filter — would fragment SERP snippets and create thin duplicate signals.
+
+Optionally render a small "Showing events in November 2026 · clear" sub-heading when filtered, purely visual.
+
+### 6. Internal linking — none for now
+
+Don't add month links into the page bodies. Keeps crawl surface clean. If we promote specific month combos to static routes later (the hybrid), that's when internal links get added.
+
+## Technical details
+
+- `MonthKey` derived from `sort_date` in UTC (matches existing `formatEventDate` convention in `src/lib/date.ts`).
+- `availableMonths` filters out months strictly before the current month, sorts ascending, caps at 12.
+- Month pill click → `navigate({ search: prev => ({ ...prev, month: next }) })`. Same-pill click clears: `({ ...prev, month: undefined })`.
+- Combine cleanly with existing search params on combo pages (none today, but future-proof via spread).
+- All filtering is client-side on already-loaded events — no new DB queries, no loader changes.
+
+## Build effort
+
+~Half a day. Largest piece is wiring the eight route files; the helper + component are ~60 LOC each.
+
+## What we'll learn before considering Option B
+
+After 6–8 weeks live:
+1. Check GSC for queries containing month names landing on region/combo pages.
+2. Identify top 10–20 (region × distance × month) combos by impressions.
+3. *Then* decide whether to generate static routes for those specific combos with a 12-month rolling sitemap. Everything else stays on query params.
