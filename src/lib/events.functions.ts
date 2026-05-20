@@ -4,9 +4,11 @@ import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import {
   DISTANCE_PAGES,
+  DISTANCE_PAGE_LIST,
   matchesDistance,
   type DistanceKey,
 } from "@/lib/distance-filters";
+import { REGIONS, slugToRegion } from "@/lib/regions";
 
 const slugSchema = z.object({
   slug: z.string().trim().min(1).max(255).regex(/^[a-z0-9-]+$/),
