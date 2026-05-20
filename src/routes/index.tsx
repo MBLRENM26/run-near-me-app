@@ -96,9 +96,23 @@ export const Route = createFileRoute("/")({
 });
 
 function HomePage() {
-  const [coords, setCoords] = useState<Coords | null>(null);
-  const [radius, setRadius] = useState<Radius>(10);
-  const [eventType, setEventType] = useState<EventType>("all");
+  const search = Route.useSearch();
+  const navigate = useNavigate({ from: "/" });
+  const coords: Coords | null =
+    search.lat != null && search.lng != null
+      ? { lat: search.lat, lng: search.lng, label: search.label }
+      : null;
+  const radius: Radius = search.radius ?? 10;
+  const eventType: EventType = search.type ?? "all";
+
+  const setCoords = (c: Coords) =>
+    navigate({
+      search: (prev) => ({ ...prev, lat: c.lat, lng: c.lng, label: c.label }),
+    });
+  const setRadius = (r: Radius) =>
+    navigate({ search: (prev) => ({ ...prev, radius: r }) });
+  const setEventType = (t: EventType) =>
+    navigate({ search: (prev) => ({ ...prev, type: t }) });
 
   const { data: nearbyEvents, isLoading } = useQuery({
     queryKey: ["events", "nearby", coords?.lat, coords?.lng, radius],
