@@ -248,6 +248,40 @@ function HomePage() {
           </div>
         </section>
 
+        {/* Parkrun callout */}
+        <section className="mx-auto max-w-6xl px-4 pb-12">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Link
+              to="/parkrun-events"
+              className="group rounded-2xl border border-border bg-card p-6 shadow-card hover:border-primary hover:shadow-card-hover transition-all"
+            >
+              <h3 className="text-lg font-semibold text-foreground">
+                Free weekly 5K · parkrun
+              </h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                1,100+ parkrun locations across the UK. Every Saturday, 9am.
+              </p>
+              <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-primary group-hover:underline">
+                Find your nearest parkrun →
+              </span>
+            </Link>
+            <Link
+              to="/junior-parkrun-events"
+              className="group rounded-2xl border border-border bg-card p-6 shadow-card hover:border-primary hover:shadow-card-hover transition-all"
+            >
+              <h3 className="text-lg font-semibold text-foreground">
+                Free weekly 2K · junior parkrun
+              </h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                For ages 4–14. Every Sunday morning at 9:30am.
+              </p>
+              <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-primary group-hover:underline">
+                Find a junior parkrun →
+              </span>
+            </Link>
+          </div>
+        </section>
+
         {/* Discover events across the UK (when no location set) */}
         {!coords && upcomingEvents && upcomingEvents.length > 0 && (
           <section className="mx-auto max-w-6xl px-4 pb-16">
