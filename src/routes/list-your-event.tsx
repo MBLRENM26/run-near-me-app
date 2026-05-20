@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { CheckCircle2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import { SITE_URL } from "@/lib/site";
+import { submitListing } from "@/lib/admin.functions";
 
 const submissionSchema = z.object({
   event_details: z
@@ -65,6 +66,7 @@ function ListYourEventPage() {
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const submit = useServerFn(submitListing);
 
   useEffect(() => {
     if (claim && eventDetails === "") {
@@ -84,16 +86,21 @@ function ListYourEventPage() {
       return;
     }
     setSubmitting(true);
-    const { error } = await supabase.from("submissions").insert({
-      event_details: parsed.data.event_details,
-      email: parsed.data.email,
-    });
-    setSubmitting(false);
-    if (error) {
+    try {
+      await submit({
+        data: {
+          event_details: parsed.data.event_details,
+          email: parsed.data.email,
+          claim_slug: claim ?? null,
+        },
+      });
+      setSubmitted(true);
+    } catch (err) {
+      console.error(err);
       toast.error("Something went wrong. Please try again.");
-      return;
+    } finally {
+      setSubmitting(false);
     }
-    setSubmitted(true);
   };
 
   return (
