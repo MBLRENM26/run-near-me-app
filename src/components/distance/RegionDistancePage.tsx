@@ -121,12 +121,9 @@ export function RegionDistancePage({
                 Try expanding your search.
               </p>
               <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
-                <Link
-                  to={`/${cfg.slug}` as "/half-marathons"}
-                  className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-                >
+                <DistanceHomeLink cfg={cfg}>
                   See all {noun} in the UK
-                </Link>
+                </DistanceHomeLink>
                 <Link
                   to="/running-events/$slug"
                   params={{ slug: region.slug }}
