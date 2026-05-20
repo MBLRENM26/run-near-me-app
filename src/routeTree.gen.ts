@@ -13,13 +13,16 @@ import { Route as UltraMarathonsRouteImport } from './routes/ultra-marathons'
 import { Route as TrailRunningEventsRouteImport } from './routes/trail-running-events'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
+import { Route as ParkrunEventsRouteImport } from './routes/parkrun-events'
 import { Route as MarathonsRouteImport } from './routes/marathons'
 import { Route as ListYourEventRouteImport } from './routes/list-your-event'
+import { Route as JuniorParkrunEventsRouteImport } from './routes/junior-parkrun-events'
 import { Route as HalfMarathonsRouteImport } from './routes/half-marathons'
 import { Route as R5kRacesRouteImport } from './routes/5k-races'
 import { Route as R10kRacesRouteImport } from './routes/10k-races'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RunningEventsSlugRouteImport } from './routes/running-events.$slug'
+import { Route as ParkrunEventsSlugRouteImport } from './routes/parkrun-events.$slug'
 import { Route as EventsSlugRouteImport } from './routes/events.$slug'
 import { Route as ApiPublicImportEventsRouteImport } from './routes/api/public/import-events'
 import { Route as ApiPublicAdminFixEventUrlsRouteImport } from './routes/api/public/admin/fix-event-urls'
@@ -44,6 +47,11 @@ const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
   path: '/robots.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ParkrunEventsRoute = ParkrunEventsRouteImport.update({
+  id: '/parkrun-events',
+  path: '/parkrun-events',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MarathonsRoute = MarathonsRouteImport.update({
   id: '/marathons',
   path: '/marathons',
@@ -52,6 +60,11 @@ const MarathonsRoute = MarathonsRouteImport.update({
 const ListYourEventRoute = ListYourEventRouteImport.update({
   id: '/list-your-event',
   path: '/list-your-event',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JuniorParkrunEventsRoute = JuniorParkrunEventsRouteImport.update({
+  id: '/junior-parkrun-events',
+  path: '/junior-parkrun-events',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HalfMarathonsRoute = HalfMarathonsRouteImport.update({
@@ -79,6 +92,11 @@ const RunningEventsSlugRoute = RunningEventsSlugRouteImport.update({
   path: '/running-events/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ParkrunEventsSlugRoute = ParkrunEventsSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => ParkrunEventsRoute,
+} as any)
 const EventsSlugRoute = EventsSlugRouteImport.update({
   id: '/events/$slug',
   path: '/events/$slug',
@@ -101,13 +119,16 @@ export interface FileRoutesByFullPath {
   '/10k-races': typeof R10kRacesRoute
   '/5k-races': typeof R5kRacesRoute
   '/half-marathons': typeof HalfMarathonsRoute
+  '/junior-parkrun-events': typeof JuniorParkrunEventsRoute
   '/list-your-event': typeof ListYourEventRoute
   '/marathons': typeof MarathonsRoute
+  '/parkrun-events': typeof ParkrunEventsRouteWithChildren
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/trail-running-events': typeof TrailRunningEventsRoute
   '/ultra-marathons': typeof UltraMarathonsRoute
   '/events/$slug': typeof EventsSlugRoute
+  '/parkrun-events/$slug': typeof ParkrunEventsSlugRoute
   '/running-events/$slug': typeof RunningEventsSlugRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
@@ -117,13 +138,16 @@ export interface FileRoutesByTo {
   '/10k-races': typeof R10kRacesRoute
   '/5k-races': typeof R5kRacesRoute
   '/half-marathons': typeof HalfMarathonsRoute
+  '/junior-parkrun-events': typeof JuniorParkrunEventsRoute
   '/list-your-event': typeof ListYourEventRoute
   '/marathons': typeof MarathonsRoute
+  '/parkrun-events': typeof ParkrunEventsRouteWithChildren
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/trail-running-events': typeof TrailRunningEventsRoute
   '/ultra-marathons': typeof UltraMarathonsRoute
   '/events/$slug': typeof EventsSlugRoute
+  '/parkrun-events/$slug': typeof ParkrunEventsSlugRoute
   '/running-events/$slug': typeof RunningEventsSlugRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
@@ -134,13 +158,16 @@ export interface FileRoutesById {
   '/10k-races': typeof R10kRacesRoute
   '/5k-races': typeof R5kRacesRoute
   '/half-marathons': typeof HalfMarathonsRoute
+  '/junior-parkrun-events': typeof JuniorParkrunEventsRoute
   '/list-your-event': typeof ListYourEventRoute
   '/marathons': typeof MarathonsRoute
+  '/parkrun-events': typeof ParkrunEventsRouteWithChildren
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/trail-running-events': typeof TrailRunningEventsRoute
   '/ultra-marathons': typeof UltraMarathonsRoute
   '/events/$slug': typeof EventsSlugRoute
+  '/parkrun-events/$slug': typeof ParkrunEventsSlugRoute
   '/running-events/$slug': typeof RunningEventsSlugRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
@@ -152,13 +179,16 @@ export interface FileRouteTypes {
     | '/10k-races'
     | '/5k-races'
     | '/half-marathons'
+    | '/junior-parkrun-events'
     | '/list-your-event'
     | '/marathons'
+    | '/parkrun-events'
     | '/robots.txt'
     | '/sitemap.xml'
     | '/trail-running-events'
     | '/ultra-marathons'
     | '/events/$slug'
+    | '/parkrun-events/$slug'
     | '/running-events/$slug'
     | '/api/public/import-events'
     | '/api/public/admin/fix-event-urls'
@@ -168,13 +198,16 @@ export interface FileRouteTypes {
     | '/10k-races'
     | '/5k-races'
     | '/half-marathons'
+    | '/junior-parkrun-events'
     | '/list-your-event'
     | '/marathons'
+    | '/parkrun-events'
     | '/robots.txt'
     | '/sitemap.xml'
     | '/trail-running-events'
     | '/ultra-marathons'
     | '/events/$slug'
+    | '/parkrun-events/$slug'
     | '/running-events/$slug'
     | '/api/public/import-events'
     | '/api/public/admin/fix-event-urls'
@@ -184,13 +217,16 @@ export interface FileRouteTypes {
     | '/10k-races'
     | '/5k-races'
     | '/half-marathons'
+    | '/junior-parkrun-events'
     | '/list-your-event'
     | '/marathons'
+    | '/parkrun-events'
     | '/robots.txt'
     | '/sitemap.xml'
     | '/trail-running-events'
     | '/ultra-marathons'
     | '/events/$slug'
+    | '/parkrun-events/$slug'
     | '/running-events/$slug'
     | '/api/public/import-events'
     | '/api/public/admin/fix-event-urls'
@@ -201,8 +237,10 @@ export interface RootRouteChildren {
   R10kRacesRoute: typeof R10kRacesRoute
   R5kRacesRoute: typeof R5kRacesRoute
   HalfMarathonsRoute: typeof HalfMarathonsRoute
+  JuniorParkrunEventsRoute: typeof JuniorParkrunEventsRoute
   ListYourEventRoute: typeof ListYourEventRoute
   MarathonsRoute: typeof MarathonsRoute
+  ParkrunEventsRoute: typeof ParkrunEventsRouteWithChildren
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TrailRunningEventsRoute: typeof TrailRunningEventsRoute
@@ -243,6 +281,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RobotsDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/parkrun-events': {
+      id: '/parkrun-events'
+      path: '/parkrun-events'
+      fullPath: '/parkrun-events'
+      preLoaderRoute: typeof ParkrunEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/marathons': {
       id: '/marathons'
       path: '/marathons'
@@ -255,6 +300,13 @@ declare module '@tanstack/react-router' {
       path: '/list-your-event'
       fullPath: '/list-your-event'
       preLoaderRoute: typeof ListYourEventRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/junior-parkrun-events': {
+      id: '/junior-parkrun-events'
+      path: '/junior-parkrun-events'
+      fullPath: '/junior-parkrun-events'
+      preLoaderRoute: typeof JuniorParkrunEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/half-marathons': {
@@ -292,6 +344,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RunningEventsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/parkrun-events/$slug': {
+      id: '/parkrun-events/$slug'
+      path: '/$slug'
+      fullPath: '/parkrun-events/$slug'
+      preLoaderRoute: typeof ParkrunEventsSlugRouteImport
+      parentRoute: typeof ParkrunEventsRoute
+    }
     '/events/$slug': {
       id: '/events/$slug'
       path: '/events/$slug'
@@ -316,13 +375,27 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface ParkrunEventsRouteChildren {
+  ParkrunEventsSlugRoute: typeof ParkrunEventsSlugRoute
+}
+
+const ParkrunEventsRouteChildren: ParkrunEventsRouteChildren = {
+  ParkrunEventsSlugRoute: ParkrunEventsSlugRoute,
+}
+
+const ParkrunEventsRouteWithChildren = ParkrunEventsRoute._addFileChildren(
+  ParkrunEventsRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   R10kRacesRoute: R10kRacesRoute,
   R5kRacesRoute: R5kRacesRoute,
   HalfMarathonsRoute: HalfMarathonsRoute,
+  JuniorParkrunEventsRoute: JuniorParkrunEventsRoute,
   ListYourEventRoute: ListYourEventRoute,
   MarathonsRoute: MarathonsRoute,
+  ParkrunEventsRoute: ParkrunEventsRouteWithChildren,
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TrailRunningEventsRoute: TrailRunningEventsRoute,
@@ -335,3 +408,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
