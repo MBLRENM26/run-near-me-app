@@ -84,6 +84,12 @@ export const Route = createFileRoute("/sitemap.xml")({
             priority: "0.8",
             changefreq: "weekly",
           })),
+          ...comboEntries.map((c) => ({
+            loc: `${SITE_URL}/running-events/${c.regionSlug}/${c.distanceSlug}`,
+            lastmod: today,
+            priority: "0.7",
+            changefreq: "weekly",
+          })),
           ...REGIONS.map((r) => ({
             loc: `${SITE_URL}/parkrun-events/region/${r.slug}`,
             lastmod: today,
