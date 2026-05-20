@@ -1,46 +1,122 @@
-## Fix 1 — "View event" URL priority (entry_url → organiser_url → source_url)
+## Distance landing pages (6 + parkrun queued)
 
-**`EventCardData` (in `src/components/events/EventCard.tsx`)**
-- Replace the single `url` field with the three source fields: `entry_url`, `organiser_url`, `source_url` (all `string | null`).
-- Compute `const viewUrl = [entry_url, organiser_url, source_url].map(s => s?.trim()).find(Boolean) ?? null`.
-- Only render the "View event" `Button` when `viewUrl` is truthy.
+Build six high-intent SEO landing pages aggregating events by distance, with FAQ structured data for featured snippets. Parkrun queued as a 7th page after the core six ship.
 
-**Query selects** — stop aliasing `entry_url` to `url`; select all three:
-- `src/routes/index.tsx` upcoming query: `select("id, name, date_raw, town, county, distance_type:distances, entry_fee, entry_url, organiser_url, source_url, is_featured")` and drop the manual mapping at lines 244–258 (pass fields directly).
-- `src/routes/running-events.$slug.tsx`: same select change.
+### Routes
 
-**RPC `events_within_radius`** — currently returns `entry_url as url` only. Migration to extend the returned columns with `organiser_url` and `source_url` (keep `url` for backward-compat or rename — I'll rename: drop `url`, add `entry_url`, `organiser_url`, `source_url`). The signature change means `types.ts` regenerates; the homepage mapping at lines 100–112 updates to pass the three fields through.
-
-## Fix 2 — Hide price badge when no real fee
-
-In `EventCard.tsx`, replace the always-on price line:
-```ts
-const NON_FEE = new Set(["", "free", "tbc", "0"]);
-const showFee = event.entry_fee && !NON_FEE.has(event.entry_fee.trim().toLowerCase());
 ```
-Only render the `<span>{event.entry_fee}</span>` when `showFee`. Keep the footer row layout — if no fee and no URL, the row collapses; if only the button, it right-aligns.
-
-## Fix 3 — UK bounding box on region pages
-
-UK bounds: lat 49.9–60.9, lng -8.6–1.8.
-
-**`src/routes/running-events.$slug.tsx`** — add to the existing query chain:
-```ts
-.gte("lat", 49.9).lte("lat", 60.9)
-.gte("lng", -8.6).lte("lng", 1.8)
+/5k-races              → 5K
+/10k-races             → 10K
+/half-marathons        → Half Marathon
+/marathons             → Marathon (26.2 only — no ultras)
+/trail-running-events  → Trail / Fell / Hill / Multi-Terrain
+/ultra-marathons       → Ultra
 ```
 
-This filters out events with NULL coordinates as well as overseas ones. That's the intended behavior for region pages (a region listing without geolocation is unreliable anyway). I'll note this in the response so the user can confirm; if they want NULL-coord events kept, we'd switch to an `.or()` with `lat.is.null` — but the requirement as stated is "only events with coordinates inside the UK".
+Queued (not built this round): `/parkrun-events` — 1,391 parkrun locations in the data, high-volume "parkrun near me" intent. Will be its own follow-up because parkrun is recurring/weekly (different data shape — needs a location-grouped layout, not a date list).
 
-The homepage nearby query uses the RPC (already coordinate-bounded by user location) and the homepage upcoming query is global "across the UK" — no bbox filter needed there.
+Flat route files in `src/routes/` (`5k-races.tsx`, `10k-races.tsx`, etc.). Each is a thin wrapper passing a config object into a shared `<DistancePage>` component.
 
-## Files touched
+### Year constant
 
-- `src/components/events/EventCard.tsx` — new fields, viewUrl computation, fee filter
-- `src/routes/index.tsx` — select all three url fields, drop manual mapping, update RPC field mapping
-- `src/routes/running-events.$slug.tsx` — select three url fields + UK bbox filter
-- Migration: redefine `events_within_radius` to return `entry_url`, `organiser_url`, `source_url` instead of `url`
+Single source of truth at the top of `src/lib/site.ts`:
 
-## Open question
+```ts
+export const CURRENT_YEAR = 2026;
+```
 
-The region-page bbox will also exclude events with NULL lat/lng. Confirm that's what you want, or should I keep NULL-coordinate events visible (filtering only out-of-bbox ones)?
+Imported by every distance route, the homepage title, and the FAQ content. January bump = one line.
+
+### Matching logic
+
+The `distances` column is messy free-text (`"5K"`, `"5 km"`, `"5K, 10K"`, `"5 km | 10 km | Half Marathon"`). Centralise in `src/lib/distance-filters.ts`:
+
+```ts
+export const DISTANCE_FILTERS = {
+  "5k":            { include: ["%5k%", "%5 km%", "%5km%"], exclude: ["%50k%", "%500%", "%15k%", "%25k%", "%35k%", "%45k%"] },
+  "10k":           { include: ["%10k%", "%10 km%", "%10km%"], exclude: ["%100k%", "%110k%"] },
+  "half-marathon": { include: ["%half marathon%", "%half-marathon%", "%halfmarathon%"] },
+  "marathon":      { include: ["%marathon%"], exclude: ["%half%", "%ultra%"] }, // 26.2 only
+  "trail":         { include: ["%trail%", "%fell%", "%hill race%", "%multi-terrain%", "%multi terrain%"] },
+  "ultra":         { include: ["%ultra%"] },
+};
+```
+
+Server query chains `.or("distances.ilike.X,distances.ilike.Y,...")` for includes and `.not("distances", "ilike", Z)` per exclude. Always: `status='ACTIVE'`, `sort_date >= today OR NULL`, UK bbox (lat 49.9–60.9, lng -8.6–1.8) — same as region pages.
+
+### Server function
+
+New `getEventsByDistance` in `src/lib/events.functions.ts`:
+- Input: `{ distanceKey: "5k" | "10k" | "half-marathon" | "marathon" | "trail" | "ultra" }` (Zod validated)
+- Returns: `{ events: EventCardData[], regionCounts: { region: string; count: number }[], total: number }`
+- Uses `supabaseAdmin`, paginates 1000-row pages
+
+### Page layout (shared `<DistancePage>`)
+
+In `src/components/distance/DistancePage.tsx`:
+
+1. **Hero** — H1 (`"5K Races in the UK 2026"`), one-line intro, total count
+2. **Distance nav row** — 6 pill links to sibling distance pages (also rendered on home + region pages)
+3. **Event grid** — reuses existing `EventCard`
+4. **Regional breakdown** — 12 internal links to `/running-events/{region}` with counts. Strong internal-linking play.
+5. **FAQ block** — 4 distance-specific Q&As (visible accordion using existing shadcn `<Accordion>`)
+6. **Cross-links** — "Looking for something different?" row
+
+### SEO — title, meta, JSON-LD
+
+Per-route `head()`:
+
+- **Title**: `"5K Races in the UK ${CURRENT_YEAR} — ${SITE_NAME}"`
+- **Description**: `"Find ${total} upcoming 5K races across the UK in ${CURRENT_YEAR}. Browse by region, enter online or contact organisers directly."`
+- **Canonical**: `${SITE_URL}/5k-races`
+- **OG**: title/description/url, `og:type=website`
+
+**JSON-LD — two schemas per page (this is the key SEO play):**
+
+1. `CollectionPage` describing the listing
+2. `FAQPage` with the 4 Q&As as `mainEntity[].acceptedAnswer.text` — this is what Google reads for featured snippets / People Also Ask. The accordion text and the JSON-LD must match exactly (define the Q&As as a single `const FAQS` array per distance and render both UI and JSON-LD from it).
+
+Example FAQ content for `/5k-races`:
+- "How long is a 5K race?" → "A 5K is 5 kilometres, or 3.1 miles. Most runners complete one in 20–40 minutes."
+- "How much does a 5K race cost to enter?" → cost range from UK data
+- "What's a good 5K time?" → benchmarks by age/experience
+- "Where can I find a 5K near me?" → CTA to homepage location prompt
+
+Each distance gets its own 4 Q&As written for the specific distance.
+
+### Sitemap
+
+Update `src/routes/sitemap[.]xml.tsx`: add the 6 distance routes with `weekly` changefreq, `0.9` priority (above region pages at 0.8, below homepage at 1.0).
+
+### Internal linking — drive authority to the new pages
+
+- **Homepage** (`src/routes/index.tsx`): add `<DistanceNav />` between "Browse by region" and the upcoming events list
+- **Region pages** (`src/routes/running-events.$slug.tsx`): add `<DistanceNav />` above the event grid
+- **Event detail** (`src/routes/events.$slug.tsx`): contextual single link in the back-link area — "More {distance} races →"
+
+### Files
+
+**New:**
+- `src/routes/5k-races.tsx`
+- `src/routes/10k-races.tsx`
+- `src/routes/half-marathons.tsx`
+- `src/routes/marathons.tsx`
+- `src/routes/trail-running-events.tsx`
+- `src/routes/ultra-marathons.tsx`
+- `src/components/distance/DistancePage.tsx`
+- `src/components/distance/DistanceNav.tsx`
+- `src/lib/distance-filters.ts` (matchers + FAQ content + page config in one place)
+
+**Edited:**
+- `src/lib/site.ts` — add `CURRENT_YEAR`
+- `src/lib/events.functions.ts` — add `getEventsByDistance`
+- `src/routes/sitemap[.]xml.tsx` — add 6 entries
+- `src/routes/index.tsx` — add `<DistanceNav />`
+- `src/routes/running-events.$slug.tsx` — add `<DistanceNav />`
+- `src/routes/events.$slug.tsx` — contextual distance link
+
+No DB migrations needed.
+
+### After this ships
+
+Parkrun page (`/parkrun-events`) becomes the next ticket — separate plan because the data model is location-grouped weekly events, not a one-off race list.

@@ -8,6 +8,7 @@ import { EventCard, type EventCardData } from "@/components/events/EventCard";
 import { Toaster } from "@/components/ui/sonner";
 import { slugToRegion } from "@/lib/regions";
 import { SITE_URL } from "@/lib/site";
+import { DistanceNav } from "@/components/distance/DistanceNav";
 
 const SLUG_REDIRECTS: Record<string, string> = {
   kent: "south-east",
@@ -116,6 +117,13 @@ function RegionPage() {
           <p className="mt-2 text-muted-foreground">
             Browse upcoming races across {region.name}.
           </p>
+        </section>
+
+        <section className="mx-auto max-w-6xl px-4 pb-6">
+          <h2 className="text-sm font-medium text-muted-foreground mb-3">
+            Browse by distance
+          </h2>
+          <DistanceNav />
         </section>
 
         <section className="mx-auto max-w-6xl px-4 pb-16">

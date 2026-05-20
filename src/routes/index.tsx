@@ -16,6 +16,7 @@ import { EventCard, type EventCardData } from "@/components/events/EventCard";
 import { Toaster } from "@/components/ui/sonner";
 import { matchesEventType, type EventType } from "@/lib/distance";
 import { MapPin } from "lucide-react";
+import { DistanceNav } from "@/components/distance/DistanceNav";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -231,6 +232,19 @@ function HomePage() {
                 <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
               </Link>
             ))}
+          </div>
+        </section>
+
+        {/* Browse by distance */}
+        <section className="mx-auto max-w-6xl px-4 pb-12">
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+            Browse by distance
+          </h2>
+          <p className="mt-2 text-muted-foreground">
+            From parkrun 5Ks to ultra marathons across the UK.
+          </p>
+          <div className="mt-6">
+            <DistanceNav />
           </div>
         </section>
 

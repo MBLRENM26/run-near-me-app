@@ -9,15 +9,31 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as UltraMarathonsRouteImport } from './routes/ultra-marathons'
+import { Route as TrailRunningEventsRouteImport } from './routes/trail-running-events'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
+import { Route as MarathonsRouteImport } from './routes/marathons'
 import { Route as ListYourEventRouteImport } from './routes/list-your-event'
+import { Route as HalfMarathonsRouteImport } from './routes/half-marathons'
+import { Route as R5kRacesRouteImport } from './routes/5k-races'
+import { Route as R10kRacesRouteImport } from './routes/10k-races'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RunningEventsSlugRouteImport } from './routes/running-events.$slug'
 import { Route as EventsSlugRouteImport } from './routes/events.$slug'
 import { Route as ApiPublicImportEventsRouteImport } from './routes/api/public/import-events'
 import { Route as ApiPublicAdminFixEventUrlsRouteImport } from './routes/api/public/admin/fix-event-urls'
 
+const UltraMarathonsRoute = UltraMarathonsRouteImport.update({
+  id: '/ultra-marathons',
+  path: '/ultra-marathons',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TrailRunningEventsRoute = TrailRunningEventsRouteImport.update({
+  id: '/trail-running-events',
+  path: '/trail-running-events',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
@@ -28,9 +44,29 @@ const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
   path: '/robots.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MarathonsRoute = MarathonsRouteImport.update({
+  id: '/marathons',
+  path: '/marathons',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ListYourEventRoute = ListYourEventRouteImport.update({
   id: '/list-your-event',
   path: '/list-your-event',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HalfMarathonsRoute = HalfMarathonsRouteImport.update({
+  id: '/half-marathons',
+  path: '/half-marathons',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const R5kRacesRoute = R5kRacesRouteImport.update({
+  id: '/5k-races',
+  path: '/5k-races',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const R10kRacesRoute = R10kRacesRouteImport.update({
+  id: '/10k-races',
+  path: '/10k-races',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -62,9 +98,15 @@ const ApiPublicAdminFixEventUrlsRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/10k-races': typeof R10kRacesRoute
+  '/5k-races': typeof R5kRacesRoute
+  '/half-marathons': typeof HalfMarathonsRoute
   '/list-your-event': typeof ListYourEventRoute
+  '/marathons': typeof MarathonsRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/trail-running-events': typeof TrailRunningEventsRoute
+  '/ultra-marathons': typeof UltraMarathonsRoute
   '/events/$slug': typeof EventsSlugRoute
   '/running-events/$slug': typeof RunningEventsSlugRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
@@ -72,9 +114,15 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/10k-races': typeof R10kRacesRoute
+  '/5k-races': typeof R5kRacesRoute
+  '/half-marathons': typeof HalfMarathonsRoute
   '/list-your-event': typeof ListYourEventRoute
+  '/marathons': typeof MarathonsRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/trail-running-events': typeof TrailRunningEventsRoute
+  '/ultra-marathons': typeof UltraMarathonsRoute
   '/events/$slug': typeof EventsSlugRoute
   '/running-events/$slug': typeof RunningEventsSlugRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
@@ -83,9 +131,15 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/10k-races': typeof R10kRacesRoute
+  '/5k-races': typeof R5kRacesRoute
+  '/half-marathons': typeof HalfMarathonsRoute
   '/list-your-event': typeof ListYourEventRoute
+  '/marathons': typeof MarathonsRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/trail-running-events': typeof TrailRunningEventsRoute
+  '/ultra-marathons': typeof UltraMarathonsRoute
   '/events/$slug': typeof EventsSlugRoute
   '/running-events/$slug': typeof RunningEventsSlugRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
@@ -95,9 +149,15 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/10k-races'
+    | '/5k-races'
+    | '/half-marathons'
     | '/list-your-event'
+    | '/marathons'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/trail-running-events'
+    | '/ultra-marathons'
     | '/events/$slug'
     | '/running-events/$slug'
     | '/api/public/import-events'
@@ -105,9 +165,15 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/10k-races'
+    | '/5k-races'
+    | '/half-marathons'
     | '/list-your-event'
+    | '/marathons'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/trail-running-events'
+    | '/ultra-marathons'
     | '/events/$slug'
     | '/running-events/$slug'
     | '/api/public/import-events'
@@ -115,9 +181,15 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/10k-races'
+    | '/5k-races'
+    | '/half-marathons'
     | '/list-your-event'
+    | '/marathons'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/trail-running-events'
+    | '/ultra-marathons'
     | '/events/$slug'
     | '/running-events/$slug'
     | '/api/public/import-events'
@@ -126,9 +198,15 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  R10kRacesRoute: typeof R10kRacesRoute
+  R5kRacesRoute: typeof R5kRacesRoute
+  HalfMarathonsRoute: typeof HalfMarathonsRoute
   ListYourEventRoute: typeof ListYourEventRoute
+  MarathonsRoute: typeof MarathonsRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  TrailRunningEventsRoute: typeof TrailRunningEventsRoute
+  UltraMarathonsRoute: typeof UltraMarathonsRoute
   EventsSlugRoute: typeof EventsSlugRoute
   RunningEventsSlugRoute: typeof RunningEventsSlugRoute
   ApiPublicImportEventsRoute: typeof ApiPublicImportEventsRoute
@@ -137,6 +215,20 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/ultra-marathons': {
+      id: '/ultra-marathons'
+      path: '/ultra-marathons'
+      fullPath: '/ultra-marathons'
+      preLoaderRoute: typeof UltraMarathonsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/trail-running-events': {
+      id: '/trail-running-events'
+      path: '/trail-running-events'
+      fullPath: '/trail-running-events'
+      preLoaderRoute: typeof TrailRunningEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
@@ -151,11 +243,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RobotsDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/marathons': {
+      id: '/marathons'
+      path: '/marathons'
+      fullPath: '/marathons'
+      preLoaderRoute: typeof MarathonsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/list-your-event': {
       id: '/list-your-event'
       path: '/list-your-event'
       fullPath: '/list-your-event'
       preLoaderRoute: typeof ListYourEventRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/half-marathons': {
+      id: '/half-marathons'
+      path: '/half-marathons'
+      fullPath: '/half-marathons'
+      preLoaderRoute: typeof HalfMarathonsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/5k-races': {
+      id: '/5k-races'
+      path: '/5k-races'
+      fullPath: '/5k-races'
+      preLoaderRoute: typeof R5kRacesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/10k-races': {
+      id: '/10k-races'
+      path: '/10k-races'
+      fullPath: '/10k-races'
+      preLoaderRoute: typeof R10kRacesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -198,9 +318,15 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  R10kRacesRoute: R10kRacesRoute,
+  R5kRacesRoute: R5kRacesRoute,
+  HalfMarathonsRoute: HalfMarathonsRoute,
   ListYourEventRoute: ListYourEventRoute,
+  MarathonsRoute: MarathonsRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  TrailRunningEventsRoute: TrailRunningEventsRoute,
+  UltraMarathonsRoute: UltraMarathonsRoute,
   EventsSlugRoute: EventsSlugRoute,
   RunningEventsSlugRoute: RunningEventsSlugRoute,
   ApiPublicImportEventsRoute: ApiPublicImportEventsRoute,
@@ -209,13 +335,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

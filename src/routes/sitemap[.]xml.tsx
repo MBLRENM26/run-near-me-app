@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { REGIONS } from "@/lib/regions";
 import { SITE_URL } from "@/lib/site";
 import { getAllActiveSlugs } from "@/lib/events.functions";
+import { DISTANCE_PAGE_LIST } from "@/lib/distance-filters";
 
 export const Route = createFileRoute("/sitemap.xml")({
   server: {
@@ -28,6 +29,12 @@ export const Route = createFileRoute("/sitemap.xml")({
             priority: "0.5",
             changefreq: "monthly",
           },
+          ...DISTANCE_PAGE_LIST.map((p) => ({
+            loc: `${SITE_URL}/${p.slug}`,
+            lastmod: today,
+            priority: "0.9",
+            changefreq: "weekly",
+          })),
           ...REGIONS.map((r) => ({
             loc: `${SITE_URL}/running-events/${r.slug}`,
             lastmod: today,
