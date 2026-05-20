@@ -55,7 +55,20 @@ interface DistancePageProps {
 
 export function DistancePage({ cfg, data }: DistancePageProps) {
   const { events, regionCounts, total } = data;
-  const showing = events.length;
+  const search = useSearch({ strict: false }) as { month?: MonthKey };
+  const navigate = useNavigate();
+  const month = search.month;
+
+  const months = availableMonths(events);
+  const filtered = filterByMonth(events, month);
+  const showing = filtered.length;
+
+  const setMonth = (m: MonthKey | undefined) =>
+    navigate({
+      to: ".",
+      search: (prev: Record<string, unknown>) => ({ ...prev, month: m }),
+      replace: true,
+    });
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -85,13 +98,46 @@ export function DistancePage({ cfg, data }: DistancePageProps) {
         </section>
 
         <section className="mx-auto max-w-6xl px-4 pb-12">
-          {events.length === 0 ? (
+          {months.length >= 2 && (
+            <div className="mb-4">
+              <MonthFilter months={months} value={month} onChange={setMonth} />
+            </div>
+          )}
+          {month && (
+            <p className="mb-4 inline-flex items-center gap-2 text-sm text-muted-foreground">
+              Showing events in{" "}
+              <span className="font-medium text-foreground">
+                {formatMonthLabelLong(month)}
+              </span>
+              <button
+                type="button"
+                onClick={() => setMonth(undefined)}
+                className="inline-flex items-center gap-1 text-primary hover:underline"
+              >
+                <X className="h-3.5 w-3.5" />
+                clear
+              </button>
+            </p>
+          )}
+          {filtered.length === 0 ? (
             <div className="text-center py-16 rounded-2xl border border-dashed border-border bg-muted/30">
               <p className="text-lg font-medium text-foreground">
-                No upcoming events found
+                {month
+                  ? `No ${cfg.shortName} races in ${formatMonthLabelLong(month)} yet`
+                  : "No upcoming events found"}
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Check back soon — we add new listings every week.
+                {month ? (
+                  <button
+                    type="button"
+                    onClick={() => setMonth(undefined)}
+                    className="text-primary hover:underline"
+                  >
+                    Show all months
+                  </button>
+                ) : (
+                  "Check back soon — we add new listings every week."
+                )}
               </p>
             </div>
           ) : (
@@ -99,7 +145,7 @@ export function DistancePage({ cfg, data }: DistancePageProps) {
               <h2 className="text-xl font-semibold text-foreground mb-2">
                 Upcoming {cfg.shortName} races
               </h2>
-              {total > showing ? (
+              {!month && total > showing ? (
                 <p className="text-sm text-muted-foreground mb-4">
                   Showing the next {showing} of {total.toLocaleString()} —{" "}
                   <Link
@@ -116,13 +162,14 @@ export function DistancePage({ cfg, data }: DistancePageProps) {
                 </p>
               )}
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {events.map((e) => (
+                {filtered.map((e) => (
                   <EventCard key={e.id} event={toEventCardData(e)} />
                 ))}
               </div>
             </>
           )}
         </section>
+
 
         {regionCounts.length > 0 && (
           <section className="mx-auto max-w-6xl px-4 pb-12">
