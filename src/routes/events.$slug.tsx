@@ -135,9 +135,10 @@ export const Route = createFileRoute("/events/$slug")({
         },
       };
       // Offers: entry link only — no price claim. Scraped fees are stale and
-      // single-valued, so the structured data never asserts a price.
+      // single-valued, so the structured data never asserts a price. Generic
+      // aggregator listing URLs are never asserted as the entry link.
       const entryUrl = e.entry_url?.trim();
-      if (entryUrl) {
+      if (entryUrl && !isGenericListingUrl(entryUrl)) {
         jsonLd.offers = {
           "@type": "Offer",
           url: entryUrl,
