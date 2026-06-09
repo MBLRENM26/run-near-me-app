@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { normaliseRegion } from "@/lib/region-normalize";
 
 const EventRowSchema = z.object({
   norm_id: z.string().min(1).max(255),
