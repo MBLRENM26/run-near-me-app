@@ -180,7 +180,9 @@ export const Route = createFileRoute("/api/public/admin/sync-scottish-athletics"
         // 4. Map to event rows
         const todayISO = new Date().toISOString().slice(0, 10);
         const seenSlugs = new Set<string>();
-        const rows: Record<string, unknown>[] = [];
+        type EventInsert =
+          import("@/integrations/supabase/types").Database["public"]["Tables"]["events"]["Insert"];
+        const rows: EventInsert[] = [];
         let skippedDupes = 0;
         let skippedNoDate = 0;
 
