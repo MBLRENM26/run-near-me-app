@@ -23,7 +23,9 @@ export const Route = createFileRoute("/sitemap.xml")({
             .filter((s) => !s.sort_date || s.sort_date >= today)
             .map((s) => ({
               slug: s.slug,
-              lastmod: s.sort_date ?? today,
+              // lastmod must not be a future date — clamp to today.
+              lastmod:
+                s.sort_date && s.sort_date < today ? s.sort_date : today,
             }));
         } catch (err) {
           console.error("Sitemap: failed to load event slugs", err);
