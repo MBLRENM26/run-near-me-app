@@ -37,6 +37,7 @@ import { Route as AdminShellAdminClaimsRouteImport } from './routes/_adminShell.
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
+import { Route as ApiPublicAdminSyncScottishAthleticsRouteImport } from './routes/api/public/admin/sync-scottish-athletics'
 import { Route as ApiPublicAdminFixEventUrlsRouteImport } from './routes/api/public/admin/fix-event-urls'
 
 const UltraMarathonsRoute = UltraMarathonsRouteImport.update({
@@ -183,6 +184,12 @@ const LovableEmailQueueProcessRoute =
     path: '/lovable/email/queue/process',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicAdminSyncScottishAthleticsRoute =
+  ApiPublicAdminSyncScottishAthleticsRouteImport.update({
+    id: '/api/public/admin/sync-scottish-athletics',
+    path: '/api/public/admin/sync-scottish-athletics',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicAdminFixEventUrlsRoute =
   ApiPublicAdminFixEventUrlsRouteImport.update({
     id: '/api/public/admin/fix-event-urls',
@@ -216,6 +223,7 @@ export interface FileRoutesByFullPath {
   '/parkrun-events/region/$region': typeof ParkrunEventsRegionRegionRoute
   '/running-events/$slug/$distance': typeof RunningEventsSlugDistanceRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
+  '/api/public/admin/sync-scottish-athletics': typeof ApiPublicAdminSyncScottishAthleticsRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
@@ -246,6 +254,7 @@ export interface FileRoutesByTo {
   '/parkrun-events/region/$region': typeof ParkrunEventsRegionRegionRoute
   '/running-events/$slug/$distance': typeof RunningEventsSlugDistanceRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
+  '/api/public/admin/sync-scottish-athletics': typeof ApiPublicAdminSyncScottishAthleticsRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
@@ -278,6 +287,7 @@ export interface FileRoutesById {
   '/parkrun-events/region/$region': typeof ParkrunEventsRegionRegionRoute
   '/running-events/$slug_/$distance': typeof RunningEventsSlugDistanceRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
+  '/api/public/admin/sync-scottish-athletics': typeof ApiPublicAdminSyncScottishAthleticsRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
@@ -310,6 +320,7 @@ export interface FileRouteTypes {
     | '/parkrun-events/region/$region'
     | '/running-events/$slug/$distance'
     | '/api/public/admin/fix-event-urls'
+    | '/api/public/admin/sync-scottish-athletics'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
@@ -340,6 +351,7 @@ export interface FileRouteTypes {
     | '/parkrun-events/region/$region'
     | '/running-events/$slug/$distance'
     | '/api/public/admin/fix-event-urls'
+    | '/api/public/admin/sync-scottish-athletics'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
@@ -371,6 +383,7 @@ export interface FileRouteTypes {
     | '/parkrun-events/region/$region'
     | '/running-events/$slug_/$distance'
     | '/api/public/admin/fix-event-urls'
+    | '/api/public/admin/sync-scottish-athletics'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
@@ -400,6 +413,7 @@ export interface RootRouteChildren {
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   RunningEventsSlugDistanceRoute: typeof RunningEventsSlugDistanceRoute
   ApiPublicAdminFixEventUrlsRoute: typeof ApiPublicAdminFixEventUrlsRoute
+  ApiPublicAdminSyncScottishAthleticsRoute: typeof ApiPublicAdminSyncScottishAthleticsRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
   LovableEmailTransactionalSendRoute: typeof LovableEmailTransactionalSendRoute
@@ -603,6 +617,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/admin/sync-scottish-athletics': {
+      id: '/api/public/admin/sync-scottish-athletics'
+      path: '/api/public/admin/sync-scottish-athletics'
+      fullPath: '/api/public/admin/sync-scottish-athletics'
+      preLoaderRoute: typeof ApiPublicAdminSyncScottishAthleticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/admin/fix-event-urls': {
       id: '/api/public/admin/fix-event-urls'
       path: '/api/public/admin/fix-event-urls'
@@ -663,6 +684,8 @@ const rootRouteChildren: RootRouteChildren = {
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   RunningEventsSlugDistanceRoute: RunningEventsSlugDistanceRoute,
   ApiPublicAdminFixEventUrlsRoute: ApiPublicAdminFixEventUrlsRoute,
+  ApiPublicAdminSyncScottishAthleticsRoute:
+    ApiPublicAdminSyncScottishAthleticsRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
   LovableEmailTransactionalSendRoute: LovableEmailTransactionalSendRoute,
