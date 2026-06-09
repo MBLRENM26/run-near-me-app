@@ -1,0 +1,1 @@
+ALTER TABLE public.events ADD COLUMN date_is_estimated boolean NOT NULL DEFAULT false;
