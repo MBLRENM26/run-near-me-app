@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { Calendar, MapPin, Tag, ExternalLink, Info } from "lucide-react";
+import { Calendar, MapPin, Tag, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Breadcrumb,
@@ -201,7 +201,6 @@ function EventDetailPage() {
   // pages earn "Enter now".
   const entryLink = classifyEventLink(e.entry_url);
   const orgLink = classifyEventLink(e.organiser_url);
-  const srcLink = classifyEventLink(e.source_url);
 
   const dateLabel = formatEventDate(e);
   const loc = locationLabel(e.town, e.county);
@@ -236,9 +235,7 @@ function EventDetailPage() {
   // No trustworthy official link → invite the organiser to claim the listing.
   const showClaim = !primaryCta;
 
-  // Source attribution is plain text only — aggregator sites are named,
-  // never linked.
-  const sourceHost = srcLink.host ?? entryLink.host ?? orgLink.host;
+
 
   const relatedLabel = related.distanceKey
     ? distancePlural(related.distanceKey)
@@ -318,20 +315,9 @@ function EventDetailPage() {
                   <ExternalLink className="h-4 w-4" />
                 </a>
               </Button>
-              {sourceHost && srcLink.href !== primaryCta.href && (
-                <p className="mt-3 text-xs text-muted-foreground">
-                  Originally listed on {sourceHost}
-                </p>
-              )}
             </div>
           )}
 
-          {!primaryCta && sourceHost && (
-            <p className="mt-6 text-sm text-muted-foreground inline-flex items-center gap-1.5">
-              <Info className="h-4 w-4" />
-              <span>Listed via {sourceHost}</span>
-            </p>
-          )}
 
           {about && (
             <div className="mt-10">
