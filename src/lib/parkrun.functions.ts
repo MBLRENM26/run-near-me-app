@@ -119,6 +119,8 @@ const slugSchema = z.object({
 });
 
 export interface ParkrunDetail extends ParkrunLocation {
+  town: string | null;
+  county: string | null;
   nearby: (ParkrunLocation & { distanceMiles: number })[];
 }
 
@@ -144,6 +146,16 @@ export const getParkrunBySlug = createServerFn({ method: "GET" })
     const all = await fetchAll();
     const me = all.find((l) => l.slug === data.slug);
     if (!me) throw notFound();
+
+    // Location fields for SEO title/description and JSON-LD address.
+    const { data: locRow } = await supabaseAdmin
+      .from("events")
+      .select("town, county")
+      .eq("id", me.id)
+      .maybeSingle();
+    const town = (locRow?.town as string | null)?.trim() || null;
+    const county = (locRow?.county as string | null)?.trim() || null;
+
     let nearby: (ParkrunLocation & { distanceMiles: number })[] = [];
     if (me.lat != null && me.lng != null) {
       nearby = all
@@ -155,5 +167,5 @@ export const getParkrunBySlug = createServerFn({ method: "GET" })
         .sort((a, b) => a.distanceMiles - b.distanceMiles)
         .slice(0, 5);
     }
-    return { ...me, nearby };
+    return { ...me, town, county, nearby };
   });
