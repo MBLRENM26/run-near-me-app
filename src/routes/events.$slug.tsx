@@ -29,42 +29,51 @@ export const Route = createFileRoute("/events/$slug")({
 
     const year = eventYear(e);
     const loc = [e.town, e.county].filter(Boolean).join(", ");
-    const title = [
-      [e.name, year].filter(Boolean).join(" "),
-      loc || null,
-      "Running Events Near Me",
-    ]
-      .filter(Boolean)
-      .join(" — ")
-      .replace("Running Events Near Me", "Running Events Near Me");
+    const place = e.town || e.county || "";
 
-    // Per spec: "{Event} {Year} | {Town}, {County} — Running Events Near Me"
+    // Title: "{Name} {Year} — {Day Month}, {Town} | Entry & Info"
+    // (month only for estimated dates; date/place segments drop out when unknown)
+    const shortDate = shortEventDate(e);
+    const mid = [shortDate || null, place || null].filter(Boolean).join(", ");
     const titleSpec =
       `${[e.name, year].filter(Boolean).join(" ")}` +
-      (loc ? ` | ${loc}` : "") +
-      ` — Running Events Near Me`;
+      (mid ? ` — ${mid}` : "") +
+      ` | Entry & Info`;
 
     const dateLabel = formatEventDate(e);
-    const distance = e.distances?.trim() || e.discipline?.trim() || "Running";
-    const descParts = [
-      `${distance} race${loc ? ` in ${loc}` : ""}${dateLabel ? ` on ${dateLabel}` : ""}.`,
-      "Find details and enter online.",
-    ];
-    const description = descParts.join(" ").slice(0, 300);
+    const distance = e.distances?.trim() || e.discipline?.trim() || "running";
 
-    // Month-only entries get month precision in JSON-LD ("2026-06"), not a
-    // false exact day.
-    const preciseStart = isoDate(e.date_from) ?? isoDate(e.sort_date);
+    // Fee clause: "Entry £18." / "Free entry." / omitted when blank or TBC.
+    const feeRaw = e.entry_fee?.trim() ?? "";
+    const feeKey = feeRaw.toLowerCase();
+    let feeClause = "";
+    if (feeRaw && !NON_FEE.has(feeKey)) feeClause = `Entry ${feeRaw}.`;
+    else if (feeKey === "free" || feeKey === "0") feeClause = "Free entry.";
+
+    const when = e.date_is_estimated
+      ? dateLabel
+        ? `, expected ${dateLabel.replace(" (date TBC)", "")} — date to be confirmed`
+        : ""
+      : dateLabel
+        ? ` on ${dateLabel}`
+        : "";
+    const description = [
+      `${e.name} is a ${distance} race${loc ? ` in ${loc}` : ""}${when}.`,
+      feeClause || null,
+      "See route details, start time and enter online.",
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .slice(0, 300);
+
+    // Event JSON-LD: Google requires a full-precision startDate and a Place
+    // location. Estimated (month-only) dates can't satisfy the date format,
+    // so those events ship no JSON-LD rather than invalid markup.
     const startISO = e.date_is_estimated
-      ? (preciseStart?.slice(0, 7) ?? null)
-      : preciseStart;
-    const endISO = e.date_is_estimated
-      ? startISO
-      : (isoDate(e.date_to) ?? startISO);
+      ? null
+      : (isoDate(e.date_from) ?? isoDate(e.sort_date));
+    const endISO = isoDate(e.date_to) ?? startISO;
 
-    // Google requires startDate and location on Event schema. Emit the
-    // JSON-LD block only when we have a date; fall back to region for
-    // location so no event ships schema without a Place.
     let jsonLd: Record<string, unknown> | null = null;
     if (startISO) {
       jsonLd = {
@@ -91,11 +100,41 @@ export const Route = createFileRoute("/events/$slug")({
           addressCountry: "GB",
         },
       };
+      // Offers: entry link, plus a parsed numeric price when available.
+      const entryUrl = e.entry_url?.trim();
+      if (entryUrl) {
+        const offer: Record<string, unknown> = {
+          "@type": "Offer",
+          url: entryUrl,
+          availability: "https://schema.org/InStock",
+        };
+        const priceMatch =
+          feeRaw && !NON_FEE.has(feeKey)
+            ? feeRaw.match(/(\d+(?:\.\d{1,2})?)/)
+            : null;
+        if (priceMatch) {
+          offer.price = priceMatch[1];
+          offer.priceCurrency = "GBP";
+        } else if (feeKey === "free" || feeKey === "0") {
+          offer.price = "0";
+          offer.priceCurrency = "GBP";
+        }
+        jsonLd.offers = offer;
+      }
       if (e.organiser_url?.trim()) {
+        const orgUrl = e.organiser_url.trim();
+        let orgName = e.organiser?.trim() || "";
+        if (!orgName) {
+          try {
+            orgName = new URL(orgUrl).hostname.replace(/^www\./, "");
+          } catch {
+            orgName = "";
+          }
+        }
         jsonLd.organizer = {
           "@type": "Organization",
-          ...(e.organiser ? { name: e.organiser } : {}),
-          url: e.organiser_url.trim(),
+          ...(orgName ? { name: orgName } : {}),
+          url: orgUrl,
         };
       }
     }
