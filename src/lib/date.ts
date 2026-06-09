@@ -96,3 +96,35 @@ export function isoDate(d: string | null | undefined): string | null {
   const dt = parseISO(d);
   return dt ? dt.toISOString().slice(0, 10) : null;
 }
+
+/**
+ * How close an event is to race day, for honest CTA treatment:
+ * - "imminent" — starts within `windowDays` days (entries may have closed)
+ * - "past"     — already finished
+ * - null       — comfortably in the future, or date unknown/estimated
+ */
+export type EventProximity = "imminent" | "past" | null;
+
+export function eventProximity(
+  args: {
+    date_from?: string | null;
+    date_to?: string | null;
+    sort_date?: string | null;
+    date_is_estimated?: boolean | null;
+  },
+  windowDays = 7,
+): EventProximity {
+  if (args.date_is_estimated) return null;
+  const start = parseISO(args.date_from) ?? parseISO(args.sort_date);
+  if (!start) return null;
+  const end = parseISO(args.date_to) ?? start;
+  const now = new Date();
+  const todayUTC = Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate(),
+  );
+  if (end.getTime() < todayUTC) return "past";
+  const daysUntilStart = Math.ceil((start.getTime() - todayUTC) / 86400000);
+  return daysUntilStart <= windowDays ? "imminent" : null;
+}
