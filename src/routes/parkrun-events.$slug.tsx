@@ -26,15 +26,18 @@ export const Route = createFileRoute("/parkrun-events/$slug")({
     const dist = p.distance ?? (isJunior ? "2K" : "5K");
     const town = p.town?.trim() || null;
     const county = p.county?.trim() || null;
+    const regionName = p.regionSlug ? REGION_BY_SLUG[p.regionSlug]?.name ?? null : null;
+    // Place segment: town when known, otherwise the coord-derived region.
+    const place = town ?? regionName;
 
-    // Title: "{Name} — Free Weekly {5K|2K} in {Town} | Course & Start Time"
-    // (drop the town segment when unknown)
+    // Title: "{Name} — Free Weekly {5K|2K}, {Place} | Course & Start Time"
+    // (drop the place segment when unknown)
     const title =
       `${p.name} — Free Weekly ${dist}` +
-      (town ? ` in ${town}` : "") +
+      (place ? `, ${place}` : "") +
       ` | Course & Start Time`;
 
-    const locText = [town, county].filter(Boolean).join(", ");
+    const locText = [town, county].filter(Boolean).join(", ") || regionName || "";
     const description =
       `${p.name} is a free, weekly, timed ${dist}` +
       (locText ? ` in ${locText}` : "") +
