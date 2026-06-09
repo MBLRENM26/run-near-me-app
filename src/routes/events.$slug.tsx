@@ -235,9 +235,7 @@ function EventDetailPage() {
   // No trustworthy official link → invite the organiser to claim the listing.
   const showClaim = !primaryCta;
 
-  // Source attribution is plain text only — aggregator sites are named,
-  // never linked.
-  const sourceHost = srcLink.host ?? entryLink.host ?? orgLink.host;
+
 
   const relatedLabel = related.distanceKey
     ? distancePlural(related.distanceKey)
@@ -317,20 +315,9 @@ function EventDetailPage() {
                   <ExternalLink className="h-4 w-4" />
                 </a>
               </Button>
-              {sourceHost && srcLink.href !== primaryCta.href && (
-                <p className="mt-3 text-xs text-muted-foreground">
-                  Originally listed on {sourceHost}
-                </p>
-              )}
             </div>
           )}
 
-          {!primaryCta && sourceHost && (
-            <p className="mt-6 text-sm text-muted-foreground inline-flex items-center gap-1.5">
-              <Info className="h-4 w-4" />
-              <span>Listed via {sourceHost}</span>
-            </p>
-          )}
 
           {about && (
             <div className="mt-10">
