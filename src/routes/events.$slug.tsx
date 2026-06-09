@@ -110,12 +110,14 @@ export const Route = createFileRoute("/events/$slug")({
         { property: "og:url", content: canonical },
       ],
       links: [{ rel: "canonical", href: canonical }],
-      scripts: [
-        {
-          type: "application/ld+json",
-          children: JSON.stringify(jsonLd),
-        },
-      ],
+      scripts: jsonLd
+        ? [
+            {
+              type: "application/ld+json",
+              children: JSON.stringify(jsonLd),
+            },
+          ]
+        : [],
     };
   },
   component: EventDetailPage,
