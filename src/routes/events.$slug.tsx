@@ -318,20 +318,9 @@ function EventDetailPage() {
                   <ExternalLink className="h-4 w-4" />
                 </a>
               </Button>
-              {sourceUrl && primaryCta.href !== sourceUrl && (
+              {sourceHost && srcLink.href !== primaryCta.href && (
                 <p className="mt-3 text-xs text-muted-foreground">
-                  Originally listed at{" "}
-                  <a
-                    href={sourceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline hover:text-foreground"
-                  >
-                    {(() => {
-                      try { return new URL(sourceUrl).hostname.replace(/^www\./, ""); }
-                      catch { return "source"; }
-                    })()}
-                  </a>
+                  Originally listed on {sourceHost}
                 </p>
               )}
             </div>
@@ -340,15 +329,7 @@ function EventDetailPage() {
           {!primaryCta && sourceHost && (
             <p className="mt-6 text-sm text-muted-foreground inline-flex items-center gap-1.5">
               <Info className="h-4 w-4" />
-              Listed on{" "}
-              <a
-                href={attributionUrl!}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline hover:text-foreground"
-              >
-                {sourceHost}
-              </a>
+              <span>Listed via {sourceHost}</span>
             </p>
           )}
 
