@@ -4,7 +4,7 @@ import { ADULT_PARKRUN_CONFIG } from "@/lib/parkrun-config";
 import { ParkrunHub, buildParkrunHead } from "@/components/parkrun/ParkrunHub";
 import { SITE_URL } from "@/lib/site";
 
-export const Route = createFileRoute("/parkrun-events")({
+export const Route = createFileRoute("/parkrun-events/")({
   loader: () => getParkrunList({ data: { variant: "adult" } }),
   head: ({ loaderData }) =>
     buildParkrunHead(

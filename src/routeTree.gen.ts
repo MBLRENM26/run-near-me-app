@@ -14,7 +14,6 @@ import { Route as TrailRunningEventsRouteImport } from './routes/trail-running-e
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as ParkrunEventsRouteImport } from './routes/parkrun-events'
 import { Route as MarathonsRouteImport } from './routes/marathons'
 import { Route as ListYourEventRouteImport } from './routes/list-your-event'
 import { Route as JuniorParkrunEventsRouteImport } from './routes/junior-parkrun-events'
@@ -23,6 +22,7 @@ import { Route as AdminShellRouteImport } from './routes/_adminShell'
 import { Route as R5kRacesRouteImport } from './routes/5k-races'
 import { Route as R10kRacesRouteImport } from './routes/10k-races'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ParkrunEventsIndexRouteImport } from './routes/parkrun-events.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as RunningEventsSlugRouteImport } from './routes/running-events.$slug'
 import { Route as ParkrunEventsSlugRouteImport } from './routes/parkrun-events.$slug'
@@ -66,11 +66,6 @@ const PrivacyRoute = PrivacyRouteImport.update({
   path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ParkrunEventsRoute = ParkrunEventsRouteImport.update({
-  id: '/parkrun-events',
-  path: '/parkrun-events',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const MarathonsRoute = MarathonsRouteImport.update({
   id: '/marathons',
   path: '/marathons',
@@ -110,6 +105,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ParkrunEventsIndexRoute = ParkrunEventsIndexRouteImport.update({
+  id: '/parkrun-events/',
+  path: '/parkrun-events/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
@@ -121,9 +121,9 @@ const RunningEventsSlugRoute = RunningEventsSlugRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const ParkrunEventsSlugRoute = ParkrunEventsSlugRouteImport.update({
-  id: '/$slug',
-  path: '/$slug',
-  getParentRoute: () => ParkrunEventsRoute,
+  id: '/parkrun-events/$slug',
+  path: '/parkrun-events/$slug',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const EventsSlugRoute = EventsSlugRouteImport.update({
   id: '/events/$slug',
@@ -212,7 +212,6 @@ export interface FileRoutesByFullPath {
   '/junior-parkrun-events': typeof JuniorParkrunEventsRoute
   '/list-your-event': typeof ListYourEventRoute
   '/marathons': typeof MarathonsRoute
-  '/parkrun-events': typeof ParkrunEventsRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -224,6 +223,7 @@ export interface FileRoutesByFullPath {
   '/parkrun-events/$slug': typeof ParkrunEventsSlugRoute
   '/running-events/$slug': typeof RunningEventsSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/parkrun-events/': typeof ParkrunEventsIndexRoute
   '/admin/claims': typeof AdminShellAdminClaimsRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -244,7 +244,6 @@ export interface FileRoutesByTo {
   '/junior-parkrun-events': typeof JuniorParkrunEventsRoute
   '/list-your-event': typeof ListYourEventRoute
   '/marathons': typeof MarathonsRoute
-  '/parkrun-events': typeof ParkrunEventsRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -256,6 +255,7 @@ export interface FileRoutesByTo {
   '/parkrun-events/$slug': typeof ParkrunEventsSlugRoute
   '/running-events/$slug': typeof RunningEventsSlugRoute
   '/admin': typeof AdminIndexRoute
+  '/parkrun-events': typeof ParkrunEventsIndexRoute
   '/admin/claims': typeof AdminShellAdminClaimsRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -278,7 +278,6 @@ export interface FileRoutesById {
   '/junior-parkrun-events': typeof JuniorParkrunEventsRoute
   '/list-your-event': typeof ListYourEventRoute
   '/marathons': typeof MarathonsRoute
-  '/parkrun-events': typeof ParkrunEventsRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -290,6 +289,7 @@ export interface FileRoutesById {
   '/parkrun-events/$slug': typeof ParkrunEventsSlugRoute
   '/running-events/$slug': typeof RunningEventsSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/parkrun-events/': typeof ParkrunEventsIndexRoute
   '/_adminShell/admin/claims': typeof AdminShellAdminClaimsRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -312,7 +312,6 @@ export interface FileRouteTypes {
     | '/junior-parkrun-events'
     | '/list-your-event'
     | '/marathons'
-    | '/parkrun-events'
     | '/privacy'
     | '/robots.txt'
     | '/sitemap.xml'
@@ -324,6 +323,7 @@ export interface FileRouteTypes {
     | '/parkrun-events/$slug'
     | '/running-events/$slug'
     | '/admin/'
+    | '/parkrun-events/'
     | '/admin/claims'
     | '/api/public/import-events'
     | '/lovable/email/suppression'
@@ -344,7 +344,6 @@ export interface FileRouteTypes {
     | '/junior-parkrun-events'
     | '/list-your-event'
     | '/marathons'
-    | '/parkrun-events'
     | '/privacy'
     | '/robots.txt'
     | '/sitemap.xml'
@@ -356,6 +355,7 @@ export interface FileRouteTypes {
     | '/parkrun-events/$slug'
     | '/running-events/$slug'
     | '/admin'
+    | '/parkrun-events'
     | '/admin/claims'
     | '/api/public/import-events'
     | '/lovable/email/suppression'
@@ -377,7 +377,6 @@ export interface FileRouteTypes {
     | '/junior-parkrun-events'
     | '/list-your-event'
     | '/marathons'
-    | '/parkrun-events'
     | '/privacy'
     | '/robots.txt'
     | '/sitemap.xml'
@@ -389,6 +388,7 @@ export interface FileRouteTypes {
     | '/parkrun-events/$slug'
     | '/running-events/$slug'
     | '/admin/'
+    | '/parkrun-events/'
     | '/_adminShell/admin/claims'
     | '/api/public/import-events'
     | '/lovable/email/suppression'
@@ -411,7 +411,6 @@ export interface RootRouteChildren {
   JuniorParkrunEventsRoute: typeof JuniorParkrunEventsRoute
   ListYourEventRoute: typeof ListYourEventRoute
   MarathonsRoute: typeof MarathonsRoute
-  ParkrunEventsRoute: typeof ParkrunEventsRouteWithChildren
   PrivacyRoute: typeof PrivacyRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -420,8 +419,10 @@ export interface RootRouteChildren {
   AdminLoginRoute: typeof AdminLoginRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   EventsSlugRoute: typeof EventsSlugRoute
+  ParkrunEventsSlugRoute: typeof ParkrunEventsSlugRoute
   RunningEventsSlugRoute: typeof RunningEventsSlugRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  ParkrunEventsIndexRoute: typeof ParkrunEventsIndexRoute
   ApiPublicImportEventsRoute: typeof ApiPublicImportEventsRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   RunningEventsSlugDistanceRoute: typeof RunningEventsSlugDistanceRoute
@@ -468,13 +469,6 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/parkrun-events': {
-      id: '/parkrun-events'
-      path: '/parkrun-events'
-      fullPath: '/parkrun-events'
-      preLoaderRoute: typeof ParkrunEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/marathons': {
@@ -533,6 +527,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/parkrun-events/': {
+      id: '/parkrun-events/'
+      path: '/parkrun-events'
+      fullPath: '/parkrun-events/'
+      preLoaderRoute: typeof ParkrunEventsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/': {
       id: '/admin/'
       path: '/admin'
@@ -549,10 +550,10 @@ declare module '@tanstack/react-router' {
     }
     '/parkrun-events/$slug': {
       id: '/parkrun-events/$slug'
-      path: '/$slug'
+      path: '/parkrun-events/$slug'
       fullPath: '/parkrun-events/$slug'
       preLoaderRoute: typeof ParkrunEventsSlugRouteImport
-      parentRoute: typeof ParkrunEventsRoute
+      parentRoute: typeof rootRouteImport
     }
     '/events/$slug': {
       id: '/events/$slug'
@@ -667,20 +668,6 @@ const AdminShellRouteWithChildren = AdminShellRoute._addFileChildren(
   AdminShellRouteChildren,
 )
 
-interface ParkrunEventsRouteChildren {
-  ParkrunEventsSlugRoute: typeof ParkrunEventsSlugRoute
-  ParkrunEventsRegionRegionRoute: typeof ParkrunEventsRegionRegionRoute
-}
-
-const ParkrunEventsRouteChildren: ParkrunEventsRouteChildren = {
-  ParkrunEventsSlugRoute: ParkrunEventsSlugRoute,
-  ParkrunEventsRegionRegionRoute: ParkrunEventsRegionRegionRoute,
-}
-
-const ParkrunEventsRouteWithChildren = ParkrunEventsRoute._addFileChildren(
-  ParkrunEventsRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   R10kRacesRoute: R10kRacesRoute,
@@ -690,7 +677,6 @@ const rootRouteChildren: RootRouteChildren = {
   JuniorParkrunEventsRoute: JuniorParkrunEventsRoute,
   ListYourEventRoute: ListYourEventRoute,
   MarathonsRoute: MarathonsRoute,
-  ParkrunEventsRoute: ParkrunEventsRouteWithChildren,
   PrivacyRoute: PrivacyRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
@@ -699,8 +685,10 @@ const rootRouteChildren: RootRouteChildren = {
   AdminLoginRoute: AdminLoginRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   EventsSlugRoute: EventsSlugRoute,
+  ParkrunEventsSlugRoute: ParkrunEventsSlugRoute,
   RunningEventsSlugRoute: RunningEventsSlugRoute,
   AdminIndexRoute: AdminIndexRoute,
+  ParkrunEventsIndexRoute: ParkrunEventsIndexRoute,
   ApiPublicImportEventsRoute: ApiPublicImportEventsRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   RunningEventsSlugDistanceRoute: RunningEventsSlugDistanceRoute,
@@ -716,3 +704,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

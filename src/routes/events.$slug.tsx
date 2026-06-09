@@ -34,6 +34,27 @@ function locationLabel(town: string | null, county: string | null): string {
   return [town, county].filter(Boolean).join(", ");
 }
 
+/**
+ * True when a scraped URL is an aggregator's *regional listing* page rather
+ * than an event-specific page — e.g. https://runabc.co.uk/kent. These must
+ * never be presented as the event's official website / entry link.
+ */
+function isGenericListingUrl(url: string | null): boolean {
+  if (!url) return false;
+  try {
+    const u = new URL(url);
+    const host = u.hostname.replace(/^www\./, "").toLowerCase();
+    if (host !== "runabc.co.uk" && host !== "runabc.scot") return false;
+    const segments = u.pathname.split("/").filter(Boolean);
+    // Region listing pages are a single short slug with no digits
+    // (e.g. /kent, /scotland). Real event pages have deeper or dated paths.
+    if (segments.length === 0) return true;
+    return segments.length === 1 && !/\d/.test(segments[0]);
+  } catch {
+    return false;
+  }
+}
+
 export const Route = createFileRoute("/events/$slug")({
   loader: ({ params }) => getEventPageData({ data: { slug: params.slug } }),
   head: ({ params, loaderData }) => {
@@ -114,16 +135,17 @@ export const Route = createFileRoute("/events/$slug")({
         },
       };
       // Offers: entry link only — no price claim. Scraped fees are stale and
-      // single-valued, so the structured data never asserts a price.
+      // single-valued, so the structured data never asserts a price. Generic
+      // aggregator listing URLs are never asserted as the entry link.
       const entryUrl = e.entry_url?.trim();
-      if (entryUrl) {
+      if (entryUrl && !isGenericListingUrl(entryUrl)) {
         jsonLd.offers = {
           "@type": "Offer",
           url: entryUrl,
           availability: "https://schema.org/InStock",
         };
       }
-      if (e.organiser_url?.trim()) {
+      if (e.organiser_url?.trim() && !isGenericListingUrl(e.organiser_url.trim())) {
         const orgUrl = e.organiser_url.trim();
         let orgName = e.organiser?.trim() || "";
         if (!orgName) {
@@ -196,9 +218,18 @@ function EventDetailPage() {
   const { event: e, related }: import("@/lib/events.functions").EventPageData =
     Route.useLoaderData();
 
-  const entryUrl = e.entry_url?.trim() || null;
-  const organiserUrl = e.organiser_url?.trim() || null;
+  const rawEntryUrl = e.entry_url?.trim() || null;
+  const rawOrganiserUrl = e.organiser_url?.trim() || null;
   const sourceUrl = e.source_url?.trim() || null;
+
+  // Scraped aggregator URLs that point at a regional listing page (e.g.
+  // runabc.co.uk/kent) are not the event's official site — never present
+  // them as the primary CTA. Demote to source attribution instead.
+  const entryUrl = isGenericListingUrl(rawEntryUrl) ? null : rawEntryUrl;
+  const organiserUrl = isGenericListingUrl(rawOrganiserUrl)
+    ? null
+    : rawOrganiserUrl;
+
   const dateLabel = formatEventDate(e);
   const loc = locationLabel(e.town, e.county);
   const distance = e.distances?.trim() || e.discipline?.trim();
@@ -227,10 +258,13 @@ function EventDetailPage() {
   if (entryUrl) primaryCta = { href: entryUrl, label: "Enter now" };
   else if (organiserUrl) primaryCta = { href: organiserUrl, label: "Visit organiser" };
 
+  // Attribution link when there is no trustworthy primary CTA: prefer the
+  // source URL, falling back to a demoted generic listing URL.
+  const attributionUrl = sourceUrl || rawEntryUrl || rawOrganiserUrl;
   let sourceHost: string | null = null;
-  if (!primaryCta && sourceUrl) {
+  if (!primaryCta && attributionUrl) {
     try {
-      sourceHost = new URL(sourceUrl).hostname.replace(/^www\./, "");
+      sourceHost = new URL(attributionUrl).hostname.replace(/^www\./, "");
     } catch {
       sourceHost = null;
     }
@@ -338,7 +372,7 @@ function EventDetailPage() {
               <Info className="h-4 w-4" />
               Listed on{" "}
               <a
-                href={sourceUrl!}
+                href={attributionUrl!}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline hover:text-foreground"
