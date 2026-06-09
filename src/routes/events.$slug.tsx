@@ -145,7 +145,7 @@ export const Route = createFileRoute("/events/$slug")({
           availability: "https://schema.org/InStock",
         };
       }
-      if (e.organiser_url?.trim()) {
+      if (e.organiser_url?.trim() && !isGenericListingUrl(e.organiser_url.trim())) {
         const orgUrl = e.organiser_url.trim();
         let orgName = e.organiser?.trim() || "";
         if (!orgName) {
