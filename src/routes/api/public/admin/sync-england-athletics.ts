@@ -93,8 +93,10 @@ function distancesFromRaces(races: EaRace[] | null | undefined): string | null {
 
 async function fetchPage(
   page: number,
+  order: "asc" | "desc" = "asc",
 ): Promise<{ events: EaEvent[]; lastPage: number }> {
-  const url = `${EA_URL}?action=data_api_search&types%5B%5D=event&page=${page}`;
+  const orderParam = order === "desc" ? "&order=desc" : "";
+  const url = `${EA_URL}?action=data_api_search&types%5B%5D=event&page=${page}${orderParam}`;
   const res = await fetch(url, {
     headers: {
       "User-Agent": "Mozilla/5.0 (compatible; RunningEventsNearMe/1.0)",
