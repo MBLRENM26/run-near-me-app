@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { normaliseRegion } from "@/lib/region-normalize";
 
 const EventRowSchema = z.object({
   norm_id: z.string().min(1).max(255),
@@ -80,6 +81,9 @@ export const Route = createFileRoute("/api/public/import-events")({
 
         const rows = parsed.data.events.map((e) => ({
           ...e,
+          // Normalise broad region labels ("England") to the specific UK
+          // region used by regional pages, via county or coordinates.
+          region: normaliseRegion(e.region, e.county, e.lat, e.lng),
           // Mirror date_from into sort_date so the existing "upcoming" sort keeps working
           sort_date: e.date_from ?? null,
           // Mark upcoming if date_from is today or later
