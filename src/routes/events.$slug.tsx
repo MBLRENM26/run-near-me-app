@@ -17,7 +17,13 @@ import {
   distancePlural,
 } from "@/lib/event-description";
 import { DISTANCE_PAGES } from "@/lib/distance-filters";
-import { formatEventDate, eventYear, isoDate, shortEventDate } from "@/lib/date";
+import {
+  formatEventDate,
+  eventYear,
+  isoDate,
+  shortEventDate,
+  eventProximity,
+} from "@/lib/date";
 import { REGIONS } from "@/lib/regions";
 import { SITE_URL } from "@/lib/site";
 
@@ -122,9 +128,10 @@ export const Route = createFileRoute("/events/$slug")({
           addressCountry: "GB",
         },
       };
-      // Offers: entry link only — no price claim, and only event-specific
-      // pages on trusted (non-aggregator) hosts are ever asserted.
-      if (headEntryLink.kind === "entry") {
+      // Offers: entry link only — no price claim, only event-specific pages
+      // on trusted (non-aggregator) hosts, and never for imminent/past
+      // events where "InStock" availability would overpromise.
+      if (headEntryLink.kind === "entry" && eventProximity(e) === null) {
         jsonLd.offers = {
           "@type": "Offer",
           url: headEntryLink.href,
@@ -207,14 +214,27 @@ function EventDetailPage() {
   const distance = e.distances?.trim() || e.discipline?.trim();
   const regionSlug = regionSlugFromName(e.region);
 
+  // Imminent (within 7 days) or past events don't promise open entries.
+  const proximity = eventProximity(e);
+
   let primaryCta: { href: string; label: string } | null = null;
   if (entryLink.kind === "entry") {
-    primaryCta = { href: entryLink.href!, label: "Enter now" };
+    primaryCta = {
+      href: entryLink.href!,
+      label: proximity ? "View event details" : "Enter now",
+    };
   } else if (entryLink.kind === "organiser-site") {
     primaryCta = { href: entryLink.href!, label: "Visit organiser website" };
   } else if (isTrustedLink(orgLink)) {
     primaryCta = { href: orgLink.href!, label: "Visit organiser website" };
   }
+
+  const proximityNote =
+    proximity === "past"
+      ? "This event has taken place."
+      : proximity === "imminent"
+        ? "Race day is close — entries may have closed. Check the event page for availability."
+        : null;
 
   const about = buildAboutParagraph({
     slug: e.slug,
@@ -315,6 +335,11 @@ function EventDetailPage() {
                   <ExternalLink className="h-4 w-4" />
                 </a>
               </Button>
+              {proximityNote && (
+                <p className="mt-3 text-sm text-muted-foreground">
+                  {proximityNote}
+                </p>
+              )}
             </div>
           )}
 
