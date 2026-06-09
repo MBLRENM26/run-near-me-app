@@ -23,8 +23,25 @@ export const Route = createFileRoute("/parkrun-events/$slug")({
     const p = loaderData;
     const isJunior = p.variant === "junior";
     const schedule = isJunior ? "Sunday 9:30am" : "Saturday 9:00am";
-    const title = `${p.name} — Free ${p.distance ?? (isJunior ? "2K" : "5K")} ${schedule}`;
-    const description = `${p.name} is a free, weekly, timed ${p.distance ?? (isJunior ? "2K" : "5K")} run held every ${schedule}. Find course details, sign up and turn up to run.`;
+    const dist = p.distance ?? (isJunior ? "2K" : "5K");
+    const town = p.town?.trim() || null;
+    const county = p.county?.trim() || null;
+    const regionName = p.regionSlug ? REGION_BY_SLUG[p.regionSlug]?.name ?? null : null;
+    // Place segment: town when known, otherwise the coord-derived region.
+    const place = town ?? regionName;
+
+    // Title: "{Name} — Free Weekly {5K|2K}, {Place} | Course & Start Time"
+    // (drop the place segment when unknown)
+    const title =
+      `${p.name} — Free Weekly ${dist}` +
+      (place ? `, ${place}` : "") +
+      ` | Course & Start Time`;
+
+    const locText = [town, county].filter(Boolean).join(", ") || regionName || "";
+    const description =
+      `${p.name} is a free, weekly, timed ${dist}` +
+      (locText ? ` in ${locText}` : "") +
+      `, every ${schedule}. See the course map, nearby parkruns and how to register.`;
 
     const jsonLd: Record<string, unknown> = {
       "@context": "https://schema.org",
@@ -43,12 +60,25 @@ export const Route = createFileRoute("/parkrun-events/$slug")({
       },
       offers: { "@type": "Offer", price: "0", priceCurrency: "GBP" },
     };
-    if (p.lat != null && p.lng != null) {
-      jsonLd.location = {
+    if (p.lat != null || p.lng != null || town || county || regionName) {
+      const location: Record<string, unknown> = {
         "@type": "Place",
         name: p.name,
-        geo: { "@type": "GeoCoordinates", latitude: p.lat, longitude: p.lng },
       };
+      if (p.lat != null && p.lng != null) {
+        location.geo = { "@type": "GeoCoordinates", latitude: p.lat, longitude: p.lng };
+      }
+      if (town || county || regionName) {
+        location.address = {
+          "@type": "PostalAddress",
+          ...(town ? { addressLocality: town } : {}),
+          ...(county || regionName
+            ? { addressRegion: county || regionName }
+            : {}),
+          addressCountry: "GB",
+        };
+      }
+      jsonLd.location = location;
     }
     if (p.organiserUrl) {
       jsonLd.organizer = {

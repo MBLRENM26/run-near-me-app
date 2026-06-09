@@ -1,41 +1,57 @@
-# Event-page title, meta description & rich-results improvements
+# Next sprint: parkrun snippets, privacy top-up, and roadmap calls
 
-Goal: lift CTR on the ~10k monthly impressions sitting at positions 4–10 by making search snippets answer the searcher's question (date, location, how to enter) and maximising Event rich-result eligibility.
+## 1. Parkrun title/meta rewrite (build now)
 
-## 1. Title rewrite
+Current title: `Comber parkrun — Free 5K Saturday 9:00am` — no location, no info cue, and weak for "[name] parkrun" searches (233 queries, ~1.5k impressions, near-zero clicks).
 
-Current: `EPIC Aylsham 5K 2026 | Norwich, Norfolk — Running Events Near Me` (often >60 chars, brand eats the visible tail).
+**New title pattern** (mirrors the event-page treatment):
+- `{Name} — Free Weekly {5K|2K} in {Town} | Course & Start Time`
+- e.g. `Comber parkrun — Free Weekly 5K in Comber | Course & Start Time`
+- Drop town segment when unknown.
 
-New pattern, prioritised to fit ~60 visible characters:
+**New meta description** (~150 chars):
+- `{Name} is a free, weekly, timed {5K|2K} in {Town}, every {Saturday 9:00am|Sunday 9:30am}. See the course map, nearby parkruns and how to register.`
 
-- With a confirmed date: `{Name} {Year} — {Day Month}, {Town} | Entry & Info`
-  e.g. `EPIC Aylsham 5K 2026 — 5 June, Norwich | Entry & Info`
-- Estimated/month-only date: `{Name} {Year} — {Month}, {Town} | Entry & Info`
-- Drop the county from the title (kept in description); drop the brand suffix from event-page titles — the domain already shows in the result.
+**Data change needed:** the parkrun detail server function doesn't currently fetch `town`/`county` — add those two fields to its select so the title/description can include location. No schema change.
 
-## 2. Meta description rewrite
+**JSON-LD:** keep the existing recurring-Event block; add `location.address` (town/county, GB) alongside the existing geo coordinates when available — addresses strengthen rich-result eligibility.
 
-Current: `5 km race in Norwich, Norfolk on Friday 5 June 2026. Find details and enter online.`
+Files: `src/lib/parkrun.functions.ts` (detail fn select + type), `src/routes/parkrun-events.$slug.tsx` (`head()` only).
 
-New pattern (~150 chars), adding entry fee when known and a stronger close:
+## 2. Privacy Policy — already live, small top-up (build now)
 
-`{Name} is a {distance} race in {Town}, {County} on {Full date}. Entry {fee}. See route details, start time and enter online.`
+`/privacy` already exists with company details, data collected, retention, and UK GDPR rights. I'll add the missing GDPR-completeness pieces:
+- **Lawful basis** for processing (legitimate interest / consent for form submissions)
+- **Data processors / hosting** statement (data stored with our hosting and database providers within standard safeguards)
+- **Right to complain to the ICO** with link
+- Update "Last updated" date
 
-- Omit the fee clause when blank/TBC/free (free → "Free entry.")
-- For estimated dates: "expected {Month Year} — date to be confirmed."
+## 3. GSC coverage export — waiting on you
 
-## 3. Rich-results gaps in the Event JSON-LD
+Drop the CSV here when ready and I'll analyse indexing gaps (excluded URLs, crawled-not-indexed, duplicates).
 
-- **Fix invalid month-precision startDate**: for `date_is_estimated` events, emit a full ISO date (first of the month) and pair it with `"eventStatus": "EventScheduled"` only when confirmed — or simpler and safer: omit the JSON-LD block for estimated-date events so no invalid markup ships. (I'll use the omit approach — incorrect dates in rich results are worse than none.)
-- **Add `offers`**: when `entry_url` exists, emit `offers: { "@type": "Offer", url, availability: InStock, priceCurrency: "GBP", price }`, parsing the numeric price from `entry_fee` (e.g. "£18" → 18). Skip `price` when unparseable; emit fee-free offers with just the URL.
-- **Add `organizer.name` fallback**: when organiser name is missing, use the organiser site's hostname.
+## 4. Eventrac / Let's Do This outreach — yours
 
-## 4. Cleanup
+If useful, I can draft the two emails for you to review and send (positioning, API ask, partnership angle for Eventrac). Say the word.
 
-- Remove the dead `title` variable (lines 30–39 of the route file) left over from an earlier iteration.
+## 5. List Your Event form improvements — needs scoping
+
+Tell me what's bothering you about it (drop-off? missing fields? claim flow friction?) and I'll plan it.
+
+## 6. "Near me" deprioritisation — my recommendation: agree
+
+The query data is unambiguous: event-name + year queries dominate (7.3k impressions) vs ~122 for "near me". Recommend: keep the existing location prompt as-is (it's built, low maintenance), but stop investing in geo features and put that effort into event-page coverage, internal linking and the directory's long tail. No removal needed — just a roadmap call.
+
+## What else I'd add
+
+- **Measure the snippet rewrites** — check GSC CTR on the rewritten pages in ~3 weeks before further snippet work; that tells us if the pattern works before scaling it.
+- **BreadcrumbList JSON-LD** on event + parkrun pages (Region → Event) — cheap, improves how the URL path displays in results.
+- **Internal linking on event pages** — "More {distance} races in {county}" block; spreads authority to thin pages and helps crawl depth (relevant to whatever the GSC coverage export shows).
+- **Sitemap freshness check** — confirm `sitemap.xml` includes all event + parkrun detail URLs with sensible lastmod, before reviewing the coverage CSV.
+- **Terms of Use page** — you have privacy but no terms; worth having once organiser claims become a commercial relationship (Eventrac).
 
 ## Technical details
 
-- Single file change: `src/routes/events.$slug.tsx` (`head()` function only — no UI, loader, or schema changes).
-- The same canonical/og tags stay; og:title/og:description follow the new copy.
-- After deploy, validate one live URL with Google's Rich Results Test and request re-crawl is not needed — Google picks changes up on its normal recrawl cycle.
+- Item 1: two files, head/meta only — no UI changes. Detail server fn gains `town, county` in its select.
+- Item 2: content-only edit to `src/routes/privacy.tsx`.
+- Both ship together; validate one parkrun URL in Rich Results Test after publish.
