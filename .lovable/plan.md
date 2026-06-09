@@ -1,43 +1,30 @@
-# Approved: EA Sync, Weekly Cron, GSC Steps, Organiser URL Corrections
+# Finish the two remaining actions
 
-## Duplicate check — confirmed safe
+Both connectors are now linked and verified:
+- **Search Console**: `runningeventsnearme.com` domain property, owner access confirmed
+- **Google Sheets**: pipeline sheet accessible, `URL_REVIEW` tab found
 
-I checked your 904 existing `england-athletics` records: their `norm_id` is `ea-<UUID>`, and the UUIDs are the **same event IDs the RunEvents API returns today**. The new sync will key on exactly that (`ea-${event.id}`), so all existing records are updated in place — dates, organiser URLs, distances refreshed — never duplicated. Existing slugs are also preserved (the sync reuses the stored slug for known records), so no published event URLs change.
+## 1. Google Search Console — indexing health pull
 
-## 1. England Athletics sync endpoint
+- Query the Search Console API for the domain property:
+  - URL inspection / index coverage data via the Search Analytics API (impressions, clicks, indexed pages)
+  - Sitemap status for `sitemap.xml` (submitted vs indexed counts, errors)
+- Surface the affected-URL lists behind the previously reported soft-404 / noindex / structured-data issues
+- Report findings back with a recommended fix list (no code changes until reviewed)
 
-`src/routes/api/public/admin/sync-england-athletics.ts`:
-- Pages through the RunEvents API (846 events, 10 per page — page size is fixed by their API; supports chunked runs via `?from=&to=` just in case)
-- Upserts on `norm_id = ea-<EA UUID>` with source kept as `england-athletics`
-- Maps: name, ISO dates, town (title-cased), county, region via the existing `normaliseRegion` helper (county + coordinates), lat/lng, distances from the structured `races` array, `organiser_url` = their real website_url, `entry_url` = registration URL or website
-- New events: name+date dedupe against other sources, slug collision handling (append date)
-- Run once and report: updated existing vs new vs skipped
+## 2. Organiser URL corrections — dry run, then apply
 
-## 2. Weekly scheduled syncs
-
-- Both sync endpoints accept the project's public API key in an `apikey` header (standard pattern for scheduled jobs) alongside the existing admin secret
-- Migration: enable `pg_cron` + `pg_net`
-- Two weekly jobs (Mon 03:00 Scottish, Mon 03:15 England) POSTing to the stable production URL
-
-## 3. Google Search Console — your steps (no code)
-
-1. Type `/` in the chat composer (or Settings → Connectors) and pick **Google Search Console**
-2. Click **Connect**, sign in with the Google account that owns the `runningeventsnearme.com` property, grant read access
-3. Tell me once connected — I'll pull the exact affected-URL lists for the soft-404 / noindex / structured-data reports
-
-## 4. Organiser URL corrections from your sheet
-
-Connect the **Google Sheets** connector the same way (account that owns the pipeline sheet). Then I'll:
-1. Read `URL_REVIEW` from sheet `1Ss89ap0...G518` (col A norm_id/slug, col N corrected_url)
-2. Skip blank / "no website" / "no event found" / "date conflicts" rows; sanity-check URLs
-3. Show a dry-run summary (matched/unmatched, samples)
-4. Apply ~220 updates as one reviewed data change — you approve before it runs
-
-No throwaway endpoint or migration needed; it's one-shot data with a built-in approval step.
+- Read `URL_REVIEW!A:N` from the sheet
+- Filter rows: skip any where column N is blank, "no website", "no event found", or "date conflicts"
+- Match column A (`norm_id`) against `events.slug` in the database
+- **Dry-run report first**: total rows in tab → rows passing the filter → rows matched to an event → sample of before/after `organiser_url` values, plus any unmatched `norm_id`s
+- After your approval, apply the ~220 `UPDATE events SET organiser_url = ...` changes in one batch (data update, not a migration)
+- Post-apply verification: count of updated rows and spot-check sample
 
 ## Technical details
 
-- New file: `src/routes/api/public/admin/sync-england-athletics.ts`; small auth tweak to `sync-scottish-athletics.ts`
-- Migration: `CREATE EXTENSION IF NOT EXISTS pg_cron; CREATE EXTENSION IF NOT EXISTS pg_net;`
-- Cron jobs inserted via the data tool (contain project URL + key, so not in migration history)
-- EA API: `englandathletics.org/runevents/wp-admin/admin-ajax.php?action=data_api_search&types[]=event&page=N` — public, no auth
+- Both steps run via the connector gateway at build time (curl from sandbox) — no new code, routes, or secrets needed
+- Database updates use the data-insert tool (UPDATE statements), keyed on `slug`, scoped only to matched rows
+- No frontend changes; no schema changes
+
+Nothing further is needed from you — approve and I'll run the dry-run and GSC pull.
