@@ -102,11 +102,31 @@ async function fetchPage(
     signal: AbortSignal.timeout(15000),
   });
   if (!res.ok) throw new Error(`EA API returned ${res.status} for page ${page}`);
-  const json = (await res.json()) as {
+  const text = await res.text();
+  // admin-ajax sometimes prefixes "0" or returns an HTML error with HTTP 200
+  const start = text.indexOf("{");
+  if (start === -1) throw new Error(`EA API returned non-JSON for page ${page}`);
+  const json = JSON.parse(text.slice(start)) as {
     data: EaEvent[];
     meta: { last_page: number };
   };
   return { events: json.data ?? [], lastPage: json.meta?.last_page ?? page };
+}
+
+/** Fetch a page with retries; returns null if the EA API keeps failing. */
+async function fetchPageSafe(
+  page: number,
+): Promise<{ events: EaEvent[]; lastPage: number } | null> {
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      return await fetchPage(page);
+    } catch {
+      if (attempt < 3) {
+        await new Promise((r) => setTimeout(r, 1500 * attempt));
+      }
+    }
+  }
+  return null;
 }
 
 function isAuthorized(request: Request): boolean {
@@ -142,12 +162,17 @@ export const Route = createFileRoute(
 
         // 1. Fetch pages from the EA RunEvents API
         const all: EaEvent[] = [];
+        const failedPages: number[] = [];
         let lastPage = toParam;
         for (let p = fromPage; p <= Math.min(toParam, lastPage, MAX_PAGES); p++) {
-          const { events, lastPage: lp } = await fetchPage(p);
-          lastPage = lp;
-          all.push(...events);
-          if (events.length < PAGE_SIZE) break;
+          const result = await fetchPageSafe(p);
+          if (!result) {
+            failedPages.push(p);
+            continue;
+          }
+          lastPage = result.lastPage;
+          all.push(...result.events);
+          if (p >= lastPage) break;
         }
 
         // 2. Keep active event records only
