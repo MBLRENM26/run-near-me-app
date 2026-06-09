@@ -52,8 +52,15 @@ export const Route = createFileRoute("/events/$slug")({
     ];
     const description = descParts.join(" ").slice(0, 300);
 
-    const startISO = isoDate(e.date_from) ?? isoDate(e.sort_date);
-    const endISO = isoDate(e.date_to) ?? startISO;
+    // Month-only entries get month precision in JSON-LD ("2026-06"), not a
+    // false exact day.
+    const preciseStart = isoDate(e.date_from) ?? isoDate(e.sort_date);
+    const startISO = e.date_is_estimated
+      ? (preciseStart?.slice(0, 7) ?? null)
+      : preciseStart;
+    const endISO = e.date_is_estimated
+      ? startISO
+      : (isoDate(e.date_to) ?? startISO);
 
     const jsonLd: Record<string, unknown> = {
       "@context": "https://schema.org",
