@@ -76,6 +76,21 @@ export function eventYear(args: {
   return dt ? String(dt.getUTCFullYear()) : "";
 }
 
+/**
+ * Compact date for page titles: "5 June" for confirmed dates,
+ * "June" for month-only (estimated) dates, "" if unknown.
+ */
+export function shortEventDate(args: {
+  date_from?: string | null;
+  sort_date?: string | null;
+  date_is_estimated?: boolean | null;
+}): string {
+  const dt = parseISO(args.date_from) ?? parseISO(args.sort_date);
+  if (!dt) return "";
+  if (args.date_is_estimated) return MONTHS[dt.getUTCMonth()];
+  return `${dt.getUTCDate()} ${MONTHS[dt.getUTCMonth()]}`;
+}
+
 /** ISO 8601 date string for schema.org, or null. */
 export function isoDate(d: string | null | undefined): string | null {
   const dt = parseISO(d);
