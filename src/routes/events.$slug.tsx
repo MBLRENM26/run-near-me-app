@@ -196,22 +196,26 @@ function EventDetailPage() {
   const { event: e, related }: import("@/lib/events.functions").EventPageData =
     Route.useLoaderData();
 
-  const rawEntryUrl = e.entry_url?.trim() || null;
-  const rawOrganiserUrl = e.organiser_url?.trim() || null;
-  const sourceUrl = e.source_url?.trim() || null;
-
-  // Scraped aggregator URLs that point at a regional listing page (e.g.
-  // runabc.co.uk/kent) are not the event's official site — never present
-  // them as the primary CTA. Demote to source attribution instead.
-  const entryUrl = isGenericListingUrl(rawEntryUrl) ? null : rawEntryUrl;
-  const organiserUrl = isGenericListingUrl(rawOrganiserUrl)
-    ? null
-    : rawOrganiserUrl;
+  // Site-wide link-trust policy: aggregator URLs are never rendered as
+  // links, homepages are "Visit organiser website", and only event-specific
+  // pages earn "Enter now".
+  const entryLink = classifyEventLink(e.entry_url);
+  const orgLink = classifyEventLink(e.organiser_url);
+  const srcLink = classifyEventLink(e.source_url);
 
   const dateLabel = formatEventDate(e);
   const loc = locationLabel(e.town, e.county);
   const distance = e.distances?.trim() || e.discipline?.trim();
   const regionSlug = regionSlugFromName(e.region);
+
+  let primaryCta: { href: string; label: string } | null = null;
+  if (entryLink.kind === "entry") {
+    primaryCta = { href: entryLink.href!, label: "Enter now" };
+  } else if (entryLink.kind === "organiser-site") {
+    primaryCta = { href: entryLink.href!, label: "Visit organiser website" };
+  } else if (isTrustedLink(orgLink)) {
+    primaryCta = { href: orgLink.href!, label: "Visit organiser website" };
+  }
 
   const about = buildAboutParagraph({
     slug: e.slug,
@@ -225,28 +229,16 @@ function EventDetailPage() {
     date_raw: e.date_raw,
     date_is_estimated: e.date_is_estimated,
     distanceKey: related.distanceKey,
-    hasOfficialLink: !!(entryUrl || organiserUrl),
+    hasOfficialLink: !!primaryCta,
     regionCount: related.totalCount,
   });
 
-  // Per spec: Claim block triggers when both entry_url AND organiser_url are empty.
-  const showClaim = !entryUrl && !organiserUrl;
+  // No trustworthy official link → invite the organiser to claim the listing.
+  const showClaim = !primaryCta;
 
-  let primaryCta: { href: string; label: string } | null = null;
-  if (entryUrl) primaryCta = { href: entryUrl, label: "Enter now" };
-  else if (organiserUrl) primaryCta = { href: organiserUrl, label: "Visit organiser" };
-
-  // Attribution link when there is no trustworthy primary CTA: prefer the
-  // source URL, falling back to a demoted generic listing URL.
-  const attributionUrl = sourceUrl || rawEntryUrl || rawOrganiserUrl;
-  let sourceHost: string | null = null;
-  if (!primaryCta && attributionUrl) {
-    try {
-      sourceHost = new URL(attributionUrl).hostname.replace(/^www\./, "");
-    } catch {
-      sourceHost = null;
-    }
-  }
+  // Source attribution is plain text only — aggregator sites are named,
+  // never linked.
+  const sourceHost = srcLink.host ?? entryLink.host ?? orgLink.host;
 
   const relatedLabel = related.distanceKey
     ? distancePlural(related.distanceKey)
