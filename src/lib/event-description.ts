@@ -124,7 +124,7 @@ export function buildAboutParagraph(e: AboutEventInput): string | null {
     } else if (v === 1) {
       s3 = `It's among ${n} ${plural} happening across ${e.region} this season — see more below.`;
     } else {
-      s3 = `${e.region} has ${n} ${plural} coming up this season — explore more below.`;
+      s3 = `There are ${n} ${plural} coming up in ${e.region} this season — explore more below.`;
     }
   }
 
