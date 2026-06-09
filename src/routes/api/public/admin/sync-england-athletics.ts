@@ -157,12 +157,24 @@ export const Route = createFileRoute(
 
         // 3. Existing records — preserve slugs for ea-* rows, dedupe vs
         //    other sources by name+date and slug ownership
-        const { data: existing, error: exErr } = await supabaseAdmin
-          .from("events")
-          .select("slug, name, date_from, norm_id, source")
-          .limit(50000);
-        if (exErr) {
-          return Response.json({ error: exErr.message }, { status: 500 });
+        type ExistingRow = {
+          slug: string | null;
+          name: string | null;
+          date_from: string | null;
+          norm_id: string | null;
+          source: string | null;
+        };
+        const existing: ExistingRow[] = [];
+        for (let offset = 0; ; offset += 1000) {
+          const { data: chunk, error: exErr } = await supabaseAdmin
+            .from("events")
+            .select("slug, name, date_from, norm_id, source")
+            .range(offset, offset + 999);
+          if (exErr) {
+            return Response.json({ error: exErr.message }, { status: 500 });
+          }
+          existing.push(...(chunk ?? []));
+          if (!chunk || chunk.length < 1000) break;
         }
         const slugByNormId = new Map(
           (existing ?? []).map((e) => [e.norm_id, e.slug]),
