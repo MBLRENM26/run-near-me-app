@@ -201,7 +201,6 @@ function EventDetailPage() {
   // pages earn "Enter now".
   const entryLink = classifyEventLink(e.entry_url);
   const orgLink = classifyEventLink(e.organiser_url);
-  const srcLink = classifyEventLink(e.source_url);
 
   const dateLabel = formatEventDate(e);
   const loc = locationLabel(e.town, e.county);
