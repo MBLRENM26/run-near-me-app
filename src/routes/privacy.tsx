@@ -32,7 +32,7 @@ function PrivacyPage() {
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
             Privacy Policy
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground">Last updated: May 2026</p>
+          <p className="mt-2 text-sm text-muted-foreground">Last updated: June 2026</p>
 
           <div className="mt-8 space-y-6 text-foreground leading-relaxed">
             <p>
@@ -74,6 +74,27 @@ function PrivacyPage() {
             </section>
 
             <section>
+              <h2 className="text-xl font-semibold text-foreground">Lawful basis for processing</h2>
+              <p className="mt-3">
+                We process the personal data you submit through our forms on the basis
+                of <strong>legitimate interest</strong> — operating an accurate directory
+                of running events — and, where you ask us to contact you about a
+                submission or claim, on the basis of <strong>consent</strong>. You may
+                withdraw consent at any time by contacting us.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="text-xl font-semibold text-foreground">Where your data is stored</h2>
+              <p className="mt-3">
+                Submitted data is stored securely with our website hosting and database
+                providers, who act as data processors on our behalf under standard
+                contractual safeguards. We do not share your personal data with any
+                other third parties.
+              </p>
+            </section>
+
+            <section>
               <h2 className="text-xl font-semibold text-foreground">Data retention</h2>
               <p className="mt-3">
                 We retain submitted data for as long as your event listing is active on
@@ -92,6 +113,20 @@ function PrivacyPage() {
                 >
                   info@hithe19.com
                 </a>
+              </p>
+              <p className="mt-3">
+                If you are unhappy with how we have handled your data, you also have
+                the right to lodge a complaint with the UK Information Commissioner's
+                Office (ICO) at{" "}
+                <a
+                  href="https://ico.org.uk/make-a-complaint/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  ico.org.uk/make-a-complaint
+                </a>
+                .
               </p>
             </section>
 
