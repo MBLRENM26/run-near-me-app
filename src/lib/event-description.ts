@@ -1,0 +1,136 @@
+// Generates the "About this race" paragraph for event pages.
+//
+// ACCURACY RULE: every clause is built only from stable structured fields
+// (name, distance bucket, town, county, region, date) plus a live database
+// count. No scraped fee, no organiser, no invented copy — a sentence is
+// dropped entirely when its field is missing.
+
+import { formatEventDate } from "./date";
+import type { DistanceKey } from "./distance-filters";
+
+/** "a half marathon", "an ultra marathon", "a 10K race" — with article. */
+export function distanceSingular(key: DistanceKey): string {
+  switch (key) {
+    case "5k":
+      return "a 5K race";
+    case "10k":
+      return "a 10K race";
+    case "half-marathon":
+      return "a half marathon";
+    case "marathon":
+      return "a marathon";
+    case "trail":
+      return "a trail race";
+    case "ultra":
+      return "an ultra marathon";
+  }
+}
+
+/** "half marathons", "10K races" — for counts and headings. */
+export function distancePlural(key: DistanceKey): string {
+  switch (key) {
+    case "5k":
+      return "5K races";
+    case "10k":
+      return "10K races";
+    case "half-marathon":
+      return "half marathons";
+    case "marathon":
+      return "marathons";
+    case "trail":
+      return "trail races";
+    case "ultra":
+      return "ultra marathons";
+  }
+}
+
+/** Deterministic small hash so adjacent pages get different phrasings. */
+function slugVariant(slug: string, mod: number): number {
+  let h = 0;
+  for (let i = 0; i < slug.length; i++) h = (h * 31 + slug.charCodeAt(i)) % 9973;
+  return h % mod;
+}
+
+export type AboutEventInput = {
+  slug: string;
+  name: string;
+  town: string | null;
+  county: string | null;
+  region: string | null;
+  date_from?: string | null;
+  date_to?: string | null;
+  sort_date?: string | null;
+  date_raw?: string | null;
+  date_is_estimated?: boolean | null;
+  distanceKey: DistanceKey | null;
+  hasOfficialLink: boolean;
+  /** Live count of same-distance (or all, when unbucketed) upcoming events in the region. */
+  regionCount: number;
+};
+
+/** Only mention the count when it reads as a meaningful number. */
+const MIN_COUNT_FOR_MENTION = 5;
+
+export function buildAboutParagraph(e: AboutEventInput): string | null {
+  if (!e.name?.trim()) return null;
+  const v = slugVariant(e.slug, 3);
+
+  const name = e.name.trim();
+  const subject = /^the\s/i.test(name) ? name : `The ${name}`;
+  const what = e.distanceKey ? distanceSingular(e.distanceKey) : "a running event";
+  const sameTownCounty =
+    e.town && e.county && e.town.trim().toLowerCase() === e.county.trim().toLowerCase();
+  const loc = (sameTownCounty ? [e.town] : [e.town, e.county])
+    .filter(Boolean)
+    .join(", ");
+
+  // Date clause — estimated dates are never shown as a precise day.
+  const dateLabel = formatEventDate(e);
+  let dateClause = "";
+  if (dateLabel) {
+    if (e.date_is_estimated) {
+      const month = dateLabel.replace(" (date TBC)", "");
+      dateClause = `, expected in ${month} with the exact date still to be confirmed`;
+    } else {
+      dateClause =
+        v === 1 ? ` on ${dateLabel}` : `, taking place on ${dateLabel}`;
+    }
+  }
+
+  // Sentence 1 — name, distance, location, date.
+  let s1: string;
+  if (v === 0) {
+    s1 = `${subject} is ${what}${loc ? ` in ${loc}` : ""}${dateClause}.`;
+  } else if (v === 1) {
+    s1 = `${subject} is ${what}${loc ? ` held in ${loc}` : ""}${dateClause}.`;
+  } else {
+    s1 = `${subject} is ${what}${loc ? ` based in ${loc}` : ""}${dateClause}.`;
+  }
+
+  // Sentence 2 — entry pointer. Never a price claim.
+  let s2 = "";
+  if (e.hasOfficialLink) {
+    s2 =
+      v === 1
+        ? "For entry details and current pricing, head to the official event website."
+        : "Entry details and pricing are available on the official event website.";
+  }
+
+  // Sentence 3 — live regional count.
+  let s3 = "";
+  if (e.region && e.regionCount >= MIN_COUNT_FOR_MENTION) {
+    const plural = e.distanceKey
+      ? distancePlural(e.distanceKey)
+      : "running events";
+    const n = e.regionCount.toLocaleString();
+    if (v === 0) {
+      s3 = `It's one of ${n} ${plural} taking place in ${e.region} this season — find more below.`;
+    } else if (v === 1) {
+      s3 = `It's among ${n} ${plural} happening across ${e.region} this season — see more below.`;
+    } else {
+      s3 = `There are ${n} ${plural} coming up in ${e.region} this season — explore more below.`;
+    }
+  }
+
+  return [s1, s2, s3].filter(Boolean).join(" ");
+}

@@ -6,6 +6,7 @@ import {
   DISTANCE_PAGES,
   DISTANCE_PAGE_LIST,
   matchesDistance,
+  primaryDistanceKey,
   type DistanceKey,
 } from "@/lib/distance-filters";
 import { REGIONS, slugToRegion } from "@/lib/regions";
@@ -344,4 +345,110 @@ export const getRegionDistanceMatrix = createServerFn({ method: "GET" })
       }
     }
     return out;
+  });
+
+// ----- Event detail page (event + related events in one call) -----
+
+export type RelatedEvent = {
+  id: string;
+  slug: string;
+  name: string;
+  date_raw: string | null;
+  sort_date: string | null;
+  date_is_estimated: boolean;
+  town: string | null;
+  county: string | null;
+};
+
+export type RelatedEvents = {
+  /** Up to 6 upcoming events, same region + same distance bucket when possible. */
+  events: RelatedEvent[];
+  /** Live count of upcoming same-distance (or all, when unbucketed) events in the region. */
+  totalCount: number;
+  /** Distance bucket the count/list was filtered by, or null when unbucketed. */
+  distanceKey: DistanceKey | null;
+};
+
+export type EventPageData = {
+  event: EventDetail;
+  related: RelatedEvents;
+};
+
+export const getEventPageData = createServerFn({ method: "GET" })
+  .inputValidator((input: unknown) => slugSchema.parse(input))
+  .handler(async ({ data }): Promise<EventPageData> => {
+    const { data: row, error } = await supabaseAdmin
+      .from("events")
+      .select(
+        "id, slug, name, date_raw, date_from, date_to, sort_date, town, county, region, distances, discipline, entry_fee, entry_url, organiser_url, source_url, organiser, is_featured, date_is_estimated",
+      )
+      .eq("slug", data.slug)
+      .eq("status", "ACTIVE")
+      .maybeSingle();
+
+    if (error) throw new Error(error.message);
+    if (!row) throw notFound();
+    const event = row as EventDetail;
+
+    const related: RelatedEvents = {
+      events: [],
+      totalCount: 0,
+      distanceKey: primaryDistanceKey(event.distances),
+    };
+
+    if (event.region) {
+      const today = new Date().toISOString().slice(0, 10);
+      const pageSize = 1000;
+      type Row = RelatedEvent & { distances: string | null };
+      const all: Row[] = [];
+      for (let from = 0; ; from += pageSize) {
+        const { data: rows, error: relErr } = await supabaseAdmin
+          .from("events")
+          .select(
+            "id, slug, name, date_raw, sort_date, date_is_estimated, town, county, distances",
+          )
+          .eq("status", "ACTIVE")
+          .eq("region", event.region)
+          .not("slug", "is", null)
+          .or(`sort_date.gte.${today},sort_date.is.null`)
+          .or(
+            "lat.is.null,and(lat.gte.49.9,lat.lte.60.9,lng.gte.-8.6,lng.lte.1.8)",
+          )
+          .order("sort_date", { ascending: true, nullsFirst: false })
+          .range(from, from + pageSize - 1);
+        if (relErr) throw new Error(relErr.message);
+        if (!rows || rows.length === 0) break;
+        for (const r of rows) {
+          all.push({
+            id: r.id as string,
+            slug: r.slug as string,
+            name: r.name as string,
+            date_raw: r.date_raw as string | null,
+            sort_date: r.sort_date as string | null,
+            date_is_estimated: !!r.date_is_estimated,
+            town: r.town as string | null,
+            county: r.county as string | null,
+            distances: r.distances as string | null,
+          });
+        }
+        if (rows.length < pageSize) break;
+      }
+
+      const cfg = related.distanceKey
+        ? DISTANCE_PAGES[related.distanceKey]
+        : null;
+      const matched = cfg
+        ? all.filter((r) => matchesDistance(r.distances, cfg))
+        : all;
+
+      // Count includes the event itself (it's "one of N"); the displayed
+      // list excludes it.
+      related.totalCount = matched.length;
+      related.events = matched
+        .filter((r) => r.id !== event.id)
+        .slice(0, 6)
+        .map(({ distances: _d, ...rest }) => rest);
+    }
+
+    return { event, related };
   });

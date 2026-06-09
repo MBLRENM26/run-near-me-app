@@ -1,24 +1,43 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { ArrowLeft, Calendar, MapPin, Tag, Ticket, ExternalLink, Info } from "lucide-react";
+import { Calendar, MapPin, Tag, ExternalLink, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
-import { getEventBySlug } from "@/lib/events.functions";
+import { getEventPageData } from "@/lib/events.functions";
+import {
+  buildAboutParagraph,
+  distancePlural,
+} from "@/lib/event-description";
+import { DISTANCE_PAGES } from "@/lib/distance-filters";
 import { formatEventDate, eventYear, isoDate, shortEventDate } from "@/lib/date";
 import { REGIONS } from "@/lib/regions";
 import { SITE_URL } from "@/lib/site";
-
-const NON_FEE = new Set(["", "free", "tbc", "0", "n/a", "na"]);
 
 function regionSlugFromName(name: string | null | undefined): string | null {
   if (!name) return null;
   return REGIONS.find((r) => r.name === name)?.slug ?? null;
 }
 
+/** "Town, County" with duplicates collapsed (e.g. Conwy, Conwy → Conwy). */
+function locationLabel(town: string | null, county: string | null): string {
+  if (town && county && town.trim().toLowerCase() === county.trim().toLowerCase()) {
+    return town.trim();
+  }
+  return [town, county].filter(Boolean).join(", ");
+}
+
 export const Route = createFileRoute("/events/$slug")({
-  loader: ({ params }) => getEventBySlug({ data: { slug: params.slug } }),
+  loader: ({ params }) => getEventPageData({ data: { slug: params.slug } }),
   head: ({ params, loaderData }) => {
-    const e = loaderData;
+    const e = loaderData?.event;
     const canonical = `${SITE_URL}/events/${params.slug}`;
     if (!e) {
       return {
@@ -28,7 +47,7 @@ export const Route = createFileRoute("/events/$slug")({
     }
 
     const year = eventYear(e);
-    const loc = [e.town, e.county].filter(Boolean).join(", ");
+    const loc = locationLabel(e.town, e.county);
     const place = e.town || e.county || "";
 
     // Title: "{Name} {Year} — {Day Month}, {Town} | Entry & Info"
@@ -43,13 +62,8 @@ export const Route = createFileRoute("/events/$slug")({
     const dateLabel = formatEventDate(e);
     const distance = e.distances?.trim() || e.discipline?.trim() || "running";
 
-    // Fee clause: "Entry £18." / "Free entry." / omitted when blank or TBC.
-    const feeRaw = e.entry_fee?.trim() ?? "";
-    const feeKey = feeRaw.toLowerCase();
-    let feeClause = "";
-    if (feeRaw && !NON_FEE.has(feeKey)) feeClause = `Entry ${feeRaw}.`;
-    else if (feeKey === "free" || feeKey === "0") feeClause = "Free entry.";
-
+    // No fee claims in the description — scraped single-value pricing goes
+    // stale and misleads. Point readers at the official site instead.
     const when = e.date_is_estimated
       ? dateLabel
         ? `, expected ${dateLabel.replace(" (date TBC)", "")} — date to be confirmed`
@@ -59,8 +73,7 @@ export const Route = createFileRoute("/events/$slug")({
         : "";
     const description = [
       `${e.name} is a ${distance} race${loc ? ` in ${loc}` : ""}${when}.`,
-      feeClause || null,
-      "See route details, start time and enter online.",
+      "See route details, start time and how to enter on the official site.",
     ]
       .filter(Boolean)
       .join(" ")
@@ -100,26 +113,15 @@ export const Route = createFileRoute("/events/$slug")({
           addressCountry: "GB",
         },
       };
-      // Offers: entry link, plus a parsed numeric price when available.
+      // Offers: entry link only — no price claim. Scraped fees are stale and
+      // single-valued, so the structured data never asserts a price.
       const entryUrl = e.entry_url?.trim();
       if (entryUrl) {
-        const offer: Record<string, unknown> = {
+        jsonLd.offers = {
           "@type": "Offer",
           url: entryUrl,
           availability: "https://schema.org/InStock",
         };
-        const priceMatch =
-          feeRaw && !NON_FEE.has(feeKey)
-            ? feeRaw.match(/(\d+(?:\.\d{1,2})?)/)
-            : null;
-        if (priceMatch) {
-          offer.price = priceMatch[1];
-          offer.priceCurrency = "GBP";
-        } else if (feeKey === "free" || feeKey === "0") {
-          offer.price = "0";
-          offer.priceCurrency = "GBP";
-        }
-        jsonLd.offers = offer;
       }
       if (e.organiser_url?.trim()) {
         const orgUrl = e.organiser_url.trim();
@@ -139,6 +141,39 @@ export const Route = createFileRoute("/events/$slug")({
       }
     }
 
+    // BreadcrumbList JSON-LD: Home → Region → Event.
+    const regionSlug = regionSlugFromName(e.region);
+    const crumbs: { name: string; item?: string }[] = [
+      { name: "Home", item: SITE_URL },
+    ];
+    if (e.region && regionSlug) {
+      crumbs.push({
+        name: e.region,
+        item: `${SITE_URL}/running-events/${regionSlug}`,
+      });
+    }
+    crumbs.push({ name: e.name });
+    const breadcrumbLd = {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: crumbs.map((c, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        name: c.name,
+        ...(c.item ? { item: c.item } : {}),
+      })),
+    };
+
+    const scripts = [
+      ...(jsonLd
+        ? [{ type: "application/ld+json", children: JSON.stringify(jsonLd) }]
+        : []),
+      {
+        type: "application/ld+json",
+        children: JSON.stringify(breadcrumbLd),
+      },
+    ];
+
     return {
       meta: [
         { title: titleSpec },
@@ -149,14 +184,7 @@ export const Route = createFileRoute("/events/$slug")({
         { property: "og:url", content: canonical },
       ],
       links: [{ rel: "canonical", href: canonical }],
-      scripts: jsonLd
-        ? [
-            {
-              type: "application/ld+json",
-              children: JSON.stringify(jsonLd),
-            },
-          ]
-        : [],
+      scripts,
     };
   },
   component: EventDetailPage,
@@ -165,17 +193,32 @@ export const Route = createFileRoute("/events/$slug")({
 });
 
 function EventDetailPage() {
-  const e = Route.useLoaderData();
+  const { event: e, related }: import("@/lib/events.functions").EventPageData =
+    Route.useLoaderData();
 
   const entryUrl = e.entry_url?.trim() || null;
   const organiserUrl = e.organiser_url?.trim() || null;
   const sourceUrl = e.source_url?.trim() || null;
   const dateLabel = formatEventDate(e);
-  const loc = [e.town, e.county].filter(Boolean).join(", ");
-  const fee = e.entry_fee?.trim();
-  const showFee = fee && !NON_FEE.has(fee.toLowerCase());
+  const loc = locationLabel(e.town, e.county);
   const distance = e.distances?.trim() || e.discipline?.trim();
   const regionSlug = regionSlugFromName(e.region);
+
+  const about = buildAboutParagraph({
+    slug: e.slug,
+    name: e.name,
+    town: e.town,
+    county: e.county,
+    region: e.region,
+    date_from: e.date_from,
+    date_to: e.date_to,
+    sort_date: e.sort_date,
+    date_raw: e.date_raw,
+    date_is_estimated: e.date_is_estimated,
+    distanceKey: related.distanceKey,
+    hasOfficialLink: !!(entryUrl || organiserUrl),
+    regionCount: related.totalCount,
+  });
 
   // Per spec: Claim block triggers when both entry_url AND organiser_url are empty.
   const showClaim = !entryUrl && !organiserUrl;
@@ -193,29 +236,50 @@ function EventDetailPage() {
     }
   }
 
+  const relatedLabel = related.distanceKey
+    ? distancePlural(related.distanceKey)
+    : "running events";
+  const comboSlug = related.distanceKey
+    ? DISTANCE_PAGES[related.distanceKey].slug
+    : null;
+  const showCombo =
+    !!regionSlug && !!comboSlug && related.totalCount >= 3;
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       <main className="flex-1">
         <section className="mx-auto max-w-3xl px-4 pt-10 pb-12">
-          {regionSlug ? (
-            <Link
-              to="/running-events/$slug"
-              params={{ slug: regionSlug }}
-              className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to {e.region}
-            </Link>
-          ) : (
-            <Link
-              to="/"
-              className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to all events
-            </Link>
-          )}
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link to="/">Home</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              {e.region && regionSlug && (
+                <>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    <BreadcrumbLink asChild>
+                      <Link
+                        to="/running-events/$slug"
+                        params={{ slug: regionSlug }}
+                      >
+                        {e.region}
+                      </Link>
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                </>
+              )}
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage className="line-clamp-1">
+                  {e.name}
+                </BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
 
           <h1 className="mt-4 text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
             {e.name}
@@ -238,12 +302,6 @@ function EventDetailPage() {
               <div className="flex items-center gap-2">
                 <Tag className="h-4 w-4 shrink-0" />
                 <span>{distance}</span>
-              </div>
-            )}
-            {showFee && (
-              <div className="flex items-center gap-2">
-                <Ticket className="h-4 w-4 shrink-0" />
-                <span>{fee}</span>
               </div>
             )}
           </div>
@@ -290,6 +348,17 @@ function EventDetailPage() {
             </p>
           )}
 
+          {about && (
+            <div className="mt-10">
+              <h2 className="text-xl font-semibold text-foreground">
+                About this race
+              </h2>
+              <p className="mt-2 text-muted-foreground leading-relaxed">
+                {about}
+              </p>
+            </div>
+          )}
+
           {showClaim && (
             <div className="mt-10 rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-card">
               <h2 className="text-xl font-semibold text-foreground">
@@ -309,6 +378,56 @@ function EventDetailPage() {
                   </Link>
                 </Button>
               </div>
+            </div>
+          )}
+
+          {related.events.length > 0 && e.region && (
+            <div className="mt-12">
+              <h2 className="text-xl font-semibold text-foreground">
+                More {relatedLabel} in {e.region}
+              </h2>
+              <ul className="mt-4 divide-y divide-border rounded-2xl border border-border bg-card">
+                {related.events.map((r) => {
+                  const rDate = formatEventDate(r);
+                  const rLoc = r.town || r.county;
+                  return (
+                    <li key={r.id}>
+                      <Link
+                        to="/events/$slug"
+                        params={{ slug: r.slug }}
+                        className="flex flex-col gap-0.5 px-4 py-3 hover:bg-muted/50 transition-colors"
+                      >
+                        <span className="font-medium text-foreground">
+                          {r.name}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          {[rDate, rLoc].filter(Boolean).join(" · ")}
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+              <p className="mt-4 text-sm">
+                {showCombo && regionSlug && comboSlug ? (
+                  <Link
+                    to="/running-events/$slug/$distance"
+                    params={{ slug: regionSlug, distance: comboSlug }}
+                    className="font-medium text-primary hover:underline"
+                  >
+                    View all {related.totalCount.toLocaleString()} {relatedLabel}{" "}
+                    in {e.region} →
+                  </Link>
+                ) : regionSlug ? (
+                  <Link
+                    to="/running-events/$slug"
+                    params={{ slug: regionSlug }}
+                    className="font-medium text-primary hover:underline"
+                  >
+                    View all running events in {e.region} →
+                  </Link>
+                ) : null}
+              </p>
             </div>
           )}
         </section>

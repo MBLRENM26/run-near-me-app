@@ -88,6 +88,33 @@ export const Route = createFileRoute("/parkrun-events/$slug")({
       };
     }
 
+    // BreadcrumbList JSON-LD: Home → region parkruns → this parkrun.
+    const crumbs: { name: string; item?: string }[] = [
+      { name: "Home", item: SITE_URL },
+    ];
+    if (p.regionSlug && regionName) {
+      crumbs.push({
+        name: `${regionName} parkruns`,
+        item: `${SITE_URL}/parkrun-events/region/${p.regionSlug}`,
+      });
+    } else {
+      crumbs.push({
+        name: isJunior ? "junior parkrun" : "parkrun events",
+        item: `${SITE_URL}/${isJunior ? "junior-parkrun-events" : "parkrun-events"}`,
+      });
+    }
+    crumbs.push({ name: p.name });
+    const breadcrumbLd = {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: crumbs.map((c, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        name: c.name,
+        ...(c.item ? { item: c.item } : {}),
+      })),
+    };
+
     return {
       meta: [
         { title },
@@ -100,6 +127,7 @@ export const Route = createFileRoute("/parkrun-events/$slug")({
       links: [{ rel: "canonical", href: canonical }],
       scripts: [
         { type: "application/ld+json", children: JSON.stringify(jsonLd) },
+        { type: "application/ld+json", children: JSON.stringify(breadcrumbLd) },
       ],
     };
   },
