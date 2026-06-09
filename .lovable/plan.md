@@ -1,43 +1,43 @@
-# Fix Search Console Errors First, Then Scotland Athletics
+# Approved: EA Sync, Weekly Cron, GSC Steps, Organiser URL Corrections
 
-## What I found
+## Duplicate check — confirmed safe
 
-### GSC errors — root causes identified
+I checked your 904 existing `england-athletics` records: their `norm_id` is `ea-<UUID>`, and the UUIDs are the **same event IDs the RunEvents API returns today**. The new sync will key on exactly that (`ea-${event.id}`), so all existing records are updated in place — dates, organiser URLs, distances refreshed — never duplicated. Existing slugs are also preserved (the sync reuses the stored slug for known records), so no published event URLs change.
 
-**1. "Missing field 'location'" — 1,607 event pages affected**
-The event page JSON-LD only includes `location` when the event has a town or county. 1,607 active events have neither — but **all 1,607 have a region** (and 1,429 have coordinates). Easy fix.
+## 1. England Athletics sync endpoint
 
-**2. Probable "Missing field 'startDate'" too — 1,397 events**
-1,397 active events have no date at all. Google requires `startDate` on Event schema, so these pages emit invalid structured data.
+`src/routes/api/public/admin/sync-england-athletics.ts`:
+- Pages through the RunEvents API (846 events, 10 per page — page size is fixed by their API; supports chunked runs via `?from=&to=` just in case)
+- Upserts on `norm_id = ea-<EA UUID>` with source kept as `england-athletics`
+- Maps: name, ISO dates, town (title-cased), county, region via the existing `normaliseRegion` helper (county + coordinates), lat/lng, distances from the structured `races` array, `organiser_url` = their real website_url, `entry_url` = registration URL or website
+- New events: name+date dedupe against other sources, slug collision handling (append date)
+- Run once and report: updated existing vs new vs skipped
 
-**3. "Soft 404"**
-Hard 404s work correctly (verified live — missing events return a real 404 status). The likely soft-404 candidates are the **1,970 active events whose date has already passed** — they're still in the sitemap and render with stale past dates, plus any listing pages that render with zero events. I'll pull the exact affected URLs from Search Console to confirm before changing anything.
+## 2. Weekly scheduled syncs
 
-**4. "Excluded by noindex"**
-This one is mostly **intentional and healthy**: thin region×distance pages (<3 events) and admin pages are deliberately noindexed, and the sitemap already excludes them. No fix needed — but I'll verify against the actual URL list from GSC.
+- Both sync endpoints accept the project's public API key in an `apikey` header (standard pattern for scheduled jobs) alongside the existing admin secret
+- Migration: enable `pg_cron` + `pg_net`
+- Two weekly jobs (Mon 03:00 Scottish, Mon 03:15 England) POSTing to the stable production URL
 
-### Scotland Athletics
-Their events calendar page loads events via JavaScript — the static HTML contains no event data or obvious API endpoint. Needs a browser-based inspection to find the underlying data feed.
+## 3. Google Search Console — your steps (no code)
 
-## Plan
+1. Type `/` in the chat composer (or Settings → Connectors) and pick **Google Search Console**
+2. Click **Connect**, sign in with the Google account that owns the `runningeventsnearme.com` property, grant read access
+3. Tell me once connected — I'll pull the exact affected-URL lists for the soft-404 / noindex / structured-data reports
 
-### Phase 1 — GSC fixes (do first)
+## 4. Organiser URL corrections from your sheet
 
-1. **Pull exact affected URLs from Search Console** via the connected GSC API, so fixes target the real problem pages rather than guesses.
-2. **JSON-LD location fallback**: when town/county are missing, fall back to `region` (e.g. Place name "Scotland", addressCountry GB). Fixes all 1,607 "missing location" errors.
-3. **Undated events**: omit the Event JSON-LD block entirely when there's no date (invalid schema is worse than none), keeping the page itself indexable.
-4. **Past events**: exclude events with a past date from the sitemap (keep the pages live so existing links still work). If GSC confirms these are the soft-404 source, optionally add `eventStatus` handling or noindex events more than ~30 days past.
-5. **Verify noindex exclusions** against the GSC URL list — expected to be intentional thin/admin pages; no code change unless something unexpected shows up.
+Connect the **Google Sheets** connector the same way (account that owns the pipeline sheet). Then I'll:
+1. Read `URL_REVIEW` from sheet `1Ss89ap0...G518` (col A norm_id/slug, col N corrected_url)
+2. Skip blank / "no website" / "no event found" / "date conflicts" rows; sanity-check URLs
+3. Show a dry-run summary (matched/unmatched, samples)
+4. Apply ~220 updates as one reviewed data change — you approve before it runs
 
-### Phase 2 — Scotland Athletics source investigation
-
-6. Use the browser tool to load their events calendar and capture the network request that fetches event data (likely a WordPress AJAX/JSON feed).
-7. Assess the feed: fields available (name, date, location, distance, entry URL), volume, and licensing/attribution considerations.
-8. If viable, map their fields to our import format and load via the existing `/api/public/import-events` endpoint (which now auto-normalises regions). If their feed is unusable, fall back to alternative Scottish sources (e.g. SI Entries / Entry Central, which carry most Scottish races).
+No throwaway endpoint or migration needed; it's one-shot data with a built-in approval step.
 
 ## Technical details
 
-- Location fallback edit: `src/routes/events.$slug.tsx` head() JSON-LD block (~lines 76–87).
-- Sitemap edit: `src/lib/events.functions.ts` `getAllActiveSlugs` — filter `sort_date >= today OR sort_date IS NULL` (undated events stay in, since many are "month TBC" future races... actually undated ≠ past; only filter confirmed-past dates).
-- GSC API calls go through the connector gateway (read-only queries first).
-- No database changes required for Phase 1.
+- New file: `src/routes/api/public/admin/sync-england-athletics.ts`; small auth tweak to `sync-scottish-athletics.ts`
+- Migration: `CREATE EXTENSION IF NOT EXISTS pg_cron; CREATE EXTENSION IF NOT EXISTS pg_net;`
+- Cron jobs inserted via the data tool (contain project URL + key, so not in migration history)
+- EA API: `englandathletics.org/runevents/wp-admin/admin-ajax.php?action=data_api_search&types[]=event&page=N` — public, no auth
