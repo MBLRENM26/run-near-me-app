@@ -17,10 +17,14 @@ export const Route = createFileRoute("/sitemap.xml")({
         let eventEntries: { slug: string; lastmod: string }[] = [];
         try {
           const slugs = await getAllActiveSlugs();
-          eventEntries = slugs.map((s) => ({
-            slug: s.slug,
-            lastmod: s.sort_date ?? today,
-          }));
+          eventEntries = slugs
+            // Exclude past events from the sitemap (pages stay live, but we
+            // don't ask Google to crawl stale race dates — soft-404 risk).
+            .filter((s) => !s.sort_date || s.sort_date >= today)
+            .map((s) => ({
+              slug: s.slug,
+              lastmod: s.sort_date ?? today,
+            }));
         } catch (err) {
           console.error("Sitemap: failed to load event slugs", err);
         }
