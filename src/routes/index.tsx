@@ -12,7 +12,11 @@ import {
   type Coords,
 } from "@/components/events/LocationPrompt";
 import { FilterBar, type Radius } from "@/components/events/FilterBar";
-import { EventCard, type EventCardData } from "@/components/events/EventCard";
+import {
+  EventCard,
+  isParkrunEvent,
+  type EventCardData,
+} from "@/components/events/EventCard";
 import { Toaster } from "@/components/ui/sonner";
 import { matchesEventType, type EventType } from "@/lib/distance";
 import { MapPin } from "lucide-react";
@@ -174,6 +178,15 @@ function HomePage() {
       .sort((a, b) => a.distanceMiles! - b.distanceMiles!);
   }, [eventsWithDistance, eventType]);
 
+  const races: EventCardData[] = useMemo(
+    () => visibleEvents.filter((e) => !isParkrunEvent(e)),
+    [visibleEvents],
+  );
+  const parkruns: EventCardData[] = useMemo(
+    () => visibleEvents.filter((e) => isParkrunEvent(e)),
+    [visibleEvents],
+  );
+
   const featuredNearby: EventCardData[] = useMemo(() => {
     return eventsWithDistance
       .filter((e) => e.is_featured)
@@ -238,14 +251,38 @@ function HomePage() {
             ) : (
               <>
                 <p className="text-sm text-muted-foreground mb-4">
-                  {visibleEvents.length}{" "}
-                  {visibleEvents.length === 1 ? "event" : "events"} found
+                  {races.length} {races.length === 1 ? "event" : "events"} found
+                  {parkruns.length > 0 && (
+                    <>
+                      {" "}
+                      · {parkruns.length}{" "}
+                      {parkruns.length === 1 ? "parkrun" : "parkruns"}
+                    </>
+                  )}
                 </p>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {visibleEvents.map((event) => (
-                    <EventCard key={event.id} event={event} />
-                  ))}
-                </div>
+                {races.length > 0 && (
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {races.map((event) => (
+                      <EventCard key={event.id} event={event} />
+                    ))}
+                  </div>
+                )}
+                {parkruns.length > 0 && (
+                  <div className={races.length > 0 ? "mt-10" : undefined}>
+                    <h2 className="text-xl font-semibold text-foreground">
+                      Free weekly parkruns near you
+                    </h2>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Every Saturday (juniors on Sunday) — free, timed, all
+                      abilities welcome.
+                    </p>
+                    <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      {parkruns.map((event) => (
+                        <EventCard key={event.id} event={event} />
+                      ))}
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </section>
