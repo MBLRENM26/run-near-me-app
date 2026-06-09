@@ -34,6 +34,27 @@ function locationLabel(town: string | null, county: string | null): string {
   return [town, county].filter(Boolean).join(", ");
 }
 
+/**
+ * True when a scraped URL is an aggregator's *regional listing* page rather
+ * than an event-specific page — e.g. https://runabc.co.uk/kent. These must
+ * never be presented as the event's official website / entry link.
+ */
+function isGenericListingUrl(url: string | null): boolean {
+  if (!url) return false;
+  try {
+    const u = new URL(url);
+    const host = u.hostname.replace(/^www\./, "").toLowerCase();
+    if (host !== "runabc.co.uk" && host !== "runabc.scot") return false;
+    const segments = u.pathname.split("/").filter(Boolean);
+    // Region listing pages are a single short slug with no digits
+    // (e.g. /kent, /scotland). Real event pages have deeper or dated paths.
+    if (segments.length === 0) return true;
+    return segments.length === 1 && !/\d/.test(segments[0]);
+  } catch {
+    return false;
+  }
+}
+
 export const Route = createFileRoute("/events/$slug")({
   loader: ({ params }) => getEventPageData({ data: { slug: params.slug } }),
   head: ({ params, loaderData }) => {
@@ -350,7 +371,7 @@ function EventDetailPage() {
               <Info className="h-4 w-4" />
               Listed on{" "}
               <a
-                href={sourceUrl!}
+                href={attributionUrl!}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline hover:text-foreground"
