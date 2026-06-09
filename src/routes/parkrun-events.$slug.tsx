@@ -60,7 +60,7 @@ export const Route = createFileRoute("/parkrun-events/$slug")({
       },
       offers: { "@type": "Offer", price: "0", priceCurrency: "GBP" },
     };
-    if (p.lat != null || p.lng != null || town || county) {
+    if (p.lat != null || p.lng != null || town || county || regionName) {
       const location: Record<string, unknown> = {
         "@type": "Place",
         name: p.name,
@@ -68,11 +68,13 @@ export const Route = createFileRoute("/parkrun-events/$slug")({
       if (p.lat != null && p.lng != null) {
         location.geo = { "@type": "GeoCoordinates", latitude: p.lat, longitude: p.lng };
       }
-      if (town || county) {
+      if (town || county || regionName) {
         location.address = {
           "@type": "PostalAddress",
           ...(town ? { addressLocality: town } : {}),
-          ...(county ? { addressRegion: county } : {}),
+          ...(county || regionName
+            ? { addressRegion: county || regionName }
+            : {}),
           addressCountry: "GB",
         };
       }
