@@ -288,6 +288,7 @@ export type Database = {
         }
         Returns: {
           county: string
+          date_is_estimated: boolean
           date_raw: string
           distance_miles: number
           distance_type: string
