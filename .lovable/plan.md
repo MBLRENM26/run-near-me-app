@@ -1,30 +1,35 @@
-# Fix event card links + parkrun ordering in nearby results
+# De-duplicate event listings
 
-## Problem 1 — Cards send visitors off-site to the wrong pages
-The "View event" button on every event card is an external link to the scraped `entry_url`. For runabc-scraped events that URL is often a **generic regional listing** (e.g. `runabc.co.uk/kent` for Dartford Bridge 10K), so visitors leave your site and don't even land on the event. Your own event pages — with the new About copy, breadcrumbs and related races — are bypassed entirely.
+## What's wrong
+The nearby results (and region/distance pages) show the same race twice because the database holds duplicate rows from different scrape runs:
 
-### Fix
-- **Card CTA goes internal, always.** "View details →" linking to `/events/{slug}`. The external link is removed from cards completely — the official site link lives on the event detail page where it belongs.
-- **Parkrun cards link to their parkrun page** (`/parkrun-events/{slug}` or junior equivalent) instead of the generic event page, detected by name containing "parkrun".
-- **Event detail page: demote generic listing URLs.** On `/events/{slug}`, if `entry_url` is a bare runabc regional page (path like `/kent`, `/scotland` — no event-specific path), it is no longer shown as the primary "Visit official event website" button. It drops to the small "Listed on runabc.co.uk" source attribution instead, consistent with the scraped-data trust rules. Event-specific URLs (eventrac, organiser sites, full event paths) keep working as the primary CTA.
+1. **Exact duplicates** — same name + town + date ingested twice with different slugs (338 groups, mostly England Athletics re-ingests, some runabc).
+2. **Estimated vs confirmed pairs** — an older scrape with a month-only guessed date ("September 2026 — date TBC") alongside a newer row with the real confirmed date (630 groups). Dartford Bridge 10K, Spitfire Scramble and Petts Wood 10k are all this type.
+3. **Race series** (same name, genuinely different dates — e.g. "Tavy 5" ×24) are NOT duplicates and will not be touched.
 
-## Problem 2 — Parkruns flood the top of nearby results
-Results are sorted by distance only. Parkruns are dense (1,391 of them), so 3+ parkruns often sit above the actual races people came to find.
+## Approach
 
-### Fix
-- Nearby results split into two groups: **races first** (distance-sorted), then parkruns at the bottom under a small divider heading — "Free weekly parkruns near you" — also distance-sorted.
-- The count line reads e.g. "12 events found · 4 parkruns".
-- The "All / 5K / 10K…" filter still applies to both groups; choosing "5K" keeps parkruns in their bottom section.
+### 1. Mark duplicates, never delete
+- Add a `duplicate_of` column (points at the surviving row) and a `DUPLICATE` status value. Nothing is deleted — fully reversible.
+- **Survivor ranking** within each duplicate group (same name + town, and either identical date or estimated-vs-confirmed in the same year):
+  1. Confirmed date beats estimated date
+  2. Event-specific entry link beats generic/none (generic runabc regional URLs count as none)
+  3. Newer scrape beats older
+- **Field merge**: if the survivor is missing a value the loser has (entry URL, organiser URL, region, county, date_raw), copy it across — so the Dartford Bridge survivor keeps the real 13 September date AND the proper eventrac entry link.
 
-## Where this applies
-- Homepage nearby results (the main complaint)
-- The same `EventCard` is used on distance/region pages, so the internal-link fix applies everywhere automatically.
+### 2. Redirect retired pages (protects your Google indexing)
+- Duplicate slugs may already be crawled. The event page will issue a **permanent redirect** from a duplicate's URL to the survivor's URL, so any indexed dupe page passes its value to the kept page instead of 404ing.
+- Sitemap/listing queries already filter to `status = 'ACTIVE'`, so dupes vanish from all lists, counts and "More races in {region}" blocks automatically — the live About-paragraph counts become more accurate too.
+
+### 3. Run the dedupe
+- One SQL migration: add column/status, then a single pass that ranks each group, marks losers as `DUPLICATE` with `duplicate_of`, and merges missing fields into survivors.
+- Verification queries before/after: total active events, group counts (expect ~970 rows retired of ~6,700), spot-checks on Dartford Bridge, Petts Wood, Spitfire Scramble, and a series like Tavy 5 (must remain untouched).
 
 ## Technical details
-- `src/components/events/EventCard.tsx` — remove external `<a>` CTA; always render internal `Link`; route parkruns (name match) to `/parkrun-events/$slug` / `/junior-parkrun-events` equivalents based on existing slugs.
-- `src/routes/index.tsx` — partition `visibleEvents` into `races` / `parkruns` via name match; render parkrun group after races with divider heading; update count line.
-- `src/routes/events.$slug.tsx` — add a `isGenericListingUrl()` check (runabc host + single non-event path segment) in the primary-CTA picker; demote to source attribution when matched.
-- No database or schema changes; no changes to the radius RPC.
+- Migration: `ALTER TABLE events ADD COLUMN duplicate_of uuid REFERENCES events(id)`; dedupe pass uses `row_number()` over groups keyed on `(lower(name), lower(coalesce(town,'')))` joined two ways: exact `sort_date` match, and estimated↔confirmed within same year.
+- `src/lib/events.functions.ts` — `getEventPageData`: when the slug resolves to a `DUPLICATE` row, return the survivor's slug; route loader throws `redirect({ to: '/events/$slug', params, statusCode: 301 })`.
+- `src/routes/events.$slug.tsx` — handle the redirect signal in the loader.
+- No UI changes otherwise; all listing queries already filter to ACTIVE.
 
-## Out of scope (flagged, not fixed here)
-- Duplicate rows exist (two "Dartford Bridge 10K" entries — one runabc-scraped with the bad URL, one with the proper eventrac link). De-duplication of scraped vs. sourced events is a separate data-cleanup job worth doing soon.
+## Out of scope
+- Preventing future duplicate ingests (a uniqueness check in the scraper pipeline) — recommended follow-up when the fee-data rebuild happens.
