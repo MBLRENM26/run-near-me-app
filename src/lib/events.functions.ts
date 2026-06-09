@@ -6,6 +6,7 @@ import {
   DISTANCE_PAGES,
   DISTANCE_PAGE_LIST,
   matchesDistance,
+  primaryDistanceKey,
   type DistanceKey,
 } from "@/lib/distance-filters";
 import { REGIONS, slugToRegion } from "@/lib/regions";
