@@ -118,10 +118,11 @@ async function fetchPage(
 /** Fetch a page with retries; returns null if the EA API keeps failing. */
 async function fetchPageSafe(
   page: number,
+  order: "asc" | "desc" = "asc",
 ): Promise<{ events: EaEvent[]; lastPage: number } | null> {
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      return await fetchPage(page);
+      return await fetchPage(page, order);
     } catch {
       if (attempt < 3) {
         await new Promise((r) => setTimeout(r, 1500 * attempt));
@@ -158,16 +159,20 @@ export const Route = createFileRoute(
         }
 
         // Optional page range for chunked runs: ?from=1&to=30
+        // Optional ?order=desc to sweep the feed in reverse — covers events
+        // stranded on pages where the EA API 500s in ascending order.
         const u = new URL(request.url);
         const fromPage = Math.max(1, Number(u.searchParams.get("from")) || 1);
         const toParam = Number(u.searchParams.get("to")) || MAX_PAGES;
+        const order: "asc" | "desc" =
+          u.searchParams.get("order") === "desc" ? "desc" : "asc";
 
         // 1. Fetch pages from the EA RunEvents API
         const all: EaEvent[] = [];
         const failedPages: number[] = [];
         let lastPage = toParam;
         for (let p = fromPage; p <= Math.min(toParam, lastPage, MAX_PAGES); p++) {
-          const result = await fetchPageSafe(p);
+          const result = await fetchPageSafe(p, order);
           if (!result) {
             failedPages.push(p);
             continue;
