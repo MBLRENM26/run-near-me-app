@@ -1,0 +1,2 @@
+ALTER TABLE public.events ADD COLUMN IF NOT EXISTS duplicate_of uuid REFERENCES public.events(id);
+CREATE INDEX IF NOT EXISTS idx_events_duplicate_of ON public.events (duplicate_of) WHERE duplicate_of IS NOT NULL;

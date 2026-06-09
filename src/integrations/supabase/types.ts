@@ -112,6 +112,7 @@ export type Database = {
           date_to: string | null
           discipline: string | null
           distances: string | null
+          duplicate_of: string | null
           entry_fee: string | null
           entry_url: string | null
           id: string
@@ -145,6 +146,7 @@ export type Database = {
           date_to?: string | null
           discipline?: string | null
           distances?: string | null
+          duplicate_of?: string | null
           entry_fee?: string | null
           entry_url?: string | null
           id?: string
@@ -178,6 +180,7 @@ export type Database = {
           date_to?: string | null
           discipline?: string | null
           distances?: string | null
+          duplicate_of?: string | null
           entry_fee?: string | null
           entry_url?: string | null
           id?: string
@@ -201,7 +204,15 @@ export type Database = {
           status?: string
           town?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "events_duplicate_of_fkey"
+            columns: ["duplicate_of"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       submissions: {
         Row: {

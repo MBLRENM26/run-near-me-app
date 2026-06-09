@@ -148,9 +148,9 @@ const RunningEventsSlugDistanceRoute =
   } as any)
 const ParkrunEventsRegionRegionRoute =
   ParkrunEventsRegionRegionRouteImport.update({
-    id: '/region/$region',
-    path: '/region/$region',
-    getParentRoute: () => ParkrunEventsRoute,
+    id: '/parkrun-events/region/$region',
+    path: '/parkrun-events/region/$region',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   id: '/lovable/email/suppression',
@@ -425,6 +425,7 @@ export interface RootRouteChildren {
   ParkrunEventsIndexRoute: typeof ParkrunEventsIndexRoute
   ApiPublicImportEventsRoute: typeof ApiPublicImportEventsRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
+  ParkrunEventsRegionRegionRoute: typeof ParkrunEventsRegionRegionRoute
   RunningEventsSlugDistanceRoute: typeof RunningEventsSlugDistanceRoute
   ApiPublicAdminFixEventUrlsRoute: typeof ApiPublicAdminFixEventUrlsRoute
   ApiPublicAdminSyncEnglandAthleticsRoute: typeof ApiPublicAdminSyncEnglandAthleticsRoute
@@ -585,10 +586,10 @@ declare module '@tanstack/react-router' {
     }
     '/parkrun-events/region/$region': {
       id: '/parkrun-events/region/$region'
-      path: '/region/$region'
+      path: '/parkrun-events/region/$region'
       fullPath: '/parkrun-events/region/$region'
       preLoaderRoute: typeof ParkrunEventsRegionRegionRouteImport
-      parentRoute: typeof ParkrunEventsRoute
+      parentRoute: typeof rootRouteImport
     }
     '/lovable/email/suppression': {
       id: '/lovable/email/suppression'
@@ -691,6 +692,7 @@ const rootRouteChildren: RootRouteChildren = {
   ParkrunEventsIndexRoute: ParkrunEventsIndexRoute,
   ApiPublicImportEventsRoute: ApiPublicImportEventsRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
+  ParkrunEventsRegionRegionRoute: ParkrunEventsRegionRegionRoute,
   RunningEventsSlugDistanceRoute: RunningEventsSlugDistanceRoute,
   ApiPublicAdminFixEventUrlsRoute: ApiPublicAdminFixEventUrlsRoute,
   ApiPublicAdminSyncEnglandAthleticsRoute:
@@ -704,13 +706,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
