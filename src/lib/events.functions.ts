@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { notFound } from "@tanstack/react-router";
+import { notFound, redirect } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import {
@@ -387,7 +387,32 @@ export const getEventPageData = createServerFn({ method: "GET" })
       .maybeSingle();
 
     if (error) throw new Error(error.message);
-    if (!row) throw notFound();
+    if (!row) {
+      // Retired duplicate listing? Permanently redirect to the survivor.
+      const { data: dup } = await supabaseAdmin
+        .from("events")
+        .select("duplicate_of")
+        .eq("slug", data.slug)
+        .eq("status", "DUPLICATE")
+        .not("duplicate_of", "is", null)
+        .maybeSingle();
+      if (dup?.duplicate_of) {
+        const { data: survivor } = await supabaseAdmin
+          .from("events")
+          .select("slug")
+          .eq("id", dup.duplicate_of as string)
+          .eq("status", "ACTIVE")
+          .maybeSingle();
+        if (survivor?.slug) {
+          throw redirect({
+            to: "/events/$slug",
+            params: { slug: survivor.slug as string },
+            statusCode: 301,
+          });
+        }
+      }
+      throw notFound();
+    }
     const event = row as EventDetail;
 
     const related: RelatedEvents = {
