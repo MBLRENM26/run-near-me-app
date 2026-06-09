@@ -196,9 +196,18 @@ function EventDetailPage() {
   const { event: e, related }: import("@/lib/events.functions").EventPageData =
     Route.useLoaderData();
 
-  const entryUrl = e.entry_url?.trim() || null;
-  const organiserUrl = e.organiser_url?.trim() || null;
+  const rawEntryUrl = e.entry_url?.trim() || null;
+  const rawOrganiserUrl = e.organiser_url?.trim() || null;
   const sourceUrl = e.source_url?.trim() || null;
+
+  // Scraped aggregator URLs that point at a regional listing page (e.g.
+  // runabc.co.uk/kent) are not the event's official site — never present
+  // them as the primary CTA. Demote to source attribution instead.
+  const entryUrl = isGenericListingUrl(rawEntryUrl) ? null : rawEntryUrl;
+  const organiserUrl = isGenericListingUrl(rawOrganiserUrl)
+    ? null
+    : rawOrganiserUrl;
+
   const dateLabel = formatEventDate(e);
   const loc = locationLabel(e.town, e.county);
   const distance = e.distances?.trim() || e.discipline?.trim();
@@ -227,10 +236,13 @@ function EventDetailPage() {
   if (entryUrl) primaryCta = { href: entryUrl, label: "Enter now" };
   else if (organiserUrl) primaryCta = { href: organiserUrl, label: "Visit organiser" };
 
+  // Attribution link when there is no trustworthy primary CTA: prefer the
+  // source URL, falling back to a demoted generic listing URL.
+  const attributionUrl = sourceUrl || rawEntryUrl || rawOrganiserUrl;
   let sourceHost: string | null = null;
-  if (!primaryCta && sourceUrl) {
+  if (!primaryCta && attributionUrl) {
     try {
-      sourceHost = new URL(sourceUrl).hostname.replace(/^www\./, "");
+      sourceHost = new URL(attributionUrl).hostname.replace(/^www\./, "");
     } catch {
       sourceHost = null;
     }
