@@ -35,7 +35,17 @@ export function formatEventDate(args: {
   date_to?: string | null;
   sort_date?: string | null;
   date_raw?: string | null;
+  date_is_estimated?: boolean | null;
 }): string {
+  // Month-only entries: never show a false precise day like "1 June" —
+  // the stored date defaults to the 1st of the month.
+  if (args.date_is_estimated) {
+    const dt = parseISO(args.date_from) ?? parseISO(args.sort_date);
+    if (dt) return `${fmtMonthYearUTC(dt)} (date TBC)`;
+    const raw = args.date_raw?.trim();
+    return raw ? `${raw} (date TBC)` : "";
+  }
+
   const from = parseISO(args.date_from);
   const to = parseISO(args.date_to);
 

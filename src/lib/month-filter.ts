@@ -39,6 +39,27 @@ export function filterByMonth<T extends { sort_date?: string | null }>(
   return events.filter((e) => eventMonthKey(e) === month);
 }
 
+/**
+ * Re-sort an event list so that, within each month, events with an
+ * estimated (month-only) date come AFTER precisely-dated events. Month
+ * order and date order within each precision group are preserved.
+ */
+export function sortEstimatedLastWithinMonth<
+  T extends { sort_date?: string | null; date_is_estimated?: boolean | null },
+>(events: T[]): T[] {
+  return [...events].sort((a, b) => {
+    const ma = eventMonthKey(a) ?? "9999-99";
+    const mb = eventMonthKey(b) ?? "9999-99";
+    if (ma !== mb) return ma < mb ? -1 : 1;
+    const ea = a.date_is_estimated ? 1 : 0;
+    const eb = b.date_is_estimated ? 1 : 0;
+    if (ea !== eb) return ea - eb;
+    const sa = a.sort_date ?? "9999-99-99";
+    const sb = b.sort_date ?? "9999-99-99";
+    return sa < sb ? -1 : sa > sb ? 1 : 0;
+  });
+}
+
 function currentMonthKey(): MonthKey {
   const d = new Date();
   const yr = d.getUTCFullYear();
