@@ -62,35 +62,42 @@ export const Route = createFileRoute("/events/$slug")({
       ? startISO
       : (isoDate(e.date_to) ?? startISO);
 
-    const jsonLd: Record<string, unknown> = {
-      "@context": "https://schema.org",
-      "@type": "Event",
-      name: e.name,
-      eventStatus: "https://schema.org/EventScheduled",
-      eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
-      url: canonical,
-    };
-    if (startISO) jsonLd.startDate = startISO;
-    if (endISO) jsonLd.endDate = endISO;
-    if (description) jsonLd.description = description;
-    if (e.town || e.county) {
+    // Google requires startDate and location on Event schema. Emit the
+    // JSON-LD block only when we have a date; fall back to region for
+    // location so no event ships schema without a Place.
+    let jsonLd: Record<string, unknown> | null = null;
+    if (startISO) {
+      jsonLd = {
+        "@context": "https://schema.org",
+        "@type": "Event",
+        name: e.name,
+        eventStatus: "https://schema.org/EventScheduled",
+        eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+        url: canonical,
+        startDate: startISO,
+      };
+      if (endISO) jsonLd.endDate = endISO;
+      if (description) jsonLd.description = description;
+      const placeName = e.town || e.county || e.region || "United Kingdom";
       jsonLd.location = {
         "@type": "Place",
-        name: e.town || e.county || "UK",
+        name: placeName,
         address: {
           "@type": "PostalAddress",
           ...(e.town ? { addressLocality: e.town } : {}),
-          ...(e.county ? { addressRegion: e.county } : {}),
+          ...(e.county || e.region
+            ? { addressRegion: e.county || e.region }
+            : {}),
           addressCountry: "GB",
         },
       };
-    }
-    if (e.organiser_url?.trim()) {
-      jsonLd.organizer = {
-        "@type": "Organization",
-        ...(e.organiser ? { name: e.organiser } : {}),
-        url: e.organiser_url.trim(),
-      };
+      if (e.organiser_url?.trim()) {
+        jsonLd.organizer = {
+          "@type": "Organization",
+          ...(e.organiser ? { name: e.organiser } : {}),
+          url: e.organiser_url.trim(),
+        };
+      }
     }
 
     return {
@@ -103,12 +110,14 @@ export const Route = createFileRoute("/events/$slug")({
         { property: "og:url", content: canonical },
       ],
       links: [{ rel: "canonical", href: canonical }],
-      scripts: [
-        {
-          type: "application/ld+json",
-          children: JSON.stringify(jsonLd),
-        },
-      ],
+      scripts: jsonLd
+        ? [
+            {
+              type: "application/ld+json",
+              children: JSON.stringify(jsonLd),
+            },
+          ]
+        : [],
     };
   },
   component: EventDetailPage,
