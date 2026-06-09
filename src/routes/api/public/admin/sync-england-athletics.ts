@@ -325,6 +325,7 @@ export const Route = createFileRoute(
           newEvents: written - updatedExisting,
           skippedDupes,
           skippedNoDate,
+          failedPages,
         });
       },
     },
