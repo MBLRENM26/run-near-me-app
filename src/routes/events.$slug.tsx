@@ -26,6 +26,14 @@ function regionSlugFromName(name: string | null | undefined): string | null {
   return REGIONS.find((r) => r.name === name)?.slug ?? null;
 }
 
+/** "Town, County" with duplicates collapsed (e.g. Conwy, Conwy → Conwy). */
+function locationLabel(town: string | null, county: string | null): string {
+  if (town && county && town.trim().toLowerCase() === county.trim().toLowerCase()) {
+    return town.trim();
+  }
+  return [town, county].filter(Boolean).join(", ");
+}
+
 export const Route = createFileRoute("/events/$slug")({
   loader: ({ params }) => getEventPageData({ data: { slug: params.slug } }),
   head: ({ params, loaderData }) => {
@@ -39,7 +47,7 @@ export const Route = createFileRoute("/events/$slug")({
     }
 
     const year = eventYear(e);
-    const loc = [e.town, e.county].filter(Boolean).join(", ");
+    const loc = locationLabel(e.town, e.county);
     const place = e.town || e.county || "";
 
     // Title: "{Name} {Year} — {Day Month}, {Town} | Entry & Info"
@@ -192,7 +200,7 @@ function EventDetailPage() {
   const organiserUrl = e.organiser_url?.trim() || null;
   const sourceUrl = e.source_url?.trim() || null;
   const dateLabel = formatEventDate(e);
-  const loc = [e.town, e.county].filter(Boolean).join(", ");
+  const loc = locationLabel(e.town, e.county);
   const distance = e.distances?.trim() || e.discipline?.trim();
   const regionSlug = regionSlugFromName(e.region);
 
