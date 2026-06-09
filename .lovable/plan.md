@@ -1,18 +1,18 @@
-# Remove aggregator attribution text from event pages
+# Soften the CTA for imminent and past events
 
-## Why
-Naming the scrape source ("Originally listed on runabc.co.uk" / "Listed via englandathletics.org") isn't legally required for factual event data, gives free exposure to other sites, and makes listings feel second-hand. Trust should come from accurate data and official organiser links instead.
+## What changes
+On the event detail page, when an event's date is within the next 7 days (or already past) and the link is an event-specific entry page:
 
-## Changes
-1. **Event detail page (`src/routes/events.$slug.tsx`)**
-   - Remove the "Originally listed on {host}" caption under the CTA button.
-   - Remove the "Listed via {host}" info line shown when there's no official link — those pages just show the event details plus the existing "Are you the organiser? Claim this listing" block, which does the trust-building job properly.
-2. **Sweep for other attribution spots** — check `EventCard` and any listing components for similar "listed on/via" text and remove it the same way.
-3. **Update project memory** (`mem://constraints/scraped-data-trust`) — aggregators are now never named at all, not even as plain text.
+- Button label changes from **"Enter now"** to **"View event details"**.
+- A short note appears under the button: *"Race day is close — entries may have closed. Check the event page for availability."* (past events get *"This event has taken place."* instead, with no availability note).
+- "Visit organiser website" links stay unchanged — that label makes no entry promise.
+- JSON-LD: the `offers` block (which implies availability "InStock") is dropped for events within the 7-day window or past, so structured data never overpromises either.
 
-## What stays
-- `source_url` stays in the database for internal enrichment/debugging — it just never renders.
-- The link-trust classifier is unchanged: official entry links and organiser sites still render exactly as now.
+## Technical details
+- Add a small helper in `src/lib/date.ts` (or inline in the route): days until `date_from ?? sort_date`, ignoring estimated-only dates.
+- Apply in `src/routes/events.$slug.tsx` where `primaryCta` is built and in `head()` where `jsonLd.offers` is set.
+- No database or scraper changes.
 
 ## Verification
-- Re-check Full Essex Way Ultra (no "Listed via" line, claim block present) and a page with an official link (no "Originally listed on" caption).
+- Rock Up n Run Marsden (11 June, 2 days away) shows "View event details" + the note.
+- A far-future event (e.g. an autumn race) still shows "Enter now" with no note.
