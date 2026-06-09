@@ -136,10 +136,11 @@ function HomePage() {
       const { data, error } = await supabase
         .from("events")
         .select(
-          "id, slug, name, date_raw, town, county, distance_type:distances, entry_fee, entry_url, organiser_url, source_url, is_featured",
+          "id, slug, name, date_raw, town, county, distance_type:distances, entry_fee, entry_url, organiser_url, source_url, is_featured, date_is_estimated",
         )
         .eq("status", "ACTIVE")
         .or(`sort_date.gte.${today},sort_date.is.null`)
+        .order("date_is_estimated", { ascending: true })
         .order("sort_date", { ascending: true, nullsFirst: false })
         .limit(6);
       if (error) throw error;
@@ -162,6 +163,7 @@ function HomePage() {
       organiser_url: e.organiser_url,
       source_url: e.source_url,
       is_featured: e.is_featured,
+      date_is_estimated: e.date_is_estimated,
       distanceMiles: e.distance_miles,
     }));
   }, [nearbyEvents]);
@@ -359,6 +361,7 @@ function HomePage() {
                     organiser_url: e.organiser_url,
                     source_url: e.source_url,
                     is_featured: e.is_featured,
+                    date_is_estimated: e.date_is_estimated,
                   }}
                 />
               ))}

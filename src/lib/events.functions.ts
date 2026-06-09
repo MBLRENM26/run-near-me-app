@@ -9,6 +9,7 @@ import {
   type DistanceKey,
 } from "@/lib/distance-filters";
 import { REGIONS, slugToRegion } from "@/lib/regions";
+import { sortEstimatedLastWithinMonth } from "@/lib/month-filter";
 
 const slugSchema = z.object({
   slug: z.string().trim().min(1).max(255).regex(/^[a-z0-9-]+$/),
@@ -33,6 +34,7 @@ export type EventDetail = {
   source_url: string | null;
   organiser: string | null;
   is_featured: boolean;
+  date_is_estimated: boolean;
 };
 
 export const getEventBySlug = createServerFn({ method: "GET" })
@@ -41,7 +43,7 @@ export const getEventBySlug = createServerFn({ method: "GET" })
     const { data: row, error } = await supabaseAdmin
       .from("events")
       .select(
-        "id, slug, name, date_raw, date_from, date_to, sort_date, town, county, region, distances, discipline, entry_fee, entry_url, organiser_url, source_url, organiser, is_featured",
+        "id, slug, name, date_raw, date_from, date_to, sort_date, town, county, region, distances, discipline, entry_fee, entry_url, organiser_url, source_url, organiser, is_featured, date_is_estimated",
       )
       .eq("slug", data.slug)
       .eq("status", "ACTIVE")
@@ -99,6 +101,7 @@ export type DistanceEvent = {
   organiser_url: string | null;
   source_url: string | null;
   is_featured: boolean;
+  date_is_estimated: boolean;
 };
 
 export type DistancePageData = {
@@ -125,7 +128,7 @@ export const getEventsByDistance = createServerFn({ method: "GET" })
       const { data: rows, error } = await supabaseAdmin
         .from("events")
         .select(
-          "id, slug, name, date_raw, sort_date, town, county, region, distances, entry_fee, entry_url, organiser_url, source_url, is_featured",
+          "id, slug, name, date_raw, sort_date, town, county, region, distances, entry_fee, entry_url, organiser_url, source_url, is_featured, date_is_estimated",
         )
         .eq("status", "ACTIVE")
         .not("distances", "is", null)
@@ -154,6 +157,7 @@ export const getEventsByDistance = createServerFn({ method: "GET" })
             organiser_url: r.organiser_url as string | null,
             source_url: r.source_url as string | null,
             is_featured: !!r.is_featured,
+            date_is_estimated: !!r.date_is_estimated,
           });
         }
       }
@@ -169,8 +173,10 @@ export const getEventsByDistance = createServerFn({ method: "GET" })
       .map(([region, count]) => ({ region, count }))
       .sort((a, b) => b.count - a.count);
 
+    const sorted = sortEstimatedLastWithinMonth(all);
+
     return {
-      events: all.slice(0, DISPLAY_LIMIT),
+      events: sorted.slice(0, DISPLAY_LIMIT),
       regionCounts,
       total: all.length,
     };
@@ -214,7 +220,7 @@ export const getEventsByRegionAndDistance = createServerFn({ method: "GET" })
       const { data: rows, error } = await supabaseAdmin
         .from("events")
         .select(
-          "id, slug, name, date_raw, sort_date, town, county, region, distances, entry_fee, entry_url, organiser_url, source_url, is_featured",
+          "id, slug, name, date_raw, sort_date, town, county, region, distances, entry_fee, entry_url, organiser_url, source_url, is_featured, date_is_estimated",
         )
         .eq("status", "ACTIVE")
         .eq("region", region.name)
@@ -243,6 +249,7 @@ export const getEventsByRegionAndDistance = createServerFn({ method: "GET" })
           organiser_url: r.organiser_url as string | null,
           source_url: r.source_url as string | null,
           is_featured: !!r.is_featured,
+          date_is_estimated: !!r.date_is_estimated,
         });
       }
       if (rows.length < pageSize) break;
@@ -266,7 +273,9 @@ export const getEventsByRegionAndDistance = createServerFn({ method: "GET" })
       }
     }
 
-    const matched = all.filter((e) => matchesDistance(e.distance_type, cfg));
+    const matched = sortEstimatedLastWithinMonth(
+      all.filter((e) => matchesDistance(e.distance_type, cfg)),
+    );
 
     return {
       events: matched.slice(0, DISPLAY_LIMIT),

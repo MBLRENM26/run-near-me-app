@@ -18,6 +18,7 @@ export interface EventCardData {
   source_url: string | null;
   is_featured: boolean;
   sort_date?: string | null;
+  date_is_estimated?: boolean | null;
   distanceMiles?: number;
 }
 
@@ -77,7 +78,12 @@ export function EventCard({ event }: { event: EventCardData }) {
         {event.date_raw && (
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 shrink-0" />
-            <span>{event.date_raw}</span>
+            <span>
+              {event.date_raw}
+              {event.date_is_estimated && (
+                <span className="text-xs"> (date TBC)</span>
+              )}
+            </span>
           </div>
         )}
         <div className="flex items-center gap-2">

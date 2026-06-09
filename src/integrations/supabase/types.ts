@@ -107,6 +107,7 @@ export type Database = {
           county: string | null
           created_at: string
           date_from: string | null
+          date_is_estimated: boolean
           date_raw: string | null
           date_to: string | null
           discipline: string | null
@@ -139,6 +140,7 @@ export type Database = {
           county?: string | null
           created_at?: string
           date_from?: string | null
+          date_is_estimated?: boolean
           date_raw?: string | null
           date_to?: string | null
           discipline?: string | null
@@ -171,6 +173,7 @@ export type Database = {
           county?: string | null
           created_at?: string
           date_from?: string | null
+          date_is_estimated?: boolean
           date_raw?: string | null
           date_to?: string | null
           discipline?: string | null
@@ -285,6 +288,7 @@ export type Database = {
         }
         Returns: {
           county: string
+          date_is_estimated: boolean
           date_raw: string
           distance_miles: number
           distance_type: string

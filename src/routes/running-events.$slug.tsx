@@ -15,6 +15,7 @@ import {
   filterByMonth,
   formatMonthLabelLong,
   monthSearchValidator,
+  sortEstimatedLastWithinMonth,
   type MonthKey,
   type MonthSearch,
 } from "@/lib/month-filter";
@@ -99,7 +100,7 @@ function RegionPage() {
         const { data, error } = await supabase
           .from("events")
           .select(
-            "id, slug, name, date_raw, sort_date, town, county, distance_type:distances, entry_fee, entry_url, organiser_url, source_url, is_featured",
+            "id, slug, name, date_raw, sort_date, town, county, distance_type:distances, entry_fee, entry_url, organiser_url, source_url, is_featured, date_is_estimated",
           )
           .eq("region", region.name)
           .eq("status", "ACTIVE")
@@ -114,7 +115,7 @@ function RegionPage() {
         all.push(...(data as EventCardData[]));
         if (data.length < pageSize) break;
       }
-      return all;
+      return sortEstimatedLastWithinMonth(all);
     },
   });
 
