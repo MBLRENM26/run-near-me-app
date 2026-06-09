@@ -185,7 +185,8 @@ export const Route = createFileRoute("/events/$slug")({
 });
 
 function EventDetailPage() {
-  const { event: e, related } = Route.useLoaderData();
+  const { event: e, related }: import("@/lib/events.functions").EventPageData =
+    Route.useLoaderData();
 
   const entryUrl = e.entry_url?.trim() || null;
   const organiserUrl = e.organiser_url?.trim() || null;
