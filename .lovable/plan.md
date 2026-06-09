@@ -1,36 +1,43 @@
-# Persist month filter across distance navigation
+# Fix Search Console Errors First, Then Scotland Athletics
 
-## Problem
+## What I found
 
-On a region × distance page (e.g. `/running-events/south-west/10k-races?month=2026-12`), clicking another distance pill in `DistanceNav` navigates to the new combo page but drops `?month=2026-12`. The user then has to re-pick December. Same issue on region pages and top-level distance pages — any time `DistanceNav` is used while a month filter is active, the filter is lost on click.
+### GSC errors — root causes identified
 
-Expected behaviour: if the user has narrowed by month, switching distance should keep that month. If the new (region × distance) combo has no events in that month, the existing empty state already prompts "Show all months", so there's a safe escape hatch.
+**1. "Missing field 'location'" — 1,607 event pages affected**
+The event page JSON-LD only includes `location` when the event has a town or county. 1,607 active events have neither — but **all 1,607 have a region** (and 1,429 have coordinates). Easy fix.
 
-## Fix
+**2. Probable "Missing field 'startDate'" too — 1,397 events**
+1,397 active events have no date at all. Google requires `startDate` on Event schema, so these pages emit invalid structured data.
 
-Make every `<Link>` in `src/components/distance/DistanceNav.tsx` forward the current `month` search param to its destination.
+**3. "Soft 404"**
+Hard 404s work correctly (verified live — missing events return a real 404 status). The likely soft-404 candidates are the **1,970 active events whose date has already passed** — they're still in the sitemap and render with stale past dates, plus any listing pages that render with zero events. I'll pull the exact affected URLs from Search Console to confirm before changing anything.
 
-TanStack's `<Link search={(prev) => ...}>` function form preserves existing search params and is type-safe per destination. Since the destination routes (`/5k-races`, `/10k-races`, …, `/running-events/$slug/$distance`) all already register `monthSearchValidator`, the param is valid on the receiving end.
+**4. "Excluded by noindex"**
+This one is mostly **intentional and healthy**: thin region×distance pages (<3 events) and admin pages are deliberately noindexed, and the sitemap already excludes them. No fix needed — but I'll verify against the actual URL list from GSC.
 
-### Change
+### Scotland Athletics
+Their events calendar page loads events via JavaScript — the static HTML contains no event data or obvious API endpoint. Needs a browser-based inspection to find the underlying data feed.
 
-In `DistanceNav.tsx`, for both the `regionSlug` branch and each of the six top-level distance `<Link>`s, add:
+## Plan
 
-```tsx
-search={(prev: { month?: string }) => ({ month: prev?.month })}
-```
+### Phase 1 — GSC fixes (do first)
 
-That's the only code change. No new files, no route changes, no SEO impact (canonical and metadata stay unfiltered as already implemented).
+1. **Pull exact affected URLs from Search Console** via the connected GSC API, so fixes target the real problem pages rather than guesses.
+2. **JSON-LD location fallback**: when town/county are missing, fall back to `region` (e.g. Place name "Scotland", addressCountry GB). Fixes all 1,607 "missing location" errors.
+3. **Undated events**: omit the Event JSON-LD block entirely when there's no date (invalid schema is worse than none), keeping the page itself indexable.
+4. **Past events**: exclude events with a past date from the sitemap (keep the pages live so existing links still work). If GSC confirms these are the soft-404 source, optionally add `eventStatus` handling or noindex events more than ~30 days past.
+5. **Verify noindex exclusions** against the GSC URL list — expected to be intentional thin/admin pages; no code change unless something unexpected shows up.
 
-### Out of scope
+### Phase 2 — Scotland Athletics source investigation
 
-- The parkrun region link below the distance nav (different route family, no month filter there).
-- The homepage "Back to all events" link — intentional reset.
-- Region selector elsewhere on the page (regions don't share month context — switching region is a bigger context switch).
+6. Use the browser tool to load their events calendar and capture the network request that fetches event data (likely a WordPress AJAX/JSON feed).
+7. Assess the feed: fields available (name, date, location, distance, entry URL), volume, and licensing/attribution considerations.
+8. If viable, map their fields to our import format and load via the existing `/api/public/import-events` endpoint (which now auto-normalises regions). If their feed is unusable, fall back to alternative Scottish sources (e.g. SI Entries / Entry Central, which carry most Scottish races).
 
-## Verification
+## Technical details
 
-1. Visit `/running-events/south-west/10k-races?month=2026-12`, click **5K** pill → URL becomes `/running-events/south-west/5k-races?month=2026-12`, list is filtered to December.
-2. From the same page, click **Half marathon** → month persists; if no December half marathons in South West, empty state offers "Show all months".
-3. From `/10k-races?month=2026-12`, click **5K** pill → `/5k-races?month=2026-12` with December filter applied.
-4. Region page `/running-events/south-west?month=2026-12`, click any distance pill → month persists.
+- Location fallback edit: `src/routes/events.$slug.tsx` head() JSON-LD block (~lines 76–87).
+- Sitemap edit: `src/lib/events.functions.ts` `getAllActiveSlugs` — filter `sort_date >= today OR sort_date IS NULL` (undated events stay in, since many are "month TBC" future races... actually undated ≠ past; only filter confirmed-past dates).
+- GSC API calls go through the connector gateway (read-only queries first).
+- No database changes required for Phase 1.
