@@ -78,7 +78,11 @@ export function buildAboutParagraph(e: AboutEventInput): string | null {
   const name = e.name.trim();
   const subject = /^the\s/i.test(name) ? name : `The ${name}`;
   const what = e.distanceKey ? distanceSingular(e.distanceKey) : "a running event";
-  const loc = [e.town, e.county].filter(Boolean).join(", ");
+  const sameTownCounty =
+    e.town && e.county && e.town.trim().toLowerCase() === e.county.trim().toLowerCase();
+  const loc = (sameTownCounty ? [e.town] : [e.town, e.county])
+    .filter(Boolean)
+    .join(", ");
 
   // Date clause — estimated dates are never shown as a precise day.
   const dateLabel = formatEventDate(e);
