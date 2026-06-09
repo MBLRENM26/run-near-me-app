@@ -10,8 +10,8 @@
  * - `organiser-site` — homepage of a non-aggregator host. May be shown as
  *                      "Visit organiser website", never as "Enter now".
  * - `untrusted`      — aggregator/listing-site URL. NEVER rendered as a
- *                      link or asserted in structured data; at most named
- *                      as plain text ("Listed via runabc.co.uk").
+ *                      link, named on the page, or asserted in structured
+ *                      data. Kept in the DB for internal use only.
  * - `invalid`        — missing or unparseable. Never rendered.
  */
 
