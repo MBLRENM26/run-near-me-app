@@ -1,45 +1,30 @@
-# Event page enrichment — trustworthy fields only, scraped fees removed
+# Fix event card links + parkrun ordering in nearby results
 
-GSC shows 4,542 pages "Discovered – not indexed" and 2,959 "Crawled – not indexed". Fix package: on-page content + internal links + breadcrumbs, built strictly from fields that can't go stale.
+## Problem 1 — Cards send visitors off-site to the wrong pages
+The "View event" button on every event card is an external link to the scraped `entry_url`. For runabc-scraped events that URL is often a **generic regional listing** (e.g. `runabc.co.uk/kent` for Dartford Bridge 10K), so visitors leave your site and don't even land on the event. Your own event pages — with the new About copy, breadcrumbs and related races — are bypassed entirely.
 
-## Field trust rules
+### Fix
+- **Card CTA goes internal, always.** "View details →" linking to `/events/{slug}`. The external link is removed from cards completely — the official site link lives on the event detail page where it belongs.
+- **Parkrun cards link to their parkrun page** (`/parkrun-events/{slug}` or junior equivalent) instead of the generic event page, detected by name containing "parkrun".
+- **Event detail page: demote generic listing URLs.** On `/events/{slug}`, if `entry_url` is a bare runabc regional page (path like `/kent`, `/scotland` — no event-specific path), it is no longer shown as the primary "Visit official event website" button. It drops to the small "Listed on runabc.co.uk" source attribution instead, consistent with the scraped-data trust rules. Event-specific URLs (eventrac, organiser sites, full event paths) keep working as the primary CTA.
 
-**Stated as fact (stable):**
-- Name, distance, town, county, region.
-- Date — estimated dates get "expected … date to be confirmed" phrasing.
-- Live count of same-distance races in the region — counted from the database at render time, correct by construction (verified: 104 upcoming half marathons in the South East, 137 10Ks, 73 halves in London, 37 10Ks in Wales).
+## Problem 2 — Parkruns flood the top of nearby results
+Results are sorted by distance only. Parkruns are dense (1,391 of them), so 3+ parkruns often sit above the actual races people came to find.
 
-**Removed entirely (scraped-and-stale):**
-- **Entry fee — gone from the page.** No fee bullet, no fee in the paragraph, no fee in the meta description, and the price is stripped from the Event JSON-LD offer (the offer keeps the entry link, just no price claim). Replaced everywhere by a pointer: *"Entry details and pricing are available on the official event website."* Real pricing comes back only when we have real data (claimed listings / organiser feed).
-- **Organiser** — gone from prose (dissolved companies, ownership changes).
+### Fix
+- Nearby results split into two groups: **races first** (distance-sorted), then parkruns at the bottom under a small divider heading — "Free weekly parkruns near you" — also distance-sorted.
+- The count line reads e.g. "12 events found · 4 parkruns".
+- The "All / 5K / 10K…" filter still applies to both groups; choosing "5K" keeps parkruns in their bottom section.
 
-Final example paragraph:
-
-> "The Brighton Half Marathon is a half marathon held in Brighton, East Sussex, taking place on Sunday 22 February 2026. Entry details and pricing are available on the official event website. It's one of **104 half marathons** in the South East this season — find more below."
-
-Count safeguards: only shown when ≥ 5 (no weak "one of 2"); uses the same filters as the listing pages so the number matches what readers click through to; falls back to region-only ("one of 508 running events in the South East") when distance can't be bucketed.
-
-## Longer-term content path (no build now)
-
-`description_override` column later, populated via List Your Event, claimed listings, or an organiser feed — generated copy is the floor, owned copy replaces it page-by-page.
-
-## The build
-
-1. **"About this race" paragraph** — stable facts + live count, clause-gated on field presence, 3–4 phrasing patterns keyed off the slug so adjacent pages differ. Rendered in the page body.
-2. **Scraped fee removed** — fee bullet deleted from the event page, fee clause deleted from meta description, price stripped from JSON-LD offers (entry link kept).
-3. **"More {distance} races in {region}" block** — up to 6 upcoming same-distance/same-region events + "View all {count}" link to the region/distance combo page; same-region fallback. New `getRelatedEvents` server function returns the 6 events and the total count in one call.
-4. **Breadcrumb trail + BreadcrumbList JSON-LD** — Home → {Region} → {Event} on event pages; JSON-LD only on parkrun pages.
-
-## Not in this round
-
-- Any fee or organiser claim anywhere on event pages.
-- Fee data rebuild (future conversation — tiered pricing needs a schema rethink, likely organiser-supplied).
-- The 6 soft-404s / 4 hard-404s — drop URL lists from GSC when convenient.
-- No schema changes, no new pages, no redesign.
+## Where this applies
+- Homepage nearby results (the main complaint)
+- The same `EventCard` is used on distance/region pages, so the internal-link fix applies everywhere automatically.
 
 ## Technical details
+- `src/components/events/EventCard.tsx` — remove external `<a>` CTA; always render internal `Link`; route parkruns (name match) to `/parkrun-events/$slug` / `/junior-parkrun-events` equivalents based on existing slugs.
+- `src/routes/index.tsx` — partition `visibleEvents` into `races` / `parkruns` via name match; render parkrun group after races with divider heading; update count line.
+- `src/routes/events.$slug.tsx` — add a `isGenericListingUrl()` check (runabc host + single non-event path segment) in the primary-CTA picker; demote to source attribution when matched.
+- No database or schema changes; no changes to the radius RPC.
 
-- New `src/lib/event-description.ts`: pure function from stable fields + `{ regionCount, distanceLabel }`; reuses `formatEventDate`; no fee/organiser inputs.
-- `src/lib/events.functions.ts`: new `getRelatedEvents` — one Supabase query with `{ count: "exact" }` returning `{ events: [...6], totalCount, bucketed }` (region + distance match via `distance-filters.ts` patterns, `sort_date >= today`, `status = ACTIVE`, exclude self).
-- `src/routes/events.$slug.tsx`: loader fetches event + related in parallel; removes the fee bullet and the `feeClause` from the meta description; strips `offer.price`/`priceCurrency` from Event JSON-LD (offer keeps `url` + availability); adds About section, related-links block, breadcrumb (existing shadcn breadcrumb), BreadcrumbList JSON-LD in `head()`.
-- `src/routes/parkrun-events.$slug.tsx`: BreadcrumbList JSON-LD only (parkrun is genuinely free — "free" stays there since it's a property of parkrun itself, not scraped).
+## Out of scope (flagged, not fixed here)
+- Duplicate rows exist (two "Dartford Bridge 10K" entries — one runabc-scraped with the bad URL, one with the proper eventrac link). De-duplication of scraped vs. sourced events is a separate data-cleanup job worth doing soon.
