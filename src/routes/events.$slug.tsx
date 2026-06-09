@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { getEventBySlug } from "@/lib/events.functions";
-import { formatEventDate, eventYear, isoDate } from "@/lib/date";
+import { formatEventDate, eventYear, isoDate, shortEventDate } from "@/lib/date";
 import { REGIONS } from "@/lib/regions";
 import { SITE_URL } from "@/lib/site";
 
