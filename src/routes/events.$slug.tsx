@@ -34,26 +34,7 @@ function locationLabel(town: string | null, county: string | null): string {
   return [town, county].filter(Boolean).join(", ");
 }
 
-/**
- * True when a scraped URL is an aggregator's *regional listing* page rather
- * than an event-specific page — e.g. https://runabc.co.uk/kent. These must
- * never be presented as the event's official website / entry link.
- */
-function isGenericListingUrl(url: string | null): boolean {
-  if (!url) return false;
-  try {
-    const u = new URL(url);
-    const host = u.hostname.replace(/^www\./, "").toLowerCase();
-    if (host !== "runabc.co.uk" && host !== "runabc.scot") return false;
-    const segments = u.pathname.split("/").filter(Boolean);
-    // Region listing pages are a single short slug with no digits
-    // (e.g. /kent, /scotland). Real event pages have deeper or dated paths.
-    if (segments.length === 0) return true;
-    return segments.length === 1 && !/\d/.test(segments[0]);
-  } catch {
-    return false;
-  }
-}
+import { classifyEventLink, isTrustedLink } from "@/lib/link-trust";
 
 export const Route = createFileRoute("/events/$slug")({
   loader: ({ params }) => getEventPageData({ data: { slug: params.slug } }),
@@ -84,7 +65,12 @@ export const Route = createFileRoute("/events/$slug")({
     const distance = e.distances?.trim() || e.discipline?.trim() || "running";
 
     // No fee claims in the description — scraped single-value pricing goes
-    // stale and misleads. Point readers at the official site instead.
+    // stale and misleads. Only promise "the official site" when we actually
+    // have a trustworthy official link to show.
+    const headEntryLink = classifyEventLink(e.entry_url);
+    const headOrgLink = classifyEventLink(e.organiser_url);
+    const hasOfficialLink =
+      isTrustedLink(headEntryLink) || isTrustedLink(headOrgLink);
     const when = e.date_is_estimated
       ? dateLabel
         ? `, expected ${dateLabel.replace(" (date TBC)", "")} — date to be confirmed`
@@ -94,7 +80,9 @@ export const Route = createFileRoute("/events/$slug")({
         : "";
     const description = [
       `${e.name} is a ${distance} race${loc ? ` in ${loc}` : ""}${when}.`,
-      "See route details, start time and how to enter on the official site.",
+      hasOfficialLink
+        ? "See route details, start time and how to enter on the official site."
+        : "See date, location and distance details, plus more races nearby.",
     ]
       .filter(Boolean)
       .join(" ")
@@ -134,31 +122,21 @@ export const Route = createFileRoute("/events/$slug")({
           addressCountry: "GB",
         },
       };
-      // Offers: entry link only — no price claim. Scraped fees are stale and
-      // single-valued, so the structured data never asserts a price. Generic
-      // aggregator listing URLs are never asserted as the entry link.
-      const entryUrl = e.entry_url?.trim();
-      if (entryUrl && !isGenericListingUrl(entryUrl)) {
+      // Offers: entry link only — no price claim, and only event-specific
+      // pages on trusted (non-aggregator) hosts are ever asserted.
+      if (headEntryLink.kind === "entry") {
         jsonLd.offers = {
           "@type": "Offer",
-          url: entryUrl,
+          url: headEntryLink.href,
           availability: "https://schema.org/InStock",
         };
       }
-      if (e.organiser_url?.trim() && !isGenericListingUrl(e.organiser_url.trim())) {
-        const orgUrl = e.organiser_url.trim();
-        let orgName = e.organiser?.trim() || "";
-        if (!orgName) {
-          try {
-            orgName = new URL(orgUrl).hostname.replace(/^www\./, "");
-          } catch {
-            orgName = "";
-          }
-        }
+      if (isTrustedLink(headOrgLink)) {
+        const orgName = e.organiser?.trim() || headOrgLink.host || "";
         jsonLd.organizer = {
           "@type": "Organization",
           ...(orgName ? { name: orgName } : {}),
-          url: orgUrl,
+          url: headOrgLink.href,
         };
       }
     }
@@ -218,22 +196,26 @@ function EventDetailPage() {
   const { event: e, related }: import("@/lib/events.functions").EventPageData =
     Route.useLoaderData();
 
-  const rawEntryUrl = e.entry_url?.trim() || null;
-  const rawOrganiserUrl = e.organiser_url?.trim() || null;
-  const sourceUrl = e.source_url?.trim() || null;
-
-  // Scraped aggregator URLs that point at a regional listing page (e.g.
-  // runabc.co.uk/kent) are not the event's official site — never present
-  // them as the primary CTA. Demote to source attribution instead.
-  const entryUrl = isGenericListingUrl(rawEntryUrl) ? null : rawEntryUrl;
-  const organiserUrl = isGenericListingUrl(rawOrganiserUrl)
-    ? null
-    : rawOrganiserUrl;
+  // Site-wide link-trust policy: aggregator URLs are never rendered as
+  // links, homepages are "Visit organiser website", and only event-specific
+  // pages earn "Enter now".
+  const entryLink = classifyEventLink(e.entry_url);
+  const orgLink = classifyEventLink(e.organiser_url);
+  const srcLink = classifyEventLink(e.source_url);
 
   const dateLabel = formatEventDate(e);
   const loc = locationLabel(e.town, e.county);
   const distance = e.distances?.trim() || e.discipline?.trim();
   const regionSlug = regionSlugFromName(e.region);
+
+  let primaryCta: { href: string; label: string } | null = null;
+  if (entryLink.kind === "entry") {
+    primaryCta = { href: entryLink.href!, label: "Enter now" };
+  } else if (entryLink.kind === "organiser-site") {
+    primaryCta = { href: entryLink.href!, label: "Visit organiser website" };
+  } else if (isTrustedLink(orgLink)) {
+    primaryCta = { href: orgLink.href!, label: "Visit organiser website" };
+  }
 
   const about = buildAboutParagraph({
     slug: e.slug,
@@ -247,28 +229,16 @@ function EventDetailPage() {
     date_raw: e.date_raw,
     date_is_estimated: e.date_is_estimated,
     distanceKey: related.distanceKey,
-    hasOfficialLink: !!(entryUrl || organiserUrl),
+    hasOfficialLink: !!primaryCta,
     regionCount: related.totalCount,
   });
 
-  // Per spec: Claim block triggers when both entry_url AND organiser_url are empty.
-  const showClaim = !entryUrl && !organiserUrl;
+  // No trustworthy official link → invite the organiser to claim the listing.
+  const showClaim = !primaryCta;
 
-  let primaryCta: { href: string; label: string } | null = null;
-  if (entryUrl) primaryCta = { href: entryUrl, label: "Enter now" };
-  else if (organiserUrl) primaryCta = { href: organiserUrl, label: "Visit organiser" };
-
-  // Attribution link when there is no trustworthy primary CTA: prefer the
-  // source URL, falling back to a demoted generic listing URL.
-  const attributionUrl = sourceUrl || rawEntryUrl || rawOrganiserUrl;
-  let sourceHost: string | null = null;
-  if (!primaryCta && attributionUrl) {
-    try {
-      sourceHost = new URL(attributionUrl).hostname.replace(/^www\./, "");
-    } catch {
-      sourceHost = null;
-    }
-  }
+  // Source attribution is plain text only — aggregator sites are named,
+  // never linked.
+  const sourceHost = srcLink.host ?? entryLink.host ?? orgLink.host;
 
   const relatedLabel = related.distanceKey
     ? distancePlural(related.distanceKey)
@@ -348,20 +318,9 @@ function EventDetailPage() {
                   <ExternalLink className="h-4 w-4" />
                 </a>
               </Button>
-              {sourceUrl && primaryCta.href !== sourceUrl && (
+              {sourceHost && srcLink.href !== primaryCta.href && (
                 <p className="mt-3 text-xs text-muted-foreground">
-                  Originally listed at{" "}
-                  <a
-                    href={sourceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline hover:text-foreground"
-                  >
-                    {(() => {
-                      try { return new URL(sourceUrl).hostname.replace(/^www\./, ""); }
-                      catch { return "source"; }
-                    })()}
-                  </a>
+                  Originally listed on {sourceHost}
                 </p>
               )}
             </div>
@@ -370,15 +329,7 @@ function EventDetailPage() {
           {!primaryCta && sourceHost && (
             <p className="mt-6 text-sm text-muted-foreground inline-flex items-center gap-1.5">
               <Info className="h-4 w-4" />
-              Listed on{" "}
-              <a
-                href={attributionUrl!}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline hover:text-foreground"
-              >
-                {sourceHost}
-              </a>
+              <span>Listed via {sourceHost}</span>
             </p>
           )}
 
