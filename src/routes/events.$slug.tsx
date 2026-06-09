@@ -34,26 +34,7 @@ function locationLabel(town: string | null, county: string | null): string {
   return [town, county].filter(Boolean).join(", ");
 }
 
-/**
- * True when a scraped URL is an aggregator's *regional listing* page rather
- * than an event-specific page — e.g. https://runabc.co.uk/kent. These must
- * never be presented as the event's official website / entry link.
- */
-function isGenericListingUrl(url: string | null): boolean {
-  if (!url) return false;
-  try {
-    const u = new URL(url);
-    const host = u.hostname.replace(/^www\./, "").toLowerCase();
-    if (host !== "runabc.co.uk" && host !== "runabc.scot") return false;
-    const segments = u.pathname.split("/").filter(Boolean);
-    // Region listing pages are a single short slug with no digits
-    // (e.g. /kent, /scotland). Real event pages have deeper or dated paths.
-    if (segments.length === 0) return true;
-    return segments.length === 1 && !/\d/.test(segments[0]);
-  } catch {
-    return false;
-  }
-}
+import { classifyEventLink, isTrustedLink } from "@/lib/link-trust";
 
 export const Route = createFileRoute("/events/$slug")({
   loader: ({ params }) => getEventPageData({ data: { slug: params.slug } }),
@@ -84,7 +65,12 @@ export const Route = createFileRoute("/events/$slug")({
     const distance = e.distances?.trim() || e.discipline?.trim() || "running";
 
     // No fee claims in the description — scraped single-value pricing goes
-    // stale and misleads. Point readers at the official site instead.
+    // stale and misleads. Only promise "the official site" when we actually
+    // have a trustworthy official link to show.
+    const headEntryLink = classifyEventLink(e.entry_url);
+    const headOrgLink = classifyEventLink(e.organiser_url);
+    const hasOfficialLink =
+      isTrustedLink(headEntryLink) || isTrustedLink(headOrgLink);
     const when = e.date_is_estimated
       ? dateLabel
         ? `, expected ${dateLabel.replace(" (date TBC)", "")} — date to be confirmed`
@@ -94,7 +80,9 @@ export const Route = createFileRoute("/events/$slug")({
         : "";
     const description = [
       `${e.name} is a ${distance} race${loc ? ` in ${loc}` : ""}${when}.`,
-      "See route details, start time and how to enter on the official site.",
+      hasOfficialLink
+        ? "See route details, start time and how to enter on the official site."
+        : "See date, location and distance details, plus more races nearby.",
     ]
       .filter(Boolean)
       .join(" ")
@@ -134,31 +122,21 @@ export const Route = createFileRoute("/events/$slug")({
           addressCountry: "GB",
         },
       };
-      // Offers: entry link only — no price claim. Scraped fees are stale and
-      // single-valued, so the structured data never asserts a price. Generic
-      // aggregator listing URLs are never asserted as the entry link.
-      const entryUrl = e.entry_url?.trim();
-      if (entryUrl && !isGenericListingUrl(entryUrl)) {
+      // Offers: entry link only — no price claim, and only event-specific
+      // pages on trusted (non-aggregator) hosts are ever asserted.
+      if (headEntryLink.kind === "entry") {
         jsonLd.offers = {
           "@type": "Offer",
-          url: entryUrl,
+          url: headEntryLink.href,
           availability: "https://schema.org/InStock",
         };
       }
-      if (e.organiser_url?.trim() && !isGenericListingUrl(e.organiser_url.trim())) {
-        const orgUrl = e.organiser_url.trim();
-        let orgName = e.organiser?.trim() || "";
-        if (!orgName) {
-          try {
-            orgName = new URL(orgUrl).hostname.replace(/^www\./, "");
-          } catch {
-            orgName = "";
-          }
-        }
+      if (isTrustedLink(headOrgLink)) {
+        const orgName = e.organiser?.trim() || headOrgLink.host || "";
         jsonLd.organizer = {
           "@type": "Organization",
           ...(orgName ? { name: orgName } : {}),
-          url: orgUrl,
+          url: headOrgLink.href,
         };
       }
     }
