@@ -404,7 +404,7 @@ function ClusterCard({
           </thead>
           <tbody>
             {cluster.rows.map((row, i) => {
-              const isSurvivor = i === 0;
+              const isSurvivor = i === 0 && cluster.kind !== "series";
               return (
                 <tr
                   key={row.id}
