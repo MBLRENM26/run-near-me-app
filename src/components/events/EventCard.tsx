@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Calendar, MapPin, Tag, Star, ArrowRight } from "lucide-react";
+import { Calendar, MapPin, Tag, Star, ArrowRight, Repeat } from "lucide-react";
 import { formatDistance } from "@/lib/distance";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +18,7 @@ export interface EventCardData {
   is_featured: boolean;
   sort_date?: string | null;
   date_is_estimated?: boolean | null;
+  is_recurring?: boolean | null;
   distanceMiles?: number;
 }
 
