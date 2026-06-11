@@ -508,15 +508,18 @@ export interface DuplicateRow {
   source_url: string | null;
   distance_tags: string[];
   terrain_tags: string[];
+  is_recurring: boolean;
 }
 
 export type DuplicateConfidence = "high" | "medium" | "low";
+export type DuplicateKind = "duplicate" | "series";
 
 export interface DuplicateCluster {
   key: string;
   rows: DuplicateRow[];
   confidence: DuplicateConfidence;
   reason: string;
+  kind: DuplicateKind;
 }
 
 function hostOf(url: string | null): string | null {
