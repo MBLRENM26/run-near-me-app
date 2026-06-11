@@ -101,6 +101,38 @@ export type Database = {
         }
         Relationships: []
       }
+      event_edits: {
+        Row: {
+          changes: Json
+          edited_at: string
+          event_id: string
+          id: string
+          note: string | null
+        }
+        Insert: {
+          changes: Json
+          edited_at?: string
+          event_id: string
+          id?: string
+          note?: string | null
+        }
+        Update: {
+          changes?: Json
+          edited_at?: string
+          event_id?: string
+          id?: string
+          note?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_edits_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           country: string | null

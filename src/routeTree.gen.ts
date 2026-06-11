@@ -35,6 +35,7 @@ import { Route as RunningEventsSlugDistanceRouteImport } from './routes/running-
 import { Route as ParkrunEventsRegionRegionRouteImport } from './routes/parkrun-events.region.$region'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as ApiPublicImportEventsRouteImport } from './routes/api/public/import-events'
+import { Route as AdminShellAdminEventsRouteImport } from './routes/_adminShell.admin.events'
 import { Route as AdminShellAdminClaimsRouteImport } from './routes/_adminShell.admin.claims'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
@@ -42,6 +43,7 @@ import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/e
 import { Route as ApiPublicAdminSyncScottishAthleticsRouteImport } from './routes/api/public/admin/sync-scottish-athletics'
 import { Route as ApiPublicAdminSyncEnglandAthleticsRouteImport } from './routes/api/public/admin/sync-england-athletics'
 import { Route as ApiPublicAdminFixEventUrlsRouteImport } from './routes/api/public/admin/fix-event-urls'
+import { Route as AdminShellAdminEventsIdRouteImport } from './routes/_adminShell.admin.events.$id'
 
 const UltraMarathonsRoute = UltraMarathonsRouteImport.update({
   id: '/ultra-marathons',
@@ -174,6 +176,11 @@ const ApiPublicImportEventsRoute = ApiPublicImportEventsRouteImport.update({
   path: '/api/public/import-events',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminShellAdminEventsRoute = AdminShellAdminEventsRouteImport.update({
+  id: '/admin/events',
+  path: '/admin/events',
+  getParentRoute: () => AdminShellRoute,
+} as any)
 const AdminShellAdminClaimsRoute = AdminShellAdminClaimsRouteImport.update({
   id: '/admin/claims',
   path: '/admin/claims',
@@ -215,6 +222,11 @@ const ApiPublicAdminFixEventUrlsRoute =
     path: '/api/public/admin/fix-event-urls',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AdminShellAdminEventsIdRoute = AdminShellAdminEventsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AdminShellAdminEventsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -239,10 +251,12 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/parkrun-events/': typeof ParkrunEventsIndexRoute
   '/admin/claims': typeof AdminShellAdminClaimsRoute
+  '/admin/events': typeof AdminShellAdminEventsRouteWithChildren
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/parkrun-events/region/$region': typeof ParkrunEventsRegionRegionRoute
   '/running-events/$slug/$distance': typeof RunningEventsSlugDistanceRoute
+  '/admin/events/$id': typeof AdminShellAdminEventsIdRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
   '/api/public/admin/sync-england-athletics': typeof ApiPublicAdminSyncEnglandAthleticsRoute
   '/api/public/admin/sync-scottish-athletics': typeof ApiPublicAdminSyncScottishAthleticsRoute
@@ -273,10 +287,12 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/parkrun-events': typeof ParkrunEventsIndexRoute
   '/admin/claims': typeof AdminShellAdminClaimsRoute
+  '/admin/events': typeof AdminShellAdminEventsRouteWithChildren
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/parkrun-events/region/$region': typeof ParkrunEventsRegionRegionRoute
   '/running-events/$slug/$distance': typeof RunningEventsSlugDistanceRoute
+  '/admin/events/$id': typeof AdminShellAdminEventsIdRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
   '/api/public/admin/sync-england-athletics': typeof ApiPublicAdminSyncEnglandAthleticsRoute
   '/api/public/admin/sync-scottish-athletics': typeof ApiPublicAdminSyncScottishAthleticsRoute
@@ -309,10 +325,12 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/parkrun-events/': typeof ParkrunEventsIndexRoute
   '/_adminShell/admin/claims': typeof AdminShellAdminClaimsRoute
+  '/_adminShell/admin/events': typeof AdminShellAdminEventsRouteWithChildren
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/parkrun-events/region/$region': typeof ParkrunEventsRegionRegionRoute
   '/running-events/$slug_/$distance': typeof RunningEventsSlugDistanceRoute
+  '/_adminShell/admin/events/$id': typeof AdminShellAdminEventsIdRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
   '/api/public/admin/sync-england-athletics': typeof ApiPublicAdminSyncEnglandAthleticsRoute
   '/api/public/admin/sync-scottish-athletics': typeof ApiPublicAdminSyncScottishAthleticsRoute
@@ -345,10 +363,12 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/parkrun-events/'
     | '/admin/claims'
+    | '/admin/events'
     | '/api/public/import-events'
     | '/lovable/email/suppression'
     | '/parkrun-events/region/$region'
     | '/running-events/$slug/$distance'
+    | '/admin/events/$id'
     | '/api/public/admin/fix-event-urls'
     | '/api/public/admin/sync-england-athletics'
     | '/api/public/admin/sync-scottish-athletics'
@@ -379,10 +399,12 @@ export interface FileRouteTypes {
     | '/admin'
     | '/parkrun-events'
     | '/admin/claims'
+    | '/admin/events'
     | '/api/public/import-events'
     | '/lovable/email/suppression'
     | '/parkrun-events/region/$region'
     | '/running-events/$slug/$distance'
+    | '/admin/events/$id'
     | '/api/public/admin/fix-event-urls'
     | '/api/public/admin/sync-england-athletics'
     | '/api/public/admin/sync-scottish-athletics'
@@ -414,10 +436,12 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/parkrun-events/'
     | '/_adminShell/admin/claims'
+    | '/_adminShell/admin/events'
     | '/api/public/import-events'
     | '/lovable/email/suppression'
     | '/parkrun-events/region/$region'
     | '/running-events/$slug_/$distance'
+    | '/_adminShell/admin/events/$id'
     | '/api/public/admin/fix-event-urls'
     | '/api/public/admin/sync-england-athletics'
     | '/api/public/admin/sync-scottish-athletics'
@@ -645,6 +669,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicImportEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_adminShell/admin/events': {
+      id: '/_adminShell/admin/events'
+      path: '/admin/events'
+      fullPath: '/admin/events'
+      preLoaderRoute: typeof AdminShellAdminEventsRouteImport
+      parentRoute: typeof AdminShellRoute
+    }
     '/_adminShell/admin/claims': {
       id: '/_adminShell/admin/claims'
       path: '/admin/claims'
@@ -694,15 +725,37 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAdminFixEventUrlsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_adminShell/admin/events/$id': {
+      id: '/_adminShell/admin/events/$id'
+      path: '/$id'
+      fullPath: '/admin/events/$id'
+      preLoaderRoute: typeof AdminShellAdminEventsIdRouteImport
+      parentRoute: typeof AdminShellAdminEventsRoute
+    }
   }
 }
 
+interface AdminShellAdminEventsRouteChildren {
+  AdminShellAdminEventsIdRoute: typeof AdminShellAdminEventsIdRoute
+}
+
+const AdminShellAdminEventsRouteChildren: AdminShellAdminEventsRouteChildren = {
+  AdminShellAdminEventsIdRoute: AdminShellAdminEventsIdRoute,
+}
+
+const AdminShellAdminEventsRouteWithChildren =
+  AdminShellAdminEventsRoute._addFileChildren(
+    AdminShellAdminEventsRouteChildren,
+  )
+
 interface AdminShellRouteChildren {
   AdminShellAdminClaimsRoute: typeof AdminShellAdminClaimsRoute
+  AdminShellAdminEventsRoute: typeof AdminShellAdminEventsRouteWithChildren
 }
 
 const AdminShellRouteChildren: AdminShellRouteChildren = {
   AdminShellAdminClaimsRoute: AdminShellAdminClaimsRoute,
+  AdminShellAdminEventsRoute: AdminShellAdminEventsRouteWithChildren,
 }
 
 const AdminShellRouteWithChildren = AdminShellRoute._addFileChildren(
