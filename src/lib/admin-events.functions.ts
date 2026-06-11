@@ -639,6 +639,45 @@ function normaliseEventName(name: string): string {
     .join(" ");
 }
 
+/**
+ * A cluster is treated as a "recurring series" (not duplicates) when there
+ * are 3+ rows in the same region with consistent town/distances, but their
+ * dates are spread across multiple distinct days/months. Strong example:
+ * RunThrough Tatton Park 5k, fortnightly, all from the same EA feed.
+ */
+function detectSeries(rows: DuplicateRow[]): boolean {
+  if (rows.length < 3) return false;
+  const towns = rows
+    .map((r) => normTown(r.town))
+    .filter((t): t is string => !!t);
+  const townsConsistent =
+    towns.length === 0 || new Set(towns).size === 1;
+  if (!townsConsistent) return false;
+
+  const dates = rows
+    .map((r) => r.sort_date)
+    .filter((d): d is string => !!d);
+  const distinctDates = new Set(dates).size;
+  const distinctMonths = new Set(
+    dates.map((d) => d.slice(0, 7)),
+  ).size;
+  // Need at least 3 distinct dates OR 2+ distinct months — a single fixture
+  // with two slightly-different scraped rows shouldn't trigger this.
+  return distinctDates >= 3 || distinctMonths >= 2;
+}
+
+function seriesReason(rows: DuplicateRow[]): string {
+  const sources = new Set(rows.map((r) => r.source).filter(Boolean));
+  const dates = rows
+    .map((r) => r.sort_date)
+    .filter((d): d is string => !!d);
+  const months = new Set(dates.map((d) => d.slice(0, 7))).size;
+  const sourceNote =
+    sources.size === 1 ? ` from ${[...sources][0]}` : "";
+  return `Recurring series — ${rows.length} dates across ${months} month${months === 1 ? "" : "s"}${sourceNote}.`;
+}
+
+
 export const findPotentialDuplicates = createServerFn({ method: "GET" })
   .handler(async (): Promise<{ clusters: DuplicateCluster[]; total: number }> => {
     requireAdminOrThrow();
