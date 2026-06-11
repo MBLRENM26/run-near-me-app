@@ -487,3 +487,202 @@ function sameSet(a: string[], b: string[]): boolean {
   return true;
 }
 
+// ---- Duplicate detection & merge ----
+//
+// Scraped sources occasionally produce two ACTIVE rows for the same race
+// (different slug, slightly different name/date). Without dedupe, distance
+// filters surface the lower-quality copy. This pair of fns powers an admin
+// UI to find clusters and merge them.
+
+export interface DuplicateRow {
+  id: string;
+  slug: string | null;
+  name: string;
+  date_raw: string | null;
+  sort_date: string | null;
+  region: string | null;
+  town: string | null;
+  distances: string | null;
+  discipline: string | null;
+  source: string | null;
+  source_url: string | null;
+  distance_tags: string[];
+  terrain_tags: string[];
+}
+
+export interface DuplicateCluster {
+  key: string;
+  rows: DuplicateRow[];
+}
+
+/**
+ * Strip year tokens, trailing parentheticals, and noise so two scraped names
+ * for the same race normalise to the same string. Tuned conservatively — a
+ * false negative (cluster missed) is fine; a false positive (different
+ * races merged) is expensive to unwind.
+ */
+function normaliseEventName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/\(.*?\)/g, " ")
+    .replace(/\b(19|20)\d{2}\b/g, " ")
+    .replace(/\b(spring|summer|autumn|fall|winter)\b/g, " ")
+    .replace(/\b(the|a|an|race|run|running|event|events)\b/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter((t) => t.length > 1)
+    .sort()
+    .join(" ");
+}
+
+export const findPotentialDuplicates = createServerFn({ method: "GET" })
+  .handler(async (): Promise<{ clusters: DuplicateCluster[]; total: number }> => {
+    requireAdminOrThrow();
+
+    const pageSize = 1000;
+    const all: (DuplicateRow & { _norm: string })[] = [];
+    for (let from = 0; ; from += pageSize) {
+      const { data: rows, error } = await supabaseAdmin
+        .from("events")
+        .select(
+          "id, slug, name, date_raw, sort_date, region, town, distances, discipline, source, source_url, distance_tags, terrain_tags",
+        )
+        .eq("status", "ACTIVE")
+        .order("id", { ascending: true })
+        .range(from, from + pageSize - 1);
+      if (error) throw new Error(error.message);
+      if (!rows || rows.length === 0) break;
+      for (const r of rows) {
+        all.push({
+          id: r.id as string,
+          slug: (r.slug as string | null) ?? null,
+          name: r.name as string,
+          date_raw: (r.date_raw as string | null) ?? null,
+          sort_date: (r.sort_date as string | null) ?? null,
+          region: (r.region as string | null) ?? null,
+          town: (r.town as string | null) ?? null,
+          distances: (r.distances as string | null) ?? null,
+          discipline: (r.discipline as string | null) ?? null,
+          source: (r.source as string | null) ?? null,
+          source_url: (r.source_url as string | null) ?? null,
+          distance_tags: (r.distance_tags as string[] | null) ?? [],
+          terrain_tags: (r.terrain_tags as string[] | null) ?? [],
+          _norm: normaliseEventName(r.name as string),
+        });
+      }
+      if (rows.length < pageSize) break;
+    }
+
+    // Group by (normalised name + region). Empty norm is too noisy to cluster.
+    const groups = new Map<string, (DuplicateRow & { _norm: string })[]>();
+    for (const r of all) {
+      if (!r._norm) continue;
+      const key = `${r._norm}::${r.region ?? ""}`;
+      const arr = groups.get(key) ?? [];
+      arr.push(r);
+      groups.set(key, arr);
+    }
+
+    const clusters: DuplicateCluster[] = [];
+    for (const [key, rows] of groups) {
+      if (rows.length < 2) continue;
+      // Sort: rows with sort_date first, then most-complete tags — gives the
+      // admin a sensible default survivor at the top of each cluster.
+      rows.sort((a, b) => {
+        const aHas = a.sort_date ? 1 : 0;
+        const bHas = b.sort_date ? 1 : 0;
+        if (aHas !== bHas) return bHas - aHas;
+        const aTags = a.distance_tags.length + a.terrain_tags.length;
+        const bTags = b.distance_tags.length + b.terrain_tags.length;
+        return bTags - aTags;
+      });
+      clusters.push({
+        key,
+        rows: rows.map(({ _norm: _n, ...rest }) => {
+          void _n;
+          return rest;
+        }),
+      });
+    }
+
+    clusters.sort((a, b) => b.rows.length - a.rows.length);
+    return { clusters, total: clusters.length };
+  });
+
+export const mergeDuplicateEvents = createServerFn({ method: "POST" })
+  .inputValidator((d) =>
+    z
+      .object({
+        survivorId: z.string().uuid(),
+        duplicateId: z.string().uuid(),
+        note: z.string().trim().max(500).optional(),
+      })
+      .refine((v) => v.survivorId !== v.duplicateId, {
+        message: "survivor and duplicate must differ",
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    requireAdminOrThrow();
+
+    const { data: rows, error } = await supabaseAdmin
+      .from("events")
+      .select(
+        "id, slug, name, status, distance_tags, terrain_tags, is_curated_tags",
+      )
+      .in("id", [data.survivorId, data.duplicateId]);
+    if (error) throw new Error(error.message);
+    const survivor = rows?.find((r) => r.id === data.survivorId);
+    const dupe = rows?.find((r) => r.id === data.duplicateId);
+    if (!survivor) throw new Error("Survivor not found");
+    if (!dupe) throw new Error("Duplicate not found");
+    if (survivor.status !== "ACTIVE") {
+      throw new Error("Survivor must be ACTIVE");
+    }
+
+    const survivorDT = (survivor.distance_tags as string[]) ?? [];
+    const survivorTT = (survivor.terrain_tags as string[]) ?? [];
+    const dupeDT = (dupe.distance_tags as string[]) ?? [];
+    const dupeTT = (dupe.terrain_tags as string[]) ?? [];
+
+    // Copy tags onto survivor only if survivor is empty AND dupe has any.
+    // Never overwrite a curated survivor.
+    const shouldCopyTags =
+      !survivor.is_curated_tags &&
+      survivorDT.length === 0 &&
+      survivorTT.length === 0 &&
+      (dupeDT.length > 0 || dupeTT.length > 0);
+
+    if (shouldCopyTags) {
+      const { error: upErr } = await supabaseAdmin
+        .from("events")
+        .update({ distance_tags: dupeDT, terrain_tags: dupeTT })
+        .eq("id", data.survivorId);
+      if (upErr) throw new Error(upErr.message);
+    }
+
+    const { error: dupErr } = await supabaseAdmin
+      .from("events")
+      .update({ status: "DUPLICATE", duplicate_of: data.survivorId })
+      .eq("id", data.duplicateId);
+    if (dupErr) throw new Error(dupErr.message);
+
+    // Audit trail — getEventPageData already 301s from the dupe's slug to
+    // the survivor's via duplicate_of; this records who merged what.
+    await supabaseAdmin.from("event_edits").insert({
+      event_id: data.duplicateId,
+      changes: {
+        action: "merge_duplicate",
+        survivor_id: data.survivorId,
+        survivor_slug: survivor.slug,
+        duplicate_slug: dupe.slug,
+        copied_tags: shouldCopyTags,
+      },
+      note: data.note ?? null,
+    });
+
+    return { ok: true, copied_tags: shouldCopyTags };
+  });
+
+
