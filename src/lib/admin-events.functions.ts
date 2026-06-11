@@ -794,4 +794,158 @@ export const mergeDuplicateEvents = createServerFn({ method: "POST" })
     return { ok: true, copied_tags: shouldCopyTags };
   });
 
+// ---- Bulk merge ----
+//
+// Wraps the per-pair merge in a loop so the admin UI can collapse a whole
+// cluster (or every high-confidence cluster) in one call. Errors are
+// collected per row rather than aborting the batch.
+
+async function mergePairInternal(
+  survivorId: string,
+  duplicateId: string,
+): Promise<{ copied_tags: boolean }> {
+  const { data: rows, error } = await supabaseAdmin
+    .from("events")
+    .select(
+      "id, slug, name, status, distance_tags, terrain_tags, is_curated_tags",
+    )
+    .in("id", [survivorId, duplicateId]);
+  if (error) throw new Error(error.message);
+  const survivor = rows?.find((r) => r.id === survivorId);
+  const dupe = rows?.find((r) => r.id === duplicateId);
+  if (!survivor) throw new Error("Survivor not found");
+  if (!dupe) throw new Error("Duplicate not found");
+  if (survivor.status !== "ACTIVE") throw new Error("Survivor must be ACTIVE");
+  if (dupe.status !== "ACTIVE") throw new Error("Duplicate already merged");
+
+  const sDT = (survivor.distance_tags as string[]) ?? [];
+  const sTT = (survivor.terrain_tags as string[]) ?? [];
+  const dDT = (dupe.distance_tags as string[]) ?? [];
+  const dTT = (dupe.terrain_tags as string[]) ?? [];
+
+  const shouldCopyTags =
+    !survivor.is_curated_tags &&
+    sDT.length === 0 &&
+    sTT.length === 0 &&
+    (dDT.length > 0 || dTT.length > 0);
+
+  if (shouldCopyTags) {
+    const { error: upErr } = await supabaseAdmin
+      .from("events")
+      .update({ distance_tags: dDT, terrain_tags: dTT })
+      .eq("id", survivorId);
+    if (upErr) throw new Error(upErr.message);
+  }
+
+  const { error: dupErr } = await supabaseAdmin
+    .from("events")
+    .update({ status: "DUPLICATE", duplicate_of: survivorId })
+    .eq("id", duplicateId);
+  if (dupErr) throw new Error(dupErr.message);
+
+  await supabaseAdmin.from("event_edits").insert({
+    event_id: duplicateId,
+    changes: {
+      action: "merge_duplicate",
+      survivor_id: survivorId,
+      survivor_slug: survivor.slug,
+      duplicate_slug: dupe.slug,
+      copied_tags: shouldCopyTags,
+    },
+    note: null,
+  });
+
+  return { copied_tags: shouldCopyTags };
+}
+
+export const mergeDuplicateCluster = createServerFn({ method: "POST" })
+  .inputValidator((d) =>
+    z
+      .object({
+        survivorId: z.string().uuid(),
+        duplicateIds: z.array(z.string().uuid()).min(1).max(50),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    requireAdminOrThrow();
+    const merged: string[] = [];
+    const failed: { id: string; error: string }[] = [];
+    for (const dupId of data.duplicateIds) {
+      if (dupId === data.survivorId) continue;
+      try {
+        await mergePairInternal(data.survivorId, dupId);
+        merged.push(dupId);
+      } catch (e) {
+        failed.push({
+          id: dupId,
+          error: e instanceof Error ? e.message : "Unknown error",
+        });
+      }
+    }
+    return { merged: merged.length, failed };
+  });
+
+export const mergeAllHighConfidenceClusters = createServerFn({
+  method: "POST",
+}).handler(async () => {
+  requireAdminOrThrow();
+  // Re-fetch clusters server-side so the admin's stale view can't drive a
+  // batch merge with outdated survivor picks.
+  const { clusters } = await findPotentialDuplicates();
+  const high = clusters.filter((c) => c.confidence === "high");
+  let merged = 0;
+  const failed: { id: string; error: string }[] = [];
+  for (const cluster of high) {
+    const [survivor, ...rest] = cluster.rows;
+    for (const dupe of rest) {
+      try {
+        await mergePairInternal(survivor.id, dupe.id);
+        merged++;
+      } catch (e) {
+        failed.push({
+          id: dupe.id,
+          error: e instanceof Error ? e.message : "Unknown error",
+        });
+      }
+    }
+  }
+  return { clusters_processed: high.length, merged, failed };
+});
+
+// ---- Unmerge (safety net) ----
+
+export const unmergeDuplicateEvent = createServerFn({ method: "POST" })
+  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    requireAdminOrThrow();
+    const { data: row, error } = await supabaseAdmin
+      .from("events")
+      .select("id, slug, status, duplicate_of")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("Event not found");
+    if (row.status !== "DUPLICATE") {
+      throw new Error("Only DUPLICATE rows can be unmerged");
+    }
+    const previousSurvivor = row.duplicate_of;
+    const { error: upErr } = await supabaseAdmin
+      .from("events")
+      .update({ status: "ACTIVE", duplicate_of: null })
+      .eq("id", data.id);
+    if (upErr) throw new Error(upErr.message);
+    await supabaseAdmin.from("event_edits").insert({
+      event_id: data.id,
+      changes: {
+        action: "unmerge_duplicate",
+        previous_survivor_id: previousSurvivor,
+      },
+      note: null,
+    });
+    return { ok: true };
+  });
+
+
+
 
