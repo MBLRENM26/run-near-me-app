@@ -412,7 +412,7 @@ function AdminDuplicatesPage() {
       )}
 
       {selectedClusters.length > 0 && (
-        <div className="sticky bottom-4 z-20 mx-auto flex w-fit items-center gap-3 rounded-full border border-primary/40 bg-background/95 px-4 py-2 shadow-lg backdroprop">
+        <div className="sticky bottom-4 z-20 mx-auto flex w-fit items-center gap-3 rounded-full border border-primary/40 bg-background/95 px-4 py-2 shadow-lg backdrop-blur">
           <span className="text-sm font-medium text-foreground">
             {selectedClusters.length} cluster
             {selectedClusters.length === 1 ? "" : "s"} selected ({selectedRowCount} rows)
