@@ -336,21 +336,30 @@ function AdminDuplicatesPage() {
         <>
           {seriesClusters.length > 0 && (
             <section className="space-y-3">
-              <div className="border-b border-border pb-1">
-                <h2 className="text-lg font-semibold text-foreground">
-                  Recurring series ({seriesClusters.length})
-                </h2>
-                <p className="text-xs text-muted-foreground">
-                  Looks like a recurring series (e.g. RunThrough fortnightly,
-                  Grand Prix). Don't merge — mark as a series so they're
-                  flagged as recurring on listings.
-                </p>
+              <div className="flex items-end justify-between gap-3 border-b border-border pb-1">
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground">
+                    Recurring series ({seriesClusters.length})
+                  </h2>
+                  <p className="text-xs text-muted-foreground">
+                    Looks like a recurring series (e.g. RunThrough fortnightly,
+                    Grand Prix). Don't merge — mark as a series so they're
+                    flagged as recurring on listings.
+                  </p>
+                </div>
+                <TierSelectAll
+                  list={seriesClusters}
+                  selected={selected}
+                  onChange={(on) => setTierSelection(seriesClusters, on)}
+                />
               </div>
               {seriesClusters.map((cluster) => (
                 <ClusterCard
                   key={cluster.key}
                   cluster={cluster}
                   busy={busy}
+                  selected={selected.has(cluster.key)}
+                  onToggleSelect={() => toggleCluster(cluster.key)}
                   onMergeAll={null}
                   onMergeOne={handleMerge}
                   onMarkSeries={() => handleMarkSeries(cluster)}
@@ -363,19 +372,28 @@ function AdminDuplicatesPage() {
             if (!list.length) return null;
             return (
               <section key={tier} className="space-y-3">
-                <div className="border-b border-border pb-1">
-                  <h2 className="text-lg font-semibold text-foreground">
-                    {TIER_LABEL[tier]} ({list.length})
-                  </h2>
-                  <p className="text-xs text-muted-foreground">
-                    {TIER_DESC[tier]}
-                  </p>
+                <div className="flex items-end justify-between gap-3 border-b border-border pb-1">
+                  <div>
+                    <h2 className="text-lg font-semibold text-foreground">
+                      {TIER_LABEL[tier]} ({list.length})
+                    </h2>
+                    <p className="text-xs text-muted-foreground">
+                      {TIER_DESC[tier]}
+                    </p>
+                  </div>
+                  <TierSelectAll
+                    list={list}
+                    selected={selected}
+                    onChange={(on) => setTierSelection(list, on)}
+                  />
                 </div>
                 {list.map((cluster) => (
                   <ClusterCard
                     key={cluster.key}
                     cluster={cluster}
                     busy={busy}
+                    selected={selected.has(cluster.key)}
+                    onToggleSelect={() => toggleCluster(cluster.key)}
                     onMergeAll={
                       tier !== "low" ? () => handleClusterMerge(cluster) : null
                     }
@@ -393,7 +411,32 @@ function AdminDuplicatesPage() {
         </>
       )}
 
+      {selectedClusters.length > 0 && (
+        <div className="sticky bottom-4 z-20 mx-auto flex w-fit items-center gap-3 rounded-full border border-primary/40 bg-background/95 px-4 py-2 shadow-lg backdroprop">
+          <span className="text-sm font-medium text-foreground">
+            {selectedClusters.length} cluster
+            {selectedClusters.length === 1 ? "" : "s"} selected ({selectedRowCount} rows)
+          </span>
+          <Button
+            size="sm"
+            disabled={busy}
+            onClick={handleMarkSelectedAsSeries}
+          >
+            Mark selected as series
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={busy}
+            onClick={() => setSelected(new Set())}
+          >
+            Clear
+          </Button>
+        </div>
+      )}
+
       <Toaster position="top-center" />
+
     </div>
   );
 }
