@@ -29,7 +29,7 @@ const searchSchema = z.object({
 
 const PAGE_SIZE = 50;
 
-export const Route = createFileRoute("/_adminShell/admin/events")({
+export const Route = createFileRoute("/_adminShell/admin/events/")({
   validateSearch: searchSchema,
   head: () => ({
     meta: [
