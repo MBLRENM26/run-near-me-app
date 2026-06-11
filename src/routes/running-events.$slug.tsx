@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { createFileRoute, Link, notFound, redirect, useNavigate, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { trackRegionView } from "@/lib/analytics";
 import { ArrowLeft, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/site/Header";
