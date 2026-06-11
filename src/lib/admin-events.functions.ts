@@ -510,9 +510,109 @@ export interface DuplicateRow {
   terrain_tags: string[];
 }
 
+export type DuplicateConfidence = "high" | "medium" | "low";
+
 export interface DuplicateCluster {
   key: string;
   rows: DuplicateRow[];
+  confidence: DuplicateConfidence;
+  reason: string;
+}
+
+function hostOf(url: string | null): string | null {
+  if (!url) return null;
+  try {
+    return new URL(url).hostname.toLowerCase().replace(/^www\./, "");
+  } catch {
+    return null;
+  }
+}
+
+function monthOf(sortDate: string | null): string | null {
+  if (!sortDate) return null;
+  // sort_date is yyyy-mm-dd
+  return sortDate.slice(0, 7);
+}
+
+function normTown(town: string | null): string | null {
+  if (!town) return null;
+  const t = town.trim().toLowerCase();
+  return t.length ? t : null;
+}
+
+/**
+ * Score a cluster from data on the rows. Conservative: any pair of rows with
+ * conflicting populated dates or conflicting populated towns drops the whole
+ * cluster to "low". Used to decide which clusters can be safely bulk-merged.
+ */
+function scoreCluster(rows: DuplicateRow[]): {
+  confidence: DuplicateConfidence;
+  reason: string;
+} {
+  const dates = rows.map((r) => r.sort_date);
+  const months = rows.map((r) => monthOf(r.sort_date));
+  const towns = rows.map((r) => normTown(r.town));
+  const hosts = rows.map((r) => hostOf(r.source_url));
+
+  const populatedDates = dates.filter((d): d is string => !!d);
+  const populatedMonths = months.filter((m): m is string => !!m);
+  const populatedTowns = towns.filter((t): t is string => !!t);
+  const populatedHosts = hosts.filter((h): h is string => !!h);
+
+  const allDatesEqual =
+    populatedDates.length >= 2 &&
+    populatedDates.every((d) => d === populatedDates[0]);
+  const conflictingDates =
+    new Set(populatedDates).size > 1 && populatedDates.length === rows.length;
+  const allMonthsEqual =
+    populatedMonths.length >= 2 &&
+    new Set(populatedMonths).size === 1;
+  const conflictingMonths =
+    new Set(populatedMonths).size > 1 && populatedMonths.length === rows.length;
+  const allTownsEqual =
+    populatedTowns.length >= 2 && new Set(populatedTowns).size === 1;
+  const conflictingTowns =
+    new Set(populatedTowns).size > 1 && populatedTowns.length === rows.length;
+  const sharedHost =
+    populatedHosts.length >= 2 && new Set(populatedHosts).size === 1;
+
+  if (conflictingDates || conflictingTowns) {
+    return {
+      confidence: "low",
+      reason: conflictingTowns
+        ? "Towns differ — likely a name collision, not a duplicate."
+        : "Dates differ — likely a recurring series.",
+    };
+  }
+
+  if (allDatesEqual) {
+    return { confidence: "high", reason: "Identical sort_date." };
+  }
+  if (allMonthsEqual && allTownsEqual) {
+    return {
+      confidence: "high",
+      reason: "Same month and town.",
+    };
+  }
+  if (allMonthsEqual && sharedHost) {
+    return {
+      confidence: "high",
+      reason: "Same month and same source host.",
+    };
+  }
+  if (allMonthsEqual) {
+    return { confidence: "medium", reason: "Same month, town unknown." };
+  }
+  if (conflictingMonths) {
+    return {
+      confidence: "low",
+      reason: "Months differ — likely a recurring series.",
+    };
+  }
+  return {
+    confidence: "medium",
+    reason: "Some dates missing — review before merging.",
+  };
 }
 
 /**
@@ -597,16 +697,25 @@ export const findPotentialDuplicates = createServerFn({ method: "GET" })
         const bTags = b.distance_tags.length + b.terrain_tags.length;
         return bTags - aTags;
       });
-      clusters.push({
-        key,
-        rows: rows.map(({ _norm: _n, ...rest }) => {
-          void _n;
-          return rest;
-        }),
+      const cleanRows = rows.map(({ _norm: _n, ...rest }) => {
+        void _n;
+        return rest;
       });
+      const { confidence, reason } = scoreCluster(cleanRows);
+      clusters.push({ key, rows: cleanRows, confidence, reason });
     }
 
-    clusters.sort((a, b) => b.rows.length - a.rows.length);
+    // Sort: high confidence first, then largest clusters.
+    const tierRank: Record<DuplicateConfidence, number> = {
+      high: 0,
+      medium: 1,
+      low: 2,
+    };
+    clusters.sort((a, b) => {
+      const t = tierRank[a.confidence] - tierRank[b.confidence];
+      if (t !== 0) return t;
+      return b.rows.length - a.rows.length;
+    });
     return { clusters, total: clusters.length };
   });
 
@@ -684,5 +793,159 @@ export const mergeDuplicateEvents = createServerFn({ method: "POST" })
 
     return { ok: true, copied_tags: shouldCopyTags };
   });
+
+// ---- Bulk merge ----
+//
+// Wraps the per-pair merge in a loop so the admin UI can collapse a whole
+// cluster (or every high-confidence cluster) in one call. Errors are
+// collected per row rather than aborting the batch.
+
+async function mergePairInternal(
+  survivorId: string,
+  duplicateId: string,
+): Promise<{ copied_tags: boolean }> {
+  const { data: rows, error } = await supabaseAdmin
+    .from("events")
+    .select(
+      "id, slug, name, status, distance_tags, terrain_tags, is_curated_tags",
+    )
+    .in("id", [survivorId, duplicateId]);
+  if (error) throw new Error(error.message);
+  const survivor = rows?.find((r) => r.id === survivorId);
+  const dupe = rows?.find((r) => r.id === duplicateId);
+  if (!survivor) throw new Error("Survivor not found");
+  if (!dupe) throw new Error("Duplicate not found");
+  if (survivor.status !== "ACTIVE") throw new Error("Survivor must be ACTIVE");
+  if (dupe.status !== "ACTIVE") throw new Error("Duplicate already merged");
+
+  const sDT = (survivor.distance_tags as string[]) ?? [];
+  const sTT = (survivor.terrain_tags as string[]) ?? [];
+  const dDT = (dupe.distance_tags as string[]) ?? [];
+  const dTT = (dupe.terrain_tags as string[]) ?? [];
+
+  const shouldCopyTags =
+    !survivor.is_curated_tags &&
+    sDT.length === 0 &&
+    sTT.length === 0 &&
+    (dDT.length > 0 || dTT.length > 0);
+
+  if (shouldCopyTags) {
+    const { error: upErr } = await supabaseAdmin
+      .from("events")
+      .update({ distance_tags: dDT, terrain_tags: dTT })
+      .eq("id", survivorId);
+    if (upErr) throw new Error(upErr.message);
+  }
+
+  const { error: dupErr } = await supabaseAdmin
+    .from("events")
+    .update({ status: "DUPLICATE", duplicate_of: survivorId })
+    .eq("id", duplicateId);
+  if (dupErr) throw new Error(dupErr.message);
+
+  await supabaseAdmin.from("event_edits").insert({
+    event_id: duplicateId,
+    changes: {
+      action: "merge_duplicate",
+      survivor_id: survivorId,
+      survivor_slug: survivor.slug,
+      duplicate_slug: dupe.slug,
+      copied_tags: shouldCopyTags,
+    },
+    note: null,
+  });
+
+  return { copied_tags: shouldCopyTags };
+}
+
+export const mergeDuplicateCluster = createServerFn({ method: "POST" })
+  .inputValidator((d) =>
+    z
+      .object({
+        survivorId: z.string().uuid(),
+        duplicateIds: z.array(z.string().uuid()).min(1).max(50),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    requireAdminOrThrow();
+    const merged: string[] = [];
+    const failed: { id: string; error: string }[] = [];
+    for (const dupId of data.duplicateIds) {
+      if (dupId === data.survivorId) continue;
+      try {
+        await mergePairInternal(data.survivorId, dupId);
+        merged.push(dupId);
+      } catch (e) {
+        failed.push({
+          id: dupId,
+          error: e instanceof Error ? e.message : "Unknown error",
+        });
+      }
+    }
+    return { merged: merged.length, failed };
+  });
+
+export const mergeAllHighConfidenceClusters = createServerFn({
+  method: "POST",
+}).handler(async () => {
+  requireAdminOrThrow();
+  // Re-fetch clusters server-side so the admin's stale view can't drive a
+  // batch merge with outdated survivor picks.
+  const { clusters } = await findPotentialDuplicates();
+  const high = clusters.filter((c) => c.confidence === "high");
+  let merged = 0;
+  const failed: { id: string; error: string }[] = [];
+  for (const cluster of high) {
+    const [survivor, ...rest] = cluster.rows;
+    for (const dupe of rest) {
+      try {
+        await mergePairInternal(survivor.id, dupe.id);
+        merged++;
+      } catch (e) {
+        failed.push({
+          id: dupe.id,
+          error: e instanceof Error ? e.message : "Unknown error",
+        });
+      }
+    }
+  }
+  return { clusters_processed: high.length, merged, failed };
+});
+
+// ---- Unmerge (safety net) ----
+
+export const unmergeDuplicateEvent = createServerFn({ method: "POST" })
+  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    requireAdminOrThrow();
+    const { data: row, error } = await supabaseAdmin
+      .from("events")
+      .select("id, slug, status, duplicate_of")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("Event not found");
+    if (row.status !== "DUPLICATE") {
+      throw new Error("Only DUPLICATE rows can be unmerged");
+    }
+    const previousSurvivor = row.duplicate_of;
+    const { error: upErr } = await supabaseAdmin
+      .from("events")
+      .update({ status: "ACTIVE", duplicate_of: null })
+      .eq("id", data.id);
+    if (upErr) throw new Error(upErr.message);
+    await supabaseAdmin.from("event_edits").insert({
+      event_id: data.id,
+      changes: {
+        action: "unmerge_duplicate",
+        previous_survivor_id: previousSurvivor,
+      },
+      note: null,
+    });
+    return { ok: true };
+  });
+
+
 
 

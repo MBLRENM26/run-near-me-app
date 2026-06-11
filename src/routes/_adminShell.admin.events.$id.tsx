@@ -8,6 +8,7 @@ import {
   updateAdminEvent,
   setAdminEventStatus,
   deleteAdminEvent,
+  unmergeDuplicateEvent,
   type AdminEventFull,
 } from "@/lib/admin-events.functions";
 import { adminCheckSession } from "@/lib/admin.functions";
@@ -48,6 +49,7 @@ function AdminEventEditorPage() {
   const saveOne = useServerFn(updateAdminEvent);
   const setStatus = useServerFn(setAdminEventStatus);
   const deleteOne = useServerFn(deleteAdminEvent);
+  const unmergeFn = useServerFn(unmergeDuplicateEvent);
   const checkSession = useServerFn(adminCheckSession);
 
   const [authChecked, setAuthChecked] = useState(false);
@@ -163,6 +165,25 @@ function AdminEventEditorPage() {
       toast.error(e instanceof Error ? e.message : "Failed");
     }
   };
+
+  const handleUnmerge = async () => {
+    if (
+      !confirm(
+        "Unmerge this event? It will return to ACTIVE and reappear on filter pages. The previous survivor is unaffected.",
+      )
+    )
+      return;
+    try {
+      await unmergeFn({ data: { id } });
+      toast.success("Unmerged — status set to ACTIVE.");
+      queryClient.invalidateQueries({ queryKey: ["admin-event", id] });
+      queryClient.invalidateQueries({ queryKey: ["admin-events"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-duplicates"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Unmerge failed");
+    }
+  };
+
 
   const handleDelete = async () => {
     if (
@@ -410,7 +431,7 @@ function AdminEventEditorPage() {
       {/* Flags + status */}
       <Section title="Flags & status">
         <Field label="Status">
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {STATUSES.map((s) => (
               <Button
                 key={s}
@@ -422,6 +443,25 @@ function AdminEventEditorPage() {
                 {s}
               </Button>
             ))}
+            {event.status === "DUPLICATE" && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleUnmerge}
+                type="button"
+              >
+                Unmerge
+              </Button>
+            )}
+            {event.status === "DUPLICATE" && event.duplicate_of && (
+              <Link
+                to="/admin/events/$id"
+                params={{ id: event.duplicate_of }}
+                className="text-xs text-primary hover:underline"
+              >
+                → survivor
+              </Link>
+            )}
           </div>
         </Field>
         <Field label="Featured">
