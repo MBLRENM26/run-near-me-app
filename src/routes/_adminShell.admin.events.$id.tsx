@@ -49,6 +49,7 @@ function AdminEventEditorPage() {
   const saveOne = useServerFn(updateAdminEvent);
   const setStatus = useServerFn(setAdminEventStatus);
   const deleteOne = useServerFn(deleteAdminEvent);
+  const unmergeFn = useServerFn(unmergeDuplicateEvent);
   const checkSession = useServerFn(adminCheckSession);
 
   const [authChecked, setAuthChecked] = useState(false);
