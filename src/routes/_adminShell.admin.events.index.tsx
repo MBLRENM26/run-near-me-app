@@ -9,6 +9,7 @@ import {
 import {
   listAdminEvents,
   listAdminEventSources,
+  backfillEventTags,
 } from "@/lib/admin-events.functions";
 import { REGIONS } from "@/lib/regions";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ const searchSchema = z.object({
   missing_town: z.boolean().optional(),
   missing_distances: z.boolean().optional(),
   missing_date: z.boolean().optional(),
+  missing_terrain_tags: z.boolean().optional(),
   incomplete_any: z.boolean().optional(),
   upcoming_only: z.boolean().optional(),
   region_invalid: z.boolean().optional(),
