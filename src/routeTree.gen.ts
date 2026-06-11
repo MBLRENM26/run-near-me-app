@@ -17,10 +17,12 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as MarathonsRouteImport } from './routes/marathons'
 import { Route as ListYourEventRouteImport } from './routes/list-your-event'
 import { Route as JuniorParkrunEventsRouteImport } from './routes/junior-parkrun-events'
+import { Route as IndexDothtmlRouteImport } from './routes/index[.]html'
 import { Route as HalfMarathonsRouteImport } from './routes/half-marathons'
 import { Route as AdminShellRouteImport } from './routes/_adminShell'
 import { Route as R5kRacesRouteImport } from './routes/5k-races'
 import { Route as R10kRacesRouteImport } from './routes/10k-races'
+import { Route as SlugRouteImport } from './routes/$slug'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ParkrunEventsIndexRouteImport } from './routes/parkrun-events.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
@@ -81,6 +83,11 @@ const JuniorParkrunEventsRoute = JuniorParkrunEventsRouteImport.update({
   path: '/junior-parkrun-events',
   getParentRoute: () => rootRouteImport,
 } as any)
+const IndexDothtmlRoute = IndexDothtmlRouteImport.update({
+  id: '/index.html',
+  path: '/index.html',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HalfMarathonsRoute = HalfMarathonsRouteImport.update({
   id: '/half-marathons',
   path: '/half-marathons',
@@ -98,6 +105,11 @@ const R5kRacesRoute = R5kRacesRouteImport.update({
 const R10kRacesRoute = R10kRacesRouteImport.update({
   id: '/10k-races',
   path: '/10k-races',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SlugRoute = SlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -206,9 +218,11 @@ const ApiPublicAdminFixEventUrlsRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/$slug': typeof SlugRoute
   '/10k-races': typeof R10kRacesRoute
   '/5k-races': typeof R5kRacesRoute
   '/half-marathons': typeof HalfMarathonsRoute
+  '/index.html': typeof IndexDothtmlRoute
   '/junior-parkrun-events': typeof JuniorParkrunEventsRoute
   '/list-your-event': typeof ListYourEventRoute
   '/marathons': typeof MarathonsRoute
@@ -238,9 +252,11 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/$slug': typeof SlugRoute
   '/10k-races': typeof R10kRacesRoute
   '/5k-races': typeof R5kRacesRoute
   '/half-marathons': typeof HalfMarathonsRoute
+  '/index.html': typeof IndexDothtmlRoute
   '/junior-parkrun-events': typeof JuniorParkrunEventsRoute
   '/list-your-event': typeof ListYourEventRoute
   '/marathons': typeof MarathonsRoute
@@ -271,10 +287,12 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/$slug': typeof SlugRoute
   '/10k-races': typeof R10kRacesRoute
   '/5k-races': typeof R5kRacesRoute
   '/_adminShell': typeof AdminShellRouteWithChildren
   '/half-marathons': typeof HalfMarathonsRoute
+  '/index.html': typeof IndexDothtmlRoute
   '/junior-parkrun-events': typeof JuniorParkrunEventsRoute
   '/list-your-event': typeof ListYourEventRoute
   '/marathons': typeof MarathonsRoute
@@ -306,9 +324,11 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/$slug'
     | '/10k-races'
     | '/5k-races'
     | '/half-marathons'
+    | '/index.html'
     | '/junior-parkrun-events'
     | '/list-your-event'
     | '/marathons'
@@ -338,9 +358,11 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/$slug'
     | '/10k-races'
     | '/5k-races'
     | '/half-marathons'
+    | '/index.html'
     | '/junior-parkrun-events'
     | '/list-your-event'
     | '/marathons'
@@ -370,10 +392,12 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/$slug'
     | '/10k-races'
     | '/5k-races'
     | '/_adminShell'
     | '/half-marathons'
+    | '/index.html'
     | '/junior-parkrun-events'
     | '/list-your-event'
     | '/marathons'
@@ -404,10 +428,12 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  SlugRoute: typeof SlugRoute
   R10kRacesRoute: typeof R10kRacesRoute
   R5kRacesRoute: typeof R5kRacesRoute
   AdminShellRoute: typeof AdminShellRouteWithChildren
   HalfMarathonsRoute: typeof HalfMarathonsRoute
+  IndexDothtmlRoute: typeof IndexDothtmlRoute
   JuniorParkrunEventsRoute: typeof JuniorParkrunEventsRoute
   ListYourEventRoute: typeof ListYourEventRoute
   MarathonsRoute: typeof MarathonsRoute
@@ -493,6 +519,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof JuniorParkrunEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/index.html': {
+      id: '/index.html'
+      path: '/index.html'
+      fullPath: '/index.html'
+      preLoaderRoute: typeof IndexDothtmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/half-marathons': {
       id: '/half-marathons'
       path: '/half-marathons'
@@ -519,6 +552,13 @@ declare module '@tanstack/react-router' {
       path: '/10k-races'
       fullPath: '/10k-races'
       preLoaderRoute: typeof R10kRacesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$slug': {
+      id: '/$slug'
+      path: '/$slug'
+      fullPath: '/$slug'
+      preLoaderRoute: typeof SlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -671,10 +711,12 @@ const AdminShellRouteWithChildren = AdminShellRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  SlugRoute: SlugRoute,
   R10kRacesRoute: R10kRacesRoute,
   R5kRacesRoute: R5kRacesRoute,
   AdminShellRoute: AdminShellRouteWithChildren,
   HalfMarathonsRoute: HalfMarathonsRoute,
+  IndexDothtmlRoute: IndexDothtmlRoute,
   JuniorParkrunEventsRoute: JuniorParkrunEventsRoute,
   ListYourEventRoute: ListYourEventRoute,
   MarathonsRoute: MarathonsRoute,
@@ -706,3 +748,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
