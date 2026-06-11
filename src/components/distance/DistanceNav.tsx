@@ -52,14 +52,11 @@ function PillLink({
     </>
   );
 
-  const search = (prev: { month?: string }) => ({ month: prev?.month });
-
   if (regionSlug) {
     return (
       <Link
         to="/running-events/$slug/$distance"
         params={{ slug: regionSlug, distance: cfg.slug }}
-        search={search}
         className={className}
         aria-current={aria}
       >
@@ -71,41 +68,42 @@ function PillLink({
   switch (cfg.key) {
     case "5k":
       return (
-        <Link to="/5k-races" search={search} className={className} aria-current={aria}>
+        <Link to="/5k-races" className={className} aria-current={aria}>
           {label}
         </Link>
       );
     case "10k":
       return (
-        <Link to="/10k-races" search={search} className={className} aria-current={aria}>
+        <Link to="/10k-races" className={className} aria-current={aria}>
           {label}
         </Link>
       );
     case "half-marathon":
       return (
-        <Link to="/half-marathons" search={search} className={className} aria-current={aria}>
+        <Link to="/half-marathons" className={className} aria-current={aria}>
           {label}
         </Link>
       );
     case "marathon":
       return (
-        <Link to="/marathons" search={search} className={className} aria-current={aria}>
+        <Link to="/marathons" className={className} aria-current={aria}>
           {label}
         </Link>
       );
     case "trail":
       return (
-        <Link to="/trail-running-events" search={search} className={className} aria-current={aria}>
+        <Link to="/trail-running-events" className={className} aria-current={aria}>
           {label}
         </Link>
       );
     case "ultra":
       return (
-        <Link to="/ultra-marathons" search={search} className={className} aria-current={aria}>
+        <Link to="/ultra-marathons" className={className} aria-current={aria}>
           {label}
         </Link>
       );
   }
+
 }
 
 export function DistanceNav({
