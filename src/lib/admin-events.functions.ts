@@ -510,9 +510,109 @@ export interface DuplicateRow {
   terrain_tags: string[];
 }
 
+export type DuplicateConfidence = "high" | "medium" | "low";
+
 export interface DuplicateCluster {
   key: string;
   rows: DuplicateRow[];
+  confidence: DuplicateConfidence;
+  reason: string;
+}
+
+function hostOf(url: string | null): string | null {
+  if (!url) return null;
+  try {
+    return new URL(url).hostname.toLowerCase().replace(/^www\./, "");
+  } catch {
+    return null;
+  }
+}
+
+function monthOf(sortDate: string | null): string | null {
+  if (!sortDate) return null;
+  // sort_date is yyyy-mm-dd
+  return sortDate.slice(0, 7);
+}
+
+function normTown(town: string | null): string | null {
+  if (!town) return null;
+  const t = town.trim().toLowerCase();
+  return t.length ? t : null;
+}
+
+/**
+ * Score a cluster from data on the rows. Conservative: any pair of rows with
+ * conflicting populated dates or conflicting populated towns drops the whole
+ * cluster to "low". Used to decide which clusters can be safely bulk-merged.
+ */
+function scoreCluster(rows: DuplicateRow[]): {
+  confidence: DuplicateConfidence;
+  reason: string;
+} {
+  const dates = rows.map((r) => r.sort_date);
+  const months = rows.map((r) => monthOf(r.sort_date));
+  const towns = rows.map((r) => normTown(r.town));
+  const hosts = rows.map((r) => hostOf(r.source_url));
+
+  const populatedDates = dates.filter((d): d is string => !!d);
+  const populatedMonths = months.filter((m): m is string => !!m);
+  const populatedTowns = towns.filter((t): t is string => !!t);
+  const populatedHosts = hosts.filter((h): h is string => !!h);
+
+  const allDatesEqual =
+    populatedDates.length >= 2 &&
+    populatedDates.every((d) => d === populatedDates[0]);
+  const conflictingDates =
+    new Set(populatedDates).size > 1 && populatedDates.length === rows.length;
+  const allMonthsEqual =
+    populatedMonths.length >= 2 &&
+    new Set(populatedMonths).size === 1;
+  const conflictingMonths =
+    new Set(populatedMonths).size > 1 && populatedMonths.length === rows.length;
+  const allTownsEqual =
+    populatedTowns.length >= 2 && new Set(populatedTowns).size === 1;
+  const conflictingTowns =
+    new Set(populatedTowns).size > 1 && populatedTowns.length === rows.length;
+  const sharedHost =
+    populatedHosts.length >= 2 && new Set(populatedHosts).size === 1;
+
+  if (conflictingDates || conflictingTowns) {
+    return {
+      confidence: "low",
+      reason: conflictingTowns
+        ? "Towns differ — likely a name collision, not a duplicate."
+        : "Dates differ — likely a recurring series.",
+    };
+  }
+
+  if (allDatesEqual) {
+    return { confidence: "high", reason: "Identical sort_date." };
+  }
+  if (allMonthsEqual && allTownsEqual) {
+    return {
+      confidence: "high",
+      reason: "Same month and town.",
+    };
+  }
+  if (allMonthsEqual && sharedHost) {
+    return {
+      confidence: "high",
+      reason: "Same month and same source host.",
+    };
+  }
+  if (allMonthsEqual) {
+    return { confidence: "medium", reason: "Same month, town unknown." };
+  }
+  if (conflictingMonths) {
+    return {
+      confidence: "low",
+      reason: "Months differ — likely a recurring series.",
+    };
+  }
+  return {
+    confidence: "medium",
+    reason: "Some dates missing — review before merging.",
+  };
 }
 
 /**
