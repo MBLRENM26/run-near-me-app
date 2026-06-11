@@ -134,12 +134,17 @@ async function fetchPageSafe(
 
 function isAuthorized(request: Request): boolean {
   const adminSecret = process.env.IMPORT_SECRET;
+  if (!adminSecret) return false;
   const provided = request.headers.get("x-admin-secret");
-  if (adminSecret && provided && provided === adminSecret) return true;
-  const anonKey = process.env.SUPABASE_PUBLISHABLE_KEY;
-  const apikey = request.headers.get("apikey");
-  if (anonKey && apikey && apikey === anonKey) return true;
-  return false;
+  if (!provided) return false;
+  const a = Buffer.from(provided);
+  const b = Buffer.from(adminSecret);
+  if (a.length !== b.length) return false;
+  try {
+    return timingSafeEqual(a, b);
+  } catch {
+    return false;
+  }
 }
 
 export const Route = createFileRoute(
