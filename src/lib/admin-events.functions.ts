@@ -134,6 +134,9 @@ const eventPatchSchema = z.object({
   licensed: nullableString(50),
   status: z.enum(STATUS_VALUES).optional(),
   duplicate_of: z.string().uuid().nullable().optional(),
+  distance_tags: z.array(z.enum(DISTANCE_TAG_VALUES)).optional(),
+  terrain_tags: z.array(z.enum(TERRAIN_TAG_VALUES)).optional(),
+  is_curated_tags: z.boolean().optional(),
 });
 
 // ---- List ----
