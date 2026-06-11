@@ -40,6 +40,12 @@ function AdminLayout() {
             >
               Submissions
             </Link>
+            <Link
+              to="/admin/events"
+              className="text-sm font-medium text-foreground hover:text-primary"
+            >
+              Events
+            </Link>
           </div>
           <Button variant="ghost" size="sm" onClick={handleLogout}>
             Log out
