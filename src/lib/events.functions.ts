@@ -166,7 +166,7 @@ export const getEventsByDistance = createServerFn({ method: "GET" })
       const { data: rows, error } = await supabaseAdmin
         .from("events")
         .select(
-          "id, slug, name, date_raw, sort_date, town, county, region, distances, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, source_url, is_featured, date_is_estimated",
+          "id, slug, name, date_raw, sort_date, town, county, region, distances, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, source_url, is_featured, date_is_estimated, is_recurring",
         )
         .eq("status", "ACTIVE")
         .or(`sort_date.gte.${today},sort_date.is.null`)
