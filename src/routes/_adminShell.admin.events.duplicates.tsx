@@ -454,7 +454,7 @@ function ClusterCard({
                       >
                         Edit
                       </Link>
-                      {!isSurvivor && (
+                      {!isSurvivor && cluster.kind !== "series" && (
                         <Button
                           size="sm"
                           variant="outline"
