@@ -9,8 +9,31 @@ import {
   primaryDistanceKey,
   type DistanceKey,
 } from "@/lib/distance-filters";
+import {
+  distanceKeyToTagQuery,
+  eventMatchesDistanceKey,
+  primaryDistanceKeyFromTags,
+} from "@/lib/event-tags";
 import { REGIONS, slugToRegion } from "@/lib/regions";
 import { sortEstimatedLastWithinMonth } from "@/lib/month-filter";
+
+// During the transition window, an event matches a distance page if its
+// parsed tag arrays match OR (for un-backfilled rows with empty tags) the
+// legacy substring matcher on `distances` matches. Once every row has been
+// run through the parser the substring branch becomes dead code.
+function rowMatchesDistanceKey(
+  row: {
+    distances: string | null;
+    distance_tags: string[] | null;
+    terrain_tags: string[] | null;
+  },
+  key: DistanceKey,
+): boolean {
+  const hasTags =
+    (row.distance_tags?.length ?? 0) + (row.terrain_tags?.length ?? 0) > 0;
+  if (hasTags) return eventMatchesDistanceKey(row, key);
+  return matchesDistance(row.distances, DISTANCE_PAGES[key]);
+}
 
 const slugSchema = z.object({
   slug: z.string().trim().min(1).max(255).regex(/^[a-z0-9-]+$/),
