@@ -435,6 +435,7 @@ function AdminEventsPage() {
           </Button>
         </div>
       )}
+      <Toaster position="top-center" />
     </div>
   );
 }
