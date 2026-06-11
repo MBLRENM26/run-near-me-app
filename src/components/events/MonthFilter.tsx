@@ -3,6 +3,8 @@ import {
   formatMonthLabel,
   type MonthKey,
 } from "@/lib/month-filter";
+import { trackFilter } from "@/lib/analytics";
+
 
 interface Props {
   months: MonthKey[];
@@ -35,7 +37,11 @@ export function MonthFilter({ months, value, onChange, label = "Month" }: Props)
         <button
           key={m}
           type="button"
-          onClick={() => onChange(m === value ? undefined : m)}
+          onClick={() => {
+            const next = m === value ? undefined : m;
+            if (next) trackFilter({ page: "landing", filter_type: "month", value: next });
+            onChange(next);
+          }}
           className={cn(
             "shrink-0 rounded-full px-4 py-1.5 text-sm font-medium border transition-colors",
             value === m

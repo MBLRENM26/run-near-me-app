@@ -1,5 +1,8 @@
 import type { EventType } from "@/lib/distance";
 import { cn } from "@/lib/utils";
+import { trackFilter } from "@/lib/analytics";
+
+
 
 const RADII = [5, 10, 25, 50] as const;
 export type Radius = (typeof RADII)[number];
@@ -36,7 +39,10 @@ export function FilterBar({
         {RADII.map((r) => (
           <button
             key={r}
-            onClick={() => onRadiusChange(r)}
+            onClick={() => {
+              trackFilter({ page: "home", filter_type: "radius", value: r });
+              onRadiusChange(r);
+            }}
             className={cn(
               "shrink-0 rounded-full px-4 py-1.5 text-sm font-medium border transition-colors",
               radius === r
@@ -53,7 +59,10 @@ export function FilterBar({
         {TYPES.map((t) => (
           <button
             key={t.value}
-            onClick={() => onEventTypeChange(t.value)}
+            onClick={() => {
+              trackFilter({ page: "home", filter_type: "distance", value: t.value });
+              onEventTypeChange(t.value);
+            }}
             className={cn(
               "shrink-0 rounded-full px-4 py-1.5 text-sm font-medium border transition-colors",
               eventType === t.value
