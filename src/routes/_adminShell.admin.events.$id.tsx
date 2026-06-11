@@ -85,9 +85,48 @@ function AdminEventEditorPage() {
     value: AdminEventFull[K] | null,
   ) => setForm((f) => ({ ...f, [key]: value }));
 
+  // Toggle a single tag in distance_tags or terrain_tags. Also marks the row
+  // as curated so the parser-backfill never overwrites the human choice.
+  const toggleTag = (kind: "distance_tags" | "terrain_tags", tag: string) => {
+    setForm((f) => {
+      const cur = (f[kind] as string[] | undefined) ?? [];
+      const next = cur.includes(tag)
+        ? cur.filter((t) => t !== tag)
+        : [...cur, tag];
+      return { ...f, [kind]: next, is_curated_tags: true };
+    });
+  };
+
+  // Re-run the parser on the current form values without saving — handy when
+  // editing distances/discipline and you want to preview the inferred tags.
+  const reparseFromForm = () => {
+    const parsed = parseEventTags({
+      name: form.name ?? null,
+      distances: form.distances ?? null,
+      discipline: form.discipline ?? null,
+    });
+    setForm((f) => ({
+      ...f,
+      distance_tags: parsed.distance_tags,
+      terrain_tags: parsed.terrain_tags,
+      is_curated_tags: false,
+    }));
+  };
+
+  const arrayEq = (a: unknown, b: unknown) => {
+    if (!Array.isArray(a) || !Array.isArray(b)) return a === b;
+    if (a.length !== b.length) return false;
+    const sa = new Set(a as string[]);
+    for (const x of b as string[]) if (!sa.has(x)) return false;
+    return true;
+  };
+
   const diff: Partial<AdminEventFull> = {};
   for (const k of Object.keys(form) as (keyof AdminEventFull)[]) {
-    if (form[k] !== event[k]) (diff as Record<string, unknown>)[k] = form[k];
+    const fv = form[k];
+    const ev = event[k];
+    const equal = Array.isArray(fv) || Array.isArray(ev) ? arrayEq(fv, ev) : fv === ev;
+    if (!equal) (diff as Record<string, unknown>)[k] = fv;
   }
   const dirty = Object.keys(diff).length > 0;
 
