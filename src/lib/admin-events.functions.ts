@@ -307,7 +307,7 @@ export const setAdminEventStatus = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     await supabaseAdmin.from("event_edits").insert({
       event_id: data.id,
-      changes: { status: { to: data.status } },
+      changes: { status: { to: data.status } } as never,
       note: `status set via admin`,
     });
     return { ok: true };
