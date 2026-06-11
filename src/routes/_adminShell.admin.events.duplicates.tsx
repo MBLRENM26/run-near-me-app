@@ -46,6 +46,7 @@ function AdminDuplicatesPage() {
   const mergeFn = useServerFn(mergeDuplicateEvents);
   const mergeClusterFn = useServerFn(mergeDuplicateCluster);
   const mergeAllHighFn = useServerFn(mergeAllHighConfidenceClusters);
+  const markSeriesFn = useServerFn(markClusterAsSeries);
   const queryClient = useQueryClient();
 
   const [authChecked, setAuthChecked] = useState(false);
