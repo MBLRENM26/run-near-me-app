@@ -363,14 +363,19 @@ export const getRegionDistanceMatrix = createServerFn({ method: "GET" })
     const today = new Date().toISOString().slice(0, 10);
     const pageSize = 1000;
 
-    // Pull every active future event with a region + distances in one pass.
-    const rows: { region: string; distances: string }[] = [];
+    // Pull every active future event with a region + distances/tags in one pass.
+    type MatrixRow = {
+      region: string;
+      distances: string | null;
+      distance_tags: string[] | null;
+      terrain_tags: string[] | null;
+    };
+    const rows: MatrixRow[] = [];
     for (let from = 0; ; from += pageSize) {
       const { data, error } = await supabaseAdmin
         .from("events")
-        .select("region, distances")
+        .select("region, distances, distance_tags, terrain_tags")
         .eq("status", "ACTIVE")
-        .not("distances", "is", null)
         .not("region", "is", null)
         .or(`sort_date.gte.${today},sort_date.is.null`)
         .or(
@@ -380,8 +385,13 @@ export const getRegionDistanceMatrix = createServerFn({ method: "GET" })
       if (error) throw new Error(error.message);
       if (!data || data.length === 0) break;
       for (const r of data) {
-        if (r.region && r.distances) {
-          rows.push({ region: r.region as string, distances: r.distances as string });
+        if (r.region) {
+          rows.push({
+            region: r.region as string,
+            distances: (r.distances as string | null) ?? null,
+            distance_tags: (r.distance_tags as string[] | null) ?? null,
+            terrain_tags: (r.terrain_tags as string[] | null) ?? null,
+          });
         }
       }
       if (data.length < pageSize) break;
@@ -390,7 +400,7 @@ export const getRegionDistanceMatrix = createServerFn({ method: "GET" })
     const counts = new Map<string, number>();
     for (const r of rows) {
       for (const p of DISTANCE_PAGE_LIST) {
-        if (matchesDistance(r.distances, p)) {
+        if (rowMatchesDistanceKey(r, p.key)) {
           const key = `${r.region}::${p.key}`;
           counts.set(key, (counts.get(key) ?? 0) + 1);
         }
