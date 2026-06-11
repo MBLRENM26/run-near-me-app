@@ -338,33 +338,55 @@ function ClusterCard({
   return (
     <div className="rounded-lg border border-border bg-card">
       <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2 text-xs">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <span
-            className={`rounded px-1.5 py-0.5 font-medium uppercase ${tierColor[cluster.confidence]}`}
-          >
-            {cluster.confidence}
-          </span>
+        <div className="flex flex-wrap items-center gap-2 text-muted-foreground">
+          {cluster.kind === "series" ? (
+            <span className="rounded bg-blue-100 px-1.5 py-0.5 font-medium uppercase text-blue-900 dark:bg-blue-900/30 dark:text-blue-200">
+              series
+            </span>
+          ) : (
+            <span
+              className={`rounded px-1.5 py-0.5 font-medium uppercase ${tierColor[cluster.confidence]}`}
+            >
+              {cluster.confidence}
+            </span>
+          )}
           <span>{cluster.reason}</span>
           <span>·</span>
           <span>{cluster.rows.length} rows</span>
-          <span>·</span>
-          <span>
-            survivor:{" "}
-            <span className="font-mono text-foreground">
-              {survivor.slug ?? survivor.id.slice(0, 8)}
-            </span>
-          </span>
+          {cluster.kind !== "series" && (
+            <>
+              <span>·</span>
+              <span>
+                survivor:{" "}
+                <span className="font-mono text-foreground">
+                  {survivor.slug ?? survivor.id.slice(0, 8)}
+                </span>
+              </span>
+            </>
+          )}
         </div>
-        {onMergeAll && (
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={busy}
-            onClick={onMergeAll}
-          >
-            Merge all in cluster
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {onMarkSeries && (
+            <Button
+              size="sm"
+              variant={cluster.kind === "series" ? "default" : "outline"}
+              disabled={busy}
+              onClick={onMarkSeries}
+            >
+              Mark as series
+            </Button>
+          )}
+          {onMergeAll && (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={busy}
+              onClick={onMergeAll}
+            >
+              Merge all in cluster
+            </Button>
+          )}
+        </div>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
