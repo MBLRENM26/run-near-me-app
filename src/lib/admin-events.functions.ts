@@ -194,7 +194,7 @@ export const listAdminEvents = createServerFn({ method: "POST" })
     if (data.missing_distances) query = query.or(DIST_MISSING);
     if (data.missing_date) query = query.or(DATE_MISSING);
     if (data.missing_terrain_tags)
-      query = query.eq("terrain_tags", "{}");
+      query = query.filter("terrain_tags", "eq", "{}");
     if (data.incomplete_any) {
       query = query.or(
         [
