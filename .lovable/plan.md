@@ -1,38 +1,111 @@
-## What's actually happening
+## Correction noted
 
-Confirmed by querying the database directly: there are no trail/fell/multi-terrain events in the South East with a June 2026 date. The earliest trail event in the region is **Rasselbock 545 — 1 July 2026**. So the empty result on `/running-events/south-east/trail-running-events?month=2026-06` is not a missing-data bug in the query — the data really isn't there.
+You're right — checked the row directly:
 
-The reason you saw an empty June page is a **UX issue in `DistanceNav`**: when you switch distance (e.g. South East → Trail), the component forwards the currently-selected `month` search param to the destination URL. You had June selected on the all-distances South East page; clicking "Trail" carried `?month=2026-06` over to the trail page, where June isn't one of the months that has any trail events. Result: the destination shows a "no events in June" empty state with a working "Show all months" button.
+```
+name:        North Downs Run 2026
+distances:   30K
+discipline:  Multi-Terrain Race
+```
 
-## Recommendation — strategic, not a quick fix
+The terrain classification lives in `discipline`, not `distances`. That changes the parser inputs but actually **strengthens the case for normalisation**, because it reveals a second, parallel free-text field that the current distance-page filters ignore entirely. Distribution across the live catalogue:
 
-Distance and month are **independent dimensions of intent**. Persisting a month across a distance change is the wrong default for three reasons that matter long-term:
+```text
+discipline                          rows
+(null)                              1787
+Road Race                            555
+Multi-Terrain Race                   213
+Road Race / Multi Terrain             76
+Trail Race / Ultra Distance           13
+Hill Running                           8
+Road                                   2
+Cross Country                          1
+```
 
-1. **It produces false empties** that look like missing data (exactly what just happened) and that we cannot avoid as the catalogue grows — every region × distance × month cell will not have entries.
-2. **It muddies analytics.** Right now `trackFilter` fires when a user actively picks a month. Auto-carrying it makes "month=June" look like an explicit choice on every onward navigation, polluting which months are actually in demand.
-3. **It blocks the town-page work coming next.** Town pages, region pages, and region × distance pages will share the same `month` search param convention. The cleanest rule across all of them is: month is scoped to the page you set it on; switching scope (region, distance, town) resets it. Anything else creates inconsistent state to reason about as we add more page types.
+So today there are **289 events** (213 + 76) whose only terrain signal is `discipline = "Multi-Terrain ..."`. None of them surface on the Trail page unless `distances` *also* contains "trail" — which it usually doesn't. That's the same class of omission as North Downs Run 2026, just at scale.
 
-The fix is one line in `DistanceNav` — stop forwarding `month` in the `search` prop on its `<Link>`s. The `MonthFilter` on the destination page already only shows months that have data, so users land on a clean "all months" view and can re-filter if they want.
+## What changes in the plan
 
-## Scope of change
+The normalisation slice is otherwise identical to what you approved. Only the parser inputs and a couple of helper details change:
 
-Single file: `src/components/distance/DistanceNav.tsx`.
+### Parser is multi-source, not just `distances`
 
-- Remove the `const search = (prev) => ({ month: prev?.month })` line.
-- Remove the `search={search}` prop from every `<Link>` in `PillLink` (both the region-combo link and the six top-level distance links).
+```ts
+parseEventTags({
+  name,         // "North Downs Run 2026"
+  distances,    // "30K"
+  discipline,   // "Multi-Terrain Race"
+}): { distance_tags, terrain_tags }
+```
 
-No changes to:
-- `MonthFilter` (already correctly only renders months present in the dataset)
-- `RegionDistancePage` empty state (already correctly offers "Show all months")
-- Loaders / query functions / data model
-- Any other persistence (distance pill itself, region context — those come from the URL path, not search params, and are unaffected)
+Resolution order:
 
-## Out of scope
+- **`distance_tags`** read primarily from `distances`, with `name` as a fallback for cases like `"London Marathon"` where the distance lives in the title.
+- **`terrain_tags`** read primarily from `discipline`, then `distances`, then `name`. The mapping for the known `discipline` values is exact and unambiguous:
 
-- Slice 2 (Add new event) and Slice 3 (CSV import) — unchanged, still queued next.
-- Any change to how the `MonthFilter` itself behaves within a single page (still persists when re-rendering the same page, still tracked via `trackFilter`).
-- Backfilling South East trail events for June. There genuinely are no June trail races scraped yet for that region; that's a data-sourcing question, not a UI fix.
+```text
+"Road Race"                  → ["road"]
+"Road"                       → ["road"]
+"Multi-Terrain Race"         → ["multi-terrain"]
+"Road Race / Multi Terrain"  → ["road", "multi-terrain"]
+"Trail Race / Ultra Distance"→ ["trail"]   (ultra is a distance, not a terrain)
+"Hill Running"               → ["fell"]
+"Cross Country"              → ["cross-country"]   (new tag, see below)
+null                         → fall through to distances/name
+```
 
-## Verification
+Free-text `distances` continues to contribute terrain when it says "Trail", "Fell", "Multi-Terrain", "Obstacle", "Night Trail", etc.
 
-After the change, from `/running-events/south-east?month=2026-06`, clicking the Trail pill should land on `/running-events/south-east/trail-running-events` (no `?month=`) and show all upcoming South East trail events starting July 2026. Same pattern verified for top-level distance pills (e.g. selecting June on `/running-events/south-east` then clicking 5K should go to `/5k-races` clean).
+### Tag vocabulary tweak
+
+Add `cross-country` to the `terrain_tags` enum so the single existing row isn't lost. Doesn't need its own page yet — the tag just preserves the signal for future filters.
+
+`ultra` stays a **distance** tag (correct interpretation of `"Trail Race / Ultra Distance"` → distance `ultra`, terrain `trail`), not a terrain.
+
+### Trail page now genuinely catches everything
+
+After backfill, the South East Trail page query becomes:
+
+```sql
+WHERE region = 'South East'
+  AND terrain_tags && ARRAY['trail','multi-terrain','fell']
+```
+
+…and picks up:
+
+- `Maverick North Downs Trails` (terrain from `distances = "Trail"`)
+- `North Downs Run 2026` (terrain from `discipline = "Multi-Terrain Race"`)
+- every other Multi-Terrain Race in the region currently missing
+
+Whether `multi-terrain` belongs on the Trail page by default is a content decision — defensible either way. Default to including it (matches how runners search) and expose a dedicated `/multi-terrain-running-events` page in a later slice if we want to split them.
+
+### Admin editor reflects both axes
+
+Two multi-selects in the editor:
+
+- **Distance tags** — checkbox group bound to `distance_tags`.
+- **Terrain tags** — checkbox group bound to `terrain_tags`.
+
+Raw `distances` and `discipline` stay editable text fields above them (source-of-truth display strings). Saving sets `is_curated_tags = true` so the parser leaves the row alone on future scraper runs.
+
+The admin list gains an "Untagged terrain" filter (`cardinality(terrain_tags) = 0`) so the 1787 currently-null-discipline rows can be triaged.
+
+## Everything else from the previous plan is unchanged
+
+- Schema migration: add `distance_tags text[]`, `terrain_tags text[]`, `is_curated_tags boolean`, two GIN indexes. No new RLS.
+- Sequencing: Slice 2 (Add new event) → this normalisation → Slice 3 (CSV import into normalised columns).
+- Backfill runs as a server function calling the same TypeScript parser. Idempotent.
+- Scrapers + `import-events.ts` call the parser on write.
+- `DISTANCE_PAGES` config swaps `includes`/`excludes` strings for a `{ distanceTags?: string[]; terrainTags?: string[] }` shape.
+- Out of scope: town normalisation, splitting multi-distance events into child rows, dedicated multi-terrain page.
+
+## Verification adds one case
+
+Backfill `North Downs Run 2026` and confirm:
+
+```text
+distance_tags = {30k}        (parser learns "30K" → "30k")
+terrain_tags  = {multi-terrain}
+```
+
+…then the South East Trail page returns it with no manual edit required. The manual editor is only needed for rows where both `distances` and `discipline` are silent on terrain.
