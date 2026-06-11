@@ -48,6 +48,7 @@ function toEventCardData(e: DistanceEvent): EventCardData {
     source_url: e.source_url,
     is_featured: e.is_featured,
     date_is_estimated: e.date_is_estimated,
+    is_recurring: e.is_recurring,
   };
 }
 

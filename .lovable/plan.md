@@ -1,52 +1,49 @@
-## Short answer
+## The problem
 
-No — you should not have to click through them one by one. But blanket auto-merging is the wrong fix: the normaliser is intentionally loose, and one wrong merge sends real traffic and SEO equity to the wrong page. The right answer is **tiered confidence + bulk actions**, so the boring obvious cases collapse in a couple of clicks and only genuinely ambiguous clusters need eyes.
+Some "Low confidence" duplicates aren't duplicates — they're legitimate **recurring series** (RunThrough Tatton Park 5k every fortnight, Grand Prix series, etc.). Merging them all into one survivor would hide future fixture dates and lose accurate per-event entry URLs. Leaving them as N separate events bloats listings, confuses users ("which Tatton Park 5k do I click?"), and dilutes SEO across near-identical pages.
 
-## What we have now
-
-`findPotentialDuplicates` clusters ACTIVE rows by `(normalised name, region)`. Survivor is auto-chosen (has `sort_date`, then most tags). Merge is one button per duplicate row. That's it — no confidence score, no bulk action, no signal for "are these actually the same race or just same-named events in different months?".
+We already have an `is_recurring boolean` column on `events` (currently set by the importer for some sources, but otherwise unused). Let's make it do real work.
 
 ## Plan
 
-### Slice 1 — Confidence score per cluster (no schema change)
+### Slice 1 — Detect "series" clusters in the duplicates view
 
-Compute a tier server-side from data already on the rows:
+In `findPotentialDuplicates`, when a Low-confidence cluster has **3+ rows, same name, same region, same town, distances overlap, dates spread across multiple weeks/months**, tag it as `kind: "series"` (vs the existing `kind: "duplicate"`). Add an optional `recurring_source` flag set true when every row's `source` is the same (e.g. all `england-athletics` + `runthrough` in name) — strong signal it's a legit series feed, not scrape noise.
 
-- **High** — same `sort_date` (exact), or same month + same town, or shared `source_url` host + same month. Almost certainly the same race.
-- **Medium** — same month, town matches OR is null on one side, distances overlap.
-- **Low** — name+region match but dates conflict (different months with both populated), or towns conflict. Likely a recurring series or a name collision (e.g. "Park 5K" in two different towns within one region).
+UI: render series clusters in a separate section above Low duplicates, with copy: "Looks like a recurring series — don't merge."
 
-Return `confidence: "high" | "medium" | "low"` and a one-line `reason` per cluster. Group the UI by tier.
+### Slice 2 — One-click "Mark cluster as series"
 
-### Slice 2 — Bulk merge for High-confidence clusters
+Adds a `markClusterAsSeries({ ids[] })` server function that:
+- Sets `is_recurring = true` on every row.
+- Optionally writes a shared `series_key` (slugified name+town) so we can group them later. Cheap to add as a nullable text column; no behaviour change until something reads it.
+- Logs each change in `event_edits`.
 
-In the duplicates UI:
+After marking, those rows stop appearing in the duplicates scan (filter out `is_recurring = true` from the clustering input).
 
-- "Merge all in this cluster into survivor" button per cluster (one call, N-1 merges).
-- "Merge all High-confidence clusters" button at the top, with a confirm dialog showing the count and a 10-row sample.
-- Both run through the existing `mergeDuplicateEvents` per pair so `event_edits` logging, tag-copying, and the redirect contract are unchanged.
+### Slice 3 — Surface "is_recurring" on listing pages
 
-Server-side, add `mergeDuplicateCluster({ survivorId, duplicateIds[] })` that wraps the existing logic in a loop with per-row error capture, and returns `{ merged, failed: [{id, error}] }`. No new DB primitives.
+Today recurring events show as N separate cards on month/distance/region pages, indistinguishable from one-offs. Two cheap improvements:
 
-### Slice 3 — Low-confidence stays manual; Medium is one-click-per-cluster
+- **Card badge:** show a "Recurring" pill on `EventCard` when `is_recurring`. Honest signal, no de-dup required.
+- **Listing collapse (optional, behind a feature flag):** on region/distance index pages, when multiple `is_recurring` rows share `(name, town)`, collapse them to a single card showing "Next: <date> · +N more dates". Click expands or links to the canonical event page which lists all upcoming dates. Skip this if it's more work than you want right now — the badge alone is a decent fix.
 
-- Low tier renders with a warning banner and no bulk button — admin reviews row-by-row as today.
-- Medium tier shows the per-cluster bulk button but not the global "merge all" button.
+### Slice 4 — Event page shows the schedule
 
-### Slice 4 — Undo safety net (optional, recommended)
+On `/events/<slug>` for a recurring row, query sibling rows (same `series_key` or same normalised name+town with `is_recurring=true`) and render an "Upcoming dates" list with per-date entry links. This is the bit that justifies keeping the rows separate — users get the schedule, organiser gets every entry URL clicked.
 
-A merge sets `status=DUPLICATE` and `duplicate_of`. Add an "Unmerge" action on the event edit page that flips `status` back to ACTIVE and clears `duplicate_of`, logged to `event_edits`. Cheap insurance against a bad bulk run; no schema change.
+### Slice 5 — Manual override on the event editor
+
+The `is_recurring` checkbox is already on the edit form. Add a "Series key" text input next to it so an admin can manually group rows the detector missed (e.g. branded series across multiple towns).
 
 ### Out of scope
 
-- Changing the clustering key (e.g. fuzzy name matching, cross-region). Current key is conservative on purpose; we tighten the *action*, not the *detection*, in this pass.
-- Auto-merging on scrape. Still humans-in-the-loop, just with bigger levers.
-- Backfilling redirects for slugs that were never published — the existing `getEventPageData` redirect already handles all live URLs.
+- Auto-collapsing series on the home page or in search.
+- Generating one synthetic "RunThrough Tatton Park 5k" parent row. The per-date rows are the source of truth from the EA feed; a synthetic parent would drift.
+- Cross-series intelligence (e.g. "RunThrough events near you"). Possible later via `series_key`, not now.
 
-### Sequencing
+## Sequencing & recommendation
 
-Slices 1+2 together (they're the actual answer to your question). Slice 3 is one-line UI gating off Slice 1. Slice 4 separately if you want it before running a big batch.
+Do **Slice 1 + 2 + 3 (badge only)** in one pass. That's the answer to "how do we handle these?" — they get pulled out of the duplicates queue, flagged as recurring, and shown honestly on listings. Slice 4 (schedule on event page) is the high-value follow-up but it's a bigger UI change and can ship next. Slice 5 is a 10-minute add whenever.
 
-## Recommendation
-
-Do 1+2+4 in one pass, then run "Merge all High-confidence" once and report back what's left. Realistically that collapses the bulk of the duplicate list in a single action, and you only hand-review Medium/Low.
+Schema change is one nullable text column (`series_key`) + one migration. No data backfill required — Slice 2 populates it as you mark clusters.

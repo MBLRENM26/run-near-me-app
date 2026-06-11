@@ -139,6 +139,7 @@ export type DistanceEvent = {
   source_url: string | null;
   is_featured: boolean;
   date_is_estimated: boolean;
+  is_recurring?: boolean;
 };
 
 export type DistancePageData = {
@@ -165,7 +166,7 @@ export const getEventsByDistance = createServerFn({ method: "GET" })
       const { data: rows, error } = await supabaseAdmin
         .from("events")
         .select(
-          "id, slug, name, date_raw, sort_date, town, county, region, distances, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, source_url, is_featured, date_is_estimated",
+          "id, slug, name, date_raw, sort_date, town, county, region, distances, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, source_url, is_featured, date_is_estimated, is_recurring",
         )
         .eq("status", "ACTIVE")
         .or(`sort_date.gte.${today},sort_date.is.null`)
@@ -202,6 +203,7 @@ export const getEventsByDistance = createServerFn({ method: "GET" })
             source_url: r.source_url as string | null,
             is_featured: !!r.is_featured,
             date_is_estimated: !!r.date_is_estimated,
+            is_recurring: !!r.is_recurring,
           });
         }
       }
@@ -268,7 +270,7 @@ export const getEventsByRegionAndDistance = createServerFn({ method: "GET" })
       const { data: rows, error } = await supabaseAdmin
         .from("events")
         .select(
-          "id, slug, name, date_raw, sort_date, town, county, region, distances, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, source_url, is_featured, date_is_estimated",
+          "id, slug, name, date_raw, sort_date, town, county, region, distances, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, source_url, is_featured, date_is_estimated, is_recurring",
         )
         .eq("status", "ACTIVE")
         .eq("region", region.name)
@@ -297,6 +299,7 @@ export const getEventsByRegionAndDistance = createServerFn({ method: "GET" })
           source_url: r.source_url as string | null,
           is_featured: !!r.is_featured,
           date_is_estimated: !!r.date_is_estimated,
+          is_recurring: !!r.is_recurring,
           _distance_tags: r.distance_tags as string[] | null,
           _terrain_tags: r.terrain_tags as string[] | null,
         });

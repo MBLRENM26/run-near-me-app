@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Calendar, MapPin, Tag, Star, ArrowRight } from "lucide-react";
+import { Calendar, MapPin, Tag, Star, ArrowRight, Repeat } from "lucide-react";
 import { formatDistance } from "@/lib/distance";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +18,7 @@ export interface EventCardData {
   is_featured: boolean;
   sort_date?: string | null;
   date_is_estimated?: boolean | null;
+  is_recurring?: boolean | null;
   distanceMiles?: number;
 }
 
@@ -54,12 +55,23 @@ export function EventCard({ event }: { event: EventCardData }) {
             event.name
           )}
         </h3>
-        {event.is_featured && (
-          <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground">
-            <Star className="h-3 w-3 fill-current" />
-            Featured
-          </span>
-        )}
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          {event.is_featured && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground">
+              <Star className="h-3 w-3 fill-current" />
+              Featured
+            </span>
+          )}
+          {event.is_recurring && (
+            <span
+              className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground"
+              title="This event runs on a recurring schedule — multiple dates available."
+            >
+              <Repeat className="h-3 w-3" />
+              Recurring
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="space-y-1.5 text-sm text-muted-foreground">

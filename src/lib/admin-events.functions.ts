@@ -508,15 +508,18 @@ export interface DuplicateRow {
   source_url: string | null;
   distance_tags: string[];
   terrain_tags: string[];
+  is_recurring: boolean;
 }
 
 export type DuplicateConfidence = "high" | "medium" | "low";
+export type DuplicateKind = "duplicate" | "series";
 
 export interface DuplicateCluster {
   key: string;
   rows: DuplicateRow[];
   confidence: DuplicateConfidence;
   reason: string;
+  kind: DuplicateKind;
 }
 
 function hostOf(url: string | null): string | null {
@@ -636,6 +639,45 @@ function normaliseEventName(name: string): string {
     .join(" ");
 }
 
+/**
+ * A cluster is treated as a "recurring series" (not duplicates) when there
+ * are 3+ rows in the same region with consistent town/distances, but their
+ * dates are spread across multiple distinct days/months. Strong example:
+ * RunThrough Tatton Park 5k, fortnightly, all from the same EA feed.
+ */
+function detectSeries(rows: DuplicateRow[]): boolean {
+  if (rows.length < 3) return false;
+  const towns = rows
+    .map((r) => normTown(r.town))
+    .filter((t): t is string => !!t);
+  const townsConsistent =
+    towns.length === 0 || new Set(towns).size === 1;
+  if (!townsConsistent) return false;
+
+  const dates = rows
+    .map((r) => r.sort_date)
+    .filter((d): d is string => !!d);
+  const distinctDates = new Set(dates).size;
+  const distinctMonths = new Set(
+    dates.map((d) => d.slice(0, 7)),
+  ).size;
+  // Need at least 3 distinct dates OR 2+ distinct months — a single fixture
+  // with two slightly-different scraped rows shouldn't trigger this.
+  return distinctDates >= 3 || distinctMonths >= 2;
+}
+
+function seriesReason(rows: DuplicateRow[]): string {
+  const sources = new Set(rows.map((r) => r.source).filter(Boolean));
+  const dates = rows
+    .map((r) => r.sort_date)
+    .filter((d): d is string => !!d);
+  const months = new Set(dates.map((d) => d.slice(0, 7))).size;
+  const sourceNote =
+    sources.size === 1 ? ` from ${[...sources][0]}` : "";
+  return `Recurring series — ${rows.length} dates across ${months} month${months === 1 ? "" : "s"}${sourceNote}.`;
+}
+
+
 export const findPotentialDuplicates = createServerFn({ method: "GET" })
   .handler(async (): Promise<{ clusters: DuplicateCluster[]; total: number }> => {
     requireAdminOrThrow();
@@ -646,9 +688,11 @@ export const findPotentialDuplicates = createServerFn({ method: "GET" })
       const { data: rows, error } = await supabaseAdmin
         .from("events")
         .select(
-          "id, slug, name, date_raw, sort_date, region, town, distances, discipline, source, source_url, distance_tags, terrain_tags",
+          "id, slug, name, date_raw, sort_date, region, town, distances, discipline, source, source_url, distance_tags, terrain_tags, is_recurring, series_key",
         )
         .eq("status", "ACTIVE")
+        .eq("is_recurring", false)
+        .is("series_key", null)
         .order("id", { ascending: true })
         .range(from, from + pageSize - 1);
       if (error) throw new Error(error.message);
@@ -668,6 +712,7 @@ export const findPotentialDuplicates = createServerFn({ method: "GET" })
           source_url: (r.source_url as string | null) ?? null,
           distance_tags: (r.distance_tags as string[] | null) ?? [],
           terrain_tags: (r.terrain_tags as string[] | null) ?? [],
+          is_recurring: !!(r.is_recurring as boolean | null),
           _norm: normaliseEventName(r.name as string),
         });
       }
@@ -702,16 +747,29 @@ export const findPotentialDuplicates = createServerFn({ method: "GET" })
         return rest;
       });
       const { confidence, reason } = scoreCluster(cleanRows);
-      clusters.push({ key, rows: cleanRows, confidence, reason });
+      const kind = detectSeries(cleanRows) ? "series" : "duplicate";
+      const finalReason =
+        kind === "series"
+          ? seriesReason(cleanRows)
+          : reason;
+      clusters.push({
+        key,
+        rows: cleanRows,
+        confidence,
+        reason: finalReason,
+        kind,
+      });
     }
 
-    // Sort: high confidence first, then largest clusters.
+    // Sort: series first (most actionable separately), then high → low,
+    // then largest clusters within tier.
     const tierRank: Record<DuplicateConfidence, number> = {
       high: 0,
       medium: 1,
       low: 2,
     };
     clusters.sort((a, b) => {
+      if (a.kind !== b.kind) return a.kind === "series" ? -1 : 1;
       const t = tierRank[a.confidence] - tierRank[b.confidence];
       if (t !== 0) return t;
       return b.rows.length - a.rows.length;
@@ -946,6 +1004,70 @@ export const unmergeDuplicateEvent = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// ---- Mark cluster as recurring series ----
+//
+// Flags every row in the cluster with is_recurring=true and writes a shared
+// series_key (slugified name+town) so they can be grouped later. These rows
+// are then excluded from the duplicate scan.
 
+function slugifySeriesKey(name: string, town: string | null): string {
+  const base = `${name} ${town ?? ""}`.toLowerCase();
+  return base
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 120);
+}
 
+export const markClusterAsSeries = createServerFn({ method: "POST" })
+  .inputValidator((d) =>
+    z
+      .object({
+        ids: z.array(z.string().uuid()).min(2).max(200),
+        seriesKey: z.string().trim().min(1).max(120).optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    requireAdminOrThrow();
+
+    const { data: rows, error } = await supabaseAdmin
+      .from("events")
+      .select("id, name, town, is_recurring, series_key")
+      .in("id", data.ids);
+    if (error) throw new Error(error.message);
+    if (!rows || rows.length === 0) throw new Error("No matching rows");
+
+    const key =
+      data.seriesKey ??
+      slugifySeriesKey(
+        (rows[0].name as string) ?? "series",
+        (rows[0].town as string | null) ?? null,
+      );
+
+    let marked = 0;
+    for (const r of rows) {
+      const id = r.id as string;
+      const before = {
+        is_recurring: !!(r.is_recurring as boolean | null),
+        series_key: (r.series_key as string | null) ?? null,
+      };
+      if (before.is_recurring && before.series_key === key) continue;
+      const { error: upErr } = await supabaseAdmin
+        .from("events")
+        .update({ is_recurring: true, series_key: key })
+        .eq("id", id);
+      if (upErr) throw new Error(upErr.message);
+      await supabaseAdmin.from("event_edits").insert({
+        event_id: id,
+        changes: {
+          action: "mark_as_series",
+          series_key: { from: before.series_key, to: key },
+          is_recurring: { from: before.is_recurring, to: true },
+        },
+        note: null,
+      });
+      marked++;
+    }
+    return { ok: true, marked, series_key: key };
+  });
 
