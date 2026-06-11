@@ -124,6 +124,10 @@ function RegionPage() {
   const months = events ? availableMonths(events) : [];
   const filtered = events ? filterByMonth(events, month) : [];
 
+  useEffect(() => {
+    if (events) trackRegionView({ region: region.name, total_events: events.length });
+  }, [region.name, events]);
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
