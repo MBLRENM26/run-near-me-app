@@ -59,18 +59,32 @@ function AdminEventsPage() {
   const [backfilling, setBackfilling] = useState(false);
 
   const handleBackfill = async (force: boolean) => {
-    if (!confirm(force ? "Re-parse ALL non-curated rows?" : "Backfill tags for un-tagged rows?"))
+    if (
+      !confirm(
+        force
+          ? "Re-parse ALL non-curated rows? (cursor walk visits every row)"
+          : "Backfill tags for non-curated rows?",
+      )
+    )
       return;
     setBackfilling(true);
     try {
       let totalUpdated = 0;
       let totalScanned = 0;
-      // Keep running batches until the server reports nothing left.
-      for (let i = 0; i < 30; i++) {
-        const res = await runBackfill({ data: { force, limit: 2000 } });
+      let cursor: string | null = null;
+      // Cursor-based loop: terminates exactly when the server returns
+      // next_cursor: null. No fixed iteration cap, because each call moves
+      // strictly forward through `id` and the dataset is bounded (~5k rows).
+      for (;;) {
+        const res: {
+          scanned: number;
+          updated: number;
+          next_cursor: string | null;
+        } = await runBackfill({ data: { force, limit: 1000, cursor } });
         totalUpdated += res.updated;
         totalScanned += res.scanned;
-        if (!res.remaining_hint) break;
+        if (!res.next_cursor) break;
+        cursor = res.next_cursor;
       }
       toast.success(
         `Backfill done — scanned ${totalScanned}, updated ${totalUpdated}.`,
