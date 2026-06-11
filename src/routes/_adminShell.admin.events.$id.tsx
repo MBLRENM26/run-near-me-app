@@ -8,6 +8,7 @@ import {
   updateAdminEvent,
   setAdminEventStatus,
   deleteAdminEvent,
+  unmergeDuplicateEvent,
   type AdminEventFull,
 } from "@/lib/admin-events.functions";
 import { adminCheckSession } from "@/lib/admin.functions";
