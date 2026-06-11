@@ -302,6 +302,16 @@ function AdminEventsPage() {
           <label className="flex items-center gap-2">
             <input
               type="checkbox"
+              checked={!!search.missing_terrain_tags}
+              onChange={(e) =>
+                update({ missing_terrain_tags: e.target.checked || undefined })
+              }
+            />
+            Untagged terrain
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
               checked={!!search.upcoming_only}
               onChange={(e) =>
                 update({ upcoming_only: e.target.checked || undefined })
