@@ -22,6 +22,10 @@ const searchSchema = z.object({
   status: z.enum(STATUSES).optional(),
   source: z.string().optional(),
   missing_coords: z.boolean().optional(),
+  missing_town: z.boolean().optional(),
+  missing_distances: z.boolean().optional(),
+  missing_date: z.boolean().optional(),
+  incomplete_any: z.boolean().optional(),
   upcoming_only: z.boolean().optional(),
   region_invalid: z.boolean().optional(),
   page: z.number().int().min(0).optional(),
@@ -29,7 +33,7 @@ const searchSchema = z.object({
 
 const PAGE_SIZE = 50;
 
-export const Route = createFileRoute("/_adminShell/admin/events")({
+export const Route = createFileRoute("/_adminShell/admin/events/")({
   validateSearch: searchSchema,
   head: () => ({
     meta: [
@@ -73,6 +77,10 @@ function AdminEventsPage() {
           status: search.status,
           source: search.source,
           missing_coords: search.missing_coords,
+          missing_town: search.missing_town,
+          missing_distances: search.missing_distances,
+          missing_date: search.missing_date,
+          incomplete_any: search.incomplete_any,
           upcoming_only: search.upcoming_only,
           region_invalid: search.region_invalid,
           sort: "sort_date",
@@ -185,7 +193,47 @@ function AdminEventsPage() {
             ))}
           </select>
         </div>
-        <div className="md:col-span-3 flex flex-wrap items-center gap-4 text-sm">
+        <div className="md:col-span-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={!!search.incomplete_any}
+              onChange={(e) =>
+                update({ incomplete_any: e.target.checked || undefined })
+              }
+            />
+            <span className="font-medium">Any incomplete data</span>
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={!!search.missing_town}
+              onChange={(e) =>
+                update({ missing_town: e.target.checked || undefined })
+              }
+            />
+            Missing town
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={!!search.missing_distances}
+              onChange={(e) =>
+                update({ missing_distances: e.target.checked || undefined })
+              }
+            />
+            Missing distances
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={!!search.missing_date}
+              onChange={(e) =>
+                update({ missing_date: e.target.checked || undefined })
+              }
+            />
+            Missing/TBC date
+          </label>
           <label className="flex items-center gap-2">
             <input
               type="checkbox"
@@ -221,6 +269,7 @@ function AdminEventsPage() {
           </Button>
         </div>
       </form>
+
 
       {/* Table */}
       {isLoading ? (

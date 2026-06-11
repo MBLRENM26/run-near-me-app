@@ -35,8 +35,8 @@ import { Route as RunningEventsSlugDistanceRouteImport } from './routes/running-
 import { Route as ParkrunEventsRegionRegionRouteImport } from './routes/parkrun-events.region.$region'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as ApiPublicImportEventsRouteImport } from './routes/api/public/import-events'
-import { Route as AdminShellAdminEventsRouteImport } from './routes/_adminShell.admin.events'
 import { Route as AdminShellAdminClaimsRouteImport } from './routes/_adminShell.admin.claims'
+import { Route as AdminShellAdminEventsIndexRouteImport } from './routes/_adminShell.admin.events.index'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -176,16 +176,17 @@ const ApiPublicImportEventsRoute = ApiPublicImportEventsRouteImport.update({
   path: '/api/public/import-events',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminShellAdminEventsRoute = AdminShellAdminEventsRouteImport.update({
-  id: '/admin/events',
-  path: '/admin/events',
-  getParentRoute: () => AdminShellRoute,
-} as any)
 const AdminShellAdminClaimsRoute = AdminShellAdminClaimsRouteImport.update({
   id: '/admin/claims',
   path: '/admin/claims',
   getParentRoute: () => AdminShellRoute,
 } as any)
+const AdminShellAdminEventsIndexRoute =
+  AdminShellAdminEventsIndexRouteImport.update({
+    id: '/admin/events/',
+    path: '/admin/events/',
+    getParentRoute: () => AdminShellRoute,
+  } as any)
 const LovableEmailTransactionalSendRoute =
   LovableEmailTransactionalSendRouteImport.update({
     id: '/lovable/email/transactional/send',
@@ -223,9 +224,9 @@ const ApiPublicAdminFixEventUrlsRoute =
     getParentRoute: () => rootRouteImport,
   } as any)
 const AdminShellAdminEventsIdRoute = AdminShellAdminEventsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => AdminShellAdminEventsRoute,
+  id: '/admin/events/$id',
+  path: '/admin/events/$id',
+  getParentRoute: () => AdminShellRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -251,7 +252,6 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/parkrun-events/': typeof ParkrunEventsIndexRoute
   '/admin/claims': typeof AdminShellAdminClaimsRoute
-  '/admin/events': typeof AdminShellAdminEventsRouteWithChildren
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/parkrun-events/region/$region': typeof ParkrunEventsRegionRegionRoute
@@ -263,6 +263,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/admin/events/': typeof AdminShellAdminEventsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -287,7 +288,6 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/parkrun-events': typeof ParkrunEventsIndexRoute
   '/admin/claims': typeof AdminShellAdminClaimsRoute
-  '/admin/events': typeof AdminShellAdminEventsRouteWithChildren
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/parkrun-events/region/$region': typeof ParkrunEventsRegionRegionRoute
@@ -299,6 +299,7 @@ export interface FileRoutesByTo {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/admin/events': typeof AdminShellAdminEventsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -325,7 +326,6 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/parkrun-events/': typeof ParkrunEventsIndexRoute
   '/_adminShell/admin/claims': typeof AdminShellAdminClaimsRoute
-  '/_adminShell/admin/events': typeof AdminShellAdminEventsRouteWithChildren
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/parkrun-events/region/$region': typeof ParkrunEventsRegionRegionRoute
@@ -337,6 +337,7 @@ export interface FileRoutesById {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/_adminShell/admin/events/': typeof AdminShellAdminEventsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -363,7 +364,6 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/parkrun-events/'
     | '/admin/claims'
-    | '/admin/events'
     | '/api/public/import-events'
     | '/lovable/email/suppression'
     | '/parkrun-events/region/$region'
@@ -375,6 +375,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/admin/events/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -399,7 +400,6 @@ export interface FileRouteTypes {
     | '/admin'
     | '/parkrun-events'
     | '/admin/claims'
-    | '/admin/events'
     | '/api/public/import-events'
     | '/lovable/email/suppression'
     | '/parkrun-events/region/$region'
@@ -411,6 +411,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/admin/events'
   id:
     | '__root__'
     | '/'
@@ -436,7 +437,6 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/parkrun-events/'
     | '/_adminShell/admin/claims'
-    | '/_adminShell/admin/events'
     | '/api/public/import-events'
     | '/lovable/email/suppression'
     | '/parkrun-events/region/$region'
@@ -448,6 +448,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/_adminShell/admin/events/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -669,18 +670,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicImportEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_adminShell/admin/events': {
-      id: '/_adminShell/admin/events'
-      path: '/admin/events'
-      fullPath: '/admin/events'
-      preLoaderRoute: typeof AdminShellAdminEventsRouteImport
-      parentRoute: typeof AdminShellRoute
-    }
     '/_adminShell/admin/claims': {
       id: '/_adminShell/admin/claims'
       path: '/admin/claims'
       fullPath: '/admin/claims'
       preLoaderRoute: typeof AdminShellAdminClaimsRouteImport
+      parentRoute: typeof AdminShellRoute
+    }
+    '/_adminShell/admin/events/': {
+      id: '/_adminShell/admin/events/'
+      path: '/admin/events'
+      fullPath: '/admin/events/'
+      preLoaderRoute: typeof AdminShellAdminEventsIndexRouteImport
       parentRoute: typeof AdminShellRoute
     }
     '/lovable/email/transactional/send': {
@@ -727,35 +728,24 @@ declare module '@tanstack/react-router' {
     }
     '/_adminShell/admin/events/$id': {
       id: '/_adminShell/admin/events/$id'
-      path: '/$id'
+      path: '/admin/events/$id'
       fullPath: '/admin/events/$id'
       preLoaderRoute: typeof AdminShellAdminEventsIdRouteImport
-      parentRoute: typeof AdminShellAdminEventsRoute
+      parentRoute: typeof AdminShellRoute
     }
   }
 }
 
-interface AdminShellAdminEventsRouteChildren {
-  AdminShellAdminEventsIdRoute: typeof AdminShellAdminEventsIdRoute
-}
-
-const AdminShellAdminEventsRouteChildren: AdminShellAdminEventsRouteChildren = {
-  AdminShellAdminEventsIdRoute: AdminShellAdminEventsIdRoute,
-}
-
-const AdminShellAdminEventsRouteWithChildren =
-  AdminShellAdminEventsRoute._addFileChildren(
-    AdminShellAdminEventsRouteChildren,
-  )
-
 interface AdminShellRouteChildren {
   AdminShellAdminClaimsRoute: typeof AdminShellAdminClaimsRoute
-  AdminShellAdminEventsRoute: typeof AdminShellAdminEventsRouteWithChildren
+  AdminShellAdminEventsIdRoute: typeof AdminShellAdminEventsIdRoute
+  AdminShellAdminEventsIndexRoute: typeof AdminShellAdminEventsIndexRoute
 }
 
 const AdminShellRouteChildren: AdminShellRouteChildren = {
   AdminShellAdminClaimsRoute: AdminShellAdminClaimsRoute,
-  AdminShellAdminEventsRoute: AdminShellAdminEventsRouteWithChildren,
+  AdminShellAdminEventsIdRoute: AdminShellAdminEventsIdRoute,
+  AdminShellAdminEventsIndexRoute: AdminShellAdminEventsIndexRoute,
 }
 
 const AdminShellRouteWithChildren = AdminShellRoute._addFileChildren(

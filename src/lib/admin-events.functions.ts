@@ -137,6 +137,10 @@ export const listAdminEvents = createServerFn({ method: "POST" })
         status: z.enum([...STATUS_VALUES, "ANY"]).optional(),
         source: z.string().trim().max(100).optional(),
         missing_coords: z.boolean().optional(),
+        missing_town: z.boolean().optional(),
+        missing_distances: z.boolean().optional(),
+        missing_date: z.boolean().optional(),
+        incomplete_any: z.boolean().optional(),
         upcoming_only: z.boolean().optional(),
         region_invalid: z.boolean().optional(),
         sort: z.enum(["sort_date", "name", "created_at"]).default("sort_date"),
@@ -166,6 +170,27 @@ export const listAdminEvents = createServerFn({ method: "POST" })
     if (data.source) query = query.eq("source", data.source);
     if (data.missing_coords) query = query.is("lat", null);
     if (data.upcoming_only) query = query.eq("is_upcoming", true);
+
+    // "Missing" predicates: NULL OR blank OR contains TBC (case-insensitive)
+    const TOWN_MISSING = "town.is.null,town.eq.,town.ilike.%tbc%";
+    const DIST_MISSING = "distances.is.null,distances.eq.,distances.ilike.%tbc%";
+    const DATE_MISSING = "sort_date.is.null,date_raw.ilike.%tbc%";
+
+    if (data.missing_town) query = query.or(TOWN_MISSING);
+    if (data.missing_distances) query = query.or(DIST_MISSING);
+    if (data.missing_date) query = query.or(DATE_MISSING);
+    if (data.incomplete_any) {
+      query = query.or(
+        [
+          TOWN_MISSING,
+          DIST_MISSING,
+          DATE_MISSING,
+          "lat.is.null",
+          "region.is.null",
+        ].join(","),
+      );
+    }
+
     if (data.region_invalid) {
       // Region not in canonical list AND not null
       query = query
