@@ -203,6 +203,7 @@ export const getEventsByDistance = createServerFn({ method: "GET" })
             source_url: r.source_url as string | null,
             is_featured: !!r.is_featured,
             date_is_estimated: !!r.date_is_estimated,
+            is_recurring: !!r.is_recurring,
           });
         }
       }
