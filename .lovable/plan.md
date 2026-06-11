@@ -1,42 +1,51 @@
-## SEO cleanup — ghost URLs from Google Search Console
+## Goal
 
-You're right: a blind catch-all `/{slug}` → `/events/{slug}` redirect would hide real 404s (e.g. a typo in a region or distance page). The redirect must only fire when the slug resolves to a real, active event in the DB. Anything else stays a 404 so we can see and fix it.
+Add **Big Half** and **Vitality London 10,000** as ACTIVE manual events so `/$slug` redirects them internally to real pages (fixes GSC soft-404s + keeps users on-site).
 
-### What this fixes
+## Changes
 
-The four GSC validation failures:
+### 1. Insert two events (data-only)
 
-1. `/index.html` — never a valid URL on TanStack Start.
-2. `/vitality-london-10k` — legacy flat path; current canonical is `/events/vitality-london-10k`.
-3. `/big-half` — same legacy shape.
-4. `/running-events/$slug` — literal route template that leaked into a link or sitemap entry at some point.
+| Field | Big Half | Vitality London 10,000 |
+|---|---|---|
+| `slug` | `big-half` | `vitality-london-10k` |
+| `norm_id` | `manual:big-half` | `manual:vitality-london-10k` |
+| `name` | The Big Half | Vitality London 10,000 |
+| `date_from` / `date_to` / `sort_date` | 2026-09-06 | 2026-09-27 |
+| `date_raw` | "Sunday 6 September 2026" | "Sunday 27 September 2026" |
+| `distances` | `Half Marathon` | `10K` |
+| `discipline` | `Road` | `Road` |
+| `town` | London | London |
+| `region` | London | London |
+| `country` | England | England |
+| `lat` / `lng` | 51.505456, -0.075357 (Tower Bridge) | 51.504490, -0.134307 (The Mall) |
+| `organiser` | London Marathon Events | London Marathon Events |
+| `organiser_url` | https://www.londonmarathonevents.co.uk/big-half | https://www.londonmarathonevents.co.uk/london-10000 |
+| `entry_url` | same as organiser_url | same as organiser_url |
+| `entry_fee` | **null** | **null** |
+| `source` / `source_url` | `manual` / organiser_url | `manual` / organiser_url |
+| `status` / `is_upcoming` / `date_is_estimated` | ACTIVE / true / false | ACTIVE / true / false |
 
-### Changes
+**On entry_fee — deliberately null.** Per the scraped-data-trust core rule, we don't assert fees we haven't verified at-source today, and "typically £35–£55" / "typically £39" is exactly the kind of stale or approximate pricing that erodes trust if wrong on the day. Leaving null causes the event card to render "See event website for entry fee" and link out, which is the correct behaviour. (If you later confirm the live 2026 entry fee from the LME page, we can update — easy follow-up.)
 
-**1. DB-checked legacy event redirect** — `src/routes/$slug.tsx` (splat-free single-segment catch route, lowest priority)
-- Server handler: look up the slug in `events` (active only). If found → 301 to `/events/{slug}`. If not found → return TanStack's `notFound()` so the normal 404 page renders.
-- Important: this route must NOT shadow existing top-level routes (`/5k-races`, `/marathons`, `/list-your-event`, etc.). TanStack file routing already prefers a concrete route file over a `$slug` catch — verified by the existing route list. We'll also keep an explicit deny-list of reserved first-segment names as a belt-and-braces guard inside the handler, so even if someone later adds an event with slug `marathons`, the redirect won't hijack a real page.
-- The component just renders the 404 page (handler does the redirect server-side before render).
+**On lat/lng — included.** These are stable course start points, not pricing, so they're safe to record and they make the events appear on the radius map. Both fall inside the UK lat/lng bounding box used by the distance/region queries, so they'll show up on `/10k-races`, `/half-marathons`, `/running-events/london/10k`, etc.
 
-**2. `/index.html` → `/` redirect** — `src/routes/index[.]html.tsx`
-- Server handler returns a 301 to `/`. Tiny, surgical.
+### 2. Trim `LEGACY_EXTERNAL_REDIRECTS` in `src/routes/$slug.tsx`
 
-**3. Sitemap & link audit for `$slug` literal**
-- Grep the codebase for any `to="/...$..."` or sitemap entry built from a route pattern. Current `sitemap[.]xml.tsx` looks clean (it maps real slugs), so this is likely a historical leak Google still has cached. Confirm with one ripgrep pass.
-- If nothing is found in source, the GSC entry is a ghost — just "Mark as fixed" / request re-validation; it won't reappear.
+With DB rows present, the existing flow handles both URLs:
 
-**4. GSC re-validation guidance** (no code) — once deployed, hit "Validate fix" in GSC for each of the 4 URLs. `/running-events/$slug` can also be dismissed as "Not a valid URL."
+`/big-half` → `lookupEventSlug` hits → 301 to `/events/big-half`
+`/vitality-london-10k` → 301 to `/events/vitality-london-10k`
 
-### Technical notes (for review)
+Remove the two entries from the external redirect map (leave the empty `Record<string,string>` scaffold for the next legacy case). No other code touched.
 
-- The `$slug` catch route uses `notFound()` for misses, not a generic 404 string, so it integrates with `__root.tsx`'s `notFoundComponent` — Google sees a real 404 status, which is what we want.
-- Reserved-name guard inside the handler: a small `RESERVED_TOP_LEVEL` set (`events`, `running-events`, `parkrun-events`, `junior-parkrun-events`, `5k-races`, `10k-races`, `half-marathons`, `marathons`, `ultra-marathons`, `trail-running-events`, `list-your-event`, `privacy`, `admin`, `api`, `lovable`, `email`, `sitemap.xml`, `robots.txt`, `favicon.ico`, `index.html`). If the segment is reserved, return `notFound()` immediately — never redirect.
-- DB lookup uses the existing `events.functions.ts` server-fn layer (or a small new `lookupEventSlug` fn) so it goes through the same Supabase client + RLS path as everything else. Indexed on `slug` (already the case).
-- No new tables, no migration. Pure routing.
+### 3. Verify after deploy
 
-### Out of scope (deliberately)
+- Sitemap picks both slugs up automatically (driven by `getAllActiveSlugs`).
+- Hit "Validate fix" in GSC for `/big-half` and `/vitality-london-10k` — both now return 200 via a single 301 to the canonical `/events/{slug}`.
+- Spot-check the two event pages render with a working "Enter now" CTA pointing at londonmarathonevents.co.uk (the URLs are event-specific so `classifyEventLink` will treat them as enterable, not as a homepage).
 
-- Building 301s for arbitrary historical URL shapes we have no evidence of. Only the patterns GSC actually shows us.
-- Touching the sitemap generator itself unless the audit finds a real bug.
+## Out of scope
 
-### After this, we resume the Phase 2 plan (Admin data browser).
+- Persisting the £35–£55 / £39 figures (intentional — see entry_fee note above).
+- Reclassifying these as our own listings — they remain LME-owned; we just provide the landing page + clear hand-off.
