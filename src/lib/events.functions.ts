@@ -299,6 +299,7 @@ export const getEventsByRegionAndDistance = createServerFn({ method: "GET" })
           source_url: r.source_url as string | null,
           is_featured: !!r.is_featured,
           date_is_estimated: !!r.date_is_estimated,
+          is_recurring: !!r.is_recurring,
           _distance_tags: r.distance_tags as string[] | null,
           _terrain_tags: r.terrain_tags as string[] | null,
         });
