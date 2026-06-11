@@ -439,6 +439,10 @@ function EventDetailPage() {
                 {related.events.map((r) => {
                   const rDate = formatEventDate(r);
                   const rLoc = r.town || r.county;
+                  const rMiles =
+                    typeof r.distance_miles === "number"
+                      ? `${r.distance_miles.toFixed(1)} miles away`
+                      : null;
                   return (
                     <li key={r.id}>
                       <Link
@@ -450,7 +454,7 @@ function EventDetailPage() {
                           {r.name}
                         </span>
                         <span className="text-sm text-muted-foreground">
-                          {[rDate, rLoc].filter(Boolean).join(" · ")}
+                          {[rDate, rLoc, rMiles].filter(Boolean).join(" · ")}
                         </span>
                       </Link>
                     </li>
