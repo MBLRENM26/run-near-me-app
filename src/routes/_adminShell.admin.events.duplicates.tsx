@@ -183,9 +183,7 @@ function AdminDuplicatesPage() {
     }
   };
 
-  if (!authChecked) {
-    return <p className="text-sm text-muted-foreground">Checking session…</p>;
-  }
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const clusters = data?.clusters ?? [];
   const seriesClusters = clusters.filter((c) => c.kind === "series");
@@ -195,6 +193,90 @@ function AdminDuplicatesPage() {
     medium: dupeClusters.filter((c) => c.confidence === "medium"),
     low: dupeClusters.filter((c) => c.confidence === "low"),
   };
+
+  // Prune selected keys that no longer exist after a refetch.
+  const allKeys = useMemo(
+    () => new Set(clusters.map((c) => c.key)),
+    [clusters],
+  );
+  useEffect(() => {
+    setSelected((prev) => {
+      let changed = false;
+      const next = new Set<string>();
+      prev.forEach((k) => {
+        if (allKeys.has(k)) next.add(k);
+        else changed = true;
+      });
+      return changed ? next : prev;
+    });
+  }, [allKeys]);
+
+  const toggleCluster = (key: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+
+  const setTierSelection = (tierClusters: DuplicateCluster[], on: boolean) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      tierClusters.forEach((c) => {
+        if (on) next.add(c.key);
+        else next.delete(c.key);
+      });
+      return next;
+    });
+
+  const selectedClusters = clusters.filter((c) => selected.has(c.key));
+  const selectedRowCount = selectedClusters.reduce(
+    (n, c) => n + c.rows.length,
+    0,
+  );
+
+  const handleMarkSelectedAsSeries = async () => {
+    if (!selectedClusters.length) return;
+    if (
+      !confirm(
+        `Mark ${selectedClusters.length} cluster${selectedClusters.length === 1 ? "" : "s"} (${selectedRowCount} rows) as recurring series? Each cluster gets its own series_key.`,
+      )
+    )
+      return;
+    setBusy(true);
+    let marked = 0;
+    let failed = 0;
+    let firstError: string | null = null;
+    for (const cluster of selectedClusters) {
+      try {
+        const res = await markSeriesFn({
+          data: { ids: cluster.rows.map((r) => r.id) },
+        });
+        marked += res.marked;
+      } catch (e) {
+        failed += 1;
+        if (!firstError)
+          firstError = e instanceof Error ? e.message : String(e);
+      }
+    }
+    setBusy(false);
+    setSelected(new Set());
+    if (failed) {
+      toast.warning(
+        `Marked ${marked} rows; ${failed} cluster${failed === 1 ? "" : "s"} failed. ${firstError ?? ""}`,
+      );
+    } else {
+      toast.success(
+        `Marked ${marked} row${marked === 1 ? "" : "s"} across ${selectedClusters.length} cluster${selectedClusters.length === 1 ? "" : "s"} as series.`,
+      );
+    }
+    invalidate();
+  };
+
+  if (!authChecked) {
+    return <p className="text-sm text-muted-foreground">Checking session…</p>;
+  }
+
 
   return (
     <div className="space-y-6">
