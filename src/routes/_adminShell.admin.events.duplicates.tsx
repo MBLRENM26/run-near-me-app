@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { adminCheckSession } from "@/lib/admin.functions";
@@ -182,9 +183,7 @@ function AdminDuplicatesPage() {
     }
   };
 
-  if (!authChecked) {
-    return <p className="text-sm text-muted-foreground">Checking session…</p>;
-  }
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const clusters = data?.clusters ?? [];
   const seriesClusters = clusters.filter((c) => c.kind === "series");
@@ -194,6 +193,90 @@ function AdminDuplicatesPage() {
     medium: dupeClusters.filter((c) => c.confidence === "medium"),
     low: dupeClusters.filter((c) => c.confidence === "low"),
   };
+
+  // Prune selected keys that no longer exist after a refetch.
+  const allKeys = useMemo(
+    () => new Set(clusters.map((c) => c.key)),
+    [clusters],
+  );
+  useEffect(() => {
+    setSelected((prev) => {
+      let changed = false;
+      const next = new Set<string>();
+      prev.forEach((k) => {
+        if (allKeys.has(k)) next.add(k);
+        else changed = true;
+      });
+      return changed ? next : prev;
+    });
+  }, [allKeys]);
+
+  const toggleCluster = (key: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+
+  const setTierSelection = (tierClusters: DuplicateCluster[], on: boolean) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      tierClusters.forEach((c) => {
+        if (on) next.add(c.key);
+        else next.delete(c.key);
+      });
+      return next;
+    });
+
+  const selectedClusters = clusters.filter((c) => selected.has(c.key));
+  const selectedRowCount = selectedClusters.reduce(
+    (n, c) => n + c.rows.length,
+    0,
+  );
+
+  const handleMarkSelectedAsSeries = async () => {
+    if (!selectedClusters.length) return;
+    if (
+      !confirm(
+        `Mark ${selectedClusters.length} cluster${selectedClusters.length === 1 ? "" : "s"} (${selectedRowCount} rows) as recurring series? Each cluster gets its own series_key.`,
+      )
+    )
+      return;
+    setBusy(true);
+    let marked = 0;
+    let failed = 0;
+    let firstError: string | null = null;
+    for (const cluster of selectedClusters) {
+      try {
+        const res = await markSeriesFn({
+          data: { ids: cluster.rows.map((r) => r.id) },
+        });
+        marked += res.marked;
+      } catch (e) {
+        failed += 1;
+        if (!firstError)
+          firstError = e instanceof Error ? e.message : String(e);
+      }
+    }
+    setBusy(false);
+    setSelected(new Set());
+    if (failed) {
+      toast.warning(
+        `Marked ${marked} rows; ${failed} cluster${failed === 1 ? "" : "s"} failed. ${firstError ?? ""}`,
+      );
+    } else {
+      toast.success(
+        `Marked ${marked} row${marked === 1 ? "" : "s"} across ${selectedClusters.length} cluster${selectedClusters.length === 1 ? "" : "s"} as series.`,
+      );
+    }
+    invalidate();
+  };
+
+  if (!authChecked) {
+    return <p className="text-sm text-muted-foreground">Checking session…</p>;
+  }
+
 
   return (
     <div className="space-y-6">
@@ -253,21 +336,30 @@ function AdminDuplicatesPage() {
         <>
           {seriesClusters.length > 0 && (
             <section className="space-y-3">
-              <div className="border-b border-border pb-1">
-                <h2 className="text-lg font-semibold text-foreground">
-                  Recurring series ({seriesClusters.length})
-                </h2>
-                <p className="text-xs text-muted-foreground">
-                  Looks like a recurring series (e.g. RunThrough fortnightly,
-                  Grand Prix). Don't merge — mark as a series so they're
-                  flagged as recurring on listings.
-                </p>
+              <div className="flex items-end justify-between gap-3 border-b border-border pb-1">
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground">
+                    Recurring series ({seriesClusters.length})
+                  </h2>
+                  <p className="text-xs text-muted-foreground">
+                    Looks like a recurring series (e.g. RunThrough fortnightly,
+                    Grand Prix). Don't merge — mark as a series so they're
+                    flagged as recurring on listings.
+                  </p>
+                </div>
+                <TierSelectAll
+                  list={seriesClusters}
+                  selected={selected}
+                  onChange={(on) => setTierSelection(seriesClusters, on)}
+                />
               </div>
               {seriesClusters.map((cluster) => (
                 <ClusterCard
                   key={cluster.key}
                   cluster={cluster}
                   busy={busy}
+                  selected={selected.has(cluster.key)}
+                  onToggleSelect={() => toggleCluster(cluster.key)}
                   onMergeAll={null}
                   onMergeOne={handleMerge}
                   onMarkSeries={() => handleMarkSeries(cluster)}
@@ -280,19 +372,28 @@ function AdminDuplicatesPage() {
             if (!list.length) return null;
             return (
               <section key={tier} className="space-y-3">
-                <div className="border-b border-border pb-1">
-                  <h2 className="text-lg font-semibold text-foreground">
-                    {TIER_LABEL[tier]} ({list.length})
-                  </h2>
-                  <p className="text-xs text-muted-foreground">
-                    {TIER_DESC[tier]}
-                  </p>
+                <div className="flex items-end justify-between gap-3 border-b border-border pb-1">
+                  <div>
+                    <h2 className="text-lg font-semibold text-foreground">
+                      {TIER_LABEL[tier]} ({list.length})
+                    </h2>
+                    <p className="text-xs text-muted-foreground">
+                      {TIER_DESC[tier]}
+                    </p>
+                  </div>
+                  <TierSelectAll
+                    list={list}
+                    selected={selected}
+                    onChange={(on) => setTierSelection(list, on)}
+                  />
                 </div>
                 {list.map((cluster) => (
                   <ClusterCard
                     key={cluster.key}
                     cluster={cluster}
                     busy={busy}
+                    selected={selected.has(cluster.key)}
+                    onToggleSelect={() => toggleCluster(cluster.key)}
                     onMergeAll={
                       tier !== "low" ? () => handleClusterMerge(cluster) : null
                     }
@@ -310,20 +411,70 @@ function AdminDuplicatesPage() {
         </>
       )}
 
+      {selectedClusters.length > 0 && (
+        <div className="sticky bottom-4 z-20 mx-auto flex w-fit items-center gap-3 rounded-full border border-primary/40 bg-background/95 px-4 py-2 shadow-lg backdrop-blur">
+          <span className="text-sm font-medium text-foreground">
+            {selectedClusters.length} cluster
+            {selectedClusters.length === 1 ? "" : "s"} selected ({selectedRowCount} rows)
+          </span>
+          <Button
+            size="sm"
+            disabled={busy}
+            onClick={handleMarkSelectedAsSeries}
+          >
+            Mark selected as series
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={busy}
+            onClick={() => setSelected(new Set())}
+          >
+            Clear
+          </Button>
+        </div>
+      )}
+
       <Toaster position="top-center" />
+
     </div>
+  );
+}
+
+function TierSelectAll({
+  list,
+  selected,
+  onChange,
+}: {
+  list: DuplicateCluster[];
+  selected: Set<string>;
+  onChange: (on: boolean) => void;
+}) {
+  const allSelected = list.length > 0 && list.every((c) => selected.has(c.key));
+  return (
+    <label className="flex shrink-0 cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+      <Checkbox
+        checked={allSelected}
+        onCheckedChange={(v) => onChange(v === true)}
+      />
+      Select all
+    </label>
   );
 }
 
 function ClusterCard({
   cluster,
   busy,
+  selected,
+  onToggleSelect,
   onMergeAll,
   onMergeOne,
   onMarkSeries,
 }: {
   cluster: DuplicateCluster;
   busy: boolean;
+  selected: boolean;
+  onToggleSelect: () => void;
   onMergeAll: (() => void) | null;
   onMergeOne: (survivor: DuplicateRow, dupe: DuplicateRow) => void;
   onMarkSeries?: (() => void) | null;
@@ -339,6 +490,12 @@ function ClusterCard({
     <div className="rounded-lg border border-border bg-card">
       <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2 text-xs">
         <div className="flex flex-wrap items-center gap-2 text-muted-foreground">
+          <Checkbox
+            checked={selected}
+            onCheckedChange={() => onToggleSelect()}
+            aria-label="Select cluster"
+          />
+
           {cluster.kind === "series" ? (
             <span className="rounded bg-blue-100 px-1.5 py-0.5 font-medium uppercase text-blue-900 dark:bg-blue-900/30 dark:text-blue-200">
               series
