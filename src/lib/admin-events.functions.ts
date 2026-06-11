@@ -153,6 +153,7 @@ export const listAdminEvents = createServerFn({ method: "POST" })
         missing_town: z.boolean().optional(),
         missing_distances: z.boolean().optional(),
         missing_date: z.boolean().optional(),
+        missing_terrain_tags: z.boolean().optional(),
         incomplete_any: z.boolean().optional(),
         upcoming_only: z.boolean().optional(),
         region_invalid: z.boolean().optional(),
@@ -169,7 +170,7 @@ export const listAdminEvents = createServerFn({ method: "POST" })
     let query = supabaseAdmin
       .from("events")
       .select(
-        "id,name,slug,sort_date,date_raw,town,region,distances,status,source,is_featured,is_upcoming,date_is_estimated,lat,lng,created_at",
+        "id,name,slug,sort_date,date_raw,town,region,distances,status,source,is_featured,is_upcoming,date_is_estimated,lat,lng,created_at,distance_tags,terrain_tags,is_curated_tags",
         { count: "exact" },
       );
 
@@ -192,6 +193,8 @@ export const listAdminEvents = createServerFn({ method: "POST" })
     if (data.missing_town) query = query.or(TOWN_MISSING);
     if (data.missing_distances) query = query.or(DIST_MISSING);
     if (data.missing_date) query = query.or(DATE_MISSING);
+    if (data.missing_terrain_tags)
+      query = query.eq("terrain_tags", "{}");
     if (data.incomplete_any) {
       query = query.or(
         [
@@ -200,6 +203,7 @@ export const listAdminEvents = createServerFn({ method: "POST" })
           DATE_MISSING,
           "lat.is.null",
           "region.is.null",
+          "terrain_tags.eq.{}",
         ].join(","),
       );
     }
