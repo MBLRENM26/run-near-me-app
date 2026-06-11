@@ -261,6 +261,54 @@ function AdminEventEditorPage() {
         </Field>
       </Section>
 
+      {/* Normalised tags — drives distance/region pages */}
+      <Section title="Tags (normalised)">
+        <div className="col-span-2 -mt-1 mb-2 flex items-center justify-between gap-3 text-xs">
+          <p className="text-muted-foreground">
+            Tags drive what appears on the public distance pages (5K, 10K,
+            Trail, etc.). Edit by hand to override the parser — the row is
+            marked <strong>curated</strong> and the scraper backfill leaves it
+            alone. Use <em>Re-parse from raw</em> to discard manual tags and
+            re-derive from <code>distances</code>+<code>discipline</code>.
+          </p>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={reparseFromForm}
+          >
+            Re-parse from raw
+          </Button>
+        </div>
+        <Field label="Distance tags">
+          <TagChips
+            all={DISTANCE_TAG_VALUES as readonly string[]}
+            selected={(form.distance_tags as string[] | undefined) ?? []}
+            onToggle={(t) => toggleTag("distance_tags", t)}
+          />
+        </Field>
+        <Field label="Terrain tags">
+          <TagChips
+            all={TERRAIN_TAG_VALUES as readonly string[]}
+            selected={(form.terrain_tags as string[] | undefined) ?? []}
+            onToggle={(t) => toggleTag("terrain_tags", t)}
+          />
+        </Field>
+        <Field label="Curated">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={!!form.is_curated_tags}
+              onChange={(e) => set("is_curated_tags", e.target.checked)}
+            />
+            <span className="text-muted-foreground">
+              Protect these tags from the parser backfill
+            </span>
+          </label>
+        </Field>
+      </Section>
+
+
       {/* Location */}
       <Section title="Location">
         <Field label="Town">
