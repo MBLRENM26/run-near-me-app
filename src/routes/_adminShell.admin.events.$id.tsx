@@ -166,6 +166,25 @@ function AdminEventEditorPage() {
     }
   };
 
+  const handleUnmerge = async () => {
+    if (
+      !confirm(
+        "Unmerge this event? It will return to ACTIVE and reappear on filter pages. The previous survivor is unaffected.",
+      )
+    )
+      return;
+    try {
+      await unmergeFn({ data: { id } });
+      toast.success("Unmerged — status set to ACTIVE.");
+      queryClient.invalidateQueries({ queryKey: ["admin-event", id] });
+      queryClient.invalidateQueries({ queryKey: ["admin-events"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-duplicates"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Unmerge failed");
+    }
+  };
+
+
   const handleDelete = async () => {
     if (
       !confirm(
