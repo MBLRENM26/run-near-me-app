@@ -1,56 +1,106 @@
 ## Goal
 
-Two small upgrades to the event detail page (`/events/{slug}`) to make interlinking smarter:
+Give you direct, password-gated control over the `events` table from the admin UI, so individual fixes (like the Big Half / Vitality 10K episode) and bulk imports (the 128 enriched Welsh + NI rows) don't require a chat round-trip.
 
-1. The "It's one of **107 10K races** taking place in London…" sentence in the *About this race* paragraph should be a clickable link to that region+distance page.
-2. The "More 10K races in London" list under the paragraph should show the **geographically nearest** events to this race (not just the next-by-date in the same region), when we have lat/lng.
+Shipped in three sequenced slices. Each slice is independently useful and deployable — you can start using slice 1 the day it lands without waiting for 2 and 3.
 
 ---
 
-## 1. Linkify the in-prose count
+## Slice 1 — Browse + edit any event (the unblock)
 
-Currently `buildAboutParagraph()` returns a plain string and the page renders it inside `<p>`. To embed a real `<Link>` we change the contract:
+New route: `/admin/events` (under existing `_adminShell` so it inherits the password gate).
 
-- Refactor `buildAboutParagraph` to return a structured result instead of a string:
-  ```
-  { sentence1: string; sentence2: string | null; countSentence: { before: string; linkText: string; after: string } | null }
-  ```
-  `linkText` is the "107 10K races in London" fragment; `before`/`after` are the surrounding prose (e.g. "It's one of " … " this season — find more below.").
-- In `events.$slug.tsx`, render the paragraph as JSX. When `countSentence` is present and we have a `regionSlug` + `comboSlug`, wrap `linkText` in a `<Link to="/running-events/$slug/$distance" params={{ slug: regionSlug, distance: comboSlug }}>`. Fallback (region only, no distance bucket): link to `/running-events/$slug`. If neither is available, render plain text.
-- Existing thresholds unchanged: still only mentioned when `regionCount >= 5`.
-- Existing 3 phrasing variants preserved — each variant just yields different `before`/`after` text around the same `linkText` template.
+**List view**
+- Server-paginated table (50/page). Columns: name, date, town, region, distances, status, source, featured, updated.
+- Filters: text search (name/slug/town), region (dropdown from `REGIONS`), distance bucket, status, source, "missing lat/lng", "date estimated", upcoming-only.
+- Sort by `sort_date` (default), `name`, `created_at`.
+- Each row has an "Edit" button → opens the editor (drawer or sub-route — drawer keeps filter state).
 
-This is the only place an in-body link to a distance page is added; the existing "View all 107 10K races in London →" link at the bottom of the related list stays as-is (it's already a link, just reinforced now).
+**Edit view — every field except system-owned**
+Editable: `name`, `slug`, `date_raw`, `sort_date`, `date_from`, `date_to`, `date_is_estimated`, `is_recurring`, `is_upcoming`, `town`, `county`, `region` (dropdown), `country`, `location_raw`, `lat`, `lng`, `distances`, `discipline`, `entry_fee`, `organiser`, `entry_url`, `organiser_url`, `source`, `source_url`, `licensed`, `is_featured`, `status` (dropdown: ACTIVE/HIDDEN/DRAFT), `duplicate_of`.
+Read-only: `id`, `created_at`, `norm_id`, `norm_created_at`.
 
-## 2. Nearest events instead of next-in-region
+**Validation (server-side, before write)**
+- Slug: kebab-case `^[a-z0-9-]+$`, unique, max 200 chars; auto-suggest from `name` if blank.
+- Region: must be one of the 12 canonical names in `src/lib/regions.ts` (or null for overseas). Free-text rejected — prevents the slug-mismatch trap you flagged.
+- lat/lng: both null or both set; lat ∈ [-90,90], lng ∈ [-180,180].
+- URLs: each routed through `classifyEventLink` and the resulting trust tier shown beside the input (so you can see whether `entry_url` will render as "Enter now" or be suppressed as an aggregator).
+- status: enum-checked.
 
-Today `getEventPageData` returns up to 6 same-region, same-distance events ordered by `sort_date`. We'll prefer **nearest by distance** when the current event has `lat`/`lng`.
+**Delete + soft actions**
+- "Set status = HIDDEN" (soft hide, keeps URL). Hard delete behind a second confirm, available only for `source = 'manual'` rows to start.
+- "Mark as duplicate of…" sets `duplicate_of` via slug picker.
 
-Approach (server-side, inside `getEventPageData`):
+**Audit trail**
+- Tiny `event_edits` table: `id, event_id, edited_at, changes jsonb, note text`. Every save writes a diff row. Lets you eyeball what changed without git-for-data.
 
-- If `event.lat` and `event.lng` are set:
-  - Call the existing `events_within_radius` RPC with a growing radius (try 25 mi → 75 mi → 200 mi until we have at least 6 candidates with a slug). Cap at 200 mi so we still degrade gracefully for isolated events.
-  - Filter results to the same distance bucket using `matchesDistance(row.distance_type, cfg)` when `related.distanceKey` is set; otherwise return them unfiltered.
-  - Exclude the event itself, take the first 6, and attach `distance_miles` so the UI can show "X miles away".
-- If lat/lng is missing (legacy rows), keep today's region+sort_date behaviour as the fallback.
-- `totalCount` (used by the "View all N …" footer link and the prose count) **continues to come from the region+distance query** — that's the number the about-paragraph and footer CTA are talking about ("107 in London"). Only the 6 displayed rows change source.
+**Files**
+- `supabase/migrations/...` — new `event_edits` table, GRANT block, RLS (admin-only via service role, no anon/auth grants needed since access is service-role).
+- `src/lib/admin-events.functions.ts` — `listAdminEvents`, `getAdminEvent`, `updateAdminEvent`, `deleteAdminEvent`, all gated by existing `requireAdminOrThrow()`, all using `supabaseAdmin`.
+- `src/routes/_adminShell.admin.events.tsx` — list + filters.
+- `src/routes/_adminShell.admin.events.$id.tsx` — editor.
+- `src/components/admin/EventEditor.tsx`, `EventListRow.tsx`, `EventFilters.tsx`.
+- Sidebar link added to `_adminShell.tsx`.
 
-UI changes in `events.$slug.tsx`:
+---
 
-- Heading stays "More {distance} {in region}" when we still have a region context, but each row also shows the mileage when present, reusing `formatDistance(miles)` from `src/lib/distance.ts` (e.g. "Sat 12 Sept · Camden · 2.3 miles away").
-- When the nearest-by-distance path is used, the row order is by `distance_miles` ascending, not by date.
-- No new component — extend the existing `<ul>`/`<li>` block.
+## Slice 2 — Add new event
 
-## Out of scope
+Reuses the slice 1 editor with empty defaults.
 
-- No change to the bottom "View all 107 … →" link itself (it already routes to the combo page).
-- No new distance pages, sitemap entries, or schema fields.
-- Entry-fee policy and link-trust rules untouched.
+- Route: `/admin/events/new`.
+- Same validation as edit. `source` defaults to `manual`. `norm_id` auto-set to `manual:{slug}`.
+- After save, redirects to the editor for that new row so you can keep tweaking.
+- "Duplicate this event" button on the editor → prefills a new draft with date cleared (useful for annual recurrences).
 
-## Files touched
+No new server fn beyond `createAdminEvent` (validation shared with `updateAdminEvent`).
 
-- `src/lib/event-description.ts` — change return type + small refactor of `s3`.
-- `src/lib/events.functions.ts` — extend `RelatedEvent` with optional `distance_miles`; add nearest-by-radius path to `getEventPageData`.
-- `src/routes/events.$slug.tsx` — render about paragraph as JSX with embedded `<Link>`; show miles on related rows.
+---
 
-No DB migration. No new server function. Builds against existing `events_within_radius` RPC and the new Big Half / Vitality 10K rows (both have lat/lng) will be ideal first test cases.
+## Slice 3 — Bulk CSV import (the Wales + NI patch path)
+
+Two-step flow so you never overwrite blind.
+
+**Step A: Upload + dry-run**
+- `/admin/events/import` — file input accepts CSV.
+- Server parses (header row required), validates every row through the same schema as slice 1.
+- Match key: `norm_id` if present, else `slug`, else `(name + sort_date)` fallback.
+- For each row produces one of: `CREATE`, `UPDATE` (with field-level diff), `SKIP` (no changes), `ERROR` (with reason).
+- Result shown as a table: counts at top, expandable per-row diff. **Nothing written yet.**
+
+**Step B: Apply**
+- "Apply 128 changes" button. Server re-validates and writes in a transaction-per-row (so one bad row doesn't kill the batch). Writes `event_edits` rows with `note: 'csv-import:{filename}'`.
+- Final screen: succeeded / failed counts, downloadable error CSV.
+
+**CSV column contract**
+- Required: `name`, one of (`slug` | `norm_id`).
+- Optional: every editable field from slice 1, plus `region_slug` (auto-resolved to region name via `REGIONS`) so you can paste from the NORMALISED sheet without manual region-name typing.
+- Boolean columns accept `true/false/1/0/yes/no`.
+- Unknown columns are ignored with a warning row at the top of the dry-run (helps catch typos like `distance` vs `distances`).
+
+**Files**
+- `src/lib/admin-import.functions.ts` — `dryRunImport`, `applyImport`.
+- `src/routes/_adminShell.admin.events.import.tsx`.
+- `src/components/admin/ImportDryRunTable.tsx`.
+
+---
+
+## On the region-slug consistency check you raised
+
+Folded into slice 1, not deferred:
+- The editor's region field is a dropdown sourced from `src/lib/regions.ts` — there is no way to save a free-text region from the UI.
+- A one-off read-only diagnostic (`/admin/events?region_invalid=1`) lists any row whose `region` doesn't match a canonical name, so you can spot legacy strays before building town pages.
+- No slug refactor in this phase — just enforcement going forward + visibility of existing drift.
+
+## Out of scope (next phase, not this one)
+
+- Town pages, distance hub pages, distance landing pages, sitemap/schema updates for those.
+- Slug renaming with redirect history.
+- Multi-user admin / per-user audit (single admin password stays).
+- Image/photo fields (none exist on `events` yet).
+
+## Suggested order of operations on your side
+
+1. Approve slice 1 plan → I build → you start fixing rows the same day.
+2. Approve slice 2 → I build (small, ~half a slice).
+3. Approve slice 3 → I build → you export the NORMALISED sheet as CSV → dry-run → apply.
