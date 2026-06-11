@@ -159,15 +159,40 @@ function AdminDuplicatesPage() {
     }
   };
 
+  const handleMarkSeries = async (cluster: DuplicateCluster) => {
+    if (
+      !confirm(
+        `Mark all ${cluster.rows.length} rows of "${cluster.rows[0]?.name}" as a recurring series? They'll be flagged is_recurring=true, grouped by a shared series_key, and removed from this duplicates view.`,
+      )
+    )
+      return;
+    setBusy(true);
+    try {
+      const res = await markSeriesFn({
+        data: { ids: cluster.rows.map((r) => r.id) },
+      });
+      toast.success(
+        `Marked ${res.marked} row${res.marked === 1 ? "" : "s"} as series (${res.series_key}).`,
+      );
+      invalidate();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Mark as series failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   if (!authChecked) {
     return <p className="text-sm text-muted-foreground">Checking session…</p>;
   }
 
   const clusters = data?.clusters ?? [];
+  const seriesClusters = clusters.filter((c) => c.kind === "series");
+  const dupeClusters = clusters.filter((c) => c.kind === "duplicate");
   const byTier: Record<DuplicateConfidence, DuplicateCluster[]> = {
-    high: clusters.filter((c) => c.confidence === "high"),
-    medium: clusters.filter((c) => c.confidence === "medium"),
-    low: clusters.filter((c) => c.confidence === "low"),
+    high: dupeClusters.filter((c) => c.confidence === "high"),
+    medium: dupeClusters.filter((c) => c.confidence === "medium"),
+    low: dupeClusters.filter((c) => c.confidence === "low"),
   };
 
   return (
@@ -178,9 +203,9 @@ function AdminDuplicatesPage() {
             Potential duplicates
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Grouped by tier. High-confidence clusters can be bulk-merged.
-            Low-confidence clusters need manual review — usually they're
-            recurring series or name collisions, not duplicates.
+            Grouped by tier. Recurring series are surfaced separately —
+            don't merge those, mark them as a series so they're shown as
+            scheduled fixtures instead.
           </p>
         </div>
         <div className="flex flex-col items-end gap-2 text-sm text-muted-foreground">
@@ -189,8 +214,8 @@ function AdminDuplicatesPage() {
           </Link>
           <div>
             {clusters.length} cluster{clusters.length === 1 ? "" : "s"} ·{" "}
-            {byTier.high.length} high · {byTier.medium.length} medium ·{" "}
-            {byTier.low.length} low
+            {seriesClusters.length} series · {byTier.high.length} high ·{" "}
+            {byTier.medium.length} medium · {byTier.low.length} low
             {isFetching && " · refreshing…"}
           </div>
         </div>
@@ -225,33 +250,64 @@ function AdminDuplicatesPage() {
           </p>
         </div>
       ) : (
-        (["high", "medium", "low"] as DuplicateConfidence[]).map((tier) => {
-          const list = byTier[tier];
-          if (!list.length) return null;
-          return (
-            <section key={tier} className="space-y-3">
+        <>
+          {seriesClusters.length > 0 && (
+            <section className="space-y-3">
               <div className="border-b border-border pb-1">
                 <h2 className="text-lg font-semibold text-foreground">
-                  {TIER_LABEL[tier]} ({list.length})
+                  Recurring series ({seriesClusters.length})
                 </h2>
                 <p className="text-xs text-muted-foreground">
-                  {TIER_DESC[tier]}
+                  Looks like a recurring series (e.g. RunThrough fortnightly,
+                  Grand Prix). Don't merge — mark as a series so they're
+                  flagged as recurring on listings.
                 </p>
               </div>
-              {list.map((cluster) => (
+              {seriesClusters.map((cluster) => (
                 <ClusterCard
                   key={cluster.key}
                   cluster={cluster}
                   busy={busy}
-                  onMergeAll={
-                    tier !== "low" ? () => handleClusterMerge(cluster) : null
-                  }
+                  onMergeAll={null}
                   onMergeOne={handleMerge}
+                  onMarkSeries={() => handleMarkSeries(cluster)}
                 />
               ))}
             </section>
-          );
-        })
+          )}
+          {(["high", "medium", "low"] as DuplicateConfidence[]).map((tier) => {
+            const list = byTier[tier];
+            if (!list.length) return null;
+            return (
+              <section key={tier} className="space-y-3">
+                <div className="border-b border-border pb-1">
+                  <h2 className="text-lg font-semibold text-foreground">
+                    {TIER_LABEL[tier]} ({list.length})
+                  </h2>
+                  <p className="text-xs text-muted-foreground">
+                    {TIER_DESC[tier]}
+                  </p>
+                </div>
+                {list.map((cluster) => (
+                  <ClusterCard
+                    key={cluster.key}
+                    cluster={cluster}
+                    busy={busy}
+                    onMergeAll={
+                      tier !== "low" ? () => handleClusterMerge(cluster) : null
+                    }
+                    onMergeOne={handleMerge}
+                    onMarkSeries={
+                      tier === "low"
+                        ? () => handleMarkSeries(cluster)
+                        : null
+                    }
+                  />
+                ))}
+              </section>
+            );
+          })}
+        </>
       )}
 
       <Toaster position="top-center" />
