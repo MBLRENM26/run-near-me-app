@@ -371,6 +371,8 @@ export type RelatedEvent = {
   date_is_estimated: boolean;
   town: string | null;
   county: string | null;
+  /** Miles from the current event when sourced via nearest-by-radius. */
+  distance_miles?: number | null;
 };
 
 export type RelatedEvents = {
@@ -393,7 +395,7 @@ export const getEventPageData = createServerFn({ method: "GET" })
     const { data: row, error } = await supabaseAdmin
       .from("events")
       .select(
-        "id, slug, name, date_raw, date_from, date_to, sort_date, town, county, region, distances, discipline, entry_fee, entry_url, organiser_url, source_url, organiser, is_featured, date_is_estimated",
+        "id, slug, name, date_raw, date_from, date_to, sort_date, town, county, region, distances, discipline, entry_fee, entry_url, organiser_url, source_url, organiser, is_featured, date_is_estimated, lat, lng",
       )
       .eq("slug", data.slug)
       .eq("status", "ACTIVE")
@@ -426,7 +428,9 @@ export const getEventPageData = createServerFn({ method: "GET" })
       }
       throw notFound();
     }
-    const event = row as EventDetail;
+    const eventRow = row as EventDetail & { lat: number | null; lng: number | null };
+    const { lat: eventLat, lng: eventLng, ...eventPublic } = eventRow;
+    const event = eventPublic as EventDetail;
 
     const related: RelatedEvents = {
       events: [],
@@ -479,8 +483,8 @@ export const getEventPageData = createServerFn({ method: "GET" })
         ? all.filter((r) => matchesDistance(r.distances, cfg))
         : all;
 
-      // Count includes the event itself (it's "one of N"); the displayed
-      // list excludes it.
+      // Count includes the event itself (drives the "one of N" prose and the
+      // "View all N" footer link — both region+distance scoped).
       related.totalCount = matched.length;
       related.events = matched
         .filter((r) => r.id !== event.id)
@@ -488,5 +492,58 @@ export const getEventPageData = createServerFn({ method: "GET" })
         .map(({ distances: _d, ...rest }) => rest);
     }
 
+    // Prefer nearest-by-radius for the displayed 6 when we have coordinates.
+    // totalCount stays region+distance scoped (that's what the prose says).
+    if (eventLat != null && eventLng != null) {
+      const cfg = related.distanceKey
+        ? DISTANCE_PAGES[related.distanceKey]
+        : null;
+      for (const radius of [25, 75, 200]) {
+        const { data: nearRows, error: nearErr } = await supabaseAdmin.rpc(
+          "events_within_radius",
+          {
+            p_lat: eventLat,
+            p_lng: eventLng,
+            p_radius_miles: radius,
+            p_max_results: 100,
+          },
+        );
+        if (nearErr) break; // fall back to region list silently
+        if (!nearRows) continue;
+        const picked: RelatedEvent[] = [];
+        for (const r of nearRows as Array<{
+          id: string;
+          slug: string | null;
+          name: string;
+          date_raw: string | null;
+          town: string | null;
+          county: string | null;
+          distance_type: string | null;
+          date_is_estimated: boolean | null;
+          distance_miles: number | null;
+        }>) {
+          if (!r.slug || r.id === event.id) continue;
+          if (cfg && !matchesDistance(r.distance_type, cfg)) continue;
+          picked.push({
+            id: r.id,
+            slug: r.slug,
+            name: r.name,
+            date_raw: r.date_raw,
+            sort_date: null,
+            date_is_estimated: !!r.date_is_estimated,
+            town: r.town,
+            county: r.county,
+            distance_miles: r.distance_miles,
+          });
+          if (picked.length >= 6) break;
+        }
+        if (picked.length >= 6 || radius === 200) {
+          if (picked.length > 0) related.events = picked;
+          break;
+        }
+      }
+    }
+
     return { event, related };
   });
+

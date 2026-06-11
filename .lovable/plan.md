@@ -1,51 +1,56 @@
 ## Goal
 
-Add **Big Half** and **Vitality London 10,000** as ACTIVE manual events so `/$slug` redirects them internally to real pages (fixes GSC soft-404s + keeps users on-site).
+Two small upgrades to the event detail page (`/events/{slug}`) to make interlinking smarter:
 
-## Changes
+1. The "It's one of **107 10K races** taking place in London…" sentence in the *About this race* paragraph should be a clickable link to that region+distance page.
+2. The "More 10K races in London" list under the paragraph should show the **geographically nearest** events to this race (not just the next-by-date in the same region), when we have lat/lng.
 
-### 1. Insert two events (data-only)
+---
 
-| Field | Big Half | Vitality London 10,000 |
-|---|---|---|
-| `slug` | `big-half` | `vitality-london-10k` |
-| `norm_id` | `manual:big-half` | `manual:vitality-london-10k` |
-| `name` | The Big Half | Vitality London 10,000 |
-| `date_from` / `date_to` / `sort_date` | 2026-09-06 | 2026-09-27 |
-| `date_raw` | "Sunday 6 September 2026" | "Sunday 27 September 2026" |
-| `distances` | `Half Marathon` | `10K` |
-| `discipline` | `Road` | `Road` |
-| `town` | London | London |
-| `region` | London | London |
-| `country` | England | England |
-| `lat` / `lng` | 51.505456, -0.075357 (Tower Bridge) | 51.504490, -0.134307 (The Mall) |
-| `organiser` | London Marathon Events | London Marathon Events |
-| `organiser_url` | https://www.londonmarathonevents.co.uk/big-half | https://www.londonmarathonevents.co.uk/london-10000 |
-| `entry_url` | same as organiser_url | same as organiser_url |
-| `entry_fee` | **null** | **null** |
-| `source` / `source_url` | `manual` / organiser_url | `manual` / organiser_url |
-| `status` / `is_upcoming` / `date_is_estimated` | ACTIVE / true / false | ACTIVE / true / false |
+## 1. Linkify the in-prose count
 
-**On entry_fee — deliberately null.** Per the scraped-data-trust core rule, we don't assert fees we haven't verified at-source today, and "typically £35–£55" / "typically £39" is exactly the kind of stale or approximate pricing that erodes trust if wrong on the day. Leaving null causes the event card to render "See event website for entry fee" and link out, which is the correct behaviour. (If you later confirm the live 2026 entry fee from the LME page, we can update — easy follow-up.)
+Currently `buildAboutParagraph()` returns a plain string and the page renders it inside `<p>`. To embed a real `<Link>` we change the contract:
 
-**On lat/lng — included.** These are stable course start points, not pricing, so they're safe to record and they make the events appear on the radius map. Both fall inside the UK lat/lng bounding box used by the distance/region queries, so they'll show up on `/10k-races`, `/half-marathons`, `/running-events/london/10k`, etc.
+- Refactor `buildAboutParagraph` to return a structured result instead of a string:
+  ```
+  { sentence1: string; sentence2: string | null; countSentence: { before: string; linkText: string; after: string } | null }
+  ```
+  `linkText` is the "107 10K races in London" fragment; `before`/`after` are the surrounding prose (e.g. "It's one of " … " this season — find more below.").
+- In `events.$slug.tsx`, render the paragraph as JSX. When `countSentence` is present and we have a `regionSlug` + `comboSlug`, wrap `linkText` in a `<Link to="/running-events/$slug/$distance" params={{ slug: regionSlug, distance: comboSlug }}>`. Fallback (region only, no distance bucket): link to `/running-events/$slug`. If neither is available, render plain text.
+- Existing thresholds unchanged: still only mentioned when `regionCount >= 5`.
+- Existing 3 phrasing variants preserved — each variant just yields different `before`/`after` text around the same `linkText` template.
 
-### 2. Trim `LEGACY_EXTERNAL_REDIRECTS` in `src/routes/$slug.tsx`
+This is the only place an in-body link to a distance page is added; the existing "View all 107 10K races in London →" link at the bottom of the related list stays as-is (it's already a link, just reinforced now).
 
-With DB rows present, the existing flow handles both URLs:
+## 2. Nearest events instead of next-in-region
 
-`/big-half` → `lookupEventSlug` hits → 301 to `/events/big-half`
-`/vitality-london-10k` → 301 to `/events/vitality-london-10k`
+Today `getEventPageData` returns up to 6 same-region, same-distance events ordered by `sort_date`. We'll prefer **nearest by distance** when the current event has `lat`/`lng`.
 
-Remove the two entries from the external redirect map (leave the empty `Record<string,string>` scaffold for the next legacy case). No other code touched.
+Approach (server-side, inside `getEventPageData`):
 
-### 3. Verify after deploy
+- If `event.lat` and `event.lng` are set:
+  - Call the existing `events_within_radius` RPC with a growing radius (try 25 mi → 75 mi → 200 mi until we have at least 6 candidates with a slug). Cap at 200 mi so we still degrade gracefully for isolated events.
+  - Filter results to the same distance bucket using `matchesDistance(row.distance_type, cfg)` when `related.distanceKey` is set; otherwise return them unfiltered.
+  - Exclude the event itself, take the first 6, and attach `distance_miles` so the UI can show "X miles away".
+- If lat/lng is missing (legacy rows), keep today's region+sort_date behaviour as the fallback.
+- `totalCount` (used by the "View all N …" footer link and the prose count) **continues to come from the region+distance query** — that's the number the about-paragraph and footer CTA are talking about ("107 in London"). Only the 6 displayed rows change source.
 
-- Sitemap picks both slugs up automatically (driven by `getAllActiveSlugs`).
-- Hit "Validate fix" in GSC for `/big-half` and `/vitality-london-10k` — both now return 200 via a single 301 to the canonical `/events/{slug}`.
-- Spot-check the two event pages render with a working "Enter now" CTA pointing at londonmarathonevents.co.uk (the URLs are event-specific so `classifyEventLink` will treat them as enterable, not as a homepage).
+UI changes in `events.$slug.tsx`:
+
+- Heading stays "More {distance} {in region}" when we still have a region context, but each row also shows the mileage when present, reusing `formatDistance(miles)` from `src/lib/distance.ts` (e.g. "Sat 12 Sept · Camden · 2.3 miles away").
+- When the nearest-by-distance path is used, the row order is by `distance_miles` ascending, not by date.
+- No new component — extend the existing `<ul>`/`<li>` block.
 
 ## Out of scope
 
-- Persisting the £35–£55 / £39 figures (intentional — see entry_fee note above).
-- Reclassifying these as our own listings — they remain LME-owned; we just provide the landing page + clear hand-off.
+- No change to the bottom "View all 107 … →" link itself (it already routes to the combo page).
+- No new distance pages, sitemap entries, or schema fields.
+- Entry-fee policy and link-trust rules untouched.
+
+## Files touched
+
+- `src/lib/event-description.ts` — change return type + small refactor of `s3`.
+- `src/lib/events.functions.ts` — extend `RelatedEvent` with optional `distance_miles`; add nearest-by-radius path to `getEventPageData`.
+- `src/routes/events.$slug.tsx` — render about paragraph as JSX with embedded `<Link>`; show miles on related rows.
+
+No DB migration. No new server function. Builds against existing `events_within_radius` RPC and the new Big Half / Vitality 10K rows (both have lat/lng) will be ideal first test cases.

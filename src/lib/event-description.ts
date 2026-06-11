@@ -71,7 +71,18 @@ export type AboutEventInput = {
 /** Only mention the count when it reads as a meaningful number. */
 const MIN_COUNT_FOR_MENTION = 5;
 
-export function buildAboutParagraph(e: AboutEventInput): string | null {
+export type AboutParagraph = {
+  /** Sentence 1 + optional sentence 2, joined. Always plain text. */
+  intro: string;
+  /** Sentence 3 split so the count phrase can be rendered as a link. */
+  count: {
+    before: string;
+    linkText: string;
+    after: string;
+  } | null;
+};
+
+export function buildAboutParagraph(e: AboutEventInput): AboutParagraph | null {
   if (!e.name?.trim()) return null;
   const v = slugVariant(e.slug, 3);
 
@@ -116,21 +127,34 @@ export function buildAboutParagraph(e: AboutEventInput): string | null {
         : "Entry details and pricing are available on the official event website.";
   }
 
-  // Sentence 3 — live regional count.
-  let s3 = "";
+  // Sentence 3 — live regional count, split so the count phrase is linkable.
+  let count: AboutParagraph["count"] = null;
   if (e.region && e.regionCount >= MIN_COUNT_FOR_MENTION) {
     const plural = e.distanceKey
       ? distancePlural(e.distanceKey)
       : "running events";
     const n = e.regionCount.toLocaleString();
+    const linkText = `${n} ${plural} in ${e.region}`;
     if (v === 0) {
-      s3 = `It's one of ${n} ${plural} taking place in ${e.region} this season — find more below.`;
+      count = {
+        before: "It's one of ",
+        linkText,
+        after: " this season — find more below.",
+      };
     } else if (v === 1) {
-      s3 = `It's among ${n} ${plural} happening across ${e.region} this season — see more below.`;
+      count = {
+        before: "It's among ",
+        linkText,
+        after: " happening this season — see more below.",
+      };
     } else {
-      s3 = `There are ${n} ${plural} coming up in ${e.region} this season — explore more below.`;
+      count = {
+        before: "There are ",
+        linkText,
+        after: " coming up this season — explore more below.",
+      };
     }
   }
 
-  return [s1, s2, s3].filter(Boolean).join(" ");
+  return { intro: [s1, s2].filter(Boolean).join(" "), count };
 }
