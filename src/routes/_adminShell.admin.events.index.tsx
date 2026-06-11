@@ -152,9 +152,31 @@ function AdminEventsPage() {
             Browse and edit any event in the database.
           </p>
         </div>
-        <div className="text-sm text-muted-foreground">
-          {total.toLocaleString()} match{total === 1 ? "" : "es"}
-          {isFetching && " · refreshing…"}
+        <div className="flex flex-col items-end gap-2">
+          <div className="text-sm text-muted-foreground">
+            {total.toLocaleString()} match{total === 1 ? "" : "es"}
+            {isFetching && " · refreshing…"}
+          </div>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={backfilling}
+              onClick={() => handleBackfill(false)}
+              title="Parse distances/discipline into distance_tags + terrain_tags for any rows missing tags"
+            >
+              {backfilling ? "Backfilling…" : "Backfill missing tags"}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={backfilling}
+              onClick={() => handleBackfill(true)}
+              title="Re-parse every non-curated row (preserves human edits)"
+            >
+              Re-parse all
+            </Button>
+          </div>
         </div>
       </div>
 
