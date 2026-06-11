@@ -371,6 +371,8 @@ export type RelatedEvent = {
   date_is_estimated: boolean;
   town: string | null;
   county: string | null;
+  /** Miles from the current event when sourced via nearest-by-radius. */
+  distance_miles?: number | null;
 };
 
 export type RelatedEvents = {
