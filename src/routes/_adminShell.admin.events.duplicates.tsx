@@ -441,15 +441,40 @@ function AdminDuplicatesPage() {
   );
 }
 
+function TierSelectAll({
+  list,
+  selected,
+  onChange,
+}: {
+  list: DuplicateCluster[];
+  selected: Set<string>;
+  onChange: (on: boolean) => void;
+}) {
+  const allSelected = list.length > 0 && list.every((c) => selected.has(c.key));
+  return (
+    <label className="flex shrink-0 cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+      <Checkbox
+        checked={allSelected}
+        onCheckedChange={(v) => onChange(v === true)}
+      />
+      Select all
+    </label>
+  );
+}
+
 function ClusterCard({
   cluster,
   busy,
+  selected,
+  onToggleSelect,
   onMergeAll,
   onMergeOne,
   onMarkSeries,
 }: {
   cluster: DuplicateCluster;
   busy: boolean;
+  selected: boolean;
+  onToggleSelect: () => void;
   onMergeAll: (() => void) | null;
   onMergeOne: (survivor: DuplicateRow, dupe: DuplicateRow) => void;
   onMarkSeries?: (() => void) | null;
@@ -465,6 +490,12 @@ function ClusterCard({
     <div className="rounded-lg border border-border bg-card">
       <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2 text-xs">
         <div className="flex flex-wrap items-center gap-2 text-muted-foreground">
+          <Checkbox
+            checked={selected}
+            onCheckedChange={() => onToggleSelect()}
+            aria-label="Select cluster"
+          />
+
           {cluster.kind === "series" ? (
             <span className="rounded bg-blue-100 px-1.5 py-0.5 font-medium uppercase text-blue-900 dark:bg-blue-900/30 dark:text-blue-200">
               series
