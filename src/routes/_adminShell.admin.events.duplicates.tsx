@@ -8,6 +8,7 @@ import {
   mergeDuplicateEvents,
   mergeDuplicateCluster,
   mergeAllHighConfidenceClusters,
+  markClusterAsSeries,
   type DuplicateCluster,
   type DuplicateConfidence,
   type DuplicateRow,
