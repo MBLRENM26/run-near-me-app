@@ -583,3 +583,38 @@ function UrlField({
     </Field>
   );
 }
+
+function TagChips({
+  all,
+  selected,
+  onToggle,
+}: {
+  all: readonly string[];
+  selected: string[];
+  onToggle: (tag: string) => void;
+}) {
+  const set = new Set(selected);
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {all.map((tag) => {
+        const on = set.has(tag);
+        return (
+          <button
+            key={tag}
+            type="button"
+            onClick={() => onToggle(tag)}
+            className={
+              "rounded-full border px-2.5 py-1 text-xs transition " +
+              (on
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-background text-muted-foreground hover:bg-muted")
+            }
+          >
+            {tag}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
