@@ -13,6 +13,13 @@ import {
 import { adminCheckSession } from "@/lib/admin.functions";
 import { REGIONS } from "@/lib/regions";
 import { classifyEventLink } from "@/lib/link-trust";
+import {
+  DISTANCE_TAG_VALUES,
+  TERRAIN_TAG_VALUES,
+  parseEventTags,
+  type DistanceTag,
+  type TerrainTag,
+} from "@/lib/event-tags";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
