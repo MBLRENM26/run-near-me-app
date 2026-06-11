@@ -649,9 +649,11 @@ export const findPotentialDuplicates = createServerFn({ method: "GET" })
       const { data: rows, error } = await supabaseAdmin
         .from("events")
         .select(
-          "id, slug, name, date_raw, sort_date, region, town, distances, discipline, source, source_url, distance_tags, terrain_tags",
+          "id, slug, name, date_raw, sort_date, region, town, distances, discipline, source, source_url, distance_tags, terrain_tags, is_recurring, series_key",
         )
         .eq("status", "ACTIVE")
+        .eq("is_recurring", false)
+        .is("series_key", null)
         .order("id", { ascending: true })
         .range(from, from + pageSize - 1);
       if (error) throw new Error(error.message);
@@ -671,6 +673,7 @@ export const findPotentialDuplicates = createServerFn({ method: "GET" })
           source_url: (r.source_url as string | null) ?? null,
           distance_tags: (r.distance_tags as string[] | null) ?? [],
           terrain_tags: (r.terrain_tags as string[] | null) ?? [],
+          is_recurring: !!(r.is_recurring as boolean | null),
           _norm: normaliseEventName(r.name as string),
         });
       }
@@ -705,16 +708,29 @@ export const findPotentialDuplicates = createServerFn({ method: "GET" })
         return rest;
       });
       const { confidence, reason } = scoreCluster(cleanRows);
-      clusters.push({ key, rows: cleanRows, confidence, reason });
+      const kind = detectSeries(cleanRows) ? "series" : "duplicate";
+      const finalReason =
+        kind === "series"
+          ? seriesReason(cleanRows)
+          : reason;
+      clusters.push({
+        key,
+        rows: cleanRows,
+        confidence,
+        reason: finalReason,
+        kind,
+      });
     }
 
-    // Sort: high confidence first, then largest clusters.
+    // Sort: series first (most actionable separately), then high → low,
+    // then largest clusters within tier.
     const tierRank: Record<DuplicateConfidence, number> = {
       high: 0,
       medium: 1,
       low: 2,
     };
     clusters.sort((a, b) => {
+      if (a.kind !== b.kind) return a.kind === "series" ? -1 : 1;
       const t = tierRank[a.confidence] - tierRank[b.confidence];
       if (t !== 0) return t;
       return b.rows.length - a.rows.length;
