@@ -157,18 +157,17 @@ export const getEventsByDistance = createServerFn({ method: "GET" })
     const today = new Date().toISOString().slice(0, 10);
 
     // Fetch all active future events with a non-null distances field, then
-    // filter in JS — the matcher logic is too messy to express cleanly in
-    // chained Supabase .or/.not calls and total volume is small.
+    // filter in JS. The tag-based matcher is exact; the legacy substring
+    // fallback only fires for rows whose tags haven't been backfilled yet.
     const pageSize = 1000;
     const all: DistanceEvent[] = [];
     for (let from = 0; ; from += pageSize) {
       const { data: rows, error } = await supabaseAdmin
         .from("events")
         .select(
-          "id, slug, name, date_raw, sort_date, town, county, region, distances, entry_fee, entry_url, organiser_url, source_url, is_featured, date_is_estimated",
+          "id, slug, name, date_raw, sort_date, town, county, region, distances, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, source_url, is_featured, date_is_estimated",
         )
         .eq("status", "ACTIVE")
-        .not("distances", "is", null)
         .or(`sort_date.gte.${today},sort_date.is.null`)
         .or(
           "lat.is.null,and(lat.gte.49.9,lat.lte.60.9,lng.gte.-8.6,lng.lte.1.8)",
@@ -178,7 +177,15 @@ export const getEventsByDistance = createServerFn({ method: "GET" })
       if (error) throw new Error(error.message);
       if (!rows || rows.length === 0) break;
       for (const r of rows) {
-        if (matchesDistance(r.distances as string | null, cfg)) {
+        const match = rowMatchesDistanceKey(
+          {
+            distances: r.distances as string | null,
+            distance_tags: r.distance_tags as string[] | null,
+            terrain_tags: r.terrain_tags as string[] | null,
+          },
+          cfg.key,
+        );
+        if (match) {
           all.push({
             id: r.id as string,
             slug: r.slug as string | null,
