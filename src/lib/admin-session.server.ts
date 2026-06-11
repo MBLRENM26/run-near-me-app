@@ -27,7 +27,7 @@ export function issueAdminSession(): void {
   setCookie(COOKIE_NAME, `${payload}.${sig}`, {
     httpOnly: true,
     secure: true,
-    sameSite: "none",
+    sameSite: "lax",
     maxAge: MAX_AGE_SECONDS,
     path: "/",
   });
@@ -37,7 +37,7 @@ export function clearAdminSession(): void {
   deleteCookie(COOKIE_NAME, {
     path: "/",
     secure: true,
-    sameSite: "none",
+    sameSite: "lax",
   });
 }
 
@@ -67,8 +67,10 @@ export function isAdminAuthenticated(): boolean {
 export function verifyAdminPassword(input: string): boolean {
   const expected = process.env.ADMIN_PASSWORD;
   if (!expected) return false;
-  const a = Buffer.from(input);
-  const b = Buffer.from(expected);
-  if (a.length !== b.length) return false;
+  // HMAC both sides to a fixed length so comparison time doesn't leak
+  // the configured password's byte length via an early length check.
+  const key = getSecret();
+  const a = createHmac("sha256", key).update(input).digest();
+  const b = createHmac("sha256", key).update(expected).digest();
   return timingSafeEqual(a, b);
 }
