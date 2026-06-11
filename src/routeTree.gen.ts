@@ -43,6 +43,7 @@ import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/e
 import { Route as ApiPublicAdminSyncScottishAthleticsRouteImport } from './routes/api/public/admin/sync-scottish-athletics'
 import { Route as ApiPublicAdminSyncEnglandAthleticsRouteImport } from './routes/api/public/admin/sync-england-athletics'
 import { Route as ApiPublicAdminFixEventUrlsRouteImport } from './routes/api/public/admin/fix-event-urls'
+import { Route as AdminShellAdminEventsDuplicatesRouteImport } from './routes/_adminShell.admin.events.duplicates'
 import { Route as AdminShellAdminEventsIdRouteImport } from './routes/_adminShell.admin.events.$id'
 
 const UltraMarathonsRoute = UltraMarathonsRouteImport.update({
@@ -223,6 +224,12 @@ const ApiPublicAdminFixEventUrlsRoute =
     path: '/api/public/admin/fix-event-urls',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AdminShellAdminEventsDuplicatesRoute =
+  AdminShellAdminEventsDuplicatesRouteImport.update({
+    id: '/admin/events/duplicates',
+    path: '/admin/events/duplicates',
+    getParentRoute: () => AdminShellRoute,
+  } as any)
 const AdminShellAdminEventsIdRoute = AdminShellAdminEventsIdRouteImport.update({
   id: '/admin/events/$id',
   path: '/admin/events/$id',
@@ -257,6 +264,7 @@ export interface FileRoutesByFullPath {
   '/parkrun-events/region/$region': typeof ParkrunEventsRegionRegionRoute
   '/running-events/$slug/$distance': typeof RunningEventsSlugDistanceRoute
   '/admin/events/$id': typeof AdminShellAdminEventsIdRoute
+  '/admin/events/duplicates': typeof AdminShellAdminEventsDuplicatesRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
   '/api/public/admin/sync-england-athletics': typeof ApiPublicAdminSyncEnglandAthleticsRoute
   '/api/public/admin/sync-scottish-athletics': typeof ApiPublicAdminSyncScottishAthleticsRoute
@@ -293,6 +301,7 @@ export interface FileRoutesByTo {
   '/parkrun-events/region/$region': typeof ParkrunEventsRegionRegionRoute
   '/running-events/$slug/$distance': typeof RunningEventsSlugDistanceRoute
   '/admin/events/$id': typeof AdminShellAdminEventsIdRoute
+  '/admin/events/duplicates': typeof AdminShellAdminEventsDuplicatesRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
   '/api/public/admin/sync-england-athletics': typeof ApiPublicAdminSyncEnglandAthleticsRoute
   '/api/public/admin/sync-scottish-athletics': typeof ApiPublicAdminSyncScottishAthleticsRoute
@@ -331,6 +340,7 @@ export interface FileRoutesById {
   '/parkrun-events/region/$region': typeof ParkrunEventsRegionRegionRoute
   '/running-events/$slug_/$distance': typeof RunningEventsSlugDistanceRoute
   '/_adminShell/admin/events/$id': typeof AdminShellAdminEventsIdRoute
+  '/_adminShell/admin/events/duplicates': typeof AdminShellAdminEventsDuplicatesRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
   '/api/public/admin/sync-england-athletics': typeof ApiPublicAdminSyncEnglandAthleticsRoute
   '/api/public/admin/sync-scottish-athletics': typeof ApiPublicAdminSyncScottishAthleticsRoute
@@ -369,6 +379,7 @@ export interface FileRouteTypes {
     | '/parkrun-events/region/$region'
     | '/running-events/$slug/$distance'
     | '/admin/events/$id'
+    | '/admin/events/duplicates'
     | '/api/public/admin/fix-event-urls'
     | '/api/public/admin/sync-england-athletics'
     | '/api/public/admin/sync-scottish-athletics'
@@ -405,6 +416,7 @@ export interface FileRouteTypes {
     | '/parkrun-events/region/$region'
     | '/running-events/$slug/$distance'
     | '/admin/events/$id'
+    | '/admin/events/duplicates'
     | '/api/public/admin/fix-event-urls'
     | '/api/public/admin/sync-england-athletics'
     | '/api/public/admin/sync-scottish-athletics'
@@ -442,6 +454,7 @@ export interface FileRouteTypes {
     | '/parkrun-events/region/$region'
     | '/running-events/$slug_/$distance'
     | '/_adminShell/admin/events/$id'
+    | '/_adminShell/admin/events/duplicates'
     | '/api/public/admin/fix-event-urls'
     | '/api/public/admin/sync-england-athletics'
     | '/api/public/admin/sync-scottish-athletics'
@@ -726,6 +739,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAdminFixEventUrlsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_adminShell/admin/events/duplicates': {
+      id: '/_adminShell/admin/events/duplicates'
+      path: '/admin/events/duplicates'
+      fullPath: '/admin/events/duplicates'
+      preLoaderRoute: typeof AdminShellAdminEventsDuplicatesRouteImport
+      parentRoute: typeof AdminShellRoute
+    }
     '/_adminShell/admin/events/$id': {
       id: '/_adminShell/admin/events/$id'
       path: '/admin/events/$id'
@@ -739,12 +759,14 @@ declare module '@tanstack/react-router' {
 interface AdminShellRouteChildren {
   AdminShellAdminClaimsRoute: typeof AdminShellAdminClaimsRoute
   AdminShellAdminEventsIdRoute: typeof AdminShellAdminEventsIdRoute
+  AdminShellAdminEventsDuplicatesRoute: typeof AdminShellAdminEventsDuplicatesRoute
   AdminShellAdminEventsIndexRoute: typeof AdminShellAdminEventsIndexRoute
 }
 
 const AdminShellRouteChildren: AdminShellRouteChildren = {
   AdminShellAdminClaimsRoute: AdminShellAdminClaimsRoute,
   AdminShellAdminEventsIdRoute: AdminShellAdminEventsIdRoute,
+  AdminShellAdminEventsDuplicatesRoute: AdminShellAdminEventsDuplicatesRoute,
   AdminShellAdminEventsIndexRoute: AdminShellAdminEventsIndexRoute,
 }
 

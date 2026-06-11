@@ -172,6 +172,12 @@ function AdminEventsPage() {
             {isFetching && " · refreshing…"}
           </div>
           <div className="flex gap-2">
+            <Link
+              to="/admin/events/duplicates"
+              className="inline-flex h-9 items-center rounded-md border border-input bg-background px-3 text-sm hover:bg-accent"
+            >
+              Find duplicates
+            </Link>
             <Button
               size="sm"
               variant="outline"
