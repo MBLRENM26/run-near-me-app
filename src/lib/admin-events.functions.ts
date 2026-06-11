@@ -3,6 +3,13 @@ import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { isAdminAuthenticated } from "@/lib/admin-session.server";
 import { REGIONS } from "@/lib/regions";
+import {
+  DISTANCE_TAG_VALUES,
+  TERRAIN_TAG_VALUES,
+  parseEventTags,
+  type DistanceTag,
+  type TerrainTag,
+} from "@/lib/event-tags";
 
 const STATUS_VALUES = ["ACTIVE", "DUPLICATE", "EXPIRED"] as const;
 export type EventStatus = (typeof STATUS_VALUES)[number];
@@ -36,6 +43,9 @@ export interface AdminEventListRow {
   lat: number | null;
   lng: number | null;
   created_at: string;
+  distance_tags: string[];
+  terrain_tags: string[];
+  is_curated_tags: boolean;
 }
 
 export interface AdminEventFull extends AdminEventListRow {
@@ -124,6 +134,9 @@ const eventPatchSchema = z.object({
   licensed: nullableString(50),
   status: z.enum(STATUS_VALUES).optional(),
   duplicate_of: z.string().uuid().nullable().optional(),
+  distance_tags: z.array(z.enum(DISTANCE_TAG_VALUES)).optional(),
+  terrain_tags: z.array(z.enum(TERRAIN_TAG_VALUES)).optional(),
+  is_curated_tags: z.boolean().optional(),
 });
 
 // ---- List ----
@@ -140,6 +153,7 @@ export const listAdminEvents = createServerFn({ method: "POST" })
         missing_town: z.boolean().optional(),
         missing_distances: z.boolean().optional(),
         missing_date: z.boolean().optional(),
+        missing_terrain_tags: z.boolean().optional(),
         incomplete_any: z.boolean().optional(),
         upcoming_only: z.boolean().optional(),
         region_invalid: z.boolean().optional(),
@@ -156,7 +170,7 @@ export const listAdminEvents = createServerFn({ method: "POST" })
     let query = supabaseAdmin
       .from("events")
       .select(
-        "id,name,slug,sort_date,date_raw,town,region,distances,status,source,is_featured,is_upcoming,date_is_estimated,lat,lng,created_at",
+        "id,name,slug,sort_date,date_raw,town,region,distances,status,source,is_featured,is_upcoming,date_is_estimated,lat,lng,created_at,distance_tags,terrain_tags,is_curated_tags",
         { count: "exact" },
       );
 
@@ -179,6 +193,8 @@ export const listAdminEvents = createServerFn({ method: "POST" })
     if (data.missing_town) query = query.or(TOWN_MISSING);
     if (data.missing_distances) query = query.or(DIST_MISSING);
     if (data.missing_date) query = query.or(DATE_MISSING);
+    if (data.missing_terrain_tags)
+      query = query.filter("terrain_tags", "eq", "{}");
     if (data.incomplete_any) {
       query = query.or(
         [
@@ -187,6 +203,7 @@ export const listAdminEvents = createServerFn({ method: "POST" })
           DATE_MISSING,
           "lat.is.null",
           "region.is.null",
+          "terrain_tags.eq.{}",
         ].join(","),
       );
     }
@@ -379,3 +396,86 @@ export const listAdminEventSources = createServerFn({ method: "GET" }).handler(
     return { sources: Array.from(set).sort() };
   },
 );
+
+// ---- Tag parser backfill ----
+//
+// Iterates every event row that is NOT manually curated, runs the tag parser,
+// and writes distance_tags + terrain_tags. Idempotent: safe to re-run after
+// the parser changes. Curated rows (is_curated_tags = true) are skipped so a
+// human override is never clobbered.
+
+export const backfillEventTags = createServerFn({ method: "POST" })
+  .inputValidator((d) =>
+    z
+      .object({
+        // When true, also re-parse rows that already have non-empty tags.
+        // Default false: only fill rows whose terrain_tags is empty, so a
+        // partial backfill is cheap and won't churn unrelated rows.
+        force: z.boolean().optional().default(false),
+        // Cap per run so a single call stays well within request limits.
+        limit: z.number().int().min(1).max(5000).default(2000),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    requireAdminOrThrow();
+
+    let query = supabaseAdmin
+      .from("events")
+      .select("id,name,distances,discipline,distance_tags,terrain_tags")
+      .eq("is_curated_tags", false)
+      .limit(data.limit);
+
+    if (!data.force) {
+      query = query.filter("terrain_tags", "eq", "{}");
+    }
+
+    const { data: rows, error } = await query;
+    if (error) throw new Error(error.message);
+
+    let updated = 0;
+    let unchanged = 0;
+    for (const r of rows ?? []) {
+      const parsed = parseEventTags({
+        name: r.name as string | null,
+        distances: r.distances as string | null,
+        discipline: r.discipline as string | null,
+      });
+      const prevD = (r.distance_tags as string[] | null) ?? [];
+      const prevT = (r.terrain_tags as string[] | null) ?? [];
+      if (
+        sameSet(prevD, parsed.distance_tags) &&
+        sameSet(prevT, parsed.terrain_tags)
+      ) {
+        unchanged++;
+        continue;
+      }
+      const { error: updErr } = await supabaseAdmin
+        .from("events")
+        .update({
+          distance_tags: parsed.distance_tags as DistanceTag[],
+          terrain_tags: parsed.terrain_tags as TerrainTag[],
+        })
+        .eq("id", r.id as string);
+      if (updErr) throw new Error(updErr.message);
+      updated++;
+    }
+
+    return {
+      scanned: rows?.length ?? 0,
+      updated,
+      unchanged,
+      remaining_hint:
+        (rows?.length ?? 0) === data.limit
+          ? "Hit batch limit — run again to continue."
+          : null,
+    };
+  });
+
+function sameSet(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false;
+  const set = new Set(a);
+  for (const x of b) if (!set.has(x)) return false;
+  return true;
+}
+

@@ -9,8 +9,31 @@ import {
   primaryDistanceKey,
   type DistanceKey,
 } from "@/lib/distance-filters";
+import {
+  distanceKeyToTagQuery,
+  eventMatchesDistanceKey,
+  primaryDistanceKeyFromTags,
+} from "@/lib/event-tags";
 import { REGIONS, slugToRegion } from "@/lib/regions";
 import { sortEstimatedLastWithinMonth } from "@/lib/month-filter";
+
+// During the transition window, an event matches a distance page if its
+// parsed tag arrays match OR (for un-backfilled rows with empty tags) the
+// legacy substring matcher on `distances` matches. Once every row has been
+// run through the parser the substring branch becomes dead code.
+function rowMatchesDistanceKey(
+  row: {
+    distances: string | null;
+    distance_tags: string[] | null;
+    terrain_tags: string[] | null;
+  },
+  key: DistanceKey,
+): boolean {
+  const hasTags =
+    (row.distance_tags?.length ?? 0) + (row.terrain_tags?.length ?? 0) > 0;
+  if (hasTags) return eventMatchesDistanceKey(row, key);
+  return matchesDistance(row.distances, DISTANCE_PAGES[key]);
+}
 
 const slugSchema = z.object({
   slug: z.string().trim().min(1).max(255).regex(/^[a-z0-9-]+$/),
@@ -134,18 +157,17 @@ export const getEventsByDistance = createServerFn({ method: "GET" })
     const today = new Date().toISOString().slice(0, 10);
 
     // Fetch all active future events with a non-null distances field, then
-    // filter in JS — the matcher logic is too messy to express cleanly in
-    // chained Supabase .or/.not calls and total volume is small.
+    // filter in JS. The tag-based matcher is exact; the legacy substring
+    // fallback only fires for rows whose tags haven't been backfilled yet.
     const pageSize = 1000;
     const all: DistanceEvent[] = [];
     for (let from = 0; ; from += pageSize) {
       const { data: rows, error } = await supabaseAdmin
         .from("events")
         .select(
-          "id, slug, name, date_raw, sort_date, town, county, region, distances, entry_fee, entry_url, organiser_url, source_url, is_featured, date_is_estimated",
+          "id, slug, name, date_raw, sort_date, town, county, region, distances, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, source_url, is_featured, date_is_estimated",
         )
         .eq("status", "ACTIVE")
-        .not("distances", "is", null)
         .or(`sort_date.gte.${today},sort_date.is.null`)
         .or(
           "lat.is.null,and(lat.gte.49.9,lat.lte.60.9,lng.gte.-8.6,lng.lte.1.8)",
@@ -155,7 +177,15 @@ export const getEventsByDistance = createServerFn({ method: "GET" })
       if (error) throw new Error(error.message);
       if (!rows || rows.length === 0) break;
       for (const r of rows) {
-        if (matchesDistance(r.distances as string | null, cfg)) {
+        const match = rowMatchesDistanceKey(
+          {
+            distances: r.distances as string | null,
+            distance_tags: r.distance_tags as string[] | null,
+            terrain_tags: r.terrain_tags as string[] | null,
+          },
+          cfg.key,
+        );
+        if (match) {
           all.push({
             id: r.id as string,
             slug: r.slug as string | null,
@@ -229,16 +259,19 @@ export const getEventsByRegionAndDistance = createServerFn({ method: "GET" })
     // Pull all active future events for this region with a non-null
     // distances field — volume per region is small.
     const pageSize = 1000;
-    const all: DistanceEvent[] = [];
+    type RowWithTags = DistanceEvent & {
+      _distance_tags: string[] | null;
+      _terrain_tags: string[] | null;
+    };
+    const all: RowWithTags[] = [];
     for (let from = 0; ; from += pageSize) {
       const { data: rows, error } = await supabaseAdmin
         .from("events")
         .select(
-          "id, slug, name, date_raw, sort_date, town, county, region, distances, entry_fee, entry_url, organiser_url, source_url, is_featured, date_is_estimated",
+          "id, slug, name, date_raw, sort_date, town, county, region, distances, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, source_url, is_featured, date_is_estimated",
         )
         .eq("status", "ACTIVE")
         .eq("region", region.name)
-        .not("distances", "is", null)
         .or(`sort_date.gte.${today},sort_date.is.null`)
         .or(
           "lat.is.null,and(lat.gte.49.9,lat.lte.60.9,lng.gte.-8.6,lng.lte.1.8)",
@@ -264,10 +297,22 @@ export const getEventsByRegionAndDistance = createServerFn({ method: "GET" })
           source_url: r.source_url as string | null,
           is_featured: !!r.is_featured,
           date_is_estimated: !!r.date_is_estimated,
+          _distance_tags: r.distance_tags as string[] | null,
+          _terrain_tags: r.terrain_tags as string[] | null,
         });
       }
       if (rows.length < pageSize) break;
     }
+
+    const rowMatches = (e: RowWithTags, key: DistanceKey) =>
+      rowMatchesDistanceKey(
+        {
+          distances: e.distance_type,
+          distance_tags: e._distance_tags,
+          terrain_tags: e._terrain_tags,
+        },
+        key,
+      );
 
     // Bucket the same fetched rows by every distance for the
     // "other distances in this region" panel.
@@ -281,22 +326,29 @@ export const getEventsByRegionAndDistance = createServerFn({ method: "GET" })
     };
     for (const e of all) {
       for (const p of DISTANCE_PAGE_LIST) {
-        if (matchesDistance(e.distance_type, p)) {
-          otherDistanceCounts[p.key]++;
-        }
+        if (rowMatches(e, p.key)) otherDistanceCounts[p.key]++;
       }
     }
 
     const matched = sortEstimatedLastWithinMonth(
-      all.filter((e) => matchesDistance(e.distance_type, cfg)),
+      all.filter((e) => rowMatches(e, cfg.key)),
     );
 
+    // Drop the private tag fields before returning.
+    const events = matched.slice(0, DISPLAY_LIMIT).map((e) => {
+      const { _distance_tags, _terrain_tags, ...rest } = e;
+      void _distance_tags;
+      void _terrain_tags;
+      return rest;
+    });
+
     return {
-      events: matched.slice(0, DISPLAY_LIMIT),
+      events,
       total: matched.length,
       otherDistanceCounts,
     };
   });
+
 
 export type RegionDistanceMatrixRow = {
   regionSlug: string;
@@ -311,14 +363,19 @@ export const getRegionDistanceMatrix = createServerFn({ method: "GET" })
     const today = new Date().toISOString().slice(0, 10);
     const pageSize = 1000;
 
-    // Pull every active future event with a region + distances in one pass.
-    const rows: { region: string; distances: string }[] = [];
+    // Pull every active future event with a region + distances/tags in one pass.
+    type MatrixRow = {
+      region: string;
+      distances: string | null;
+      distance_tags: string[] | null;
+      terrain_tags: string[] | null;
+    };
+    const rows: MatrixRow[] = [];
     for (let from = 0; ; from += pageSize) {
       const { data, error } = await supabaseAdmin
         .from("events")
-        .select("region, distances")
+        .select("region, distances, distance_tags, terrain_tags")
         .eq("status", "ACTIVE")
-        .not("distances", "is", null)
         .not("region", "is", null)
         .or(`sort_date.gte.${today},sort_date.is.null`)
         .or(
@@ -328,8 +385,13 @@ export const getRegionDistanceMatrix = createServerFn({ method: "GET" })
       if (error) throw new Error(error.message);
       if (!data || data.length === 0) break;
       for (const r of data) {
-        if (r.region && r.distances) {
-          rows.push({ region: r.region as string, distances: r.distances as string });
+        if (r.region) {
+          rows.push({
+            region: r.region as string,
+            distances: (r.distances as string | null) ?? null,
+            distance_tags: (r.distance_tags as string[] | null) ?? null,
+            terrain_tags: (r.terrain_tags as string[] | null) ?? null,
+          });
         }
       }
       if (data.length < pageSize) break;
@@ -338,7 +400,7 @@ export const getRegionDistanceMatrix = createServerFn({ method: "GET" })
     const counts = new Map<string, number>();
     for (const r of rows) {
       for (const p of DISTANCE_PAGE_LIST) {
-        if (matchesDistance(r.distances, p)) {
+        if (rowMatchesDistanceKey(r, p.key)) {
           const key = `${r.region}::${p.key}`;
           counts.set(key, (counts.get(key) ?? 0) + 1);
         }
@@ -395,7 +457,7 @@ export const getEventPageData = createServerFn({ method: "GET" })
     const { data: row, error } = await supabaseAdmin
       .from("events")
       .select(
-        "id, slug, name, date_raw, date_from, date_to, sort_date, town, county, region, distances, discipline, entry_fee, entry_url, organiser_url, source_url, organiser, is_featured, date_is_estimated, lat, lng",
+        "id, slug, name, date_raw, date_from, date_to, sort_date, town, county, region, distances, discipline, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, source_url, organiser, is_featured, date_is_estimated, lat, lng",
       )
       .eq("slug", data.slug)
       .eq("status", "ACTIVE")
@@ -428,26 +490,47 @@ export const getEventPageData = createServerFn({ method: "GET" })
       }
       throw notFound();
     }
-    const eventRow = row as EventDetail & { lat: number | null; lng: number | null };
-    const { lat: eventLat, lng: eventLng, ...eventPublic } = eventRow;
+    const eventRow = row as EventDetail & {
+      lat: number | null;
+      lng: number | null;
+      distance_tags: string[] | null;
+      terrain_tags: string[] | null;
+    };
+    const {
+      lat: eventLat,
+      lng: eventLng,
+      distance_tags: eventDistanceTags,
+      terrain_tags: eventTerrainTags,
+      ...eventPublic
+    } = eventRow;
     const event = eventPublic as EventDetail;
+
+    // Prefer tag-based primary distance; fall back to legacy substring for
+    // rows that haven't been backfilled yet.
+    const primaryKey =
+      primaryDistanceKeyFromTags(eventDistanceTags, eventTerrainTags) ??
+      primaryDistanceKey(event.distances);
 
     const related: RelatedEvents = {
       events: [],
       totalCount: 0,
-      distanceKey: primaryDistanceKey(event.distances),
+      distanceKey: primaryKey,
     };
 
     if (event.region) {
       const today = new Date().toISOString().slice(0, 10);
       const pageSize = 1000;
-      type Row = RelatedEvent & { distances: string | null };
+      type Row = RelatedEvent & {
+        distances: string | null;
+        distance_tags: string[] | null;
+        terrain_tags: string[] | null;
+      };
       const all: Row[] = [];
       for (let from = 0; ; from += pageSize) {
         const { data: rows, error: relErr } = await supabaseAdmin
           .from("events")
           .select(
-            "id, slug, name, date_raw, sort_date, date_is_estimated, town, county, distances",
+            "id, slug, name, date_raw, sort_date, date_is_estimated, town, county, distances, distance_tags, terrain_tags",
           )
           .eq("status", "ACTIVE")
           .eq("region", event.region)
@@ -471,16 +554,15 @@ export const getEventPageData = createServerFn({ method: "GET" })
             town: r.town as string | null,
             county: r.county as string | null,
             distances: r.distances as string | null,
+            distance_tags: r.distance_tags as string[] | null,
+            terrain_tags: r.terrain_tags as string[] | null,
           });
         }
         if (rows.length < pageSize) break;
       }
 
-      const cfg = related.distanceKey
-        ? DISTANCE_PAGES[related.distanceKey]
-        : null;
-      const matched = cfg
-        ? all.filter((r) => matchesDistance(r.distances, cfg))
+      const matched = related.distanceKey
+        ? all.filter((r) => rowMatchesDistanceKey(r, related.distanceKey!))
         : all;
 
       // Count includes the event itself (drives the "one of N" prose and the
@@ -489,7 +571,12 @@ export const getEventPageData = createServerFn({ method: "GET" })
       related.events = matched
         .filter((r) => r.id !== event.id)
         .slice(0, 6)
-        .map(({ distances: _d, ...rest }) => rest);
+        .map(({ distances: _d, distance_tags: _dt, terrain_tags: _tt, ...rest }) => {
+          void _d;
+          void _dt;
+          void _tt;
+          return rest;
+        });
     }
 
     // Prefer nearest-by-radius for the displayed 6 when we have coordinates.
@@ -523,6 +610,8 @@ export const getEventPageData = createServerFn({ method: "GET" })
           distance_miles: number | null;
         }>) {
           if (!r.slug || r.id === event.id) continue;
+          // The RPC predates tag arrays; keep the legacy substring filter
+          // here. Could be upgraded if/when the RPC starts returning tags.
           if (cfg && !matchesDistance(r.distance_type, cfg)) continue;
           picked.push({
             id: r.id,
@@ -546,4 +635,5 @@ export const getEventPageData = createServerFn({ method: "GET" })
 
     return { event, related };
   });
+
 

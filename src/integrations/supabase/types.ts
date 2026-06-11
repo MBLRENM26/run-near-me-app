@@ -143,11 +143,13 @@ export type Database = {
           date_raw: string | null
           date_to: string | null
           discipline: string | null
+          distance_tags: string[]
           distances: string | null
           duplicate_of: string | null
           entry_fee: string | null
           entry_url: string | null
           id: string
+          is_curated_tags: boolean
           is_featured: boolean
           is_recurring: boolean
           is_upcoming: boolean
@@ -166,6 +168,7 @@ export type Database = {
           source: string | null
           source_url: string | null
           status: string
+          terrain_tags: string[]
           town: string | null
         }
         Insert: {
@@ -177,11 +180,13 @@ export type Database = {
           date_raw?: string | null
           date_to?: string | null
           discipline?: string | null
+          distance_tags?: string[]
           distances?: string | null
           duplicate_of?: string | null
           entry_fee?: string | null
           entry_url?: string | null
           id?: string
+          is_curated_tags?: boolean
           is_featured?: boolean
           is_recurring?: boolean
           is_upcoming?: boolean
@@ -200,6 +205,7 @@ export type Database = {
           source?: string | null
           source_url?: string | null
           status?: string
+          terrain_tags?: string[]
           town?: string | null
         }
         Update: {
@@ -211,11 +217,13 @@ export type Database = {
           date_raw?: string | null
           date_to?: string | null
           discipline?: string | null
+          distance_tags?: string[]
           distances?: string | null
           duplicate_of?: string | null
           entry_fee?: string | null
           entry_url?: string | null
           id?: string
+          is_curated_tags?: boolean
           is_featured?: boolean
           is_recurring?: boolean
           is_upcoming?: boolean
@@ -234,6 +242,7 @@ export type Database = {
           source?: string | null
           source_url?: string | null
           status?: string
+          terrain_tags?: string[]
           town?: string | null
         }
         Relationships: [

@@ -13,6 +13,13 @@ import {
 import { adminCheckSession } from "@/lib/admin.functions";
 import { REGIONS } from "@/lib/regions";
 import { classifyEventLink } from "@/lib/link-trust";
+import {
+  DISTANCE_TAG_VALUES,
+  TERRAIN_TAG_VALUES,
+  parseEventTags,
+  type DistanceTag,
+  type TerrainTag,
+} from "@/lib/event-tags";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -78,9 +85,48 @@ function AdminEventEditorPage() {
     value: AdminEventFull[K] | null,
   ) => setForm((f) => ({ ...f, [key]: value }));
 
+  // Toggle a single tag in distance_tags or terrain_tags. Also marks the row
+  // as curated so the parser-backfill never overwrites the human choice.
+  const toggleTag = (kind: "distance_tags" | "terrain_tags", tag: string) => {
+    setForm((f) => {
+      const cur = (f[kind] as string[] | undefined) ?? [];
+      const next = cur.includes(tag)
+        ? cur.filter((t) => t !== tag)
+        : [...cur, tag];
+      return { ...f, [kind]: next, is_curated_tags: true };
+    });
+  };
+
+  // Re-run the parser on the current form values without saving — handy when
+  // editing distances/discipline and you want to preview the inferred tags.
+  const reparseFromForm = () => {
+    const parsed = parseEventTags({
+      name: form.name ?? null,
+      distances: form.distances ?? null,
+      discipline: form.discipline ?? null,
+    });
+    setForm((f) => ({
+      ...f,
+      distance_tags: parsed.distance_tags,
+      terrain_tags: parsed.terrain_tags,
+      is_curated_tags: false,
+    }));
+  };
+
+  const arrayEq = (a: unknown, b: unknown) => {
+    if (!Array.isArray(a) || !Array.isArray(b)) return a === b;
+    if (a.length !== b.length) return false;
+    const sa = new Set(a as string[]);
+    for (const x of b as string[]) if (!sa.has(x)) return false;
+    return true;
+  };
+
   const diff: Partial<AdminEventFull> = {};
   for (const k of Object.keys(form) as (keyof AdminEventFull)[]) {
-    if (form[k] !== event[k]) (diff as Record<string, unknown>)[k] = form[k];
+    const fv = form[k];
+    const ev = event[k];
+    const equal = Array.isArray(fv) || Array.isArray(ev) ? arrayEq(fv, ev) : fv === ev;
+    if (!equal) (diff as Record<string, unknown>)[k] = fv;
   }
   const dirty = Object.keys(diff).length > 0;
 
@@ -214,6 +260,54 @@ function AdminEventEditorPage() {
           />
         </Field>
       </Section>
+
+      {/* Normalised tags — drives distance/region pages */}
+      <Section title="Tags (normalised)">
+        <div className="col-span-2 -mt-1 mb-2 flex items-center justify-between gap-3 text-xs">
+          <p className="text-muted-foreground">
+            Tags drive what appears on the public distance pages (5K, 10K,
+            Trail, etc.). Edit by hand to override the parser — the row is
+            marked <strong>curated</strong> and the scraper backfill leaves it
+            alone. Use <em>Re-parse from raw</em> to discard manual tags and
+            re-derive from <code>distances</code>+<code>discipline</code>.
+          </p>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={reparseFromForm}
+          >
+            Re-parse from raw
+          </Button>
+        </div>
+        <Field label="Distance tags">
+          <TagChips
+            all={DISTANCE_TAG_VALUES as readonly string[]}
+            selected={(form.distance_tags as string[] | undefined) ?? []}
+            onToggle={(t) => toggleTag("distance_tags", t)}
+          />
+        </Field>
+        <Field label="Terrain tags">
+          <TagChips
+            all={TERRAIN_TAG_VALUES as readonly string[]}
+            selected={(form.terrain_tags as string[] | undefined) ?? []}
+            onToggle={(t) => toggleTag("terrain_tags", t)}
+          />
+        </Field>
+        <Field label="Curated">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={!!form.is_curated_tags}
+              onChange={(e) => set("is_curated_tags", e.target.checked)}
+            />
+            <span className="text-muted-foreground">
+              Protect these tags from the parser backfill
+            </span>
+          </label>
+        </Field>
+      </Section>
+
 
       {/* Location */}
       <Section title="Location">
@@ -489,3 +583,38 @@ function UrlField({
     </Field>
   );
 }
+
+function TagChips({
+  all,
+  selected,
+  onToggle,
+}: {
+  all: readonly string[];
+  selected: string[];
+  onToggle: (tag: string) => void;
+}) {
+  const set = new Set(selected);
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {all.map((tag) => {
+        const on = set.has(tag);
+        return (
+          <button
+            key={tag}
+            type="button"
+            onClick={() => onToggle(tag)}
+            className={
+              "rounded-full border px-2.5 py-1 text-xs transition " +
+              (on
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-background text-muted-foreground hover:bg-muted")
+            }
+          >
+            {tag}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import {
   adminCheckSession,
@@ -9,10 +9,13 @@ import {
 import {
   listAdminEvents,
   listAdminEventSources,
+  backfillEventTags,
 } from "@/lib/admin-events.functions";
 import { REGIONS } from "@/lib/regions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
 
 const STATUSES = ["ACTIVE", "DUPLICATE", "EXPIRED", "ANY"] as const;
 
@@ -25,6 +28,7 @@ const searchSchema = z.object({
   missing_town: z.boolean().optional(),
   missing_distances: z.boolean().optional(),
   missing_date: z.boolean().optional(),
+  missing_terrain_tags: z.boolean().optional(),
   incomplete_any: z.boolean().optional(),
   upcoming_only: z.boolean().optional(),
   region_invalid: z.boolean().optional(),
@@ -49,7 +53,35 @@ function AdminEventsPage() {
   const navigate = useNavigate({ from: "/admin/events" });
   const fetchList = useServerFn(listAdminEvents);
   const fetchSources = useServerFn(listAdminEventSources);
+  const runBackfill = useServerFn(backfillEventTags);
   const checkSession = useServerFn(adminCheckSession);
+  const queryClient = useQueryClient();
+  const [backfilling, setBackfilling] = useState(false);
+
+  const handleBackfill = async (force: boolean) => {
+    if (!confirm(force ? "Re-parse ALL non-curated rows?" : "Backfill tags for un-tagged rows?"))
+      return;
+    setBackfilling(true);
+    try {
+      let totalUpdated = 0;
+      let totalScanned = 0;
+      // Keep running batches until the server reports nothing left.
+      for (let i = 0; i < 30; i++) {
+        const res = await runBackfill({ data: { force, limit: 2000 } });
+        totalUpdated += res.updated;
+        totalScanned += res.scanned;
+        if (!res.remaining_hint) break;
+      }
+      toast.success(
+        `Backfill done — scanned ${totalScanned}, updated ${totalUpdated}.`,
+      );
+      queryClient.invalidateQueries({ queryKey: ["admin-events"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Backfill failed");
+    } finally {
+      setBackfilling(false);
+    }
+  };
 
   const [authChecked, setAuthChecked] = useState(false);
   useEffect(() => {
@@ -80,6 +112,7 @@ function AdminEventsPage() {
           missing_town: search.missing_town,
           missing_distances: search.missing_distances,
           missing_date: search.missing_date,
+          missing_terrain_tags: search.missing_terrain_tags,
           incomplete_any: search.incomplete_any,
           upcoming_only: search.upcoming_only,
           region_invalid: search.region_invalid,
@@ -119,9 +152,31 @@ function AdminEventsPage() {
             Browse and edit any event in the database.
           </p>
         </div>
-        <div className="text-sm text-muted-foreground">
-          {total.toLocaleString()} match{total === 1 ? "" : "es"}
-          {isFetching && " · refreshing…"}
+        <div className="flex flex-col items-end gap-2">
+          <div className="text-sm text-muted-foreground">
+            {total.toLocaleString()} match{total === 1 ? "" : "es"}
+            {isFetching && " · refreshing…"}
+          </div>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={backfilling}
+              onClick={() => handleBackfill(false)}
+              title="Parse distances/discipline into distance_tags + terrain_tags for any rows missing tags"
+            >
+              {backfilling ? "Backfilling…" : "Backfill missing tags"}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={backfilling}
+              onClick={() => handleBackfill(true)}
+              title="Re-parse every non-curated row (preserves human edits)"
+            >
+              Re-parse all
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -243,6 +298,16 @@ function AdminEventsPage() {
               }
             />
             Missing lat/lng
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={!!search.missing_terrain_tags}
+              onChange={(e) =>
+                update({ missing_terrain_tags: e.target.checked || undefined })
+              }
+            />
+            Untagged terrain
           </label>
           <label className="flex items-center gap-2">
             <input
@@ -370,6 +435,7 @@ function AdminEventsPage() {
           </Button>
         </div>
       )}
+      <Toaster position="top-center" />
     </div>
   );
 }
