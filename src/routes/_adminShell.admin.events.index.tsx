@@ -193,7 +193,47 @@ function AdminEventsPage() {
             ))}
           </select>
         </div>
-        <div className="md:col-span-3 flex flex-wrap items-center gap-4 text-sm">
+        <div className="md:col-span-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={!!search.incomplete_any}
+              onChange={(e) =>
+                update({ incomplete_any: e.target.checked || undefined })
+              }
+            />
+            <span className="font-medium">Any incomplete data</span>
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={!!search.missing_town}
+              onChange={(e) =>
+                update({ missing_town: e.target.checked || undefined })
+              }
+            />
+            Missing town
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={!!search.missing_distances}
+              onChange={(e) =>
+                update({ missing_distances: e.target.checked || undefined })
+              }
+            />
+            Missing distances
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={!!search.missing_date}
+              onChange={(e) =>
+                update({ missing_date: e.target.checked || undefined })
+              }
+            />
+            Missing/TBC date
+          </label>
           <label className="flex items-center gap-2">
             <input
               type="checkbox"
@@ -229,6 +269,7 @@ function AdminEventsPage() {
           </Button>
         </div>
       </form>
+
 
       {/* Table */}
       {isLoading ? (
