@@ -1,60 +1,52 @@
-## What's actually wrong
+## Short answer
 
-Database check on "North Downs" returned two ACTIVE rows for the same race:
+No — you should not have to click through them one by one. But blanket auto-merging is the wrong fix: the normaliser is intentionally loose, and one wrong merge sends real traffic and SEO equity to the wrong page. The right answer is **tiered confidence + bulk actions**, so the boring obvious cases collapse in a couple of clicks and only genuinely ambiguous clusters need eyes.
 
-| slug | date_raw | sort_date | distances | discipline | tags |
-|---|---|---|---|---|---|
-| `north-downs-run-2026` | "28 June 2026" | 2026-06-28 | `30K` | `Multi-Terrain Race` | `{}` / `{}` |
-| `north-downs-run-north-downs` | "Late June / Early July 2026" | NULL | `Various (trail)` | (empty) | `{}` / `{}` |
+## What we have now
 
-Plus, the tagging stats: **584 tagged out of 5233 active rows**, and `is_curated_tags = false` on both North Downs rows — meaning the backfill never reached them.
-
-So two distinct issues are stacked, both worth fixing properly:
-
-### Issue 1 — Backfill is not actually complete
-
-`backfillEventTags` caps each call at 2000 rows and returns `remaining_hint` for the admin to click again. The button was clicked once; 4649 rows were never scanned, including `north-downs-run-2026`. Until that row is parsed, the trail page only sees it via the legacy `distances` substring matcher — which on `30K` returns false.
-
-### Issue 2 — Duplicate ACTIVE listings
-
-`north-downs-run-north-downs` is a low-quality scrape of the same event as `north-downs-run-2026`. Both are ACTIVE, so:
-
-- **South East → trail (no month filter)**: only the bad dupe surfaces. The legacy `distances` substring sees `"Various (trail)"` → matches `trail`. The good row's `30K` does not contain "trail", so it's skipped (no tags yet → see Issue 1).
-- **South East → trail → June**: the bad dupe has `sort_date = NULL`, so it's dropped from June. The good row would be in June but fails the trail filter. Result: nothing.
-
-This is the exact pattern the user saw.
-
-The dedupe pipeline (`status = DUPLICATE`, `duplicate_of`, the survivor redirect in `getEventPageData`) already exists — the North Downs Way Ultra row uses it correctly. The gap is that there is no admin surface for finding and merging duplicates of ACTIVE rows. Until there is, duplicates like this will keep slipping through whenever the scraper produces a near-miss slug.
-
----
+`findPotentialDuplicates` clusters ACTIVE rows by `(normalised name, region)`. Survivor is auto-chosen (has `sort_date`, then most tags). Merge is one button per duplicate row. That's it — no confidence score, no bulk action, no signal for "are these actually the same race or just same-named events in different months?".
 
 ## Plan
 
-### Slice A — Finish the backfill (small, immediate)
+### Slice 1 — Confidence score per cluster (no schema change)
 
-Run the existing parser across the remaining ~4650 rows so tag-based filtering becomes the source of truth, not the legacy substring fallback.
+Compute a tier server-side from data already on the rows:
 
-1. **Auto-loop the admin action.** Change the "Backfill missing tags" button handler to call `backfillEventTags` in a loop until `remaining_hint` is null, showing running totals (`scanned`, `updated`, `unchanged`) in a toast / status line. Same server function, no schema change.
-2. **Keep the per-call cap at 2000** so each request stays well under the Worker limit; the loop handles completeness.
-3. **Verification:** after the run, `SELECT count(*) FILTER (WHERE cardinality(distance_tags)+cardinality(terrain_tags) > 0)` should equal the count of non-curated ACTIVE rows. `north-downs-run-2026` should end up with `distance_tags = {30k}`, `terrain_tags = {multi-terrain, trail}`.
+- **High** — same `sort_date` (exact), or same month + same town, or shared `source_url` host + same month. Almost certainly the same race.
+- **Medium** — same month, town matches OR is null on one side, distances overlap.
+- **Low** — name+region match but dates conflict (different months with both populated), or towns conflict. Likely a recurring series or a name collision (e.g. "Park 5K" in two different towns within one region).
 
-This alone fixes "South East → trail → June" — the good North Downs row will now match.
+Return `confidence: "high" | "medium" | "low"` and a one-line `reason` per cluster. Group the UI by tier.
 
-### Slice B — Duplicate detection & merge (the structural fix)
+### Slice 2 — Bulk merge for High-confidence clusters
 
-Without this, scraped duplicates will keep slipping in and will quietly break filter pages.
+In the duplicates UI:
 
-1. **Detection query.** Add `findPotentialDuplicates` (server fn, admin-only) that groups ACTIVE rows by a normalised key: `(slugify(name) without trailing year tokens, region, rough month bucket)`. Returns clusters of size ≥ 2 with both rows' key fields side by side. No schema change.
-2. **Admin "Duplicates" tab** at `/admin/events/duplicates` listing the clusters. Each row in a cluster shows: slug, date_raw, sort_date, distances, discipline, source_url, tag completeness, last_seen. The admin picks the survivor; the other becomes `status = DUPLICATE` with `duplicate_of = survivor.id`. This is exactly what the existing event page redirect already handles, so no consumer code needs to change.
-3. **Merge action** writes both updates in one server fn (`mergeDuplicateEvents({ survivorId, duplicateId })`) and logs to `event_edits` so the action is auditable. Survivor keeps its tags; if survivor's tags are empty and the duplicate's are not, copy them across (rare, but cheap).
-4. **One-shot fix for North Downs**: from the new UI, mark `north-downs-run-north-downs` as DUPLICATE of `north-downs-run-2026`. Verification: visiting `/events/north-downs-run-north-downs` 301s to `/events/north-downs-run-2026`, and South East → trail → June now lists the 30K once.
+- "Merge all in this cluster into survivor" button per cluster (one call, N-1 merges).
+- "Merge all High-confidence clusters" button at the top, with a confirm dialog showing the count and a 10-row sample.
+- Both run through the existing `mergeDuplicateEvents` per pair so `event_edits` logging, tag-copying, and the redirect contract are unchanged.
 
-### Out of scope (deliberately)
+Server-side, add `mergeDuplicateCluster({ survivorId, duplicateIds[] })` that wraps the existing logic in a loop with per-row error capture, and returns `{ merged, failed: [{id, error}] }`. No new DB primitives.
 
-- Auto-merging on scrape. Detection only; humans confirm. Wrong merges are expensive to unwind.
-- Rewriting the scraper to avoid producing dupes in the first place — that's a separate, larger piece of work.
-- Touching `getEventPageData` redirect logic — already correct.
+### Slice 3 — Low-confidence stays manual; Medium is one-click-per-cluster
+
+- Low tier renders with a warning banner and no bulk button — admin reviews row-by-row as today.
+- Medium tier shows the per-cluster bulk button but not the global "merge all" button.
+
+### Slice 4 — Undo safety net (optional, recommended)
+
+A merge sets `status=DUPLICATE` and `duplicate_of`. Add an "Unmerge" action on the event edit page that flips `status` back to ACTIVE and clears `duplicate_of`, logged to `event_edits`. Cheap insurance against a bad bulk run; no schema change.
+
+### Out of scope
+
+- Changing the clustering key (e.g. fuzzy name matching, cross-region). Current key is conservative on purpose; we tighten the *action*, not the *detection*, in this pass.
+- Auto-merging on scrape. Still humans-in-the-loop, just with bigger levers.
+- Backfilling redirects for slugs that were never published — the existing `getEventPageData` redirect already handles all live URLs.
 
 ### Sequencing
 
-Slice A first (fast, unblocks the immediate symptom for every untagged row, not just this one), then Slice B (structural, prevents recurrence). Both before resuming Slice 3 (CSV import), since CSV import will only make duplicate pressure worse without the merge tool in place.
+Slices 1+2 together (they're the actual answer to your question). Slice 3 is one-line UI gating off Slice 1. Slice 4 separately if you want it before running a big batch.
+
+## Recommendation
+
+Do 1+2+4 in one pass, then run "Merge all High-confidence" once and report back what's left. Realistically that collapses the bulk of the duplicate list in a single action, and you only hand-review Medium/Low.
