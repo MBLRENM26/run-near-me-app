@@ -1,111 +1,60 @@
-## Correction noted
+## What's actually wrong
 
-You're right — checked the row directly:
+Database check on "North Downs" returned two ACTIVE rows for the same race:
 
-```
-name:        North Downs Run 2026
-distances:   30K
-discipline:  Multi-Terrain Race
-```
+| slug | date_raw | sort_date | distances | discipline | tags |
+|---|---|---|---|---|---|
+| `north-downs-run-2026` | "28 June 2026" | 2026-06-28 | `30K` | `Multi-Terrain Race` | `{}` / `{}` |
+| `north-downs-run-north-downs` | "Late June / Early July 2026" | NULL | `Various (trail)` | (empty) | `{}` / `{}` |
 
-The terrain classification lives in `discipline`, not `distances`. That changes the parser inputs but actually **strengthens the case for normalisation**, because it reveals a second, parallel free-text field that the current distance-page filters ignore entirely. Distribution across the live catalogue:
+Plus, the tagging stats: **584 tagged out of 5233 active rows**, and `is_curated_tags = false` on both North Downs rows — meaning the backfill never reached them.
 
-```text
-discipline                          rows
-(null)                              1787
-Road Race                            555
-Multi-Terrain Race                   213
-Road Race / Multi Terrain             76
-Trail Race / Ultra Distance           13
-Hill Running                           8
-Road                                   2
-Cross Country                          1
-```
+So two distinct issues are stacked, both worth fixing properly:
 
-So today there are **289 events** (213 + 76) whose only terrain signal is `discipline = "Multi-Terrain ..."`. None of them surface on the Trail page unless `distances` *also* contains "trail" — which it usually doesn't. That's the same class of omission as North Downs Run 2026, just at scale.
+### Issue 1 — Backfill is not actually complete
 
-## What changes in the plan
+`backfillEventTags` caps each call at 2000 rows and returns `remaining_hint` for the admin to click again. The button was clicked once; 4649 rows were never scanned, including `north-downs-run-2026`. Until that row is parsed, the trail page only sees it via the legacy `distances` substring matcher — which on `30K` returns false.
 
-The normalisation slice is otherwise identical to what you approved. Only the parser inputs and a couple of helper details change:
+### Issue 2 — Duplicate ACTIVE listings
 
-### Parser is multi-source, not just `distances`
+`north-downs-run-north-downs` is a low-quality scrape of the same event as `north-downs-run-2026`. Both are ACTIVE, so:
 
-```ts
-parseEventTags({
-  name,         // "North Downs Run 2026"
-  distances,    // "30K"
-  discipline,   // "Multi-Terrain Race"
-}): { distance_tags, terrain_tags }
-```
+- **South East → trail (no month filter)**: only the bad dupe surfaces. The legacy `distances` substring sees `"Various (trail)"` → matches `trail`. The good row's `30K` does not contain "trail", so it's skipped (no tags yet → see Issue 1).
+- **South East → trail → June**: the bad dupe has `sort_date = NULL`, so it's dropped from June. The good row would be in June but fails the trail filter. Result: nothing.
 
-Resolution order:
+This is the exact pattern the user saw.
 
-- **`distance_tags`** read primarily from `distances`, with `name` as a fallback for cases like `"London Marathon"` where the distance lives in the title.
-- **`terrain_tags`** read primarily from `discipline`, then `distances`, then `name`. The mapping for the known `discipline` values is exact and unambiguous:
+The dedupe pipeline (`status = DUPLICATE`, `duplicate_of`, the survivor redirect in `getEventPageData`) already exists — the North Downs Way Ultra row uses it correctly. The gap is that there is no admin surface for finding and merging duplicates of ACTIVE rows. Until there is, duplicates like this will keep slipping through whenever the scraper produces a near-miss slug.
 
-```text
-"Road Race"                  → ["road"]
-"Road"                       → ["road"]
-"Multi-Terrain Race"         → ["multi-terrain"]
-"Road Race / Multi Terrain"  → ["road", "multi-terrain"]
-"Trail Race / Ultra Distance"→ ["trail"]   (ultra is a distance, not a terrain)
-"Hill Running"               → ["fell"]
-"Cross Country"              → ["cross-country"]   (new tag, see below)
-null                         → fall through to distances/name
-```
+---
 
-Free-text `distances` continues to contribute terrain when it says "Trail", "Fell", "Multi-Terrain", "Obstacle", "Night Trail", etc.
+## Plan
 
-### Tag vocabulary tweak
+### Slice A — Finish the backfill (small, immediate)
 
-Add `cross-country` to the `terrain_tags` enum so the single existing row isn't lost. Doesn't need its own page yet — the tag just preserves the signal for future filters.
+Run the existing parser across the remaining ~4650 rows so tag-based filtering becomes the source of truth, not the legacy substring fallback.
 
-`ultra` stays a **distance** tag (correct interpretation of `"Trail Race / Ultra Distance"` → distance `ultra`, terrain `trail`), not a terrain.
+1. **Auto-loop the admin action.** Change the "Backfill missing tags" button handler to call `backfillEventTags` in a loop until `remaining_hint` is null, showing running totals (`scanned`, `updated`, `unchanged`) in a toast / status line. Same server function, no schema change.
+2. **Keep the per-call cap at 2000** so each request stays well under the Worker limit; the loop handles completeness.
+3. **Verification:** after the run, `SELECT count(*) FILTER (WHERE cardinality(distance_tags)+cardinality(terrain_tags) > 0)` should equal the count of non-curated ACTIVE rows. `north-downs-run-2026` should end up with `distance_tags = {30k}`, `terrain_tags = {multi-terrain, trail}`.
 
-### Trail page now genuinely catches everything
+This alone fixes "South East → trail → June" — the good North Downs row will now match.
 
-After backfill, the South East Trail page query becomes:
+### Slice B — Duplicate detection & merge (the structural fix)
 
-```sql
-WHERE region = 'South East'
-  AND terrain_tags && ARRAY['trail','multi-terrain','fell']
-```
+Without this, scraped duplicates will keep slipping in and will quietly break filter pages.
 
-…and picks up:
+1. **Detection query.** Add `findPotentialDuplicates` (server fn, admin-only) that groups ACTIVE rows by a normalised key: `(slugify(name) without trailing year tokens, region, rough month bucket)`. Returns clusters of size ≥ 2 with both rows' key fields side by side. No schema change.
+2. **Admin "Duplicates" tab** at `/admin/events/duplicates` listing the clusters. Each row in a cluster shows: slug, date_raw, sort_date, distances, discipline, source_url, tag completeness, last_seen. The admin picks the survivor; the other becomes `status = DUPLICATE` with `duplicate_of = survivor.id`. This is exactly what the existing event page redirect already handles, so no consumer code needs to change.
+3. **Merge action** writes both updates in one server fn (`mergeDuplicateEvents({ survivorId, duplicateId })`) and logs to `event_edits` so the action is auditable. Survivor keeps its tags; if survivor's tags are empty and the duplicate's are not, copy them across (rare, but cheap).
+4. **One-shot fix for North Downs**: from the new UI, mark `north-downs-run-north-downs` as DUPLICATE of `north-downs-run-2026`. Verification: visiting `/events/north-downs-run-north-downs` 301s to `/events/north-downs-run-2026`, and South East → trail → June now lists the 30K once.
 
-- `Maverick North Downs Trails` (terrain from `distances = "Trail"`)
-- `North Downs Run 2026` (terrain from `discipline = "Multi-Terrain Race"`)
-- every other Multi-Terrain Race in the region currently missing
+### Out of scope (deliberately)
 
-Whether `multi-terrain` belongs on the Trail page by default is a content decision — defensible either way. Default to including it (matches how runners search) and expose a dedicated `/multi-terrain-running-events` page in a later slice if we want to split them.
+- Auto-merging on scrape. Detection only; humans confirm. Wrong merges are expensive to unwind.
+- Rewriting the scraper to avoid producing dupes in the first place — that's a separate, larger piece of work.
+- Touching `getEventPageData` redirect logic — already correct.
 
-### Admin editor reflects both axes
+### Sequencing
 
-Two multi-selects in the editor:
-
-- **Distance tags** — checkbox group bound to `distance_tags`.
-- **Terrain tags** — checkbox group bound to `terrain_tags`.
-
-Raw `distances` and `discipline` stay editable text fields above them (source-of-truth display strings). Saving sets `is_curated_tags = true` so the parser leaves the row alone on future scraper runs.
-
-The admin list gains an "Untagged terrain" filter (`cardinality(terrain_tags) = 0`) so the 1787 currently-null-discipline rows can be triaged.
-
-## Everything else from the previous plan is unchanged
-
-- Schema migration: add `distance_tags text[]`, `terrain_tags text[]`, `is_curated_tags boolean`, two GIN indexes. No new RLS.
-- Sequencing: Slice 2 (Add new event) → this normalisation → Slice 3 (CSV import into normalised columns).
-- Backfill runs as a server function calling the same TypeScript parser. Idempotent.
-- Scrapers + `import-events.ts` call the parser on write.
-- `DISTANCE_PAGES` config swaps `includes`/`excludes` strings for a `{ distanceTags?: string[]; terrainTags?: string[] }` shape.
-- Out of scope: town normalisation, splitting multi-distance events into child rows, dedicated multi-terrain page.
-
-## Verification adds one case
-
-Backfill `North Downs Run 2026` and confirm:
-
-```text
-distance_tags = {30k}        (parser learns "30K" → "30k")
-terrain_tags  = {multi-terrain}
-```
-
-…then the South East Trail page returns it with no manual edit required. The manual editor is only needed for rows where both `distances` and `discipline` are silent on terrain.
+Slice A first (fast, unblocks the immediate symptom for every untagged row, not just this one), then Slice B (structural, prevents recurrence). Both before resuming Slice 3 (CSV import), since CSV import will only make duplicate pressure worse without the merge tool in place.
