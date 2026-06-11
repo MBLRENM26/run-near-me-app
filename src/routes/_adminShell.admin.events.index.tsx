@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import {
   adminCheckSession,
@@ -53,7 +53,35 @@ function AdminEventsPage() {
   const navigate = useNavigate({ from: "/admin/events" });
   const fetchList = useServerFn(listAdminEvents);
   const fetchSources = useServerFn(listAdminEventSources);
+  const runBackfill = useServerFn(backfillEventTags);
   const checkSession = useServerFn(adminCheckSession);
+  const queryClient = useQueryClient();
+  const [backfilling, setBackfilling] = useState(false);
+
+  const handleBackfill = async (force: boolean) => {
+    if (!confirm(force ? "Re-parse ALL non-curated rows?" : "Backfill tags for un-tagged rows?"))
+      return;
+    setBackfilling(true);
+    try {
+      let totalUpdated = 0;
+      let totalScanned = 0;
+      // Keep running batches until the server reports nothing left.
+      for (let i = 0; i < 30; i++) {
+        const res = await runBackfill({ data: { force, limit: 2000 } });
+        totalUpdated += res.updated;
+        totalScanned += res.scanned;
+        if (!res.remaining_hint) break;
+      }
+      toast.success(
+        `Backfill done — scanned ${totalScanned}, updated ${totalUpdated}.`,
+      );
+      queryClient.invalidateQueries({ queryKey: ["admin-events"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Backfill failed");
+    } finally {
+      setBackfilling(false);
+    }
+  };
 
   const [authChecked, setAuthChecked] = useState(false);
   useEffect(() => {
