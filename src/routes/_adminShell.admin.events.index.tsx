@@ -82,6 +82,7 @@ function AdminEventsPage() {
           missing_town: search.missing_town,
           missing_distances: search.missing_distances,
           missing_date: search.missing_date,
+          missing_terrain_tags: search.missing_terrain_tags,
           incomplete_any: search.incomplete_any,
           upcoming_only: search.upcoming_only,
           region_invalid: search.region_invalid,
