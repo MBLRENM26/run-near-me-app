@@ -163,6 +163,7 @@ export type Database = {
           organiser: string | null
           organiser_url: string | null
           region: string | null
+          series_key: string | null
           slug: string | null
           sort_date: string | null
           source: string | null
@@ -200,6 +201,7 @@ export type Database = {
           organiser?: string | null
           organiser_url?: string | null
           region?: string | null
+          series_key?: string | null
           slug?: string | null
           sort_date?: string | null
           source?: string | null
@@ -237,6 +239,7 @@ export type Database = {
           organiser?: string | null
           organiser_url?: string | null
           region?: string | null
+          series_key?: string | null
           slug?: string | null
           sort_date?: string | null
           source?: string | null
