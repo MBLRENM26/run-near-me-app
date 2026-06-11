@@ -74,6 +74,19 @@ export const getAllActiveSlugs = createServerFn({ method: "GET" })
     return all;
   });
 
+export const lookupEventSlug = createServerFn({ method: "GET" })
+  .inputValidator((input: unknown) => slugSchema.parse(input))
+  .handler(async ({ data }): Promise<{ exists: boolean }> => {
+    const { data: row, error } = await supabaseAdmin
+      .from("events")
+      .select("slug")
+      .eq("slug", data.slug)
+      .eq("status", "ACTIVE")
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return { exists: !!row };
+  });
+
 // ----- Distance landing pages -----
 
 const distanceKeySchema = z.object({
