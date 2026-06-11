@@ -396,3 +396,86 @@ export const listAdminEventSources = createServerFn({ method: "GET" }).handler(
     return { sources: Array.from(set).sort() };
   },
 );
+
+// ---- Tag parser backfill ----
+//
+// Iterates every event row that is NOT manually curated, runs the tag parser,
+// and writes distance_tags + terrain_tags. Idempotent: safe to re-run after
+// the parser changes. Curated rows (is_curated_tags = true) are skipped so a
+// human override is never clobbered.
+
+export const backfillEventTags = createServerFn({ method: "POST" })
+  .inputValidator((d) =>
+    z
+      .object({
+        // When true, also re-parse rows that already have non-empty tags.
+        // Default false: only fill rows whose terrain_tags is empty, so a
+        // partial backfill is cheap and won't churn unrelated rows.
+        force: z.boolean().optional().default(false),
+        // Cap per run so a single call stays well within request limits.
+        limit: z.number().int().min(1).max(5000).default(2000),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    requireAdminOrThrow();
+
+    let query = supabaseAdmin
+      .from("events")
+      .select("id,name,distances,discipline,distance_tags,terrain_tags")
+      .eq("is_curated_tags", false)
+      .limit(data.limit);
+
+    if (!data.force) {
+      query = query.filter("terrain_tags", "eq", "{}");
+    }
+
+    const { data: rows, error } = await query;
+    if (error) throw new Error(error.message);
+
+    let updated = 0;
+    let unchanged = 0;
+    for (const r of rows ?? []) {
+      const parsed = parseEventTags({
+        name: r.name as string | null,
+        distances: r.distances as string | null,
+        discipline: r.discipline as string | null,
+      });
+      const prevD = (r.distance_tags as string[] | null) ?? [];
+      const prevT = (r.terrain_tags as string[] | null) ?? [];
+      if (
+        sameSet(prevD, parsed.distance_tags) &&
+        sameSet(prevT, parsed.terrain_tags)
+      ) {
+        unchanged++;
+        continue;
+      }
+      const { error: updErr } = await supabaseAdmin
+        .from("events")
+        .update({
+          distance_tags: parsed.distance_tags as DistanceTag[],
+          terrain_tags: parsed.terrain_tags as TerrainTag[],
+        })
+        .eq("id", r.id as string);
+      if (updErr) throw new Error(updErr.message);
+      updated++;
+    }
+
+    return {
+      scanned: rows?.length ?? 0,
+      updated,
+      unchanged,
+      remaining_hint:
+        (rows?.length ?? 0) === data.limit
+          ? "Hit batch limit — run again to continue."
+          : null,
+    };
+  });
+
+function sameSet(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false;
+  const set = new Set(a);
+  for (const x of b) if (!set.has(x)) return false;
+  return true;
+}
+
