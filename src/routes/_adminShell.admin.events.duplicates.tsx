@@ -320,11 +320,13 @@ function ClusterCard({
   busy,
   onMergeAll,
   onMergeOne,
+  onMarkSeries,
 }: {
   cluster: DuplicateCluster;
   busy: boolean;
   onMergeAll: (() => void) | null;
   onMergeOne: (survivor: DuplicateRow, dupe: DuplicateRow) => void;
+  onMarkSeries?: (() => void) | null;
 }) {
   const survivor = cluster.rows[0];
   const tierColor: Record<DuplicateConfidence, string> = {
