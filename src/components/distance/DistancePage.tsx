@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { ArrowLeft, ChevronRight, X } from "lucide-react";
+import { trackRegionView } from "@/lib/analytics";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { EventCard, type EventCardData } from "@/components/events/EventCard";
@@ -59,6 +61,10 @@ export function DistancePage({ cfg, data }: DistancePageProps) {
   const search = useSearch({ strict: false }) as { month?: MonthKey };
   const navigate = useNavigate();
   const month = search.month;
+
+  useEffect(() => {
+    trackRegionView({ region: "UK", distance: cfg.key, total_events: total });
+  }, [cfg.key, total]);
 
   const months = availableMonths(events);
   const filtered = filterByMonth(events, month);

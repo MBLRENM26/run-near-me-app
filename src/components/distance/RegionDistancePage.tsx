@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { ArrowLeft, ChevronRight, X } from "lucide-react";
+import { trackRegionView } from "@/lib/analytics";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { EventCard, type EventCardData } from "@/components/events/EventCard";
@@ -68,6 +70,10 @@ export function RegionDistancePage({
   const showing = filtered.length;
   const h1 = `${headingDistance(cfg)} in ${region.name} ${CURRENT_YEAR}`;
   const noun = pluralNoun(cfg);
+
+  useEffect(() => {
+    trackRegionView({ region: region.name, distance: cfg.key, total_events: total });
+  }, [region.name, cfg.key, total]);
 
   const setMonth = (m: MonthKey | undefined) =>
     navigate({
