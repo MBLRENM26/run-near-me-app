@@ -41,6 +41,7 @@ function locationLabel(town: string | null, county: string | null): string {
 }
 
 import { classifyEventLink, isTrustedLink } from "@/lib/link-trust";
+import { trackEntryClick, trackClaimInterest } from "@/lib/analytics";
 
 export const Route = createFileRoute("/events/$slug")({
   loader: ({ params }) => getEventPageData({ data: { slug: params.slug } }),
@@ -217,16 +218,27 @@ function EventDetailPage() {
   // Imminent (within 7 days) or past events don't promise open entries.
   const proximity = eventProximity(e);
 
-  let primaryCta: { href: string; label: string } | null = null;
+  let primaryCta:
+    | { href: string; label: string; linkType: "entry" | "organiser-site" | "organiser-other" }
+    | null = null;
   if (entryLink.kind === "entry") {
     primaryCta = {
       href: entryLink.href!,
       label: proximity ? "View event details" : "Enter now",
+      linkType: "entry",
     };
   } else if (entryLink.kind === "organiser-site") {
-    primaryCta = { href: entryLink.href!, label: "Visit organiser website" };
+    primaryCta = {
+      href: entryLink.href!,
+      label: "Visit organiser website",
+      linkType: "organiser-site",
+    };
   } else if (isTrustedLink(orgLink)) {
-    primaryCta = { href: orgLink.href!, label: "Visit organiser website" };
+    primaryCta = {
+      href: orgLink.href!,
+      label: "Visit organiser website",
+      linkType: "organiser-other",
+    };
   }
 
   const proximityNote =
@@ -330,7 +342,19 @@ function EventDetailPage() {
           {primaryCta && (
             <div className="mt-8">
               <Button asChild size="lg">
-                <a href={primaryCta.href} target="_blank" rel="noopener noreferrer">
+                <a
+                  href={primaryCta.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() =>
+                    trackEntryClick({
+                      slug: e.slug,
+                      region: e.region,
+                      link_type: primaryCta!.linkType,
+                      proximity: proximity ?? "future",
+                    })
+                  }
+                >
                   {primaryCta.label}
                   <ExternalLink className="h-4 w-4" />
                 </a>
@@ -369,6 +393,9 @@ function EventDetailPage() {
                   <Link
                     to="/list-your-event"
                     search={{ claim: e.slug }}
+                    onClick={() =>
+                      trackClaimInterest({ slug: e.slug, region: e.region })
+                    }
                   >
                     Claim this listing
                   </Link>

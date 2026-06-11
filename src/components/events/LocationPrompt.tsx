@@ -3,6 +3,8 @@ import { MapPin, Search, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { trackLocationSet } from "@/lib/analytics";
+
 
 export type Coords = { lat: number; lng: number; label?: string };
 
@@ -24,6 +26,7 @@ export function LocationPrompt({ onLocate }: Props) {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setLoadingGeo(false);
+        trackLocationSet("device");
         onLocate({
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
@@ -56,6 +59,7 @@ export function LocationPrompt({ onLocate }: Props) {
         toast.error("Couldn't find that postcode. Check and try again.");
         return;
       }
+      trackLocationSet("postcode");
       onLocate({
         lat: json.result.latitude,
         lng: json.result.longitude,

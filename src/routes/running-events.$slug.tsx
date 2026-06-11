@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { createFileRoute, Link, notFound, redirect, useNavigate, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { trackRegionView } from "@/lib/analytics";
 import { ArrowLeft, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/site/Header";
@@ -121,6 +123,10 @@ function RegionPage() {
 
   const months = events ? availableMonths(events) : [];
   const filtered = events ? filterByMonth(events, month) : [];
+
+  useEffect(() => {
+    if (events) trackRegionView({ region: region.name, total_events: events.length });
+  }, [region.name, events]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
