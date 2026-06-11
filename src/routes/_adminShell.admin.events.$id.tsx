@@ -431,7 +431,7 @@ function AdminEventEditorPage() {
       {/* Flags + status */}
       <Section title="Flags & status">
         <Field label="Status">
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {STATUSES.map((s) => (
               <Button
                 key={s}
@@ -443,6 +443,25 @@ function AdminEventEditorPage() {
                 {s}
               </Button>
             ))}
+            {event.status === "DUPLICATE" && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleUnmerge}
+                type="button"
+              >
+                Unmerge
+              </Button>
+            )}
+            {event.status === "DUPLICATE" && event.duplicate_of && (
+              <Link
+                to="/admin/events/$id"
+                params={{ id: event.duplicate_of }}
+                className="text-xs text-primary hover:underline"
+              >
+                → survivor
+              </Link>
+            )}
           </div>
         </Field>
         <Field label="Featured">
