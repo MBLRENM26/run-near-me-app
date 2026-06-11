@@ -697,16 +697,25 @@ export const findPotentialDuplicates = createServerFn({ method: "GET" })
         const bTags = b.distance_tags.length + b.terrain_tags.length;
         return bTags - aTags;
       });
-      clusters.push({
-        key,
-        rows: rows.map(({ _norm: _n, ...rest }) => {
-          void _n;
-          return rest;
-        }),
+      const cleanRows = rows.map(({ _norm: _n, ...rest }) => {
+        void _n;
+        return rest;
       });
+      const { confidence, reason } = scoreCluster(cleanRows);
+      clusters.push({ key, rows: cleanRows, confidence, reason });
     }
 
-    clusters.sort((a, b) => b.rows.length - a.rows.length);
+    // Sort: high confidence first, then largest clusters.
+    const tierRank: Record<DuplicateConfidence, number> = {
+      high: 0,
+      medium: 1,
+      low: 2,
+    };
+    clusters.sort((a, b) => {
+      const t = tierRank[a.confidence] - tierRank[b.confidence];
+      if (t !== 0) return t;
+      return b.rows.length - a.rows.length;
+    });
     return { clusters, total: clusters.length };
   });
 
