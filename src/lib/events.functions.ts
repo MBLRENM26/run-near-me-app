@@ -259,16 +259,19 @@ export const getEventsByRegionAndDistance = createServerFn({ method: "GET" })
     // Pull all active future events for this region with a non-null
     // distances field — volume per region is small.
     const pageSize = 1000;
-    const all: DistanceEvent[] = [];
+    type RowWithTags = DistanceEvent & {
+      _distance_tags: string[] | null;
+      _terrain_tags: string[] | null;
+    };
+    const all: RowWithTags[] = [];
     for (let from = 0; ; from += pageSize) {
       const { data: rows, error } = await supabaseAdmin
         .from("events")
         .select(
-          "id, slug, name, date_raw, sort_date, town, county, region, distances, entry_fee, entry_url, organiser_url, source_url, is_featured, date_is_estimated",
+          "id, slug, name, date_raw, sort_date, town, county, region, distances, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, source_url, is_featured, date_is_estimated",
         )
         .eq("status", "ACTIVE")
         .eq("region", region.name)
-        .not("distances", "is", null)
         .or(`sort_date.gte.${today},sort_date.is.null`)
         .or(
           "lat.is.null,and(lat.gte.49.9,lat.lte.60.9,lng.gte.-8.6,lng.lte.1.8)",
@@ -294,10 +297,22 @@ export const getEventsByRegionAndDistance = createServerFn({ method: "GET" })
           source_url: r.source_url as string | null,
           is_featured: !!r.is_featured,
           date_is_estimated: !!r.date_is_estimated,
+          _distance_tags: r.distance_tags as string[] | null,
+          _terrain_tags: r.terrain_tags as string[] | null,
         });
       }
       if (rows.length < pageSize) break;
     }
+
+    const rowMatches = (e: RowWithTags, key: DistanceKey) =>
+      rowMatchesDistanceKey(
+        {
+          distances: e.distance_type,
+          distance_tags: e._distance_tags,
+          terrain_tags: e._terrain_tags,
+        },
+        key,
+      );
 
     // Bucket the same fetched rows by every distance for the
     // "other distances in this region" panel.
@@ -311,22 +326,29 @@ export const getEventsByRegionAndDistance = createServerFn({ method: "GET" })
     };
     for (const e of all) {
       for (const p of DISTANCE_PAGE_LIST) {
-        if (matchesDistance(e.distance_type, p)) {
-          otherDistanceCounts[p.key]++;
-        }
+        if (rowMatches(e, p.key)) otherDistanceCounts[p.key]++;
       }
     }
 
     const matched = sortEstimatedLastWithinMonth(
-      all.filter((e) => matchesDistance(e.distance_type, cfg)),
+      all.filter((e) => rowMatches(e, cfg.key)),
     );
 
+    // Drop the private tag fields before returning.
+    const events = matched.slice(0, DISPLAY_LIMIT).map((e) => {
+      const { _distance_tags, _terrain_tags, ...rest } = e;
+      void _distance_tags;
+      void _terrain_tags;
+      return rest;
+    });
+
     return {
-      events: matched.slice(0, DISPLAY_LIMIT),
+      events,
       total: matched.length,
       otherDistanceCounts,
     };
   });
+
 
 export type RegionDistanceMatrixRow = {
   regionSlug: string;
