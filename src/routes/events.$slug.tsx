@@ -374,7 +374,33 @@ function EventDetailPage() {
                 About this race
               </h2>
               <p className="mt-2 text-muted-foreground leading-relaxed">
-                {about}
+                {about.intro}
+                {about.count && (
+                  <>
+                    {" "}
+                    {about.count.before}
+                    {regionSlug && comboSlug ? (
+                      <Link
+                        to="/running-events/$slug/$distance"
+                        params={{ slug: regionSlug, distance: comboSlug }}
+                        className="font-medium text-primary hover:underline"
+                      >
+                        {about.count.linkText}
+                      </Link>
+                    ) : regionSlug ? (
+                      <Link
+                        to="/running-events/$slug"
+                        params={{ slug: regionSlug }}
+                        className="font-medium text-primary hover:underline"
+                      >
+                        {about.count.linkText}
+                      </Link>
+                    ) : (
+                      about.count.linkText
+                    )}
+                    {about.count.after}
+                  </>
+                )}
               </p>
             </div>
           )}
