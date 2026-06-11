@@ -3,6 +3,13 @@ import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { isAdminAuthenticated } from "@/lib/admin-session.server";
 import { REGIONS } from "@/lib/regions";
+import {
+  DISTANCE_TAG_VALUES,
+  TERRAIN_TAG_VALUES,
+  parseEventTags,
+  type DistanceTag,
+  type TerrainTag,
+} from "@/lib/event-tags";
 
 const STATUS_VALUES = ["ACTIVE", "DUPLICATE", "EXPIRED"] as const;
 export type EventStatus = (typeof STATUS_VALUES)[number];
@@ -36,6 +43,9 @@ export interface AdminEventListRow {
   lat: number | null;
   lng: number | null;
   created_at: string;
+  distance_tags: string[];
+  terrain_tags: string[];
+  is_curated_tags: boolean;
 }
 
 export interface AdminEventFull extends AdminEventListRow {
