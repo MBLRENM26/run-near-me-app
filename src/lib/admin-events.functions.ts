@@ -1004,6 +1004,70 @@ export const unmergeDuplicateEvent = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// ---- Mark cluster as recurring series ----
+//
+// Flags every row in the cluster with is_recurring=true and writes a shared
+// series_key (slugified name+town) so they can be grouped later. These rows
+// are then excluded from the duplicate scan.
 
+function slugifySeriesKey(name: string, town: string | null): string {
+  const base = `${name} ${town ?? ""}`.toLowerCase();
+  return base
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 120);
+}
 
+export const markClusterAsSeries = createServerFn({ method: "POST" })
+  .inputValidator((d) =>
+    z
+      .object({
+        ids: z.array(z.string().uuid()).min(2).max(200),
+        seriesKey: z.string().trim().min(1).max(120).optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    requireAdminOrThrow();
+
+    const { data: rows, error } = await supabaseAdmin
+      .from("events")
+      .select("id, name, town, is_recurring, series_key")
+      .in("id", data.ids);
+    if (error) throw new Error(error.message);
+    if (!rows || rows.length === 0) throw new Error("No matching rows");
+
+    const key =
+      data.seriesKey ??
+      slugifySeriesKey(
+        (rows[0].name as string) ?? "series",
+        (rows[0].town as string | null) ?? null,
+      );
+
+    let marked = 0;
+    for (const r of rows) {
+      const id = r.id as string;
+      const before = {
+        is_recurring: !!(r.is_recurring as boolean | null),
+        series_key: (r.series_key as string | null) ?? null,
+      };
+      if (before.is_recurring && before.series_key === key) continue;
+      const { error: upErr } = await supabaseAdmin
+        .from("events")
+        .update({ is_recurring: true, series_key: key })
+        .eq("id", id);
+      if (upErr) throw new Error(upErr.message);
+      await supabaseAdmin.from("event_edits").insert({
+        event_id: id,
+        changes: {
+          action: "mark_as_series",
+          series_key: { from: before.series_key, to: key },
+          is_recurring: { from: before.is_recurring, to: true },
+        },
+        note: null,
+      });
+      marked++;
+    }
+    return { ok: true, marked, series_key: key };
+  });
 
