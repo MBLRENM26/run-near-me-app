@@ -408,12 +408,17 @@ export const backfillEventTags = createServerFn({ method: "POST" })
   .inputValidator((d) =>
     z
       .object({
-        // When true, also re-parse rows that already have non-empty tags.
-        // Default false: only fill rows whose terrain_tags is empty, so a
-        // partial backfill is cheap and won't churn unrelated rows.
+        // `force` is accepted for API compatibility but no longer changes
+        // behaviour — the cursor walk visits every non-curated row exactly
+        // once and `same` rows are always skipped at update time anyway.
         force: z.boolean().optional().default(false),
-        // Cap per run so a single call stays well within request limits.
-        limit: z.number().int().min(1).max(5000).default(2000),
+        limit: z.number().int().min(1).max(2000).default(1000),
+        // Cursor: process rows with id > cursor, ordered by id. The client
+        // loops, passing back next_cursor, until it's null. Previous
+        // implementation filtered `terrain_tags = '{}'` and re-scanned the
+        // same un-taggable rows on every iteration, never terminating
+        // cleanly and leaving most rows unvisited.
+        cursor: z.string().uuid().nullable().optional(),
       })
       .parse(d),
   )
@@ -424,18 +429,19 @@ export const backfillEventTags = createServerFn({ method: "POST" })
       .from("events")
       .select("id,name,distances,discipline,distance_tags,terrain_tags")
       .eq("is_curated_tags", false)
+      .order("id", { ascending: true })
       .limit(data.limit);
 
-    if (!data.force) {
-      query = query.filter("terrain_tags", "eq", "{}");
-    }
+    if (data.cursor) query = query.gt("id", data.cursor);
 
     const { data: rows, error } = await query;
     if (error) throw new Error(error.message);
 
     let updated = 0;
     let unchanged = 0;
+    let lastId: string | null = null;
     for (const r of rows ?? []) {
+      lastId = r.id as string;
       const parsed = parseEventTags({
         name: r.name as string | null,
         distances: r.distances as string | null,
@@ -461,14 +467,16 @@ export const backfillEventTags = createServerFn({ method: "POST" })
       updated++;
     }
 
+    const done = (rows?.length ?? 0) < data.limit;
+
     return {
       scanned: rows?.length ?? 0,
       updated,
       unchanged,
-      remaining_hint:
-        (rows?.length ?? 0) === data.limit
-          ? "Hit batch limit — run again to continue."
-          : null,
+      next_cursor: done ? null : lastId,
+      remaining_hint: done
+        ? null
+        : "More rows remain — call again with next_cursor.",
     };
   });
 
