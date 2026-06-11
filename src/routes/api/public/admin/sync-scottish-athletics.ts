@@ -143,11 +143,14 @@ export const Route = createFileRoute("/api/public/admin/sync-scottish-athletics"
           return Response.json({ error: "Server not configured" }, { status: 500 });
         }
         const provided = request.headers.get("x-admin-secret");
-        const anonKey = process.env.SUPABASE_PUBLISHABLE_KEY;
-        const apikey = request.headers.get("apikey");
-        const authorized =
-          (provided && provided === expected) ||
-          (anonKey && apikey && apikey === anonKey);
+        let authorized = false;
+        if (provided) {
+          const a = Buffer.from(provided);
+          const b = Buffer.from(expected);
+          if (a.length === b.length) {
+            try { authorized = timingSafeEqual(a, b); } catch { authorized = false; }
+          }
+        }
         if (!authorized) {
           return Response.json({ error: "Unauthorized" }, { status: 401 });
         }
