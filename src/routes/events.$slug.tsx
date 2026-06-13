@@ -484,6 +484,27 @@ function EventDetailPage() {
             </div>
           )}
 
+          {showFaqs && (
+            <div className="mt-10">
+              <h2 className="text-xl font-semibold text-foreground">
+                Questions about {e.name}
+              </h2>
+              <Accordion type="single" collapsible className="mt-2">
+                {faqs.map((f, i) => (
+                  <AccordionItem key={i} value={`faq-${i}`}>
+                    <AccordionTrigger className="text-base text-foreground">
+                      {f.q}
+                    </AccordionTrigger>
+                    <AccordionContent className="text-muted-foreground leading-relaxed">
+                      {f.a}
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </div>
+          )}
+
+
           {showClaim && (
             <div className="mt-10 rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-card">
               <h2 className="text-xl font-semibold text-foreground">
