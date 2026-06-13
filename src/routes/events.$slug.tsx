@@ -583,7 +583,44 @@ function EventDetailPage() {
               </p>
             </div>
           )}
+
+          {showSameTown && (
+            <div className="mt-12">
+              <h2 className="text-xl font-semibold text-foreground">
+                Other races in {e.town!.trim()}
+              </h2>
+              <ul className="mt-4 divide-y divide-border rounded-2xl border border-border bg-card">
+                {sameTown.map((r) => {
+                  const rDate = formatEventDate(r);
+                  const rLoc = r.county;
+                  return (
+                    <li key={r.id}>
+                      <Link
+                        to="/events/$slug"
+                        params={{ slug: r.slug }}
+                        className="flex flex-col gap-0.5 px-4 py-3 hover:bg-muted/50 transition-colors"
+                      >
+                        <span className="font-medium text-foreground">
+                          {r.name}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          {[rDate, rLoc].filter(Boolean).join(" · ")}
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+
+          {listingAdded && (
+            <p className="mt-12 text-xs text-muted-foreground">
+              Listing added {listingAdded}
+            </p>
+          )}
         </section>
+
       </main>
       <Footer />
     </div>
