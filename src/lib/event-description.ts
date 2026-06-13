@@ -296,10 +296,15 @@ export function buildEventFaqs(e: EventFaqInput): EventFaq[] {
       sort_date: e.sort_date,
       date_is_estimated: e.date_is_estimated,
     });
-    if (proximity === "imminent") {
+    if (proximity === "today") {
       faqs.push({
         q: `How do I enter ${name}?`,
-        a: "Entries may have closed — race day is near. Check the linked event page for current availability.",
+        a: "Race day is today — check the linked event page for current availability.",
+      });
+    } else if (proximity === "imminent") {
+      faqs.push({
+        q: `How do I enter ${name}?`,
+        a: "Race day is near — entries may have closed. Check the linked event page for current availability.",
       });
     }
     // else: skip — the visible "Enter now" button already says everything.
