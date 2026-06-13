@@ -323,7 +323,30 @@ function EventDetailPage() {
   // No trustworthy official link → invite the organiser to claim the listing.
   const showClaim = !primaryCta;
 
+  // Field-driven Q&A — same helper feeds the JSON-LD in head(). Skip the
+  // whole block when fewer than 2 trustworthy answers are available.
+  const faqs = buildEventFaqs({
+    name: e.name,
+    date_from: e.date_from,
+    date_to: e.date_to,
+    sort_date: e.sort_date,
+    date_raw: e.date_raw,
+    date_is_estimated: e.date_is_estimated,
+    town: e.town,
+    county: e.county,
+    distances: e.distances,
+    entry_url: e.entry_url,
+    organiser_url: e.organiser_url,
+  });
+  const showFaqs = faqs.length >= 2;
 
+  // "Other races in {Town}" — internal linking only when there are enough
+  // genuine siblings to be useful.
+  const showSameTown = sameTown.length >= 3 && !!e.town?.trim();
+
+  // Honest listing-added line — never labelled "Last updated" because the
+  // events table has no updated_at/last_checked_at column to back that.
+  const listingAdded = formatListingAdded(e.norm_created_at, e.created_at);
 
   const relatedLabel = related.distanceKey
     ? distancePlural(related.distanceKey)
