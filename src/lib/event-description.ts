@@ -5,7 +5,7 @@
 // count. No scraped fee, no organiser, no invented copy — a sentence is
 // dropped entirely when its field is missing.
 
-import { formatEventDate } from "./date";
+import { formatEventDate, eventProximity } from "./date";
 import { classifyEventLink } from "./link-trust";
 import type { DistanceKey } from "./distance-filters";
 
