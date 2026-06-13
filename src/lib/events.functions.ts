@@ -651,7 +651,43 @@ export const getEventPageData = createServerFn({ method: "GET" })
       }
     }
 
-    return { event, related };
+    // ----- Same-town block -----
+    // Up to 6 other upcoming ACTIVE events whose town matches the current
+    // event's town (case-insensitive). Pure internal linking — the page
+    // only renders the block when there are >=3 siblings.
+    const sameTown: SameTownEvent[] = [];
+    const eventTown = event.town?.trim();
+    if (eventTown) {
+      const today = new Date().toISOString().slice(0, 10);
+      const { data: townRows, error: townErr } = await supabaseAdmin
+        .from("events")
+        .select(
+          "id, slug, name, date_raw, sort_date, date_is_estimated, town, county",
+        )
+        .eq("status", "ACTIVE")
+        .ilike("town", eventTown)
+        .neq("id", event.id)
+        .not("slug", "is", null)
+        .or(`sort_date.gte.${today},sort_date.is.null`)
+        .order("sort_date", { ascending: true, nullsFirst: false })
+        .limit(6);
+      if (!townErr && townRows) {
+        for (const r of townRows) {
+          sameTown.push({
+            id: r.id as string,
+            slug: r.slug as string,
+            name: r.name as string,
+            date_raw: r.date_raw as string | null,
+            sort_date: r.sort_date as string | null,
+            date_is_estimated: !!r.date_is_estimated,
+            town: r.town as string | null,
+            county: r.county as string | null,
+          });
+        }
+      }
+    }
+
+    return { event, related, sameTown };
   });
 
 
