@@ -475,7 +475,7 @@ export const getEventPageData = createServerFn({ method: "GET" })
     const { data: row, error } = await supabaseAdmin
       .from("events")
       .select(
-        "id, slug, name, date_raw, date_from, date_to, sort_date, town, county, region, distances, discipline, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, source_url, organiser, is_featured, date_is_estimated, lat, lng",
+        "id, slug, name, date_raw, date_from, date_to, sort_date, town, county, region, distances, discipline, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, source_url, organiser, is_featured, date_is_estimated, created_at, norm_created_at, lat, lng",
       )
       .eq("slug", data.slug)
       .eq("status", "ACTIVE")
