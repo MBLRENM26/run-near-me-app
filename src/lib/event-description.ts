@@ -215,7 +215,8 @@ function distancesAlreadyInName(name: string, distances: string): boolean {
   const norm = (s: string) =>
     s
       .toLowerCase()
-      .replace(/[,/&+]/g, " ")
+      .replace(/,/g, "")
+      .replace(/[/&+]/g, " ")
       .replace(/\s+/g, " ")
       .trim();
   const nameNorm = ` ${norm(name)} `;
@@ -223,7 +224,17 @@ function distancesAlreadyInName(name: string, distances: string): boolean {
     .split(" ")
     .filter((t) => t && !["and", "the", "race", "run", "fun"].includes(t));
   if (tokens.length === 0) return false;
-  return tokens.every((t) => nameNorm.includes(` ${t} `) || nameNorm.includes(t));
+  return tokens.every((t) => {
+    if (nameNorm.includes(` ${t} `) || nameNorm.includes(t)) return true;
+    // Numeric-equivalence: "10k"/"10km" should also match "10000" in the name
+    // (e.g. "Vitality London 10,000" with distances "10K").
+    const m = t.match(/^(\d+)k(m)?$/);
+    if (m) {
+      const metres = String(parseInt(m[1], 10) * 1000);
+      if (nameNorm.includes(metres)) return true;
+    }
+    return false;
+  });
 }
 
 
