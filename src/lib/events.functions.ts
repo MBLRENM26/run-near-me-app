@@ -59,6 +59,8 @@ export type EventDetail = {
   organiser: string | null;
   is_featured: boolean;
   date_is_estimated: boolean;
+  created_at: string | null;
+  norm_created_at: string | null;
 };
 
 export const getEventBySlug = createServerFn({ method: "GET" })
