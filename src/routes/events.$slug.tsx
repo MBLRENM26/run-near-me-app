@@ -300,9 +300,11 @@ function EventDetailPage() {
   const proximityNote =
     proximity === "past"
       ? "This event has taken place."
-      : proximity === "imminent"
-        ? "Race day is close — entries may have closed. Check the event page for availability."
-        : null;
+      : proximity === "today"
+        ? "Race day is today — check the linked event page for availability."
+        : proximity === "imminent"
+          ? "Race day is near — entries may have closed. Check the linked event page for availability."
+          : null;
 
   const about = buildAboutParagraph({
     slug: e.slug,

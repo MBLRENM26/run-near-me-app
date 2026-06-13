@@ -215,7 +215,8 @@ function distancesAlreadyInName(name: string, distances: string): boolean {
   const norm = (s: string) =>
     s
       .toLowerCase()
-      .replace(/[,/&+]/g, " ")
+      .replace(/,/g, "")
+      .replace(/[/&+]/g, " ")
       .replace(/\s+/g, " ")
       .trim();
   const nameNorm = ` ${norm(name)} `;
@@ -223,7 +224,17 @@ function distancesAlreadyInName(name: string, distances: string): boolean {
     .split(" ")
     .filter((t) => t && !["and", "the", "race", "run", "fun"].includes(t));
   if (tokens.length === 0) return false;
-  return tokens.every((t) => nameNorm.includes(` ${t} `) || nameNorm.includes(t));
+  return tokens.every((t) => {
+    if (nameNorm.includes(` ${t} `) || nameNorm.includes(t)) return true;
+    // Numeric-equivalence: "10k"/"10km" should also match "10000" in the name
+    // (e.g. "Vitality London 10,000" with distances "10K").
+    const m = t.match(/^(\d+)k(m)?$/);
+    if (m) {
+      const metres = String(parseInt(m[1], 10) * 1000);
+      if (nameNorm.includes(metres)) return true;
+    }
+    return false;
+  });
 }
 
 
@@ -285,10 +296,15 @@ export function buildEventFaqs(e: EventFaqInput): EventFaq[] {
       sort_date: e.sort_date,
       date_is_estimated: e.date_is_estimated,
     });
-    if (proximity === "imminent") {
+    if (proximity === "today") {
       faqs.push({
         q: `How do I enter ${name}?`,
-        a: "Entries may have closed — race day is near. Check the linked event page for current availability.",
+        a: "Race day is today — check the linked event page for current availability.",
+      });
+    } else if (proximity === "imminent") {
+      faqs.push({
+        q: `How do I enter ${name}?`,
+        a: "Race day is near — entries may have closed. Check the linked event page for current availability.",
       });
     }
     // else: skip — the visible "Enter now" button already says everything.
