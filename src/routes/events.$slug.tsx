@@ -453,25 +453,6 @@ function EventDetailPage() {
             </div>
           )}
 
-          {showFaqs && (
-            <div className="mt-10">
-              <h2 className="text-xl font-semibold text-foreground">
-                Questions about {e.name}
-              </h2>
-              <Accordion type="single" collapsible className="mt-2">
-                {faqs.map((f, i) => (
-                  <AccordionItem key={i} value={`faq-${i}`}>
-                    <AccordionTrigger className="text-base text-foreground">
-                      {f.q}
-                    </AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground leading-relaxed">
-                      {f.a}
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </div>
-          )}
 
 
           {showClaim && (
@@ -583,11 +564,41 @@ function EventDetailPage() {
             </div>
           )}
 
+          <section className="mt-12">
+            <h2 className="text-xl font-semibold text-foreground">
+              About this listing
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              How Running Events Near Me works.
+            </p>
+            <Accordion type="single" collapsible className="mt-3">
+              {aboutListingFaqs.map((f) => (
+                <AccordionItem key={f.id} value={f.id}>
+                  <AccordionTrigger className="text-base text-foreground text-left">
+                    {f.q}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground leading-relaxed">
+                    {f.a}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+            <p className="mt-4 text-sm">
+              <Link
+                to="/about"
+                className="font-medium text-primary hover:underline"
+              >
+                See all FAQs →
+              </Link>
+            </p>
+          </section>
+
           {listingAdded && (
             <p className="mt-12 text-xs text-muted-foreground">
               Listing added {listingAdded}
             </p>
           )}
+
         </section>
 
       </main>
