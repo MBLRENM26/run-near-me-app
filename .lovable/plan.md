@@ -1,37 +1,43 @@
-# Improve "Discover events across the UK" quality
+# Investigation: "Discover events across the UK" not visible
 
-## Goal
-Surface 6–8 races on the homepage with strong, complete data, dated 1–3 months out across the UK. No new infra, no scoring system, no DB changes.
+## What I checked
 
-## Where
-`src/routes/index.tsx` — the `upcomingEvents` `useQuery` (the only consumer of this list). Pure frontend change to the Supabase query + a light post-filter.
+**Data side — healthy.** The query criteria match 782 rows in the DB; the top 20 by `is_featured desc, sort_date asc` all have trusted entry/organiser URLs (saledragons.org.uk, avonvalleyrunners, runtrue, etc.), so the post-filter would keep ~8. The query itself is not the problem.
 
-## Query changes
-Replace the current `events` select with one that already filters out the obvious low-quality rows:
+**Runtime side — two real issues:**
 
-- `status = 'ACTIVE'` (unchanged)
-- `date_is_estimated = false` — exclude month-only / TBC dates
-- `sort_date` between **today + 30 days** and **today + 120 days** — the "1, 2, 3 months out" window (slight buffer either side so the list never empties)
-- `lat not null` AND `lng not null` — must be mappable / locatable
-- `town not null` AND `county not null` — must have a real location label
-- `distances not null` AND `distances <> ''` — must declare a distance
-- Exclude parkruns (`not.ilike.%parkrun%` on `name`) so the dedicated parkrun section owns them
-- Order: `is_featured desc`, then `sort_date asc`
-- `limit(20)` to give the post-filter room
+1. **Stale JS chunk.** Console shows:
+   `Failed to fetch dynamically imported module: /assets/index-DYxMVJBd.js`
+   This is the preview serving an old bundle reference after the last edit. The section literally can't render because the route module failed to load — the whole page falls back / blanks parts of the render. A hard reload normally clears this, but if it persists the cause is something else (see #3).
 
-## Post-filter (in the component, tiny)
-From the 20 rows, keep only those that ALSO have at least one trusted link (`entry_url` or `organiser_url` classifies as `entry` or `organiser-site` via existing `classifyEventLink` in `src/lib/link-trust.ts`). Then `.slice(0, 8)`.
+2. **Section is gated on `!coords`.** In `src/routes/index.tsx`:
+   ```tsx
+   {!coords && upcomingEvents && upcomingEvents.length > 0 && (...)}
+   ```
+   `coords` comes from `?lat=&lng=` in the URL. From the session replay you've been navigating between `/running-events/...` and `/` with query params several times — if the URL still carries `lat`/`lng`, the "Discover events across the UK" block is intentionally hidden and the "Featured events near you" / nearby list takes over instead. This isn't a bug in the new query, it's the existing visibility rule.
 
-Render heading stays "Discover events across the UK"; if fewer than 6 survive (very unlikely given the buffer), still render what we have — the section already hides when the list is empty.
+## Proposed fix
 
-## What this excludes
-Month-only dates, missing town/county, missing distances, no coordinates, no trusted entry/organiser link, parkruns, anything sooner than ~30 days or further than ~120 days.
+Two small, targeted changes — no behaviour creep:
+
+### 1. Make the dynamic-import error self-heal
+Add a one-line listener in `src/routes/__root.tsx` that catches `Failed to fetch dynamically imported module` and does a single `location.reload()`. Standard TanStack/Vite pattern for stale chunks after redeploys. Prevents the user from seeing a half-rendered page after any future deploy.
+
+### 2. Show the UK discovery section even when a location is set
+Right now it's hidden the moment coords exist. That's why you're not seeing it on `/` — your URL almost certainly still has `?lat=&lng=` from earlier navigation.
+
+Change the gate so the section renders in both states, just lower on the page when coords are set (below "Featured events near you", above "Browse by region"). The query is already strong enough that it's a useful "what else is on across the UK" row regardless of whether the user has set a location.
+
+If you'd rather keep the strict `!coords` gate, I'll instead add a "Clear location" affordance so it's obvious why the section disappeared — but unhiding it is the cleaner answer.
 
 ## Out of scope
-- No DB columns, RPCs, or migrations
-- No changes to the nearby-events list, featured-nearby, region/distance pages
-- No new "quality score" — just hard filters on fields we already have
-- Copy unchanged
+- No changes to the query, filters, or limit (data is correct)
+- No changes to the trust/link rules
+- No changes to other sections
 
 ## Verification
-Load `/` signed out with no location set → "Discover events across the UK" shows 6–8 races, all with a real day-precision date 1–3 months out, a town + county, a distance, and an Enter/Organiser CTA on the card.
+- Reload `/` with no query params → section shows 6–8 races.
+- Reload `/?lat=51.5&lng=-0.1&label=London` → "Featured/nearby" shows AND "Discover events across the UK" shows below it.
+- Force a stale chunk (simulate by editing then revisiting) → page auto-reloads once instead of blanking.
+
+Want me to proceed with both, or just the visibility change?
