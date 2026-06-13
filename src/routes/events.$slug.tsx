@@ -128,6 +128,12 @@ export const Route = createFileRoute("/events/$slug")({
       };
       if (endISO) jsonLd.endDate = endISO;
       if (description) jsonLd.description = description;
+      // datePublished reflects when our LISTING was created — honest.
+      // We deliberately do NOT emit dateModified: there is no updated_at
+      // or last_checked_at field in the schema, so claiming the underlying
+      // event facts were re-verified would be a misleading freshness signal.
+      const publishedISO = listingPublishedISO(e.norm_created_at, e.created_at);
+      if (publishedISO) jsonLd.datePublished = publishedISO;
       const placeName = e.town || e.county || e.region || "United Kingdom";
       jsonLd.location = {
         "@type": "Place",
@@ -160,6 +166,38 @@ export const Route = createFileRoute("/events/$slug")({
         };
       }
     }
+
+    // FAQPage JSON-LD — built from the SAME helper that drives the visible
+    // accordion below, so on-page text and schema can never drift. Skipped
+    // entirely when fewer than 2 trustworthy answers are available.
+    // Note: Google restricted FAQ rich results to gov/health sites in 2023,
+    // so we do not expect a SERP carousel. The value is page completeness
+    // and machine readability for AI answer engines.
+    const headFaqs = buildEventFaqs({
+      name: e.name,
+      date_from: e.date_from,
+      date_to: e.date_to,
+      sort_date: e.sort_date,
+      date_raw: e.date_raw,
+      date_is_estimated: e.date_is_estimated,
+      town: e.town,
+      county: e.county,
+      distances: e.distances,
+      entry_url: e.entry_url,
+      organiser_url: e.organiser_url,
+    });
+    const faqLd =
+      headFaqs.length >= 2
+        ? {
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: headFaqs.map((f) => ({
+              "@type": "Question",
+              name: f.q,
+              acceptedAnswer: { "@type": "Answer", text: f.a },
+            })),
+          }
+        : null;
 
     // BreadcrumbList JSON-LD: Home → Region → Event.
     const regionSlug = regionSlugFromName(e.region);
