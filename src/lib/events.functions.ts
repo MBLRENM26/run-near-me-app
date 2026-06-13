@@ -451,9 +451,22 @@ export type RelatedEvents = {
   distanceKey: DistanceKey | null;
 };
 
+export type SameTownEvent = {
+  id: string;
+  slug: string;
+  name: string;
+  date_raw: string | null;
+  sort_date: string | null;
+  date_is_estimated: boolean;
+  town: string | null;
+  county: string | null;
+};
+
 export type EventPageData = {
   event: EventDetail;
   related: RelatedEvents;
+  /** Other upcoming events in the same town as the current event. */
+  sameTown: SameTownEvent[];
 };
 
 export const getEventPageData = createServerFn({ method: "GET" })
