@@ -14,8 +14,17 @@ import { Footer } from "@/components/site/Footer";
 import { getEventPageData } from "@/lib/events.functions";
 import {
   buildAboutParagraph,
+  buildEventFaqs,
   distancePlural,
+  formatListingAdded,
+  listingPublishedISO,
 } from "@/lib/event-description";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { DISTANCE_PAGES } from "@/lib/distance-filters";
 import {
   formatEventDate,
