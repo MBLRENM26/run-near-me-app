@@ -21,6 +21,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { matchesEventType, type EventType } from "@/lib/distance";
 import { MapPin } from "lucide-react";
 import { DistanceNav } from "@/components/distance/DistanceNav";
+import { classifyEventLink } from "@/lib/link-trust";
 
 type HomeSearch = {
   lat?: number;
