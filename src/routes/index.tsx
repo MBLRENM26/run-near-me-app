@@ -399,7 +399,7 @@ function HomePage() {
         </section>
 
         {/* Discover events across the UK (when no location set) */}
-        {!coords && upcomingEvents && upcomingEvents.length > 0 && (
+        {upcomingEvents && upcomingEvents.length > 0 && (
           <section className="mx-auto max-w-6xl px-4 pb-16">
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
               Discover events across the UK

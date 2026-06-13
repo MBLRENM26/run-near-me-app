@@ -139,6 +139,27 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
+  if (typeof window !== "undefined" && !(window as any).__chunkReloadWired) {
+    (window as any).__chunkReloadWired = true;
+    const isChunkError = (msg: unknown) =>
+      typeof msg === "string" &&
+      /Failed to fetch dynamically imported module|Importing a module script failed|ChunkLoadError/i.test(msg);
+    const reloadOnce = () => {
+      const key = "__chunkReloadedAt";
+      const last = Number(sessionStorage.getItem(key) || 0);
+      if (Date.now() - last < 10_000) return;
+      sessionStorage.setItem(key, String(Date.now()));
+      window.location.reload();
+    };
+    window.addEventListener("error", (e) => {
+      if (isChunkError(e?.message)) reloadOnce();
+    });
+    window.addEventListener("unhandledrejection", (e) => {
+      const reason: any = e?.reason;
+      if (isChunkError(reason?.message ?? reason)) reloadOnce();
+    });
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
