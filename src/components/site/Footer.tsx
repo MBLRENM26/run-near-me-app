@@ -7,6 +7,12 @@ export function Footer() {
         <p>© {new Date().getFullYear()} Running Events Near Me</p>
         <nav className="flex items-center gap-5">
           <Link
+            to="/about"
+            className="hover:text-foreground transition-colors"
+          >
+            About
+          </Link>
+          <Link
             to="/privacy"
             className="hover:text-foreground transition-colors"
           >
@@ -18,6 +24,7 @@ export function Footer() {
           >
             List your event
           </Link>
+
         </nav>
       </div>
     </footer>
