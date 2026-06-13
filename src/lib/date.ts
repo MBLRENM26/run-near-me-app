@@ -99,11 +99,12 @@ export function isoDate(d: string | null | undefined): string | null {
 
 /**
  * How close an event is to race day, for honest CTA treatment:
+ * - "today"    — race day is today (start ≤ today ≤ end)
  * - "imminent" — starts within `windowDays` days (entries may have closed)
  * - "past"     — already finished
  * - null       — comfortably in the future, or date unknown/estimated
  */
-export type EventProximity = "imminent" | "past" | null;
+export type EventProximity = "today" | "imminent" | "past" | null;
 
 export function eventProximity(
   args: {
@@ -126,5 +127,6 @@ export function eventProximity(
   );
   if (end.getTime() < todayUTC) return "past";
   const daysUntilStart = Math.ceil((start.getTime() - todayUTC) / 86400000);
+  if (daysUntilStart <= 0) return "today";
   return daysUntilStart <= windowDays ? "imminent" : null;
 }
