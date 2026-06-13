@@ -1,63 +1,37 @@
-# Replace event FAQ with site-trust module + dedicated /about page
+# Improve "Discover events across the UK" quality
 
-## Why
+## Goal
+Surface 6–8 races on the homepage with strong, complete data, dated 1–3 months out across the UK. No new infra, no scoring system, no DB changes.
 
-The current per-event FAQ restates fields already visible above the fold (date, location, distance, entry). It reads as SEO padding, not trust-building. Pivot to site-level Q&A that explains who we are, where data comes from, and how to correct it — surfaced briefly on every event page and in full on a dedicated page.
+## Where
+`src/routes/index.tsx` — the `upcomingEvents` `useQuery` (the only consumer of this list). Pure frontend change to the Supabase query + a light post-filter.
 
-## What changes
+## Query changes
+Replace the current `events` select with one that already filters out the obvious low-quality rows:
 
-### 1. New file: `src/lib/site-faqs.ts`
-Single source of truth for the 8 site-level Q&A. Plain constants, no per-event logic. Each entry: `{ id, q, a }`. Answers use the copy you supplied verbatim, with one wording tweak:
+- `status = 'ACTIVE'` (unchanged)
+- `date_is_estimated = false` — exclude month-only / TBC dates
+- `sort_date` between **today + 30 days** and **today + 120 days** — the "1, 2, 3 months out" window (slight buffer either side so the list never empties)
+- `lat not null` AND `lng not null` — must be mappable / locatable
+- `town not null` AND `county not null` — must have a real location label
+- `distances not null` AND `distances <> ''` — must declare a distance
+- Exclude parkruns (`not.ilike.%parkrun%` on `name`) so the dedicated parkrun section owns them
+- Order: `is_featured desc`, then `sort_date asc`
+- `limit(20)` to give the post-filter room
 
-- Event-page Q2 becomes **"Can I enter races through Running Events Near Me?"** (answer still clarifies we don't process entries or payments, and links out to the event/entry page when one is available).
+## Post-filter (in the component, tiny)
+From the 20 rows, keep only those that ALSO have at least one trusted link (`entry_url` or `organiser_url` classifies as `entry` or `organiser-site` via existing `classifyEventLink` in `src/lib/link-trust.ts`). Then `.slice(0, 8)`.
 
-### 2. New route: `src/routes/about.tsx` → `/about`
-- Renders all 8 Qs as an accordion.
-- `head()`: title "About — Running Events Near Me", description, canonical, og:*.
-- Emits `FAQPage` JSON-LD with all 8 Qs (this is the only page that emits FAQPage schema).
-- Linked from the site footer.
+Render heading stays "Discover events across the UK"; if fewer than 6 survive (very unlikely given the buffer), still render what we have — the section already hides when the list is empty.
 
-### 3. Event page: `src/routes/events.$slug.tsx`
-- Remove the existing per-event FAQ block + its JSON-LD.
-- Add a new "About this listing" accordion **below** the "More races in {region}" / related-events section.
-- Renders exactly 3 fixed Qs from `site-faqs.ts`:
-  1. Is Running Events Near Me the organiser of these races?
-  2. Can I enter races through Running Events Near Me?
-  3. How can I update or correct a race listing?
-- Conditionally renders a 4th Q ("Why is some race information missing?") **when the listing has no trusted entry or organiser link**. "No trusted link" means: for both `entry_url` and `organiser_url`, the URL is missing/null OR `classifyEventLink` returns anything other than `entry` or `organiser-site` (i.e. untrusted, aggregator, invalid all count as absent).
-- Footer link under the accordion: "See all FAQs →" to `/about`.
-- **No FAQPage JSON-LD on event pages** — the trust module is site-level content, not event-specific FAQ content. Keep schema where it semantically belongs (the `/about` page).
-- The proximity banner ("Race day is today/near…") stays — unrelated to the FAQ block.
-
-### 4. Cleanup in `src/lib/event-description.ts`
-Delete now-unused exports and helpers:
-- `buildEventFaqs`, `EventFaqInput`, `EventFaq`
-- `hasRealDistance`, `distancesAlreadyInName`
-
-Keep: `buildAboutParagraph`, `distanceSingular`/`Plural`, `formatListingAdded`, `listingPublishedISO`. Keep `eventProximity` in `src/lib/date.ts` (banner still uses it).
-
-### 5. Footer
-Add an "About" link in `src/components/site/Footer.tsx` routing to `/about`, alongside the existing Privacy / List your event links.
-
-## Answer copy
-
-Q1–Q8 use the wording you supplied, with the one Q2 tweak above. Q3 (update/correct) and Q7 (list your race) answers both point to `/list-your-event`.
+## What this excludes
+Month-only dates, missing town/county, missing distances, no coordinates, no trusted entry/organiser link, parkruns, anything sooner than ~30 days or further than ~120 days.
 
 ## Out of scope
-
-- No DB changes, no scraper changes, no admin changes.
-- No changes to event card, header, or other listing pages.
-- No new "weak listing" badge — the 4th Q is the only surfacing of that state.
+- No DB columns, RPCs, or migrations
+- No changes to the nearby-events list, featured-nearby, region/distance pages
+- No new "quality score" — just hard filters on fields we already have
+- Copy unchanged
 
 ## Verification
-
-- `/about` renders 8 Qs and a single valid FAQPage JSON-LD block covering all 8.
-- Event page with a trusted `entry_url` (e.g. Vitality London 10,000): module shows 3 Qs, no 4th.
-- Event page where both `entry_url` and `organiser_url` are null or untrusted (e.g. Rat Race Sea to Summit if untrusted): module shows 4 Qs including "Why is some race information missing?".
-- Event page source contains no `application/ld+json` of `@type: FAQPage`.
-- Accordion sits below the related-races section, above the listing-added footer line.
-- Footer shows an "About" link routing to `/about`.
-
-## Reversibility note
-
-Per-event FAQ logic is isolated to `event-description.ts` + the JSX block in `events.$slug.tsx`. Deleting it removes ~80 lines and 2 helpers, no other consumers. The pivot adds one constants file, one route, and one accordion block — strictly less complexity than what's there today.
+Load `/` signed out with no location set → "Discover events across the UK" shows 6–8 races, all with a real day-precision date 1–3 months out, a town + county, a distance, and an Enter/Organiser CTA on the card.

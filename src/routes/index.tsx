@@ -21,6 +21,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { matchesEventType, type EventType } from "@/lib/distance";
 import { MapPin } from "lucide-react";
 import { DistanceNav } from "@/components/distance/DistanceNav";
+import { classifyEventLink } from "@/lib/link-trust";
 
 type HomeSearch = {
   lat?: number;
@@ -134,21 +135,46 @@ function HomePage() {
   });
 
   const { data: upcomingEvents } = useQuery({
-    queryKey: ["events", "upcoming"],
+    queryKey: ["events", "upcoming", "quality-v1"],
     queryFn: async () => {
-      const today = new Date().toISOString().slice(0, 10);
+      const now = new Date();
+      const from = new Date(now.getTime() + 30 * 86400000)
+        .toISOString()
+        .slice(0, 10);
+      const to = new Date(now.getTime() + 120 * 86400000)
+        .toISOString()
+        .slice(0, 10);
       const { data, error } = await supabase
         .from("events")
         .select(
           "id, slug, name, date_raw, town, county, distance_type:distances, entry_fee, entry_url, organiser_url, source_url, is_featured, date_is_estimated",
         )
         .eq("status", "ACTIVE")
-        .or(`sort_date.gte.${today},sort_date.is.null`)
-        .order("date_is_estimated", { ascending: true })
-        .order("sort_date", { ascending: true, nullsFirst: false })
-        .limit(6);
+        .eq("date_is_estimated", false)
+        .gte("sort_date", from)
+        .lte("sort_date", to)
+        .not("lat", "is", null)
+        .not("lng", "is", null)
+        .not("town", "is", null)
+        .not("county", "is", null)
+        .not("distances", "is", null)
+        .neq("distances", "")
+        .not("name", "ilike", "%parkrun%")
+        .order("is_featured", { ascending: false })
+        .order("sort_date", { ascending: true })
+        .limit(20);
       if (error) throw error;
-      return data;
+      const trusted = (data ?? []).filter((e) => {
+        const a = classifyEventLink(e.entry_url).kind;
+        const b = classifyEventLink(e.organiser_url).kind;
+        return (
+          a === "entry" ||
+          a === "organiser-site" ||
+          b === "entry" ||
+          b === "organiser-site"
+        );
+      });
+      return trusted.slice(0, 8);
     },
   });
 
