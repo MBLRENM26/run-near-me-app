@@ -254,8 +254,11 @@ export const Route = createFileRoute("/events/$slug")({
 });
 
 function EventDetailPage() {
-  const { event: e, related }: import("@/lib/events.functions").EventPageData =
-    Route.useLoaderData();
+  const {
+    event: e,
+    related,
+    sameTown,
+  }: import("@/lib/events.functions").EventPageData = Route.useLoaderData();
 
   // Site-wide link-trust policy: aggregator URLs are never rendered as
   // links, homepages are "Visit organiser website", and only event-specific
