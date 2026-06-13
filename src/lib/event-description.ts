@@ -5,7 +5,7 @@
 // count. No scraped fee, no organiser, no invented copy — a sentence is
 // dropped entirely when its field is missing.
 
-import { formatEventDate } from "./date";
+import { formatEventDate, eventProximity } from "./date";
 import { classifyEventLink } from "./link-trust";
 import type { DistanceKey } from "./distance-filters";
 
@@ -192,6 +192,41 @@ export type EventFaqInput = {
 
 export type EventFaq = { q: string; a: string };
 
+/**
+ * True when the distances string contains at least one real distance token
+ * (numeric like "5K", "10 km", "13.1 mi", "26 miles", or the literal words
+ * "marathon" / "half marathon" / "parkrun"). Pure category strings like
+ * "Ultra", "Trail", "Ultra/Trail", or "Fun Run" return false — they describe
+ * the kind of event, not how far it is, and would mislead in a Q&A.
+ */
+function hasRealDistance(distances: string): boolean {
+  const s = distances.toLowerCase();
+  if (/\d+(\.\d+)?\s*(k|km|mi|mile|miles|m)\b/.test(s)) return true;
+  if (/\b(marathon|half\s*marathon|parkrun)\b/.test(s)) return true;
+  return false;
+}
+
+/**
+ * True when every distance-bearing token in `distances` already appears in
+ * `name` — i.e. the Q would just repeat the title. Tokens are normalised
+ * (lowercase, punctuation stripped, common joiners dropped).
+ */
+function distancesAlreadyInName(name: string, distances: string): boolean {
+  const norm = (s: string) =>
+    s
+      .toLowerCase()
+      .replace(/[,/&+]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  const nameNorm = ` ${norm(name)} `;
+  const tokens = norm(distances)
+    .split(" ")
+    .filter((t) => t && !["and", "the", "race", "run", "fun"].includes(t));
+  if (tokens.length === 0) return false;
+  return tokens.every((t) => nameNorm.includes(` ${t} `) || nameNorm.includes(t));
+}
+
+
 export function buildEventFaqs(e: EventFaqInput): EventFaq[] {
   const faqs: EventFaq[] = [];
   const name = e.name?.trim();
@@ -221,27 +256,42 @@ export function buildEventFaqs(e: EventFaqInput): EventFaq[] {
     });
   }
 
-  // 3. Distance — needs the raw distances string from the listing.
+  // 3. Distance — only when the distances string is a real distance list AND
+  //    isn't already substantively present in the event name. Strings made of
+  //    only category words ("Ultra", "Trail", "Ultra/Trail") are not distances
+  //    and would mislead — skip those entirely.
   const distances = e.distances?.trim();
-  if (distances) {
+  if (distances && hasRealDistance(distances) && !distancesAlreadyInName(name, distances)) {
     faqs.push({
       q: `How far is ${name}?`,
-      a: `${name} offers ${distances}.`,
+      a: `Distances: ${distances}.`,
     });
   }
 
   // 4. Entry / details — wording strictly follows link-trust classification.
-  //    "entry" → event-specific page on a trusted host → entry wording.
+  //    "entry" → event-specific page on a trusted host. The page already
+  //    shows an "Enter now" CTA, so a boilerplate "entry info is on the
+  //    linked page" Q just restates the button. Only render this Q when we
+  //    have a real fact to add — currently, the imminent-date caveat.
   //    "organiser-site" (or organiser_url falling back the same way) →
-  //    safer "more about" wording, never claiming it's an entry page.
+  //    softer "more about" wording, never claiming it's an entry page.
   //    Untrusted / invalid → no question at all.
   const entry = classifyEventLink(e.entry_url);
   const org = classifyEventLink(e.organiser_url);
   if (entry.kind === "entry") {
-    faqs.push({
-      q: `How do I enter ${name}?`,
-      a: "Entry information is available via the linked entry page where provided.",
+    const proximity = eventProximity({
+      date_from: e.date_from,
+      date_to: e.date_to,
+      sort_date: e.sort_date,
+      date_is_estimated: e.date_is_estimated,
     });
+    if (proximity === "imminent") {
+      faqs.push({
+        q: `How do I enter ${name}?`,
+        a: "Entries may have closed — race day is near. Check the linked event page for current availability.",
+      });
+    }
+    // else: skip — the visible "Enter now" button already says everything.
   } else if (
     entry.kind === "organiser-site" ||
     org.kind === "entry" ||

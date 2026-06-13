@@ -1,57 +1,61 @@
-## Step 1 — Rotate `IMPORT_SECRET` (build mode, ~30s)
+# Step 3a follow-up: FAQ quality fixes
 
-The Lovable Cloud secrets UI is intentionally write-only after creation (the value is encrypted and even the platform can't read it back — only delete or overwrite). Cleanest path: **update** it. Same env var name, no code changes needed, you set the new value yourself.
+Your spot-checks surfaced three real issues with `buildEventFaqs`. All fixes stay inside `src/lib/event-description.ts` (single source of truth for visible + JSON-LD) plus one render guard in `src/routes/events.$slug.tsx`. No schema changes, no data changes.
 
-I'll call `secrets--update_secret` for `IMPORT_SECRET` — a secure form pops up, you type a new value, save. Then use that value in the `x-import-secret` header for your 128-row payload.
+## Issues and fixes
 
-## Step 2 — Send the Wales / NI payload
+### 1. "How far" reads awkwardly and sometimes lies
 
-Endpoint reference (already in `src/routes/api/public/import-events.ts`, no changes needed):
+Examples you hit:
+- *Serpentine … 5K July* → "offers 5K." (name already says 5K — pure repetition)
+- *Isle of Skye Half Marathon, 10K & Fun Run* → "offers Half Marathon, 10K, Fun Run." (name already lists them)
+- *Rat Race Sea to Summit* → "offers Ultra/Trail." (those are categories, not distances — misleading)
 
-```
-POST https://runningeventsnearme.com/api/public/import-events
-Headers: Content-Type: application/json
-         x-import-secret: <new secret>
-Body:    { "events": [ ...up to 1000 rows ] }
-```
+Fix — tighten the gate and the wording:
 
-Required per row: `norm_id` (unique upsert key — prefix by source, e.g. `welshathletics-<slug>`) and `name`. Strongly recommended: `date_from` (`YYYY-MM-DD`), `town`, `county`, `country` (`"Wales"` or `"Northern Ireland"`), `lat`/`lng`, `distances`, `entry_url`, `source`. Server auto-fills `region` (from county/coords), `sort_date`, `is_upcoming`. Re-sending same `norm_id` updates the row — safe to re-run.
+- **Skip the Q entirely when the distances string is not a real distance list.** Require at least one numeric distance token (regex along the lines of `\d+(\.\d+)?\s*(k|km|mi|mile|m)\b` or the literal words `marathon`/`half marathon`/`parkrun`). Strings that are only category words (`Ultra`, `Trail`, `Ultra/Trail`, `Fun Run` alone) → no Q.
+- **Skip when the distances string is already substantively present in the event name** (normalised: lowercase, strip punctuation, compare token overlap). If every distance token in `distances` is already in `name`, the Q adds nothing — drop it.
+- **Rephrase the answer** from "{name} offers {distances}." to "Distances: {distances}." — shorter, doesn't restate the name, reads naturally regardless of how many distances there are.
 
-Smoke test first with 1 row, expect `{ "ok": true, "received": 1, "written": 1 }`, then send the full 128.
+Net effect: Serpentine 5K, Skye, and Rat Race all lose the "How far" Q. A page like *Vitality London 10K* also loses it (distance in name). Events where the name is generic (e.g. *Stoodley Pike Fell Race* with `10 miles`) keep it.
 
-## Step 3 — Sequencing the GSC-driven work
+### 2. Entry Q is redundant when the Enter Now button is right there
 
-You've said event pages are the strongest GSC signal. That's the right read — those pages are concrete, low-competition long-tail (`pete-shields-ilkley-10k` = exactly one searcher intent), and you have 5K+ of them. Region/distance hubs come next, but **only after** event pages are converting impressions → clicks well, because hubs win by linking *to* good event pages.
+On *Big Half*, *Wirral 10K* etc. the FAQ answer ("Entry information is available via the linked entry page where provided.") restates what the visible CTA already shows. It adds noise, not information.
 
-Recommended order, in scope for this phase:
+Fix — replace the boilerplate with one substantive sentence, only when we actually have something to add:
 
-### 3a. Event-page CTR & rich-result polish (1-2 sessions)
-Already-ranking pages with low CTR are the fastest wins — no new content needed.
-- **FAQ schema** on event pages: "When is X? Where? How far? How do I enter?" — answers pulled from existing structured fields only (no AI prose, per memory). Earns FAQ rich result = bigger SERP footprint.
-- **Title-tag A/B**: current is `{Name} {Year} — {Date}, {Town} | Entry & Info`. Test variants like `{Name} {Year} | {Distance} in {Town}, {Date}` — distance-in-title matches more queries.
-- **Internal linking from event → event**: the "More 10Ks in Yorkshire" block already exists. Add a sibling "Other races in {Town}" block where ≥3 events share a town. Distributes link equity, increases pages/session.
-- **Last-updated timestamp** in visible copy + JSON-LD `dateModified` — Google rewards freshness signals for event content.
+- **Drop the Q whenever the answer would just point at the same button the user can already see.** Concretely: if `classifyEventLink(entry_url).kind === "entry"` AND we have no extra context to add, skip it.
+- **Keep the Q only when we can answer with a real fact**, currently just the date proximity note (the "Race day is near…" copy already on the page). When close to race day, render: *"Entries may have closed — check the linked event page for current availability."* Otherwise omit.
+- The softer "Where can I find more about…" Q (organiser-only case) stays as-is — that one isn't redundant because there's no Enter Now button on those pages.
 
-### 3b. Hub-page targeting (2-3 sessions, *after* 3a ships and we've watched GSC for 1-2 weeks)
-- Pull GSC top-queries for hubs, find the gap (e.g. "trail running events yorkshire" vs current page).
-- Unique intro copy per region+distance combo (templated from DB counts/months, no slop).
-- Internal links from event pages back to relevant hubs (you already do region; add distance hub link).
+### 3. "Where does … take place" with no town
 
-### 3c. Wait-and-see (do NOT build yet)
-- **Organiser claim-flow + image upload** — needs auth, account model, moderation. Premature until you have ~50 organiser inbound requests. Distance-fallback images get the same SEO benefit in 1 hour.
-- **Email digest** — needs reliable user base + frequency policy. Defer until you have signed-up users to digest *to*.
-- **More scraper sources** — you can absorb Welsh/NI manually for now; automate when manual import gets painful (3+ updates/month).
+*Rat Race Sea to Summit Ben Nevis* has no `town` in your DB, so the Where Q is correctly skipped — but that leaves the page with very few Qs. This is the FAQ gate working as designed (block hides under 2 Qs), so no code change; the right fix is data (claim/edit), which the existing "Claim this listing" CTA already invites.
 
-## Push-back / what I'd resist
+No action here beyond confirming the gate behaves correctly after fix #1 reduces Q counts on some pages.
 
-If the urge is to "add a feature" (auth, accounts, digests, maps), I'd push back — the data says **the existing event pages are working and underexploited**. Squeeze them first. Every hour on CTR and rich results compounds across 5,575 pages; every hour on a new feature serves zero traffic until adoption.
+## Files touched
 
-## Technical notes
+- `src/lib/event-description.ts` — update `buildEventFaqs`:
+  - new helper `hasRealDistance(distances)` (numeric token check)
+  - new helper `distancesAlreadyInName(name, distances)` (token-overlap check)
+  - reword distance answer to `Distances: {distances}.`
+  - entry Q: drop the boilerplate-only case, keep a proximity-aware variant
+- `src/routes/events.$slug.tsx` — no logic change; the existing `faqs.length >= 2` gate already drops the block (and the FAQPage JSON-LD) when fixes above push some pages below threshold. Confirm visually after build.
 
-- FAQ schema lives in the same `head()` block as the existing Event JSON-LD in `src/routes/events.$slug.tsx`. No new files.
-- "Other races in {Town}" needs a new query in `events.functions.ts` (similar pattern to existing `related`).
-- All copy must remain templated from structured fields per `mem://constraints/scraped-data-trust`.
+## Deliberately out of scope
 
-## Out of scope for this plan
+- **URL date inconsistency** (some slugs include the year, some don't). Real issue, but it touches slug generation / canonicalisation / redirects — separate ticket.
+- **"Peter Ilkey" / Ilkley Incline traffic spike** — that's a measurement observation, not a code change.
+- **Adding more Q types** (cost, parking, route). Still blocked by the trusted-fields rule from mem://constraints/scraped-data-trust.
 
-I'll handle Step 1 (rotate secret) in build mode immediately on approval. Step 2 is yours (curl from your machine). Step 3a-3c are separate plans — approve this one, run your import, then we'll plan 3a once you confirm.
+## Verification after build
+
+Re-walk the same spot-check list:
+- Serpentine 5K, Skye, Vitality London 10K → no "How far" Q
+- Stoodley Pike Fell Race → keeps "How far" (name doesn't contain "10 miles")
+- Big Half, Wirral 10K → no boilerplate entry Q
+- Skye / Gnosall (≤14 days) → entry Q present with proximity wording
+- Rat Race Sea to Summit → no "How far", no Where, likely falls under 2-Q gate and whole block hides — confirm
+- Powys 3-Q page → may drop to 2 Qs, still renders
