@@ -5,8 +5,8 @@
 // count. No scraped fee, no organiser, no invented copy — a sentence is
 // dropped entirely when its field is missing.
 
-import { formatEventDate, eventProximity } from "./date";
-import { classifyEventLink } from "./link-trust";
+import { formatEventDate } from "./date";
+// classifyEventLink was previously used by buildEventFaqs (now removed).
 import type { DistanceKey } from "./distance-filters";
 
 /** "a half marathon", "an ultra marathon", "a 10K race" — with article. */
