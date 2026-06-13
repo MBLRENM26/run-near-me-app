@@ -5,8 +5,8 @@
 // count. No scraped fee, no organiser, no invented copy — a sentence is
 // dropped entirely when its field is missing.
 
-import { formatEventDate, eventProximity } from "./date";
-import { classifyEventLink } from "./link-trust";
+import { formatEventDate } from "./date";
+
 import type { DistanceKey } from "./distance-filters";
 
 /** "a half marathon", "an ultra marathon", "a 10K race" — with article. */
@@ -160,167 +160,11 @@ export function buildAboutParagraph(e: AboutEventInput): AboutParagraph | null {
   return { intro: [s1, s2].filter(Boolean).join(" "), count };
 }
 
-// ---------------------------------------------------------------------------
-// Event Q&A block
-//
-// Field-driven, trust-strict Q&As surfaced as a visible accordion AND a
-// matching FAQPage JSON-LD block. Both consumers use this same helper, so
-// the visible text and the schema can never drift.
-//
-// Rules (per mem://constraints/scraped-data-trust):
-// - Only ever restates structured fields we already trust.
-// - Skip any individual Q whose source field is missing/unsafe.
-// - Caller should skip the whole block when fewer than 2 Qs remain.
-// - Never asserts price, organiser identity, or "official" status.
-// - Entry wording is deliberately cautious: we do not claim the link is the
-//   organiser's official entry page, only that it is the linked entry page.
-// ---------------------------------------------------------------------------
-
-export type EventFaqInput = {
-  name: string;
-  date_from?: string | null;
-  date_to?: string | null;
-  sort_date?: string | null;
-  date_raw?: string | null;
-  date_is_estimated?: boolean | null;
-  town: string | null;
-  county: string | null;
-  distances: string | null;
-  entry_url: string | null;
-  organiser_url: string | null;
-};
-
-export type EventFaq = { q: string; a: string };
-
-/**
- * True when the distances string contains at least one real distance token
- * (numeric like "5K", "10 km", "13.1 mi", "26 miles", or the literal words
- * "marathon" / "half marathon" / "parkrun"). Pure category strings like
- * "Ultra", "Trail", "Ultra/Trail", or "Fun Run" return false — they describe
- * the kind of event, not how far it is, and would mislead in a Q&A.
- */
-function hasRealDistance(distances: string): boolean {
-  const s = distances.toLowerCase();
-  if (/\d+(\.\d+)?\s*(k|km|mi|mile|miles|m)\b/.test(s)) return true;
-  if (/\b(marathon|half\s*marathon|parkrun)\b/.test(s)) return true;
-  return false;
-}
-
-/**
- * True when every distance-bearing token in `distances` already appears in
- * `name` — i.e. the Q would just repeat the title. Tokens are normalised
- * (lowercase, punctuation stripped, common joiners dropped).
- */
-function distancesAlreadyInName(name: string, distances: string): boolean {
-  const norm = (s: string) =>
-    s
-      .toLowerCase()
-      .replace(/,/g, "")
-      .replace(/[/&+]/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
-  const nameNorm = ` ${norm(name)} `;
-  const tokens = norm(distances)
-    .split(" ")
-    .filter((t) => t && !["and", "the", "race", "run", "fun"].includes(t));
-  if (tokens.length === 0) return false;
-  return tokens.every((t) => {
-    if (nameNorm.includes(` ${t} `) || nameNorm.includes(t)) return true;
-    // Numeric-equivalence: "10k"/"10km" should also match "10000" in the name
-    // (e.g. "Vitality London 10,000" with distances "10K").
-    const m = t.match(/^(\d+)k(m)?$/);
-    if (m) {
-      const metres = String(parseInt(m[1], 10) * 1000);
-      if (nameNorm.includes(metres)) return true;
-    }
-    return false;
-  });
-}
+// The previous event-specific FAQ block (buildEventFaqs + hasRealDistance +
+// distancesAlreadyInName) was removed when the event page pivoted to a
+// site-level "About this listing" module — see src/lib/site-faqs.ts.
 
 
-export function buildEventFaqs(e: EventFaqInput): EventFaq[] {
-  const faqs: EventFaq[] = [];
-  const name = e.name?.trim();
-  if (!name) return faqs;
-
-  // 1. When — only for confirmed (non-estimated) dates with a real day.
-  if (!e.date_is_estimated) {
-    const dateLabel = formatEventDate(e);
-    if (dateLabel && !/\(date TBC\)/i.test(dateLabel)) {
-      faqs.push({
-        q: `When is ${name}?`,
-        a: `${name} takes place on ${dateLabel}.`,
-      });
-    }
-  }
-
-  // 2. Where — needs at least a town.
-  const town = e.town?.trim();
-  if (town) {
-    const county = e.county?.trim();
-    const sameTownCounty =
-      !!county && town.toLowerCase() === county.toLowerCase();
-    const loc = !county || sameTownCounty ? town : `${town}, ${county}`;
-    faqs.push({
-      q: `Where does ${name} take place?`,
-      a: `${name} is held in ${loc}.`,
-    });
-  }
-
-  // 3. Distance — only when the distances string is a real distance list AND
-  //    isn't already substantively present in the event name. Strings made of
-  //    only category words ("Ultra", "Trail", "Ultra/Trail") are not distances
-  //    and would mislead — skip those entirely.
-  const distances = e.distances?.trim();
-  if (distances && hasRealDistance(distances) && !distancesAlreadyInName(name, distances)) {
-    faqs.push({
-      q: `How far is ${name}?`,
-      a: `Distances: ${distances}.`,
-    });
-  }
-
-  // 4. Entry / details — wording strictly follows link-trust classification.
-  //    "entry" → event-specific page on a trusted host. The page already
-  //    shows an "Enter now" CTA, so a boilerplate "entry info is on the
-  //    linked page" Q just restates the button. Only render this Q when we
-  //    have a real fact to add — currently, the imminent-date caveat.
-  //    "organiser-site" (or organiser_url falling back the same way) →
-  //    softer "more about" wording, never claiming it's an entry page.
-  //    Untrusted / invalid → no question at all.
-  const entry = classifyEventLink(e.entry_url);
-  const org = classifyEventLink(e.organiser_url);
-  if (entry.kind === "entry") {
-    const proximity = eventProximity({
-      date_from: e.date_from,
-      date_to: e.date_to,
-      sort_date: e.sort_date,
-      date_is_estimated: e.date_is_estimated,
-    });
-    if (proximity === "today") {
-      faqs.push({
-        q: `How do I enter ${name}?`,
-        a: "Race day is today — check the linked event page for current availability.",
-      });
-    } else if (proximity === "imminent") {
-      faqs.push({
-        q: `How do I enter ${name}?`,
-        a: "Race day is near — entries may have closed. Check the linked event page for current availability.",
-      });
-    }
-    // else: skip — the visible "Enter now" button already says everything.
-  } else if (
-    entry.kind === "organiser-site" ||
-    org.kind === "entry" ||
-    org.kind === "organiser-site"
-  ) {
-    faqs.push({
-      q: `Where can I find more about ${name}?`,
-      a: "Event details are available via the linked organiser website where provided.",
-    });
-  }
-
-  return faqs;
-}
 
 /** "June 2026" — for the visible "Listing added" footer line. */
 export function formatListingAdded(

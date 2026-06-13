@@ -14,11 +14,12 @@ import { Footer } from "@/components/site/Footer";
 import { getEventPageData } from "@/lib/events.functions";
 import {
   buildAboutParagraph,
-  buildEventFaqs,
   distancePlural,
   formatListingAdded,
   listingPublishedISO,
 } from "@/lib/event-description";
+import { eventPageFaqs } from "@/lib/site-faqs";
+
 import {
   Accordion,
   AccordionContent,
@@ -167,37 +168,10 @@ export const Route = createFileRoute("/events/$slug")({
       }
     }
 
-    // FAQPage JSON-LD — built from the SAME helper that drives the visible
-    // accordion below, so on-page text and schema can never drift. Skipped
-    // entirely when fewer than 2 trustworthy answers are available.
-    // Note: Google restricted FAQ rich results to gov/health sites in 2023,
-    // so we do not expect a SERP carousel. The value is page completeness
-    // and machine readability for AI answer engines.
-    const headFaqs = buildEventFaqs({
-      name: e.name,
-      date_from: e.date_from,
-      date_to: e.date_to,
-      sort_date: e.sort_date,
-      date_raw: e.date_raw,
-      date_is_estimated: e.date_is_estimated,
-      town: e.town,
-      county: e.county,
-      distances: e.distances,
-      entry_url: e.entry_url,
-      organiser_url: e.organiser_url,
-    });
-    const faqLd =
-      headFaqs.length >= 2
-        ? {
-            "@context": "https://schema.org",
-            "@type": "FAQPage",
-            mainEntity: headFaqs.map((f) => ({
-              "@type": "Question",
-              name: f.q,
-              acceptedAnswer: { "@type": "Answer", text: f.a },
-            })),
-          }
-        : null;
+    // No FAQPage JSON-LD on event pages — the trust module below is
+    // site-level content (about Running Events Near Me as a site), not
+    // event-specific FAQ content. The /about page emits FAQPage schema
+    // where it semantically belongs.
 
     // BreadcrumbList JSON-LD: Home → Region → Event.
     const regionSlug = regionSlugFromName(e.region);
@@ -230,10 +204,8 @@ export const Route = createFileRoute("/events/$slug")({
         type: "application/ld+json",
         children: JSON.stringify(breadcrumbLd),
       },
-      ...(faqLd
-        ? [{ type: "application/ld+json", children: JSON.stringify(faqLd) }]
-        : []),
     ];
+
 
     return {
       meta: [
@@ -325,22 +297,17 @@ function EventDetailPage() {
   // No trustworthy official link → invite the organiser to claim the listing.
   const showClaim = !primaryCta;
 
-  // Field-driven Q&A — same helper feeds the JSON-LD in head(). Skip the
-  // whole block when fewer than 2 trustworthy answers are available.
-  const faqs = buildEventFaqs({
-    name: e.name,
-    date_from: e.date_from,
-    date_to: e.date_to,
-    sort_date: e.sort_date,
-    date_raw: e.date_raw,
-    date_is_estimated: e.date_is_estimated,
-    town: e.town,
-    county: e.county,
-    distances: e.distances,
-    entry_url: e.entry_url,
-    organiser_url: e.organiser_url,
-  });
-  const showFaqs = faqs.length >= 2;
+  // "About this listing" — site-level trust Q&A, NOT event-specific FAQs.
+  // 3 fixed Qs; a 4th appears only when the listing has no trusted entry
+  // OR organiser link (missing URLs and untrusted/aggregator URLs both
+  // count as absent — only `entry` or `organiser-site` classify as trusted).
+  const hasAnyTrustedLink =
+    entryLink.kind === "entry" ||
+    entryLink.kind === "organiser-site" ||
+    orgLink.kind === "entry" ||
+    orgLink.kind === "organiser-site";
+  const aboutListingFaqs = eventPageFaqs(!hasAnyTrustedLink);
+
 
   // "Other races in {Town}" — internal linking only when there are enough
   // genuine siblings to be useful.
@@ -486,25 +453,6 @@ function EventDetailPage() {
             </div>
           )}
 
-          {showFaqs && (
-            <div className="mt-10">
-              <h2 className="text-xl font-semibold text-foreground">
-                Questions about {e.name}
-              </h2>
-              <Accordion type="single" collapsible className="mt-2">
-                {faqs.map((f, i) => (
-                  <AccordionItem key={i} value={`faq-${i}`}>
-                    <AccordionTrigger className="text-base text-foreground">
-                      {f.q}
-                    </AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground leading-relaxed">
-                      {f.a}
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </div>
-          )}
 
 
           {showClaim && (
@@ -616,11 +564,41 @@ function EventDetailPage() {
             </div>
           )}
 
+          <section className="mt-12">
+            <h2 className="text-xl font-semibold text-foreground">
+              About this listing
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              How Running Events Near Me works.
+            </p>
+            <Accordion type="single" collapsible className="mt-3">
+              {aboutListingFaqs.map((f) => (
+                <AccordionItem key={f.id} value={f.id}>
+                  <AccordionTrigger className="text-base text-foreground text-left">
+                    {f.q}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground leading-relaxed">
+                    {f.a}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+            <p className="mt-4 text-sm">
+              <Link
+                to="/about"
+                className="font-medium text-primary hover:underline"
+              >
+                See all FAQs →
+              </Link>
+            </p>
+          </section>
+
           {listingAdded && (
             <p className="mt-12 text-xs text-muted-foreground">
               Listing added {listingAdded}
             </p>
           )}
+
         </section>
 
       </main>

@@ -1,54 +1,63 @@
-# Step 3b: proximity wording, "today" state, numeric-equivalent distance match
+# Replace event FAQ with site-trust module + dedicated /about page
 
-Three small, targeted fixes from your spot-check. No schema changes.
+## Why
 
-## 1. Reword the imminent copy (banner + FAQ together)
+The current per-event FAQ restates fields already visible above the fold (date, location, distance, entry). It reads as SEO padding, not trust-building. Pivot to site-level Q&A that explains who we are, where data comes from, and how to correct it — surfaced briefly on every event page and in full on a dedicated page.
 
-Current banner (`src/routes/events.$slug.tsx:304`):
-> Race day is close — entries may have closed. Check the event page for availability.
+## What changes
 
-New, in both places:
-> Race day is near — entries may have closed. Check the linked event page for availability.
+### 1. New file: `src/lib/site-faqs.ts`
+Single source of truth for the 8 site-level Q&A. Plain constants, no per-event logic. Each entry: `{ id, q, a }`. Answers use the copy you supplied verbatim, with one wording tweak:
 
-Same wording goes into the FAQ answer in `buildEventFaqs` so banner and Q&A read identically.
+- Event-page Q2 becomes **"Can I enter races through Running Events Near Me?"** (answer still clarifies we don't process entries or payments, and links out to the event/entry page when one is available).
 
-## 2. Add a "today" state
+### 2. New route: `src/routes/about.tsx` → `/about`
+- Renders all 8 Qs as an accordion.
+- `head()`: title "About — Running Events Near Me", description, canonical, og:*.
+- Emits `FAQPage` JSON-LD with all 8 Qs (this is the only page that emits FAQPage schema).
+- Linked from the site footer.
 
-Extend `EventProximity` in `src/lib/date.ts` from `"imminent" | "past" | null` to `"today" | "imminent" | "past" | null`. `daysUntilStart === 0` (and end ≥ today) → `"today"`. Existing `≤ windowDays` rule still produces `"imminent"`.
+### 3. Event page: `src/routes/events.$slug.tsx`
+- Remove the existing per-event FAQ block + its JSON-LD.
+- Add a new "About this listing" accordion **below** the "More races in {region}" / related-events section.
+- Renders exactly 3 fixed Qs from `site-faqs.ts`:
+  1. Is Running Events Near Me the organiser of these races?
+  2. Can I enter races through Running Events Near Me?
+  3. How can I update or correct a race listing?
+- Conditionally renders a 4th Q ("Why is some race information missing?") **when the listing has no trusted entry or organiser link**. "No trusted link" means: for both `entry_url` and `organiser_url`, the URL is missing/null OR `classifyEventLink` returns anything other than `entry` or `organiser-site` (i.e. untrusted, aggregator, invalid all count as absent).
+- Footer link under the accordion: "See all FAQs →" to `/about`.
+- **No FAQPage JSON-LD on event pages** — the trust module is site-level content, not event-specific FAQ content. Keep schema where it semantically belongs (the `/about` page).
+- The proximity banner ("Race day is today/near…") stays — unrelated to the FAQ block.
 
-Banner copy for the new state (visible page only — your call):
-> Race day is today — check the linked event page for availability.
+### 4. Cleanup in `src/lib/event-description.ts`
+Delete now-unused exports and helpers:
+- `buildEventFaqs`, `EventFaqInput`, `EventFaq`
+- `hasRealDistance`, `distancesAlreadyInName`
 
-In `buildEventFaqs`, treat `"today"` the same as `"imminent"` for the entry-Q gate, with wording:
-> Race day is today — check the linked event page for current availability.
+Keep: `buildAboutParagraph`, `distanceSingular`/`Plural`, `formatListingAdded`, `listingPublishedISO`. Keep `eventProximity` in `src/lib/date.ts` (banner still uses it).
 
-Date formatting elsewhere (page title, About paragraph) stays as the full date, per your "banner only" choice.
+### 5. Footer
+Add an "About" link in `src/components/site/Footer.tsx` routing to `/about`, alongside the existing Privacy / List your event links.
 
-## 3. Fix the Vitality-style miss
+## Answer copy
 
-Real DB row: `name = "Vitality London 10,000"`, `distances = "10K"`. The current `distancesAlreadyInName` normaliser strips `,/&+` but leaves the digits split, so token `10k` doesn't match `10 000`. Fix inside the helper:
+Q1–Q8 use the wording you supplied, with the one Q2 tweak above. Q3 (update/correct) and Q7 (list your race) answers both point to `/list-your-event`.
 
-- Strip commas from the name before token comparison (so `10,000` → `10000`).
-- For any distances token matching `^(\d+)k$`, also accept a match when the normalised name contains the metres form (e.g. `10k` → also check for `10000`). Same trick for `^(\d+)km$`.
+## Out of scope
 
-Net effect: Vitality London 10,000 no longer shows the "Distances: 10K" Q. Existing pass/fail cases (Stoodley Pike Fell Race keeps its Q, Serpentine 5K still drops it) are unchanged.
+- No DB changes, no scraper changes, no admin changes.
+- No changes to event card, header, or other listing pages.
+- No new "weak listing" badge — the 4th Q is the only surfacing of that state.
 
-## Explicitly NOT changing
+## Verification
 
-- **2-Q FAQ gate stays.** Serpentine / Tempos / Rat Race continue to hide the whole block — cleaner than a single thin Q&A, per your choice.
-- **No date format changes outside the banner.** "Today" lives in the banner only.
-- **Charlie Kilshaw** has `distances = null`, so no distance Q is correct; nothing to do.
+- `/about` renders 8 Qs and a single valid FAQPage JSON-LD block covering all 8.
+- Event page with a trusted `entry_url` (e.g. Vitality London 10,000): module shows 3 Qs, no 4th.
+- Event page where both `entry_url` and `organiser_url` are null or untrusted (e.g. Rat Race Sea to Summit if untrusted): module shows 4 Qs including "Why is some race information missing?".
+- Event page source contains no `application/ld+json` of `@type: FAQPage`.
+- Accordion sits below the related-races section, above the listing-added footer line.
+- Footer shows an "About" link routing to `/about`.
 
-## Files touched
+## Reversibility note
 
-- `src/lib/date.ts` — extend `EventProximity` union, add the `"today"` branch in `eventProximity`.
-- `src/lib/event-description.ts` — reword imminent FAQ, handle `"today"` in the same gate, add metres-form equivalence in `distancesAlreadyInName`, strip commas in the normaliser.
-- `src/routes/events.$slug.tsx` — reword the imminent banner, add the `"today"` banner string.
-
-## Verification after build
-
-- Skye Half Marathon & 10K (today, 13 June 2026) → banner reads "Race day is today …"; FAQ entry Q present with today wording.
-- An event 1–7 days out → banner + FAQ both read the new "near" wording.
-- Vitality London 10,000 → no distance Q.
-- Stoodley Pike Fell Race → distance Q still present.
-- Serpentine / Tempos / Rat Race → FAQ block still hidden.
+Per-event FAQ logic is isolated to `event-description.ts` + the JSX block in `events.$slug.tsx`. Deleting it removes ~80 lines and 2 helpers, no other consumers. The pivot adds one constants file, one route, and one accordion block — strictly less complexity than what's there today.
