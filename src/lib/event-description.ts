@@ -221,27 +221,42 @@ export function buildEventFaqs(e: EventFaqInput): EventFaq[] {
     });
   }
 
-  // 3. Distance — needs the raw distances string from the listing.
+  // 3. Distance — only when the distances string is a real distance list AND
+  //    isn't already substantively present in the event name. Strings made of
+  //    only category words ("Ultra", "Trail", "Ultra/Trail") are not distances
+  //    and would mislead — skip those entirely.
   const distances = e.distances?.trim();
-  if (distances) {
+  if (distances && hasRealDistance(distances) && !distancesAlreadyInName(name, distances)) {
     faqs.push({
       q: `How far is ${name}?`,
-      a: `${name} offers ${distances}.`,
+      a: `Distances: ${distances}.`,
     });
   }
 
   // 4. Entry / details — wording strictly follows link-trust classification.
-  //    "entry" → event-specific page on a trusted host → entry wording.
+  //    "entry" → event-specific page on a trusted host. The page already
+  //    shows an "Enter now" CTA, so a boilerplate "entry info is on the
+  //    linked page" Q just restates the button. Only render this Q when we
+  //    have a real fact to add — currently, the imminent-date caveat.
   //    "organiser-site" (or organiser_url falling back the same way) →
-  //    safer "more about" wording, never claiming it's an entry page.
+  //    softer "more about" wording, never claiming it's an entry page.
   //    Untrusted / invalid → no question at all.
   const entry = classifyEventLink(e.entry_url);
   const org = classifyEventLink(e.organiser_url);
   if (entry.kind === "entry") {
-    faqs.push({
-      q: `How do I enter ${name}?`,
-      a: "Entry information is available via the linked entry page where provided.",
+    const proximity = eventProximity({
+      date_from: e.date_from,
+      date_to: e.date_to,
+      sort_date: e.sort_date,
+      date_is_estimated: e.date_is_estimated,
     });
+    if (proximity === "imminent") {
+      faqs.push({
+        q: `How do I enter ${name}?`,
+        a: "Entries may have closed — race day is near. Check the linked event page for current availability.",
+      });
+    }
+    // else: skip — the visible "Enter now" button already says everything.
   } else if (
     entry.kind === "organiser-site" ||
     org.kind === "entry" ||
