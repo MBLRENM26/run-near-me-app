@@ -14,8 +14,17 @@ import { Footer } from "@/components/site/Footer";
 import { getEventPageData } from "@/lib/events.functions";
 import {
   buildAboutParagraph,
+  buildEventFaqs,
   distancePlural,
+  formatListingAdded,
+  listingPublishedISO,
 } from "@/lib/event-description";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { DISTANCE_PAGES } from "@/lib/distance-filters";
 import {
   formatEventDate,
@@ -119,6 +128,12 @@ export const Route = createFileRoute("/events/$slug")({
       };
       if (endISO) jsonLd.endDate = endISO;
       if (description) jsonLd.description = description;
+      // datePublished reflects when our LISTING was created — honest.
+      // We deliberately do NOT emit dateModified: there is no updated_at
+      // or last_checked_at field in the schema, so claiming the underlying
+      // event facts were re-verified would be a misleading freshness signal.
+      const publishedISO = listingPublishedISO(e.norm_created_at, e.created_at);
+      if (publishedISO) jsonLd.datePublished = publishedISO;
       const placeName = e.town || e.county || e.region || "United Kingdom";
       jsonLd.location = {
         "@type": "Place",
@@ -152,6 +167,38 @@ export const Route = createFileRoute("/events/$slug")({
       }
     }
 
+    // FAQPage JSON-LD — built from the SAME helper that drives the visible
+    // accordion below, so on-page text and schema can never drift. Skipped
+    // entirely when fewer than 2 trustworthy answers are available.
+    // Note: Google restricted FAQ rich results to gov/health sites in 2023,
+    // so we do not expect a SERP carousel. The value is page completeness
+    // and machine readability for AI answer engines.
+    const headFaqs = buildEventFaqs({
+      name: e.name,
+      date_from: e.date_from,
+      date_to: e.date_to,
+      sort_date: e.sort_date,
+      date_raw: e.date_raw,
+      date_is_estimated: e.date_is_estimated,
+      town: e.town,
+      county: e.county,
+      distances: e.distances,
+      entry_url: e.entry_url,
+      organiser_url: e.organiser_url,
+    });
+    const faqLd =
+      headFaqs.length >= 2
+        ? {
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: headFaqs.map((f) => ({
+              "@type": "Question",
+              name: f.q,
+              acceptedAnswer: { "@type": "Answer", text: f.a },
+            })),
+          }
+        : null;
+
     // BreadcrumbList JSON-LD: Home → Region → Event.
     const regionSlug = regionSlugFromName(e.region);
     const crumbs: { name: string; item?: string }[] = [
@@ -183,6 +230,9 @@ export const Route = createFileRoute("/events/$slug")({
         type: "application/ld+json",
         children: JSON.stringify(breadcrumbLd),
       },
+      ...(faqLd
+        ? [{ type: "application/ld+json", children: JSON.stringify(faqLd) }]
+        : []),
     ];
 
     return {
@@ -204,8 +254,11 @@ export const Route = createFileRoute("/events/$slug")({
 });
 
 function EventDetailPage() {
-  const { event: e, related }: import("@/lib/events.functions").EventPageData =
-    Route.useLoaderData();
+  const {
+    event: e,
+    related,
+    sameTown,
+  }: import("@/lib/events.functions").EventPageData = Route.useLoaderData();
 
   // Site-wide link-trust policy: aggregator URLs are never rendered as
   // links, homepages are "Visit organiser website", and only event-specific
@@ -270,7 +323,30 @@ function EventDetailPage() {
   // No trustworthy official link → invite the organiser to claim the listing.
   const showClaim = !primaryCta;
 
+  // Field-driven Q&A — same helper feeds the JSON-LD in head(). Skip the
+  // whole block when fewer than 2 trustworthy answers are available.
+  const faqs = buildEventFaqs({
+    name: e.name,
+    date_from: e.date_from,
+    date_to: e.date_to,
+    sort_date: e.sort_date,
+    date_raw: e.date_raw,
+    date_is_estimated: e.date_is_estimated,
+    town: e.town,
+    county: e.county,
+    distances: e.distances,
+    entry_url: e.entry_url,
+    organiser_url: e.organiser_url,
+  });
+  const showFaqs = faqs.length >= 2;
 
+  // "Other races in {Town}" — internal linking only when there are enough
+  // genuine siblings to be useful.
+  const showSameTown = sameTown.length >= 3 && !!e.town?.trim();
+
+  // Honest listing-added line — never labelled "Last updated" because the
+  // events table has no updated_at/last_checked_at column to back that.
+  const listingAdded = formatListingAdded(e.norm_created_at, e.created_at);
 
   const relatedLabel = related.distanceKey
     ? distancePlural(related.distanceKey)
@@ -408,6 +484,27 @@ function EventDetailPage() {
             </div>
           )}
 
+          {showFaqs && (
+            <div className="mt-10">
+              <h2 className="text-xl font-semibold text-foreground">
+                Questions about {e.name}
+              </h2>
+              <Accordion type="single" collapsible className="mt-2">
+                {faqs.map((f, i) => (
+                  <AccordionItem key={i} value={`faq-${i}`}>
+                    <AccordionTrigger className="text-base text-foreground">
+                      {f.q}
+                    </AccordionTrigger>
+                    <AccordionContent className="text-muted-foreground leading-relaxed">
+                      {f.a}
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </div>
+          )}
+
+
           {showClaim && (
             <div className="mt-10 rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-card">
               <h2 className="text-xl font-semibold text-foreground">
@@ -486,7 +583,44 @@ function EventDetailPage() {
               </p>
             </div>
           )}
+
+          {showSameTown && (
+            <div className="mt-12">
+              <h2 className="text-xl font-semibold text-foreground">
+                Other races in {e.town!.trim()}
+              </h2>
+              <ul className="mt-4 divide-y divide-border rounded-2xl border border-border bg-card">
+                {sameTown.map((r) => {
+                  const rDate = formatEventDate(r);
+                  const rLoc = r.county;
+                  return (
+                    <li key={r.id}>
+                      <Link
+                        to="/events/$slug"
+                        params={{ slug: r.slug }}
+                        className="flex flex-col gap-0.5 px-4 py-3 hover:bg-muted/50 transition-colors"
+                      >
+                        <span className="font-medium text-foreground">
+                          {r.name}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          {[rDate, rLoc].filter(Boolean).join(" · ")}
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+
+          {listingAdded && (
+            <p className="mt-12 text-xs text-muted-foreground">
+              Listing added {listingAdded}
+            </p>
+          )}
         </section>
+
       </main>
       <Footer />
     </div>

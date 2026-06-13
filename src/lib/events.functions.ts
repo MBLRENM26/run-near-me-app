@@ -59,6 +59,8 @@ export type EventDetail = {
   organiser: string | null;
   is_featured: boolean;
   date_is_estimated: boolean;
+  created_at: string | null;
+  norm_created_at: string | null;
 };
 
 export const getEventBySlug = createServerFn({ method: "GET" })
@@ -449,9 +451,22 @@ export type RelatedEvents = {
   distanceKey: DistanceKey | null;
 };
 
+export type SameTownEvent = {
+  id: string;
+  slug: string;
+  name: string;
+  date_raw: string | null;
+  sort_date: string | null;
+  date_is_estimated: boolean;
+  town: string | null;
+  county: string | null;
+};
+
 export type EventPageData = {
   event: EventDetail;
   related: RelatedEvents;
+  /** Other upcoming events in the same town as the current event. */
+  sameTown: SameTownEvent[];
 };
 
 export const getEventPageData = createServerFn({ method: "GET" })
@@ -460,7 +475,7 @@ export const getEventPageData = createServerFn({ method: "GET" })
     const { data: row, error } = await supabaseAdmin
       .from("events")
       .select(
-        "id, slug, name, date_raw, date_from, date_to, sort_date, town, county, region, distances, discipline, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, source_url, organiser, is_featured, date_is_estimated, lat, lng",
+        "id, slug, name, date_raw, date_from, date_to, sort_date, town, county, region, distances, discipline, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, source_url, organiser, is_featured, date_is_estimated, created_at, norm_created_at, lat, lng",
       )
       .eq("slug", data.slug)
       .eq("status", "ACTIVE")
@@ -636,7 +651,43 @@ export const getEventPageData = createServerFn({ method: "GET" })
       }
     }
 
-    return { event, related };
+    // ----- Same-town block -----
+    // Up to 6 other upcoming ACTIVE events whose town matches the current
+    // event's town (case-insensitive). Pure internal linking — the page
+    // only renders the block when there are >=3 siblings.
+    const sameTown: SameTownEvent[] = [];
+    const eventTown = event.town?.trim();
+    if (eventTown) {
+      const today = new Date().toISOString().slice(0, 10);
+      const { data: townRows, error: townErr } = await supabaseAdmin
+        .from("events")
+        .select(
+          "id, slug, name, date_raw, sort_date, date_is_estimated, town, county",
+        )
+        .eq("status", "ACTIVE")
+        .ilike("town", eventTown)
+        .neq("id", event.id)
+        .not("slug", "is", null)
+        .or(`sort_date.gte.${today},sort_date.is.null`)
+        .order("sort_date", { ascending: true, nullsFirst: false })
+        .limit(6);
+      if (!townErr && townRows) {
+        for (const r of townRows) {
+          sameTown.push({
+            id: r.id as string,
+            slug: r.slug as string,
+            name: r.name as string,
+            date_raw: r.date_raw as string | null,
+            sort_date: r.sort_date as string | null,
+            date_is_estimated: !!r.date_is_estimated,
+            town: r.town as string | null,
+            county: r.county as string | null,
+          });
+        }
+      }
+    }
+
+    return { event, related, sameTown };
   });
 
 
