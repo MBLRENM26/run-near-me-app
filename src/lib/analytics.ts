@@ -50,7 +50,7 @@ export const trackEntryClick = (props: {
   slug: string;
   region?: string | null;
   link_type: "entry" | "organiser-site" | "organiser-other";
-  proximity: "future" | "imminent" | "past";
+  proximity: "future" | "today" | "imminent" | "past";
 }) => track("Entry Click", props);
 
 export const trackLocationSet = (method: "device" | "postcode") =>
