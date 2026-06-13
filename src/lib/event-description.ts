@@ -6,6 +6,7 @@
 // dropped entirely when its field is missing.
 
 import { formatEventDate } from "./date";
+import { classifyEventLink } from "./link-trust";
 import type { DistanceKey } from "./distance-filters";
 
 /** "a half marathon", "an ultra marathon", "a 10K race" — with article. */
