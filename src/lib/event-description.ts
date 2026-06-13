@@ -192,6 +192,41 @@ export type EventFaqInput = {
 
 export type EventFaq = { q: string; a: string };
 
+/**
+ * True when the distances string contains at least one real distance token
+ * (numeric like "5K", "10 km", "13.1 mi", "26 miles", or the literal words
+ * "marathon" / "half marathon" / "parkrun"). Pure category strings like
+ * "Ultra", "Trail", "Ultra/Trail", or "Fun Run" return false — they describe
+ * the kind of event, not how far it is, and would mislead in a Q&A.
+ */
+function hasRealDistance(distances: string): boolean {
+  const s = distances.toLowerCase();
+  if (/\d+(\.\d+)?\s*(k|km|mi|mile|miles|m)\b/.test(s)) return true;
+  if (/\b(marathon|half\s*marathon|parkrun)\b/.test(s)) return true;
+  return false;
+}
+
+/**
+ * True when every distance-bearing token in `distances` already appears in
+ * `name` — i.e. the Q would just repeat the title. Tokens are normalised
+ * (lowercase, punctuation stripped, common joiners dropped).
+ */
+function distancesAlreadyInName(name: string, distances: string): boolean {
+  const norm = (s: string) =>
+    s
+      .toLowerCase()
+      .replace(/[,/&+]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  const nameNorm = ` ${norm(name)} `;
+  const tokens = norm(distances)
+    .split(" ")
+    .filter((t) => t && !["and", "the", "race", "run", "fun"].includes(t));
+  if (tokens.length === 0) return false;
+  return tokens.every((t) => nameNorm.includes(` ${t} `) || nameNorm.includes(t));
+}
+
+
 export function buildEventFaqs(e: EventFaqInput): EventFaq[] {
   const faqs: EventFaq[] = [];
   const name = e.name?.trim();
