@@ -230,6 +230,9 @@ export const Route = createFileRoute("/events/$slug")({
         type: "application/ld+json",
         children: JSON.stringify(breadcrumbLd),
       },
+      ...(faqLd
+        ? [{ type: "application/ld+json", children: JSON.stringify(faqLd) }]
+        : []),
     ];
 
     return {
