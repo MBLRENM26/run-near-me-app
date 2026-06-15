@@ -307,7 +307,7 @@ function EventDetailPage() {
   });
 
   // No trustworthy official link → invite the organiser to claim the listing.
-  const showClaim = !primaryCta;
+  const showClaim = !primaryCta && !isPast;
 
   // "About this listing" — site-level trust Q&A, NOT event-specific FAQs.
   // 3 fixed Qs; a 4th appears only when the listing has no trusted entry
