@@ -380,9 +380,14 @@ function EventDetailPage() {
 
           <div className="mt-5 space-y-2 text-base text-muted-foreground">
             {dateLabel && (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Calendar className="h-4 w-4 shrink-0" />
                 <span>{dateLabel}</span>
+                {isPast && (
+                  <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                    Took place
+                  </span>
+                )}
               </div>
             )}
             {loc && (
@@ -422,6 +427,25 @@ function EventDetailPage() {
               {proximityNote && (
                 <p className="mt-3 text-sm text-muted-foreground">
                   {proximityNote}
+                </p>
+              )}
+            </div>
+          )}
+
+          {isPast && (
+            <div className="mt-8 rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+              <p>This event has taken place.</p>
+              {pastOrganiserLink?.href && (
+                <p className="mt-1">
+                  <a
+                    href={pastOrganiserLink.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-primary hover:underline"
+                  >
+                    Visit organiser website
+                  </a>{" "}
+                  for results or future dates.
                 </p>
               )}
             </div>
