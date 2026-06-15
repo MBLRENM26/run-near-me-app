@@ -55,7 +55,7 @@ export const Route = createFileRoute("/search")({
 });
 
 function SearchPage() {
-  const { q, results, isPostcode } = Route.useLoaderData();
+  const { q, results, isPostcode } = Route.useLoaderData() as LoaderData;
   const navigate = useNavigate();
   const [searchLogId, setSearchLogId] = useState<string | null>(null);
 
