@@ -39,6 +39,7 @@ import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/em
 import { Route as ApiPublicTrackSearchClickRouteImport } from './routes/api/public/track-search-click'
 import { Route as ApiPublicTrackSearchRouteImport } from './routes/api/public/track-search'
 import { Route as ApiPublicImportEventsRouteImport } from './routes/api/public/import-events'
+import { Route as AdminShellAdminSearchRouteImport } from './routes/_adminShell.admin.search'
 import { Route as AdminShellAdminClaimsRouteImport } from './routes/_adminShell.admin.claims'
 import { Route as AdminShellAdminEventsIndexRouteImport } from './routes/_adminShell.admin.events.index'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
@@ -202,6 +203,11 @@ const ApiPublicImportEventsRoute = ApiPublicImportEventsRouteImport.update({
   path: '/api/public/import-events',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminShellAdminSearchRoute = AdminShellAdminSearchRouteImport.update({
+  id: '/admin/search',
+  path: '/admin/search',
+  getParentRoute: () => AdminShellRoute,
+} as any)
 const AdminShellAdminClaimsRoute = AdminShellAdminClaimsRouteImport.update({
   id: '/admin/claims',
   path: '/admin/claims',
@@ -286,6 +292,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/parkrun-events/': typeof ParkrunEventsIndexRoute
   '/admin/claims': typeof AdminShellAdminClaimsRoute
+  '/admin/search': typeof AdminShellAdminSearchRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
   '/api/public/track-search': typeof ApiPublicTrackSearchRoute
   '/api/public/track-search-click': typeof ApiPublicTrackSearchClickRoute
@@ -327,6 +334,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/parkrun-events': typeof ParkrunEventsIndexRoute
   '/admin/claims': typeof AdminShellAdminClaimsRoute
+  '/admin/search': typeof AdminShellAdminSearchRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
   '/api/public/track-search': typeof ApiPublicTrackSearchRoute
   '/api/public/track-search-click': typeof ApiPublicTrackSearchClickRoute
@@ -370,6 +378,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/parkrun-events/': typeof ParkrunEventsIndexRoute
   '/_adminShell/admin/claims': typeof AdminShellAdminClaimsRoute
+  '/_adminShell/admin/search': typeof AdminShellAdminSearchRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
   '/api/public/track-search': typeof ApiPublicTrackSearchRoute
   '/api/public/track-search-click': typeof ApiPublicTrackSearchClickRoute
@@ -413,6 +422,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/parkrun-events/'
     | '/admin/claims'
+    | '/admin/search'
     | '/api/public/import-events'
     | '/api/public/track-search'
     | '/api/public/track-search-click'
@@ -454,6 +464,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/parkrun-events'
     | '/admin/claims'
+    | '/admin/search'
     | '/api/public/import-events'
     | '/api/public/track-search'
     | '/api/public/track-search-click'
@@ -496,6 +507,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/parkrun-events/'
     | '/_adminShell/admin/claims'
+    | '/_adminShell/admin/search'
     | '/api/public/import-events'
     | '/api/public/track-search'
     | '/api/public/track-search-click'
@@ -764,6 +776,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicImportEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_adminShell/admin/search': {
+      id: '/_adminShell/admin/search'
+      path: '/admin/search'
+      fullPath: '/admin/search'
+      preLoaderRoute: typeof AdminShellAdminSearchRouteImport
+      parentRoute: typeof AdminShellRoute
+    }
     '/_adminShell/admin/claims': {
       id: '/_adminShell/admin/claims'
       path: '/admin/claims'
@@ -839,6 +858,7 @@ declare module '@tanstack/react-router' {
 
 interface AdminShellRouteChildren {
   AdminShellAdminClaimsRoute: typeof AdminShellAdminClaimsRoute
+  AdminShellAdminSearchRoute: typeof AdminShellAdminSearchRoute
   AdminShellAdminEventsIdRoute: typeof AdminShellAdminEventsIdRoute
   AdminShellAdminEventsDuplicatesRoute: typeof AdminShellAdminEventsDuplicatesRoute
   AdminShellAdminEventsIndexRoute: typeof AdminShellAdminEventsIndexRoute
@@ -846,6 +866,7 @@ interface AdminShellRouteChildren {
 
 const AdminShellRouteChildren: AdminShellRouteChildren = {
   AdminShellAdminClaimsRoute: AdminShellAdminClaimsRoute,
+  AdminShellAdminSearchRoute: AdminShellAdminSearchRoute,
   AdminShellAdminEventsIdRoute: AdminShellAdminEventsIdRoute,
   AdminShellAdminEventsDuplicatesRoute: AdminShellAdminEventsDuplicatesRoute,
   AdminShellAdminEventsIndexRoute: AdminShellAdminEventsIndexRoute,
