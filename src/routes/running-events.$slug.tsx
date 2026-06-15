@@ -102,7 +102,7 @@ function RegionPage() {
         const { data, error } = await supabase
           .from("events")
           .select(
-            "id, slug, name, date_raw, sort_date, town, county, distance_type:distances, entry_fee, entry_url, organiser_url, source_url, is_featured, date_is_estimated",
+            "id, slug, name, date_raw, sort_date, town, county, distance_type:distances, entry_fee, entry_url, organiser_url, is_featured, date_is_estimated",
           )
           .eq("region", region.name)
           .eq("status", "ACTIVE")

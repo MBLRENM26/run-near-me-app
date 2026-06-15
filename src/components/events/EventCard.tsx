@@ -14,7 +14,7 @@ export interface EventCardData {
   entry_fee: string | null;
   entry_url: string | null;
   organiser_url: string | null;
-  source_url: string | null;
+  
   is_featured: boolean;
   sort_date?: string | null;
   date_is_estimated?: boolean | null;
