@@ -147,7 +147,7 @@ function HomePage() {
       const { data, error } = await supabase
         .from("events")
         .select(
-          "id, slug, name, date_raw, town, county, distance_type:distances, entry_fee, entry_url, organiser_url, source_url, is_featured, date_is_estimated",
+          "id, slug, name, date_raw, town, county, distance_type:distances, entry_fee, entry_url, organiser_url, is_featured, date_is_estimated",
         )
         .eq("status", "ACTIVE")
         .eq("date_is_estimated", false)
@@ -191,7 +191,6 @@ function HomePage() {
       entry_fee: e.entry_fee,
       entry_url: e.entry_url,
       organiser_url: e.organiser_url,
-      source_url: e.source_url,
       is_featured: e.is_featured,
       date_is_estimated: e.date_is_estimated,
       distanceMiles: e.distance_miles,
@@ -422,7 +421,7 @@ function HomePage() {
                     entry_fee: e.entry_fee,
                     entry_url: e.entry_url,
                     organiser_url: e.organiser_url,
-                    source_url: e.source_url,
+                    
                     is_featured: e.is_featured,
                     date_is_estimated: e.date_is_estimated,
                   }}

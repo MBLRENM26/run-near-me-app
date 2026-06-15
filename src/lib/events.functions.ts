@@ -55,7 +55,10 @@ export type EventDetail = {
   entry_fee: string | null;
   entry_url: string | null;
   organiser_url: string | null;
-  source_url: string | null;
+  // source_url intentionally NOT exposed publicly — stays in DB for provenance
+  // and admin views only. Shipping it to the client puts the original
+  // aggregator domain in the SSR hydration JSON, where scrapers + Google's
+  // cache can pick it up. See mem://constraints/no-source-attribution.
   organiser: string | null;
   is_featured: boolean;
   date_is_estimated: boolean;
@@ -69,7 +72,7 @@ export const getEventBySlug = createServerFn({ method: "GET" })
     const { data: row, error } = await supabaseAdmin
       .from("events")
       .select(
-        "id, slug, name, date_raw, date_from, date_to, sort_date, town, county, region, distances, discipline, entry_fee, entry_url, organiser_url, source_url, organiser, is_featured, date_is_estimated",
+        "id, slug, name, date_raw, date_from, date_to, sort_date, town, county, region, distances, discipline, entry_fee, entry_url, organiser_url, organiser, is_featured, date_is_estimated",
       )
       .eq("slug", data.slug)
       .eq("status", "ACTIVE")
@@ -138,7 +141,7 @@ export type DistanceEvent = {
   entry_fee: string | null;
   entry_url: string | null;
   organiser_url: string | null;
-  source_url: string | null;
+  // source_url intentionally omitted — see EventDetail above.
   is_featured: boolean;
   date_is_estimated: boolean;
   is_recurring?: boolean;
@@ -168,7 +171,7 @@ export const getEventsByDistance = createServerFn({ method: "GET" })
       const { data: rows, error } = await supabaseAdmin
         .from("events")
         .select(
-          "id, slug, name, date_raw, sort_date, town, county, region, distances, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, source_url, is_featured, date_is_estimated, is_recurring",
+          "id, slug, name, date_raw, sort_date, town, county, region, distances, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, is_featured, date_is_estimated, is_recurring",
         )
         .eq("status", "ACTIVE")
         .or(`sort_date.gte.${today},sort_date.is.null`)
@@ -202,7 +205,6 @@ export const getEventsByDistance = createServerFn({ method: "GET" })
             entry_fee: r.entry_fee as string | null,
             entry_url: r.entry_url as string | null,
             organiser_url: r.organiser_url as string | null,
-            source_url: r.source_url as string | null,
             is_featured: !!r.is_featured,
             date_is_estimated: !!r.date_is_estimated,
             is_recurring: !!r.is_recurring,
@@ -272,7 +274,7 @@ export const getEventsByRegionAndDistance = createServerFn({ method: "GET" })
       const { data: rows, error } = await supabaseAdmin
         .from("events")
         .select(
-          "id, slug, name, date_raw, sort_date, town, county, region, distances, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, source_url, is_featured, date_is_estimated, is_recurring",
+          "id, slug, name, date_raw, sort_date, town, county, region, distances, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, is_featured, date_is_estimated, is_recurring",
         )
         .eq("status", "ACTIVE")
         .eq("region", region.name)
@@ -298,7 +300,7 @@ export const getEventsByRegionAndDistance = createServerFn({ method: "GET" })
           entry_fee: r.entry_fee as string | null,
           entry_url: r.entry_url as string | null,
           organiser_url: r.organiser_url as string | null,
-          source_url: r.source_url as string | null,
+          
           is_featured: !!r.is_featured,
           date_is_estimated: !!r.date_is_estimated,
           is_recurring: !!r.is_recurring,
@@ -475,7 +477,7 @@ export const getEventPageData = createServerFn({ method: "GET" })
     const { data: row, error } = await supabaseAdmin
       .from("events")
       .select(
-        "id, slug, name, date_raw, date_from, date_to, sort_date, town, county, region, distances, discipline, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, source_url, organiser, is_featured, date_is_estimated, created_at, norm_created_at, lat, lng",
+        "id, slug, name, date_raw, date_from, date_to, sort_date, town, county, region, distances, discipline, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, organiser, is_featured, date_is_estimated, created_at, norm_created_at, lat, lng",
       )
       .eq("slug", data.slug)
       .eq("status", "ACTIVE")

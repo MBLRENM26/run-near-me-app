@@ -45,7 +45,7 @@ function toEventCardData(e: DistanceEvent): EventCardData {
     entry_fee: e.entry_fee,
     entry_url: e.entry_url,
     organiser_url: e.organiser_url,
-    source_url: e.source_url,
+    
     is_featured: e.is_featured,
     date_is_estimated: e.date_is_estimated,
     is_recurring: e.is_recurring,
