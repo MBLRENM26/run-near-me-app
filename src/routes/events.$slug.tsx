@@ -81,6 +81,9 @@ export const Route = createFileRoute("/events/$slug")({
     const dateLabel = formatEventDate(e);
     const distance = e.distances?.trim() || e.discipline?.trim() || "running";
 
+    const headProximity = eventProximity(e);
+    const headIsPast = headProximity === "past";
+
     // No fee claims in the description — scraped single-value pricing goes
     // stale and misleads. Only promise "the official site" when we actually
     // have a trustworthy official link to show.
@@ -95,15 +98,26 @@ export const Route = createFileRoute("/events/$slug")({
       : dateLabel
         ? ` on ${dateLabel}`
         : "";
-    const description = [
-      `${e.name} is a ${distance} race${loc ? ` in ${loc}` : ""}${when}.`,
-      hasOfficialLink
-        ? "See route details, start time and how to enter on the official site."
-        : "See date, location and distance details, plus more races nearby.",
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .slice(0, 300);
+    const description = headIsPast
+      ? [
+          `Took place${dateLabel ? ` on ${dateLabel}` : ""}.`,
+          `${e.name} was a ${distance} race${loc ? ` in ${loc}` : ""}.`,
+          hasOfficialLink
+            ? "Visit the organiser website for results or future dates."
+            : "See more upcoming races nearby.",
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .slice(0, 300)
+      : [
+          `${e.name} is a ${distance} race${loc ? ` in ${loc}` : ""}${when}.`,
+          hasOfficialLink
+            ? "See route details, start time and how to enter on the official site."
+            : "See date, location and distance details, plus more races nearby.",
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .slice(0, 300);
 
     // Event JSON-LD: Google requires a full-precision startDate and a Place
     // location. Estimated (month-only) dates can't satisfy the date format,
