@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { requireAdminSession } from "@/lib/admin-session.server";
+import { isAdminAuthenticated } from "@/lib/admin-session.server";
 
 const inputSchema = z.object({
   days: z.number().int().min(1).max(365).default(30),
@@ -26,7 +26,7 @@ export type SearchAnalytics = {
 export const getSearchAnalytics = createServerFn({ method: "GET" })
   .inputValidator((input: unknown) => inputSchema.parse(input))
   .handler(async ({ data }): Promise<SearchAnalytics> => {
-    await requireAdminSession();
+    if (!isAdminAuthenticated()) throw new Error("Unauthorized");
 
     const since = new Date(
       Date.now() - data.days * 24 * 60 * 60 * 1000,
