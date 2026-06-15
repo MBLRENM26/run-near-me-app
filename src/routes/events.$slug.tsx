@@ -245,38 +245,50 @@ function EventDetailPage() {
 
   // Imminent (within 7 days) or past events don't promise open entries.
   const proximity = eventProximity(e);
+  const isPast = proximity === "past";
 
+  // Past events: no entry CTA at all — the race is done. Keep organiser
+  // links accessible inline but stop promising "Enter now" / "View event details".
   let primaryCta:
     | { href: string; label: string; linkType: "entry" | "organiser-site" | "organiser-other" }
     | null = null;
-  if (entryLink.kind === "entry") {
-    primaryCta = {
-      href: entryLink.href!,
-      label: proximity ? "View event details" : "Enter now",
-      linkType: "entry",
-    };
-  } else if (entryLink.kind === "organiser-site") {
-    primaryCta = {
-      href: entryLink.href!,
-      label: "Visit organiser website",
-      linkType: "organiser-site",
-    };
-  } else if (isTrustedLink(orgLink)) {
-    primaryCta = {
-      href: orgLink.href!,
-      label: "Visit organiser website",
-      linkType: "organiser-other",
-    };
+  if (!isPast) {
+    if (entryLink.kind === "entry") {
+      primaryCta = {
+        href: entryLink.href!,
+        label: proximity ? "View event details" : "Enter now",
+        linkType: "entry",
+      };
+    } else if (entryLink.kind === "organiser-site") {
+      primaryCta = {
+        href: entryLink.href!,
+        label: "Visit organiser website",
+        linkType: "organiser-site",
+      };
+    } else if (isTrustedLink(orgLink)) {
+      primaryCta = {
+        href: orgLink.href!,
+        label: "Visit organiser website",
+        linkType: "organiser-other",
+      };
+    }
   }
 
   const proximityNote =
-    proximity === "past"
-      ? "This event has taken place."
-      : proximity === "today"
-        ? "Race day is today — check the linked event page for availability."
-        : proximity === "imminent"
-          ? "Race day is near — entries may have closed. Check the linked event page for availability."
-          : null;
+    proximity === "today"
+      ? "Race day is today — check the linked event page for availability."
+      : proximity === "imminent"
+        ? "Race day is near — entries may have closed. Check the linked event page for availability."
+        : null;
+
+  // Past events still link to the organiser inline (read-only) when one exists.
+  const pastOrganiserLink = isPast
+    ? entryLink.kind === "organiser-site"
+      ? entryLink
+      : isTrustedLink(orgLink)
+        ? orgLink
+        : null
+    : null;
 
   const about = buildAboutParagraph({
     slug: e.slug,
