@@ -437,6 +437,21 @@ export type Database = {
           read_ct: number
         }[]
       }
+      search_events_v1: {
+        Args: { lim?: number; q: string }
+        Returns: {
+          county: string
+          date_is_estimated: boolean
+          distances: string
+          id: string
+          is_featured: boolean
+          is_past: boolean
+          name: string
+          slug: string
+          sort_date: string
+          town: string
+        }[]
+      }
       slugify: { Args: { input: string }; Returns: string }
     }
     Enums: {
