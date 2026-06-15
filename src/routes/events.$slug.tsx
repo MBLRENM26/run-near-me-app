@@ -81,6 +81,9 @@ export const Route = createFileRoute("/events/$slug")({
     const dateLabel = formatEventDate(e);
     const distance = e.distances?.trim() || e.discipline?.trim() || "running";
 
+    const headProximity = eventProximity(e);
+    const headIsPast = headProximity === "past";
+
     // No fee claims in the description — scraped single-value pricing goes
     // stale and misleads. Only promise "the official site" when we actually
     // have a trustworthy official link to show.
@@ -95,15 +98,26 @@ export const Route = createFileRoute("/events/$slug")({
       : dateLabel
         ? ` on ${dateLabel}`
         : "";
-    const description = [
-      `${e.name} is a ${distance} race${loc ? ` in ${loc}` : ""}${when}.`,
-      hasOfficialLink
-        ? "See route details, start time and how to enter on the official site."
-        : "See date, location and distance details, plus more races nearby.",
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .slice(0, 300);
+    const description = headIsPast
+      ? [
+          `Took place${dateLabel ? ` on ${dateLabel}` : ""}.`,
+          `${e.name} was a ${distance} race${loc ? ` in ${loc}` : ""}.`,
+          hasOfficialLink
+            ? "Visit the organiser website for results or future dates."
+            : "See more upcoming races nearby.",
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .slice(0, 300)
+      : [
+          `${e.name} is a ${distance} race${loc ? ` in ${loc}` : ""}${when}.`,
+          hasOfficialLink
+            ? "See route details, start time and how to enter on the official site."
+            : "See date, location and distance details, plus more races nearby.",
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .slice(0, 300);
 
     // Event JSON-LD: Google requires a full-precision startDate and a Place
     // location. Estimated (month-only) dates can't satisfy the date format,
@@ -245,38 +259,50 @@ function EventDetailPage() {
 
   // Imminent (within 7 days) or past events don't promise open entries.
   const proximity = eventProximity(e);
+  const isPast = proximity === "past";
 
+  // Past events: no entry CTA at all — the race is done. Keep organiser
+  // links accessible inline but stop promising "Enter now" / "View event details".
   let primaryCta:
     | { href: string; label: string; linkType: "entry" | "organiser-site" | "organiser-other" }
     | null = null;
-  if (entryLink.kind === "entry") {
-    primaryCta = {
-      href: entryLink.href!,
-      label: proximity ? "View event details" : "Enter now",
-      linkType: "entry",
-    };
-  } else if (entryLink.kind === "organiser-site") {
-    primaryCta = {
-      href: entryLink.href!,
-      label: "Visit organiser website",
-      linkType: "organiser-site",
-    };
-  } else if (isTrustedLink(orgLink)) {
-    primaryCta = {
-      href: orgLink.href!,
-      label: "Visit organiser website",
-      linkType: "organiser-other",
-    };
+  if (!isPast) {
+    if (entryLink.kind === "entry") {
+      primaryCta = {
+        href: entryLink.href!,
+        label: proximity ? "View event details" : "Enter now",
+        linkType: "entry",
+      };
+    } else if (entryLink.kind === "organiser-site") {
+      primaryCta = {
+        href: entryLink.href!,
+        label: "Visit organiser website",
+        linkType: "organiser-site",
+      };
+    } else if (isTrustedLink(orgLink)) {
+      primaryCta = {
+        href: orgLink.href!,
+        label: "Visit organiser website",
+        linkType: "organiser-other",
+      };
+    }
   }
 
   const proximityNote =
-    proximity === "past"
-      ? "This event has taken place."
-      : proximity === "today"
-        ? "Race day is today — check the linked event page for availability."
-        : proximity === "imminent"
-          ? "Race day is near — entries may have closed. Check the linked event page for availability."
-          : null;
+    proximity === "today"
+      ? "Race day is today — check the linked event page for availability."
+      : proximity === "imminent"
+        ? "Race day is near — entries may have closed. Check the linked event page for availability."
+        : null;
+
+  // Past events still link to the organiser inline (read-only) when one exists.
+  const pastOrganiserLink = isPast
+    ? entryLink.kind === "organiser-site"
+      ? entryLink
+      : isTrustedLink(orgLink)
+        ? orgLink
+        : null
+    : null;
 
   const about = buildAboutParagraph({
     slug: e.slug,
@@ -295,7 +321,7 @@ function EventDetailPage() {
   });
 
   // No trustworthy official link → invite the organiser to claim the listing.
-  const showClaim = !primaryCta;
+  const showClaim = !primaryCta && !isPast;
 
   // "About this listing" — site-level trust Q&A, NOT event-specific FAQs.
   // 3 fixed Qs; a 4th appears only when the listing has no trusted entry
@@ -368,9 +394,14 @@ function EventDetailPage() {
 
           <div className="mt-5 space-y-2 text-base text-muted-foreground">
             {dateLabel && (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Calendar className="h-4 w-4 shrink-0" />
                 <span>{dateLabel}</span>
+                {isPast && (
+                  <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                    Took place
+                  </span>
+                )}
               </div>
             )}
             {loc && (
@@ -410,6 +441,25 @@ function EventDetailPage() {
               {proximityNote && (
                 <p className="mt-3 text-sm text-muted-foreground">
                   {proximityNote}
+                </p>
+              )}
+            </div>
+          )}
+
+          {isPast && (
+            <div className="mt-8 rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+              <p>This event has taken place.</p>
+              {pastOrganiserLink?.href && (
+                <p className="mt-1">
+                  <a
+                    href={pastOrganiserLink.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-primary hover:underline"
+                  >
+                    Visit organiser website
+                  </a>{" "}
+                  for results or future dates.
                 </p>
               )}
             </div>

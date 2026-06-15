@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as UltraMarathonsRouteImport } from './routes/ultra-marathons'
 import { Route as TrailRunningEventsRouteImport } from './routes/trail-running-events'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as SearchRouteImport } from './routes/search'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as MarathonsRouteImport } from './routes/marathons'
@@ -35,7 +36,10 @@ import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as RunningEventsSlugDistanceRouteImport } from './routes/running-events.$slug_.$distance'
 import { Route as ParkrunEventsRegionRegionRouteImport } from './routes/parkrun-events.region.$region'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
+import { Route as ApiPublicTrackSearchClickRouteImport } from './routes/api/public/track-search-click'
+import { Route as ApiPublicTrackSearchRouteImport } from './routes/api/public/track-search'
 import { Route as ApiPublicImportEventsRouteImport } from './routes/api/public/import-events'
+import { Route as AdminShellAdminSearchRouteImport } from './routes/_adminShell.admin.search'
 import { Route as AdminShellAdminClaimsRouteImport } from './routes/_adminShell.admin.claims'
 import { Route as AdminShellAdminEventsIndexRouteImport } from './routes/_adminShell.admin.events.index'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
@@ -60,6 +64,11 @@ const TrailRunningEventsRoute = TrailRunningEventsRouteImport.update({
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SearchRoute = SearchRouteImport.update({
+  id: '/search',
+  path: '/search',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
@@ -178,10 +187,26 @@ const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   path: '/lovable/email/suppression',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicTrackSearchClickRoute =
+  ApiPublicTrackSearchClickRouteImport.update({
+    id: '/api/public/track-search-click',
+    path: '/api/public/track-search-click',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicTrackSearchRoute = ApiPublicTrackSearchRouteImport.update({
+  id: '/api/public/track-search',
+  path: '/api/public/track-search',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicImportEventsRoute = ApiPublicImportEventsRouteImport.update({
   id: '/api/public/import-events',
   path: '/api/public/import-events',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminShellAdminSearchRoute = AdminShellAdminSearchRouteImport.update({
+  id: '/admin/search',
+  path: '/admin/search',
+  getParentRoute: () => AdminShellRoute,
 } as any)
 const AdminShellAdminClaimsRoute = AdminShellAdminClaimsRouteImport.update({
   id: '/admin/claims',
@@ -255,6 +280,7 @@ export interface FileRoutesByFullPath {
   '/marathons': typeof MarathonsRoute
   '/privacy': typeof PrivacyRoute
   '/robots.txt': typeof RobotsDottxtRoute
+  '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/trail-running-events': typeof TrailRunningEventsRoute
   '/ultra-marathons': typeof UltraMarathonsRoute
@@ -266,7 +292,10 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/parkrun-events/': typeof ParkrunEventsIndexRoute
   '/admin/claims': typeof AdminShellAdminClaimsRoute
+  '/admin/search': typeof AdminShellAdminSearchRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
+  '/api/public/track-search': typeof ApiPublicTrackSearchRoute
+  '/api/public/track-search-click': typeof ApiPublicTrackSearchClickRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/parkrun-events/region/$region': typeof ParkrunEventsRegionRegionRoute
   '/running-events/$slug/$distance': typeof RunningEventsSlugDistanceRoute
@@ -293,6 +322,7 @@ export interface FileRoutesByTo {
   '/marathons': typeof MarathonsRoute
   '/privacy': typeof PrivacyRoute
   '/robots.txt': typeof RobotsDottxtRoute
+  '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/trail-running-events': typeof TrailRunningEventsRoute
   '/ultra-marathons': typeof UltraMarathonsRoute
@@ -304,7 +334,10 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/parkrun-events': typeof ParkrunEventsIndexRoute
   '/admin/claims': typeof AdminShellAdminClaimsRoute
+  '/admin/search': typeof AdminShellAdminSearchRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
+  '/api/public/track-search': typeof ApiPublicTrackSearchRoute
+  '/api/public/track-search-click': typeof ApiPublicTrackSearchClickRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/parkrun-events/region/$region': typeof ParkrunEventsRegionRegionRoute
   '/running-events/$slug/$distance': typeof RunningEventsSlugDistanceRoute
@@ -333,6 +366,7 @@ export interface FileRoutesById {
   '/marathons': typeof MarathonsRoute
   '/privacy': typeof PrivacyRoute
   '/robots.txt': typeof RobotsDottxtRoute
+  '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/trail-running-events': typeof TrailRunningEventsRoute
   '/ultra-marathons': typeof UltraMarathonsRoute
@@ -344,7 +378,10 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/parkrun-events/': typeof ParkrunEventsIndexRoute
   '/_adminShell/admin/claims': typeof AdminShellAdminClaimsRoute
+  '/_adminShell/admin/search': typeof AdminShellAdminSearchRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
+  '/api/public/track-search': typeof ApiPublicTrackSearchRoute
+  '/api/public/track-search-click': typeof ApiPublicTrackSearchClickRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/parkrun-events/region/$region': typeof ParkrunEventsRegionRegionRoute
   '/running-events/$slug_/$distance': typeof RunningEventsSlugDistanceRoute
@@ -373,6 +410,7 @@ export interface FileRouteTypes {
     | '/marathons'
     | '/privacy'
     | '/robots.txt'
+    | '/search'
     | '/sitemap.xml'
     | '/trail-running-events'
     | '/ultra-marathons'
@@ -384,7 +422,10 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/parkrun-events/'
     | '/admin/claims'
+    | '/admin/search'
     | '/api/public/import-events'
+    | '/api/public/track-search'
+    | '/api/public/track-search-click'
     | '/lovable/email/suppression'
     | '/parkrun-events/region/$region'
     | '/running-events/$slug/$distance'
@@ -411,6 +452,7 @@ export interface FileRouteTypes {
     | '/marathons'
     | '/privacy'
     | '/robots.txt'
+    | '/search'
     | '/sitemap.xml'
     | '/trail-running-events'
     | '/ultra-marathons'
@@ -422,7 +464,10 @@ export interface FileRouteTypes {
     | '/admin'
     | '/parkrun-events'
     | '/admin/claims'
+    | '/admin/search'
     | '/api/public/import-events'
+    | '/api/public/track-search'
+    | '/api/public/track-search-click'
     | '/lovable/email/suppression'
     | '/parkrun-events/region/$region'
     | '/running-events/$slug/$distance'
@@ -450,6 +495,7 @@ export interface FileRouteTypes {
     | '/marathons'
     | '/privacy'
     | '/robots.txt'
+    | '/search'
     | '/sitemap.xml'
     | '/trail-running-events'
     | '/ultra-marathons'
@@ -461,7 +507,10 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/parkrun-events/'
     | '/_adminShell/admin/claims'
+    | '/_adminShell/admin/search'
     | '/api/public/import-events'
+    | '/api/public/track-search'
+    | '/api/public/track-search-click'
     | '/lovable/email/suppression'
     | '/parkrun-events/region/$region'
     | '/running-events/$slug_/$distance'
@@ -490,6 +539,7 @@ export interface RootRouteChildren {
   MarathonsRoute: typeof MarathonsRoute
   PrivacyRoute: typeof PrivacyRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
+  SearchRoute: typeof SearchRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TrailRunningEventsRoute: typeof TrailRunningEventsRoute
   UltraMarathonsRoute: typeof UltraMarathonsRoute
@@ -501,6 +551,8 @@ export interface RootRouteChildren {
   AdminIndexRoute: typeof AdminIndexRoute
   ParkrunEventsIndexRoute: typeof ParkrunEventsIndexRoute
   ApiPublicImportEventsRoute: typeof ApiPublicImportEventsRoute
+  ApiPublicTrackSearchRoute: typeof ApiPublicTrackSearchRoute
+  ApiPublicTrackSearchClickRoute: typeof ApiPublicTrackSearchClickRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ParkrunEventsRegionRegionRoute: typeof ParkrunEventsRegionRegionRoute
   RunningEventsSlugDistanceRoute: typeof RunningEventsSlugDistanceRoute
@@ -533,6 +585,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/search': {
+      id: '/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof SearchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/robots.txt': {
@@ -696,12 +755,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailSuppressionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/track-search-click': {
+      id: '/api/public/track-search-click'
+      path: '/api/public/track-search-click'
+      fullPath: '/api/public/track-search-click'
+      preLoaderRoute: typeof ApiPublicTrackSearchClickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/track-search': {
+      id: '/api/public/track-search'
+      path: '/api/public/track-search'
+      fullPath: '/api/public/track-search'
+      preLoaderRoute: typeof ApiPublicTrackSearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/import-events': {
       id: '/api/public/import-events'
       path: '/api/public/import-events'
       fullPath: '/api/public/import-events'
       preLoaderRoute: typeof ApiPublicImportEventsRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_adminShell/admin/search': {
+      id: '/_adminShell/admin/search'
+      path: '/admin/search'
+      fullPath: '/admin/search'
+      preLoaderRoute: typeof AdminShellAdminSearchRouteImport
+      parentRoute: typeof AdminShellRoute
     }
     '/_adminShell/admin/claims': {
       id: '/_adminShell/admin/claims'
@@ -778,6 +858,7 @@ declare module '@tanstack/react-router' {
 
 interface AdminShellRouteChildren {
   AdminShellAdminClaimsRoute: typeof AdminShellAdminClaimsRoute
+  AdminShellAdminSearchRoute: typeof AdminShellAdminSearchRoute
   AdminShellAdminEventsIdRoute: typeof AdminShellAdminEventsIdRoute
   AdminShellAdminEventsDuplicatesRoute: typeof AdminShellAdminEventsDuplicatesRoute
   AdminShellAdminEventsIndexRoute: typeof AdminShellAdminEventsIndexRoute
@@ -785,6 +866,7 @@ interface AdminShellRouteChildren {
 
 const AdminShellRouteChildren: AdminShellRouteChildren = {
   AdminShellAdminClaimsRoute: AdminShellAdminClaimsRoute,
+  AdminShellAdminSearchRoute: AdminShellAdminSearchRoute,
   AdminShellAdminEventsIdRoute: AdminShellAdminEventsIdRoute,
   AdminShellAdminEventsDuplicatesRoute: AdminShellAdminEventsDuplicatesRoute,
   AdminShellAdminEventsIndexRoute: AdminShellAdminEventsIndexRoute,
@@ -808,6 +890,7 @@ const rootRouteChildren: RootRouteChildren = {
   MarathonsRoute: MarathonsRoute,
   PrivacyRoute: PrivacyRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
+  SearchRoute: SearchRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TrailRunningEventsRoute: TrailRunningEventsRoute,
   UltraMarathonsRoute: UltraMarathonsRoute,
@@ -819,6 +902,8 @@ const rootRouteChildren: RootRouteChildren = {
   AdminIndexRoute: AdminIndexRoute,
   ParkrunEventsIndexRoute: ParkrunEventsIndexRoute,
   ApiPublicImportEventsRoute: ApiPublicImportEventsRoute,
+  ApiPublicTrackSearchRoute: ApiPublicTrackSearchRoute,
+  ApiPublicTrackSearchClickRoute: ApiPublicTrackSearchClickRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ParkrunEventsRegionRegionRoute: ParkrunEventsRegionRegionRoute,
   RunningEventsSlugDistanceRoute: RunningEventsSlugDistanceRoute,

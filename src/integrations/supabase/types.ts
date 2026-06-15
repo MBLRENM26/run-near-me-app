@@ -171,6 +171,7 @@ export type Database = {
           status: string
           terrain_tags: string[]
           town: string | null
+          tsv: unknown
         }
         Insert: {
           country?: string | null
@@ -209,6 +210,7 @@ export type Database = {
           status?: string
           terrain_tags?: string[]
           town?: string | null
+          tsv?: unknown
         }
         Update: {
           country?: string | null
@@ -247,6 +249,7 @@ export type Database = {
           status?: string
           terrain_tags?: string[]
           town?: string | null
+          tsv?: unknown
         }
         Relationships: [
           {
@@ -257,6 +260,65 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      search_clicks: {
+        Row: {
+          clicked_slug: string
+          created_at: string
+          id: string
+          position: number | null
+          search_log_id: string
+        }
+        Insert: {
+          clicked_slug: string
+          created_at?: string
+          id?: string
+          position?: number | null
+          search_log_id: string
+        }
+        Update: {
+          clicked_slug?: string
+          created_at?: string
+          id?: string
+          position?: number | null
+          search_log_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "search_clicks_search_log_id_fkey"
+            columns: ["search_log_id"]
+            isOneToOne: false
+            referencedRelation: "search_logs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      search_logs: {
+        Row: {
+          created_at: string
+          id: string
+          ip_hash: string | null
+          query: string
+          results_count: number
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          query: string
+          results_count: number
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          query?: string
+          results_count?: number
+          user_agent?: string | null
+        }
+        Relationships: []
       }
       submissions: {
         Row: {
@@ -373,6 +435,21 @@ export type Database = {
           message: Json
           msg_id: number
           read_ct: number
+        }[]
+      }
+      search_events_v1: {
+        Args: { lim?: number; q: string }
+        Returns: {
+          county: string
+          date_is_estimated: boolean
+          distances: string
+          id: string
+          is_featured: boolean
+          is_past: boolean
+          name: string
+          slug: string
+          sort_date: string
+          town: string
         }[]
       }
       slugify: { Args: { input: string }; Returns: string }

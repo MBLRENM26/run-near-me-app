@@ -46,6 +46,12 @@ function AdminLayout() {
             >
               Events
             </Link>
+            <Link
+              to="/admin/search"
+              className="text-sm font-medium text-foreground hover:text-primary"
+            >
+              Search
+            </Link>
           </div>
           <Button variant="ghost" size="sm" onClick={handleLogout}>
             Log out

@@ -5,7 +5,7 @@ export const Route = createFileRoute("/robots.txt")({
   server: {
     handlers: {
       GET: async () => {
-        const body = `User-agent: *\nAllow: /\nDisallow: /admin/\n\nSitemap: ${SITE_URL}/sitemap.xml\n`;
+        const body = `User-agent: *\nAllow: /\nDisallow: /admin/\nDisallow: /search\n\nSitemap: ${SITE_URL}/sitemap.xml\n`;
         return new Response(body, {
           headers: {
             "content-type": "text/plain; charset=utf-8",
