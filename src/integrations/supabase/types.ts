@@ -14,6 +14,171 @@ export type Database = {
   }
   public: {
     Tables: {
+      club_claims: {
+        Row: {
+          admin_note: string | null
+          claimant_email: string
+          claimant_name: string
+          club_id: string
+          club_slug: string
+          created_at: string
+          id: string
+          message: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          role_at_club: string
+          status: string
+          submitted_at: string
+          updated_at: string
+          verification_hint: string | null
+          verification_method: string | null
+        }
+        Insert: {
+          admin_note?: string | null
+          claimant_email: string
+          claimant_name: string
+          club_id: string
+          club_slug: string
+          created_at?: string
+          id?: string
+          message?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          role_at_club: string
+          status?: string
+          submitted_at?: string
+          updated_at?: string
+          verification_hint?: string | null
+          verification_method?: string | null
+        }
+        Update: {
+          admin_note?: string | null
+          claimant_email?: string
+          claimant_name?: string
+          club_id?: string
+          club_slug?: string
+          created_at?: string
+          id?: string
+          message?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          role_at_club?: string
+          status?: string
+          submitted_at?: string
+          updated_at?: string
+          verification_hint?: string | null
+          verification_method?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_claims_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_claims_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "public_clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clubs: {
+        Row: {
+          affiliation_number: string | null
+          claimed_at: string | null
+          claimed_by: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          country: string | null
+          county: string | null
+          created_at: string
+          disciplines: string[]
+          governing_body: string
+          id: string
+          is_claimed: boolean
+          last_verified_at: string | null
+          lat: number | null
+          lng: number | null
+          name: string
+          norm_created_at: string | null
+          norm_id: string
+          postcode: string | null
+          region: string | null
+          slug: string
+          source: string | null
+          source_url: string | null
+          status: string
+          town: string | null
+          tsv: unknown
+          updated_at: string
+          website_url: string | null
+        }
+        Insert: {
+          affiliation_number?: string | null
+          claimed_at?: string | null
+          claimed_by?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          country?: string | null
+          county?: string | null
+          created_at?: string
+          disciplines?: string[]
+          governing_body: string
+          id?: string
+          is_claimed?: boolean
+          last_verified_at?: string | null
+          lat?: number | null
+          lng?: number | null
+          name: string
+          norm_created_at?: string | null
+          norm_id: string
+          postcode?: string | null
+          region?: string | null
+          slug: string
+          source?: string | null
+          source_url?: string | null
+          status?: string
+          town?: string | null
+          tsv?: unknown
+          updated_at?: string
+          website_url?: string | null
+        }
+        Update: {
+          affiliation_number?: string | null
+          claimed_at?: string | null
+          claimed_by?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          country?: string | null
+          county?: string | null
+          created_at?: string
+          disciplines?: string[]
+          governing_body?: string
+          id?: string
+          is_claimed?: boolean
+          last_verified_at?: string | null
+          lat?: number | null
+          lng?: number | null
+          name?: string
+          norm_created_at?: string | null
+          norm_id?: string
+          postcode?: string | null
+          region?: string | null
+          slug?: string
+          source?: string | null
+          source_url?: string | null
+          status?: string
+          town?: string | null
+          tsv?: unknown
+          updated_at?: string
+          website_url?: string | null
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
@@ -129,6 +294,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_edits_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "public_events"
             referencedColumns: ["id"]
           },
         ]
@@ -257,6 +429,13 @@ export type Database = {
             columns: ["duplicate_of"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_duplicate_of_fkey"
+            columns: ["duplicate_of"]
+            isOneToOne: false
+            referencedRelation: "public_events"
             referencedColumns: ["id"]
           },
         ]
@@ -442,7 +621,180 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_clubs: {
+        Row: {
+          affiliation_number: string | null
+          claimed_at: string | null
+          country: string | null
+          county: string | null
+          created_at: string | null
+          disciplines: string[] | null
+          governing_body: string | null
+          id: string | null
+          is_claimed: boolean | null
+          last_verified_at: string | null
+          lat: number | null
+          lng: number | null
+          name: string | null
+          norm_created_at: string | null
+          postcode: string | null
+          region: string | null
+          slug: string | null
+          status: string | null
+          town: string | null
+          website_url: string | null
+        }
+        Insert: {
+          affiliation_number?: string | null
+          claimed_at?: string | null
+          country?: string | null
+          county?: string | null
+          created_at?: string | null
+          disciplines?: string[] | null
+          governing_body?: string | null
+          id?: string | null
+          is_claimed?: boolean | null
+          last_verified_at?: string | null
+          lat?: number | null
+          lng?: number | null
+          name?: string | null
+          norm_created_at?: string | null
+          postcode?: string | null
+          region?: string | null
+          slug?: string | null
+          status?: string | null
+          town?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          affiliation_number?: string | null
+          claimed_at?: string | null
+          country?: string | null
+          county?: string | null
+          created_at?: string | null
+          disciplines?: string[] | null
+          governing_body?: string | null
+          id?: string | null
+          is_claimed?: boolean | null
+          last_verified_at?: string | null
+          lat?: number | null
+          lng?: number | null
+          name?: string | null
+          norm_created_at?: string | null
+          postcode?: string | null
+          region?: string | null
+          slug?: string | null
+          status?: string | null
+          town?: string | null
+          website_url?: string | null
+        }
+        Relationships: []
+      }
+      public_events: {
+        Row: {
+          country: string | null
+          county: string | null
+          created_at: string | null
+          date_from: string | null
+          date_is_estimated: boolean | null
+          date_raw: string | null
+          date_to: string | null
+          discipline: string | null
+          distance_tags: string[] | null
+          distances: string | null
+          entry_fee: string | null
+          entry_url: string | null
+          id: string | null
+          is_featured: boolean | null
+          is_recurring: boolean | null
+          is_upcoming: boolean | null
+          lat: number | null
+          licensed: string | null
+          lng: number | null
+          location_raw: string | null
+          name: string | null
+          norm_created_at: string | null
+          norm_id: string | null
+          organiser: string | null
+          organiser_url: string | null
+          region: string | null
+          series_key: string | null
+          slug: string | null
+          sort_date: string | null
+          status: string | null
+          terrain_tags: string[] | null
+          town: string | null
+        }
+        Insert: {
+          country?: string | null
+          county?: string | null
+          created_at?: string | null
+          date_from?: string | null
+          date_is_estimated?: boolean | null
+          date_raw?: string | null
+          date_to?: string | null
+          discipline?: string | null
+          distance_tags?: string[] | null
+          distances?: string | null
+          entry_fee?: string | null
+          entry_url?: string | null
+          id?: string | null
+          is_featured?: boolean | null
+          is_recurring?: boolean | null
+          is_upcoming?: boolean | null
+          lat?: number | null
+          licensed?: string | null
+          lng?: number | null
+          location_raw?: string | null
+          name?: string | null
+          norm_created_at?: string | null
+          norm_id?: string | null
+          organiser?: string | null
+          organiser_url?: string | null
+          region?: string | null
+          series_key?: string | null
+          slug?: string | null
+          sort_date?: string | null
+          status?: string | null
+          terrain_tags?: string[] | null
+          town?: string | null
+        }
+        Update: {
+          country?: string | null
+          county?: string | null
+          created_at?: string | null
+          date_from?: string | null
+          date_is_estimated?: boolean | null
+          date_raw?: string | null
+          date_to?: string | null
+          discipline?: string | null
+          distance_tags?: string[] | null
+          distances?: string | null
+          entry_fee?: string | null
+          entry_url?: string | null
+          id?: string | null
+          is_featured?: boolean | null
+          is_recurring?: boolean | null
+          is_upcoming?: boolean | null
+          lat?: number | null
+          licensed?: string | null
+          lng?: number | null
+          location_raw?: string | null
+          name?: string | null
+          norm_created_at?: string | null
+          norm_id?: string | null
+          organiser?: string | null
+          organiser_url?: string | null
+          region?: string | null
+          series_key?: string | null
+          slug?: string | null
+          sort_date?: string | null
+          status?: string | null
+          terrain_tags?: string[] | null
+          town?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       delete_email: {
