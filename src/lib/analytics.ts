@@ -75,3 +75,10 @@ export const trackClaimInterest = (props: {
   slug: string;
   region?: string | null;
 }) => track("Claim Interest", props);
+
+export const trackClubPageView = (props: {
+  slug: string;
+  region?: string | null;
+  is_claimed: boolean;
+  governing_body: string;
+}) => track("Club Page View", props);
