@@ -383,6 +383,63 @@ export type Database = {
         }
         Relationships: []
       }
+      sync_runs: {
+        Row: {
+          active: number | null
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          failed_pages: number | null
+          fetched: number | null
+          finished_at: string | null
+          id: string
+          new_events: number | null
+          skipped_dupes: number | null
+          skipped_no_date: number | null
+          source: string
+          started_at: string
+          status: string
+          updated_existing: number | null
+          written: number | null
+        }
+        Insert: {
+          active?: number | null
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          failed_pages?: number | null
+          fetched?: number | null
+          finished_at?: string | null
+          id?: string
+          new_events?: number | null
+          skipped_dupes?: number | null
+          skipped_no_date?: number | null
+          source: string
+          started_at?: string
+          status?: string
+          updated_existing?: number | null
+          written?: number | null
+        }
+        Update: {
+          active?: number | null
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          failed_pages?: number | null
+          fetched?: number | null
+          finished_at?: string | null
+          id?: string
+          new_events?: number | null
+          skipped_dupes?: number | null
+          skipped_no_date?: number | null
+          source?: string
+          started_at?: string
+          status?: string
+          updated_existing?: number | null
+          written?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
