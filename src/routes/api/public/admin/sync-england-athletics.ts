@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { timingSafeEqual } from "crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { normaliseRegion } from "@/lib/region-normalize";
+import { startSyncRun } from "@/lib/sync-run-log.server";
 
 // Syncs licensed running events from the England Athletics RunEvents
 // public event finder API into the events table. Idempotent: upserts on
@@ -164,6 +165,8 @@ export const Route = createFileRoute(
           return Response.json({ error: "Unauthorized" }, { status: 401 });
         }
 
+        const run = await startSyncRun("england-athletics");
+
         // Optional page range for chunked runs: ?from=1&to=30
         // Optional ?order=desc to sweep the feed in reverse — covers events
         // stranded on pages where the EA API 500s in ascending order.
@@ -209,6 +212,7 @@ export const Route = createFileRoute(
             .select("slug, name, date_from, norm_id, source")
             .range(offset, offset + 999);
           if (exErr) {
+            await run.finish({ status: "error", error_message: exErr.message, failed_pages: failedPages.length });
             return Response.json({ error: exErr.message }, { status: 500 });
           }
           existing.push(...(chunk ?? []));
@@ -321,6 +325,14 @@ export const Route = createFileRoute(
             .upsert(batch, { onConflict: "norm_id" })
             .select("id");
           if (error) {
+            await run.finish({
+              status: "error",
+              error_message: error.message,
+              fetched: all.length,
+              active: active.length,
+              written,
+              failed_pages: failedPages.length,
+            });
             return Response.json(
               { error: error.message, writtenBeforeError: written },
               { status: 500 },
@@ -328,6 +340,18 @@ export const Route = createFileRoute(
           }
           written += data?.length ?? 0;
         }
+
+        await run.finish({
+          status: failedPages.length > 0 ? "partial" : "success",
+          fetched: all.length,
+          active: active.length,
+          written,
+          updated_existing: updatedExisting,
+          new_events: written - updatedExisting,
+          skipped_dupes: skippedDupes,
+          skipped_no_date: skippedNoDate,
+          failed_pages: failedPages.length,
+        });
 
         return Response.json({
           ok: true,

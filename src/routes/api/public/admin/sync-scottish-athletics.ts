@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { timingSafeEqual } from "crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { startSyncRun } from "@/lib/sync-run-log.server";
 
 // Syncs running events from the Scottish Athletics public event browser
 // (JustGo widget API) into the events table. Idempotent: upserts on norm_id
@@ -155,6 +156,8 @@ export const Route = createFileRoute("/api/public/admin/sync-scottish-athletics"
           return Response.json({ error: "Unauthorized" }, { status: 401 });
         }
 
+        const run = await startSyncRun("scottish-athletics");
+
         // 1. Fetch all pages from JustGo
         const all: JustGoEvent[] = [];
         for (let p = 1; p <= MAX_PAGES; p++) {
@@ -175,10 +178,14 @@ export const Route = createFileRoute("/api/public/admin/sync-scottish-athletics"
           .eq("status", "ACTIVE")
           .or("region.eq.Scotland,country.eq.Scotland");
         if (exErr) {
+          await run.finish({ status: "error", error_message: exErr.message, fetched: all.length, active: running.length });
           return Response.json({ error: exErr.message }, { status: 500 });
         }
         const existingSlugs = new Map(
           (existing ?? []).map((e) => [e.slug, e.norm_id]),
+        );
+        const existingNormIds = new Set(
+          (existing ?? []).map((e) => e.norm_id).filter(Boolean) as string[],
         );
         const existingNameDate = new Set(
           (existing ?? []).map(
@@ -194,6 +201,8 @@ export const Route = createFileRoute("/api/public/admin/sync-scottish-athletics"
         const rows: EventInsert[] = [];
         let skippedDupes = 0;
         let skippedNoDate = 0;
+        let newEvents = 0;
+        let updatedExisting = 0;
 
         for (const e of running) {
           const name = cleanName(e.EventName);
@@ -228,8 +237,10 @@ export const Route = createFileRoute("/api/public/admin/sync-scottish-athletics"
           const lat = e.Latlng?.Lat ? Number(e.Latlng.Lat) : null;
           const lng = e.Latlng?.Lng ? Number(e.Latlng.Lng) : null;
 
+          const finalNormId = `scottishathletics-${slug}`;
+          if (existingNormIds.has(finalNormId)) updatedExisting++; else newEvents++;
           rows.push({
-            norm_id: `scottishathletics-${slug}`,
+            norm_id: finalNormId,
             name,
             slug,
             date_from: dateFrom,
@@ -261,14 +272,34 @@ export const Route = createFileRoute("/api/public/admin/sync-scottish-athletics"
           .upsert(rows, { onConflict: "norm_id" })
           .select("id");
         if (error) {
+          await run.finish({
+            status: "error",
+            error_message: error.message,
+            fetched: all.length,
+            active: running.length,
+          });
           return Response.json({ error: error.message }, { status: 500 });
         }
+
+        const written = data?.length ?? 0;
+        await run.finish({
+          status: "success",
+          fetched: all.length,
+          active: running.length,
+          written,
+          new_events: newEvents,
+          updated_existing: updatedExisting,
+          skipped_dupes: skippedDupes,
+          skipped_no_date: skippedNoDate,
+        });
 
         return Response.json({
           ok: true,
           fetched: all.length,
           running: running.length,
-          written: data?.length ?? 0,
+          written,
+          newEvents,
+          updatedExisting,
           skippedDupes,
           skippedNoDate,
         });

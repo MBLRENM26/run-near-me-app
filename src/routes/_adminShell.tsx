@@ -52,6 +52,12 @@ function AdminLayout() {
             >
               Search
             </Link>
+            <Link
+              to="/admin/sync-runs"
+              className="text-sm font-medium text-foreground hover:text-primary"
+            >
+              Sync runs
+            </Link>
           </div>
           <Button variant="ghost" size="sm" onClick={handleLogout}>
             Log out
