@@ -39,6 +39,7 @@ import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/em
 import { Route as ApiPublicTrackSearchClickRouteImport } from './routes/api/public/track-search-click'
 import { Route as ApiPublicTrackSearchRouteImport } from './routes/api/public/track-search'
 import { Route as ApiPublicImportEventsRouteImport } from './routes/api/public/import-events'
+import { Route as AdminShellAdminSyncRunsRouteImport } from './routes/_adminShell.admin.sync-runs'
 import { Route as AdminShellAdminSearchRouteImport } from './routes/_adminShell.admin.search'
 import { Route as AdminShellAdminClaimsRouteImport } from './routes/_adminShell.admin.claims'
 import { Route as AdminShellAdminEventsIndexRouteImport } from './routes/_adminShell.admin.events.index'
@@ -203,6 +204,11 @@ const ApiPublicImportEventsRoute = ApiPublicImportEventsRouteImport.update({
   path: '/api/public/import-events',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminShellAdminSyncRunsRoute = AdminShellAdminSyncRunsRouteImport.update({
+  id: '/admin/sync-runs',
+  path: '/admin/sync-runs',
+  getParentRoute: () => AdminShellRoute,
+} as any)
 const AdminShellAdminSearchRoute = AdminShellAdminSearchRouteImport.update({
   id: '/admin/search',
   path: '/admin/search',
@@ -293,6 +299,7 @@ export interface FileRoutesByFullPath {
   '/parkrun-events/': typeof ParkrunEventsIndexRoute
   '/admin/claims': typeof AdminShellAdminClaimsRoute
   '/admin/search': typeof AdminShellAdminSearchRoute
+  '/admin/sync-runs': typeof AdminShellAdminSyncRunsRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
   '/api/public/track-search': typeof ApiPublicTrackSearchRoute
   '/api/public/track-search-click': typeof ApiPublicTrackSearchClickRoute
@@ -335,6 +342,7 @@ export interface FileRoutesByTo {
   '/parkrun-events': typeof ParkrunEventsIndexRoute
   '/admin/claims': typeof AdminShellAdminClaimsRoute
   '/admin/search': typeof AdminShellAdminSearchRoute
+  '/admin/sync-runs': typeof AdminShellAdminSyncRunsRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
   '/api/public/track-search': typeof ApiPublicTrackSearchRoute
   '/api/public/track-search-click': typeof ApiPublicTrackSearchClickRoute
@@ -379,6 +387,7 @@ export interface FileRoutesById {
   '/parkrun-events/': typeof ParkrunEventsIndexRoute
   '/_adminShell/admin/claims': typeof AdminShellAdminClaimsRoute
   '/_adminShell/admin/search': typeof AdminShellAdminSearchRoute
+  '/_adminShell/admin/sync-runs': typeof AdminShellAdminSyncRunsRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
   '/api/public/track-search': typeof ApiPublicTrackSearchRoute
   '/api/public/track-search-click': typeof ApiPublicTrackSearchClickRoute
@@ -423,6 +432,7 @@ export interface FileRouteTypes {
     | '/parkrun-events/'
     | '/admin/claims'
     | '/admin/search'
+    | '/admin/sync-runs'
     | '/api/public/import-events'
     | '/api/public/track-search'
     | '/api/public/track-search-click'
@@ -465,6 +475,7 @@ export interface FileRouteTypes {
     | '/parkrun-events'
     | '/admin/claims'
     | '/admin/search'
+    | '/admin/sync-runs'
     | '/api/public/import-events'
     | '/api/public/track-search'
     | '/api/public/track-search-click'
@@ -508,6 +519,7 @@ export interface FileRouteTypes {
     | '/parkrun-events/'
     | '/_adminShell/admin/claims'
     | '/_adminShell/admin/search'
+    | '/_adminShell/admin/sync-runs'
     | '/api/public/import-events'
     | '/api/public/track-search'
     | '/api/public/track-search-click'
@@ -776,6 +788,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicImportEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_adminShell/admin/sync-runs': {
+      id: '/_adminShell/admin/sync-runs'
+      path: '/admin/sync-runs'
+      fullPath: '/admin/sync-runs'
+      preLoaderRoute: typeof AdminShellAdminSyncRunsRouteImport
+      parentRoute: typeof AdminShellRoute
+    }
     '/_adminShell/admin/search': {
       id: '/_adminShell/admin/search'
       path: '/admin/search'
@@ -859,6 +878,7 @@ declare module '@tanstack/react-router' {
 interface AdminShellRouteChildren {
   AdminShellAdminClaimsRoute: typeof AdminShellAdminClaimsRoute
   AdminShellAdminSearchRoute: typeof AdminShellAdminSearchRoute
+  AdminShellAdminSyncRunsRoute: typeof AdminShellAdminSyncRunsRoute
   AdminShellAdminEventsIdRoute: typeof AdminShellAdminEventsIdRoute
   AdminShellAdminEventsDuplicatesRoute: typeof AdminShellAdminEventsDuplicatesRoute
   AdminShellAdminEventsIndexRoute: typeof AdminShellAdminEventsIndexRoute
@@ -867,6 +887,7 @@ interface AdminShellRouteChildren {
 const AdminShellRouteChildren: AdminShellRouteChildren = {
   AdminShellAdminClaimsRoute: AdminShellAdminClaimsRoute,
   AdminShellAdminSearchRoute: AdminShellAdminSearchRoute,
+  AdminShellAdminSyncRunsRoute: AdminShellAdminSyncRunsRoute,
   AdminShellAdminEventsIdRoute: AdminShellAdminEventsIdRoute,
   AdminShellAdminEventsDuplicatesRoute: AdminShellAdminEventsDuplicatesRoute,
   AdminShellAdminEventsIndexRoute: AdminShellAdminEventsIndexRoute,
