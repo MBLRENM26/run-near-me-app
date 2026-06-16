@@ -32,20 +32,21 @@ export const triggerSyncRun = createServerFn({ method: "POST" })
       headers: { "x-admin-secret": secret },
     });
     const text = await res.text();
-    let body: unknown = text;
+    let parsed: Record<string, unknown> | null = null;
     try {
-      body = JSON.parse(text);
+      const j = JSON.parse(text);
+      if (j && typeof j === "object") parsed = j as Record<string, unknown>;
     } catch {
       // keep as text
     }
     if (!res.ok) {
       const msg =
-        typeof body === "object" && body && "error" in body
-          ? String((body as { error: unknown }).error)
+        parsed && typeof parsed.error === "string"
+          ? parsed.error
           : `Sync failed (${res.status})`;
       throw new Error(msg);
     }
-    return { ok: true, result: body };
+    return { ok: true as const, summary: text.slice(0, 2000) };
   });
 
 export type SyncRun = {
