@@ -208,7 +208,6 @@ function ClubDetailPage() {
             <dt className="text-muted-foreground">Affiliation</dt>
             <dd className="font-medium text-foreground">
               {GOVERNING_BODY_LABEL[c.governing_body] ?? c.governing_body}
-              {c.affiliation_number ? ` · #${c.affiliation_number}` : ""}
             </dd>
           </div>
           {c.disciplines.length > 0 && (
