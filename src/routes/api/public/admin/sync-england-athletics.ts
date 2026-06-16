@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { timingSafeEqual } from "crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { normaliseRegion } from "@/lib/region-normalize";
+import { startSyncRun } from "@/lib/sync-run-log.server";
 
 // Syncs licensed running events from the England Athletics RunEvents
 // public event finder API into the events table. Idempotent: upserts on
