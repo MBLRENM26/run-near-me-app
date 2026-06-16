@@ -1,62 +1,70 @@
-## Problem
+## What's actually going on
 
-The "Run now" buttons fail with `TypeError: fetch failed`. The server function `triggerSyncRun` currently does:
+The EA sync **worked** — the row in the DB now reads:
 
 ```
-fetch(`${origin}/api/public/admin/sync-...`, { headers: { "x-admin-secret": IMPORT_SECRET } })
+england-athletics  1m 8s  partial  new=91  updated=468  fetched=811  failed_pages=25
 ```
 
-In the dev sandbox `origin` is `https://localhost:8080` with a self-signed cert, and the Worker self-fetch from server-fn → its own HTTP route falls over. Even when it works, it's a wasted hop: same process, same code.
+The UI showed it stuck on "running" because:
+
+1. The client-side `fetch` to the server-fn times out around 30s, so the mutation throws.
+2. Our mutation only invalidates the table on **success**, not on error, so the page never re-queries to discover the row that completes 30–60s later.
+3. There's no polling, so even a successful long run wouldn't update the table mid-flight.
+
+Meanwhile the Worker kept executing after the response was cut and finished the sync correctly. So this is purely a UI / feedback problem — no sync logic to change.
+
+(`status: partial` = EA API 500'd on 25 of 811 pages; the rest succeeded. Re-running typically picks those stragglers up. Not a bug in our code.)
 
 ## Fix
 
-Stop self-fetching. Run the sync work in-process by extracting the existing handler bodies into shared functions both callers reuse.
+All in two files. No DB changes.
 
-### 1. Extract sync core (no behaviour change)
+### 1. Poll while runs are in flight, invalidate on every settle
 
-For each source, move the body of the `POST` handler (everything after the auth check) into a plain async function in a new `.server.ts` module:
+`src/routes/_adminShell.admin.sync-runs.tsx`:
 
-- `src/lib/sync-england-athletics.server.ts` → `export async function runEnglandAthleticsSync(opts: { fromPage?: number; toPage?: number; order?: "asc"|"desc" }): Promise<SyncSummary>`
-- `src/lib/sync-scottish-athletics.server.ts` → `export async function runScottishAthleticsSync(): Promise<SyncSummary>`
+- Add `refetchInterval` to the `getSyncRuns` query: **3000ms while any row has `status: "running"`, otherwise `false`**.
+- Mutation `onMutate`: invalidate the query so the new `running` row (written by `startSyncRun` before any HTTP work) appears within ~3s.
+- Mutation `onSettled` (covers both success and error): invalidate again. This is what we were missing — when the client fetch times out, we still need to refresh.
+- Disable the buttons for a source if (a) a mutation is in flight, or (b) the latest row for that source is `running`. Prevents double-firing.
 
-`SyncSummary` is the same shape the routes currently return as JSON (`fetched`, `active`, `written`, `newEvents`, `updatedExisting`, `skippedDupes`, `skippedNoDate`, `failedPages`). The `startSyncRun` call stays inside these functions so every invocation — cron, admin button, future caller — logs a row.
+### 2. Stop treating client timeout as failure
 
-### 2. Rewrite the two route handlers as thin wrappers
+`src/lib/admin-sync.functions.ts`, `triggerSyncRun`:
 
-`src/routes/api/public/admin/sync-england-athletics.ts` and `sync-scottish-athletics.ts` keep:
-- The `IMPORT_SECRET` env check
-- The `x-admin-secret` timing-safe comparison
-- Query-param parsing (EA only: `from`, `to`, `order`)
+- Wrap the in-process sync call in `Promise.race` with an 8s "ack" timer.
+- If the sync resolves first → return real result, toast shows counts (Scottish path, ~3s).
+- If the ack timer fires first → return `{ ok: true, started: true }` and **let the `await` continue in the background** (TanStack Start keeps the isolate alive for the outer handler promise). The toast says "Sync started — table will update when it finishes".
+- If the sync rejects before the ack fires → throw as today, real error message in toast.
 
-Then they call the extracted function and `Response.json(summary)`. No logic duplicated. Cron continues to hit these URLs unchanged.
+The work itself already calls `run.finish()` from inside `runEnglandAthleticsSync` regardless of whether the client is still listening, so the row always gets closed out properly. (Confirmed by the EA row above, which closed cleanly with all counts populated even though the client timed out.)
 
-### 3. Rewrite `triggerSyncRun` to call in-process
+### 3. Render stale "running" rows as `stale`
 
-In `src/lib/admin-sync.functions.ts`:
-- Drop `fetch`, `getRequest`, `IMPORT_SECRET` from this function entirely (admin cookie is already the auth here — `isAdminAuthenticated()`).
-- Dynamically import the server module inside the handler (same pattern as `supabaseAdmin`, since `.functions.ts` ships to the client bundle):
-  ```
-  if (data.source === "england-athletics") {
-    const { runEnglandAthleticsSync } = await import("@/lib/sync-england-athletics.server");
-    const summary = await runEnglandAthleticsSync({});
-    return { ok: true as const, summary };
-  }
-  ```
-- Wrap in try/catch and surface `error.message` so the toast shows the real reason instead of "fetch failed".
+In the table renderer in the same page file:
+
+- Derive a display status: if `status === "running"` and `Date.now() - started_at > 10 min`, render pill as `stale` (amber). Otherwise keep `running` (blue).
+- No DB write. Purely so a genuinely dead run (e.g. if a future runtime change does kill the background continuation) is visually distinguishable from one in progress.
 
 ### 4. Verify
 
-- Click "Run England Athletics now" on `/admin/sync-runs` → toast says success, a new row appears with counts (expected: 0 new, ~X updated, since Monday already ingested everything).
-- Click "Run Scottish Athletics now" → same.
-- Confirm the existing cron URL still responds 200 by hitting it with the secret header (no behaviour regression).
-
-## Files touched
-
-- New: `src/lib/sync-england-athletics.server.ts`, `src/lib/sync-scottish-athletics.server.ts`
-- Edited: `src/routes/api/public/admin/sync-england-athletics.ts`, `src/routes/api/public/admin/sync-scottish-athletics.ts` (shrunk to auth + call)
-- Edited: `src/lib/admin-sync.functions.ts` (`triggerSyncRun` calls in-process)
+- Click **Run England Athletics now**:
+  - Within ~3s a `running` row appears at the top.
+  - Toast: "Sync started — table will update when it finishes".
+  - Both buttons disabled.
+  - Table auto-refreshes every 3s.
+  - 60–90s later the row flips to `success` / `partial` with counts; polling stops; buttons re-enable.
+- Click **Run Scottish Athletics now**: resolves inside the 8s ack window so toast shows real counts immediately, single refetch, polling never starts.
+- The existing 13:57 EA row that's already `partial` keeps showing `partial` — no change to historical data.
 
 ## Out of scope
 
-- Long-running runs: EA sync can take >30s. Worker request timeout still applies whether triggered via HTTP or in-process, so this fix doesn't change that ceiling. If a manual run times out we'd add a background-task pattern in a follow-up.
-- No changes to the cron schedule, the `sync_runs` table, or the page UI.
+- Chunking the EA sync into batched runs. Tempting, but the current single run already completes in ~68s in the background and writes the row correctly — the only thing broken was the UI's awareness of it. Adding chunking now would add real complexity (orchestration, partial-of-partial accounting) for no extra reliability.
+- Cleaning up the stuck 13:57 row from before this fix — it's already `partial` in the DB; no stuck rows currently exist. The `stale` pill in step 3 covers future cases.
+- `waitUntil` / true Cloudflare background tasks — not needed; the handler `await` already keeps the worker alive past the early return on this runtime.
+
+## Files touched
+
+- `src/routes/_adminShell.admin.sync-runs.tsx` — polling, optimistic + onSettled invalidate, stale pill, button disable.
+- `src/lib/admin-sync.functions.ts` — `triggerSyncRun` returns early after 8s ack instead of waiting forever.
