@@ -42,6 +42,19 @@ export const getSyncRuns = createServerFn({ method: "GET" }).handler(
   },
 );
 
+export type TriggerSyncResult =
+  | {
+      ok: true;
+      started: false;
+      newEvents: number;
+      updatedExisting: number;
+      written: number;
+      fetched: number;
+    }
+  | { ok: true; started: true };
+
+const ACK_TIMEOUT_MS = 8000;
+
 export const triggerSyncRun = createServerFn({ method: "POST" })
   .inputValidator((input: { source: SyncSource }) => {
     if (!SYNC_SOURCES.includes(input.source)) {
@@ -49,35 +62,57 @@ export const triggerSyncRun = createServerFn({ method: "POST" })
     }
     return input;
   })
-  .handler(async ({ data }) => {
+  .handler(async ({ data }): Promise<TriggerSyncResult> => {
     if (!isAdminAuthenticated()) throw new Error("Unauthorized");
 
-    try {
+    const work: Promise<{
+      newEvents: number;
+      updatedExisting: number;
+      written: number;
+      fetched: number;
+    }> = (async () => {
       if (data.source === "england-athletics") {
         const { runEnglandAthleticsSync } = await import(
           "@/lib/sync-england-athletics.server"
         );
-        const result = await runEnglandAthleticsSync({});
+        const r = await runEnglandAthleticsSync({});
         return {
-          ok: true as const,
-          newEvents: result.newEvents,
-          updatedExisting: result.updatedExisting,
-          written: result.written,
-          fetched: result.fetched,
+          newEvents: r.newEvents,
+          updatedExisting: r.updatedExisting,
+          written: r.written,
+          fetched: r.fetched,
         };
       }
       const { runScottishAthleticsSync } = await import(
         "@/lib/sync-scottish-athletics.server"
       );
-      const result = await runScottishAthleticsSync();
+      const r = await runScottishAthleticsSync();
       return {
-        ok: true as const,
-        newEvents: result.newEvents,
-        updatedExisting: result.updatedExisting,
-        written: result.written,
-        fetched: result.fetched,
+        newEvents: r.newEvents,
+        updatedExisting: r.updatedExisting,
+        written: r.written,
+        fetched: r.fetched,
       };
-    } catch (err) {
-      throw new Error(err instanceof Error ? err.message : String(err));
+    })();
+
+    // Swallow background rejection so it doesn't surface as an unhandled
+    // rejection after we've already returned `started: true`. The sync's
+    // own try/catch writes the error to the sync_runs row, so the UI
+    // still sees it on the next poll.
+    work.catch(() => undefined);
+
+    const ackTimer = new Promise<"ack-timeout">((resolve) => {
+      setTimeout(() => resolve("ack-timeout"), ACK_TIMEOUT_MS);
+    });
+
+    const raced = await Promise.race([
+      work.then((r) => ({ kind: "done" as const, r })),
+      ackTimer.then(() => ({ kind: "timeout" as const })),
+    ]);
+
+    if (raced.kind === "done") {
+      return { ok: true as const, started: false as const, ...raced.r };
     }
+    return { ok: true as const, started: true as const };
   });
+
