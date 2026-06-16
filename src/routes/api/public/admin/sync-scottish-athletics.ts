@@ -156,6 +156,8 @@ export const Route = createFileRoute("/api/public/admin/sync-scottish-athletics"
           return Response.json({ error: "Unauthorized" }, { status: 401 });
         }
 
+        const run = await startSyncRun("scottish-athletics");
+
         // 1. Fetch all pages from JustGo
         const all: JustGoEvent[] = [];
         for (let p = 1; p <= MAX_PAGES; p++) {
