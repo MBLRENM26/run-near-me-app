@@ -102,12 +102,49 @@ export const Route = createFileRoute("/api/public/import-clubs")({
           return json({ ok: true, received, written: 0, rejected }, 200);
         }
 
-        const rows = accepted.map((c) => ({
-          ...c,
-          slug: (c.slug?.trim() || slugify(c.name)) || c.norm_id,
-          region: normaliseRegion(c.region, c.county, c.lat, c.lng),
-          disciplines: c.disciplines ?? [],
+        const draft = accepted.map((c) => ({
+          row: c,
+          baseSlug: (c.slug?.trim() || slugify(c.name)) || c.norm_id,
         }));
+
+        // Find existing slugs that could collide. Exclude rows being updated
+        // in this batch (matched by norm_id) — they keep their slug.
+        const normIds = draft.map((d) => d.row.norm_id);
+        const bases = Array.from(new Set(draft.map((d) => d.baseSlug)));
+        const orFilter = bases
+          .map((b) => `slug.eq.${b},slug.like.${b}-%`)
+          .join(",");
+
+        const { data: existing, error: existingErr } = await supabaseAdmin
+          .from("clubs")
+          .select("slug, norm_id")
+          .or(orFilter);
+
+        if (existingErr) {
+          console.error("[import-clubs] slug lookup error", existingErr);
+          return json({ error: existingErr.message }, 500);
+        }
+
+        const taken = new Set<string>();
+        for (const r of existing ?? []) {
+          if (!normIds.includes(r.norm_id) && r.slug) taken.add(r.slug);
+        }
+
+        const rows = draft.map(({ row, baseSlug }) => {
+          let slug = baseSlug;
+          let n = 2;
+          while (taken.has(slug)) {
+            slug = `${baseSlug}-${n}`.slice(0, 120);
+            n += 1;
+          }
+          taken.add(slug);
+          return {
+            ...row,
+            slug,
+            region: normaliseRegion(row.region, row.county, row.lat, row.lng),
+            disciplines: row.disciplines ?? [],
+          };
+        });
 
         const { data, error } = await supabaseAdmin
           .from("clubs")
