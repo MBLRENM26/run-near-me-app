@@ -212,6 +212,7 @@ export const Route = createFileRoute(
             .select("slug, name, date_from, norm_id, source")
             .range(offset, offset + 999);
           if (exErr) {
+            await run.finish({ status: "error", error_message: exErr.message, failed_pages: failedPages.length });
             return Response.json({ error: exErr.message }, { status: 500 });
           }
           existing.push(...(chunk ?? []));
