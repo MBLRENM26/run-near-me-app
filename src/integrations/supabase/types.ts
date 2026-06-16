@@ -14,6 +14,78 @@ export type Database = {
   }
   public: {
     Tables: {
+      club_claims: {
+        Row: {
+          admin_note: string | null
+          claimant_email: string
+          claimant_name: string
+          club_id: string
+          club_slug: string
+          created_at: string
+          id: string
+          message: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          role_at_club: string
+          status: string
+          submitted_at: string
+          updated_at: string
+          verification_hint: string | null
+          verification_method: string | null
+        }
+        Insert: {
+          admin_note?: string | null
+          claimant_email: string
+          claimant_name: string
+          club_id: string
+          club_slug: string
+          created_at?: string
+          id?: string
+          message?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          role_at_club: string
+          status?: string
+          submitted_at?: string
+          updated_at?: string
+          verification_hint?: string | null
+          verification_method?: string | null
+        }
+        Update: {
+          admin_note?: string | null
+          claimant_email?: string
+          claimant_name?: string
+          club_id?: string
+          club_slug?: string
+          created_at?: string
+          id?: string
+          message?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          role_at_club?: string
+          status?: string
+          submitted_at?: string
+          updated_at?: string
+          verification_hint?: string | null
+          verification_method?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_claims_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_claims_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "public_clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clubs: {
         Row: {
           affiliation_number: string | null
