@@ -325,6 +325,14 @@ export const Route = createFileRoute(
             .upsert(batch, { onConflict: "norm_id" })
             .select("id");
           if (error) {
+            await run.finish({
+              status: "error",
+              error_message: error.message,
+              fetched: all.length,
+              active: active.length,
+              written,
+              failed_pages: failedPages.length,
+            });
             return Response.json(
               { error: error.message, writtenBeforeError: written },
               { status: 500 },
@@ -332,6 +340,18 @@ export const Route = createFileRoute(
           }
           written += data?.length ?? 0;
         }
+
+        await run.finish({
+          status: failedPages.length > 0 ? "partial" : "success",
+          fetched: all.length,
+          active: active.length,
+          written,
+          updated_existing: updatedExisting,
+          new_events: written - updatedExisting,
+          skipped_dupes: skippedDupes,
+          skipped_no_date: skippedNoDate,
+          failed_pages: failedPages.length,
+        });
 
         return Response.json({
           ok: true,
