@@ -237,8 +237,10 @@ export const Route = createFileRoute("/api/public/admin/sync-scottish-athletics"
           const lat = e.Latlng?.Lat ? Number(e.Latlng.Lat) : null;
           const lng = e.Latlng?.Lng ? Number(e.Latlng.Lng) : null;
 
+          const finalNormId = `scottishathletics-${slug}`;
+          if (existingNormIds.has(finalNormId)) updatedExisting++; else newEvents++;
           rows.push({
-            norm_id: `scottishathletics-${slug}`,
+            norm_id: finalNormId,
             name,
             slug,
             date_from: dateFrom,
