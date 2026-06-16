@@ -51,6 +51,9 @@ export const trackEntryClick = (props: {
   region?: string | null;
   link_type: "entry" | "organiser-site" | "organiser-other";
   proximity: "future" | "today" | "imminent" | "past";
+  event_name: string;
+  distance?: string | null;
+  discipline?: string | null;
 }) => track("Entry Click", props);
 
 export const trackLocationSet = (method: "device" | "postcode") =>
