@@ -1,48 +1,62 @@
-## What Monday's cron actually did
+## Problem
 
-Both weekly syncs fired successfully on Monday 15 June at 03:00 / 03:15 UTC (pg_cron's run history confirms it). But **0 new events were added** — the last batch of new rows in `events` is from 9 June (365 from England Athletics, 102 from Scottish Athletics). Monday's run upserted the same set: everything already existed by `norm_id`, so nothing was inserted.
+The "Run now" buttons fail with `TypeError: fetch failed`. The server function `triggerSyncRun` currently does:
 
-The reason we can't see this in the admin panel today is that the sync endpoints return a JSON summary (`{ fetched, written, newEvents, updatedExisting, skippedDupes, failedPages }`) to the caller — but pg_cron just fires the HTTP request and throws the response away. Nothing is persisted.
+```
+fetch(`${origin}/api/public/admin/sync-...`, { headers: { "x-admin-secret": IMPORT_SECRET } })
+```
 
-## Plan: persist each sync run + surface in admin
+In the dev sandbox `origin` is `https://localhost:8080` with a self-signed cert, and the Worker self-fetch from server-fn → its own HTTP route falls over. Even when it works, it's a wasted hop: same process, same code.
 
-### 1. New table `sync_runs`
-Stores one row per cron-triggered sync attempt.
+## Fix
 
-Fields:
-- `source` — e.g. `england-athletics`, `scottish-athletics`
-- `started_at`, `finished_at`, `duration_ms`
-- `status` — `success` | `partial` | `error`
-- `fetched`, `active`, `written`, `new_events`, `updated_existing`, `skipped_dupes`, `skipped_no_date`, `failed_pages`
-- `error_message` (nullable)
+Stop self-fetching. Run the sync work in-process by extracting the existing handler bodies into shared functions both callers reuse.
 
-RLS on, no policies, no anon/authenticated grants — `service_role` only (same posture as `search_logs`).
+### 1. Extract sync core (no behaviour change)
 
-### 2. Endpoint changes (`sync-england-athletics.ts`, `sync-scottish-athletics.ts`)
-- Insert a `sync_runs` row at the start (status = `running`), capture its id.
-- On success: update the row with the counts and `finished_at`.
-- On any thrown error / non-OK return: update the row with `status = 'error'` and `error_message`, then return the existing error response.
-- No behaviour change beyond logging.
+For each source, move the body of the `POST` handler (everything after the auth check) into a plain async function in a new `.server.ts` module:
 
-### 3. New admin page `/admin/sync-runs`
-- Server fn `getSyncRuns()` (admin-gated, like the other admin fns) returns the last ~50 runs.
-- Table columns: Source · Started · Duration · Status · New · Updated · Skipped · Failed pages · Error.
-- Filter chips per source. Row click → expandable raw JSON for debugging.
-- Add a link to it from the existing admin shell nav (alongside Events / Claims / Search).
+- `src/lib/sync-england-athletics.server.ts` → `export async function runEnglandAthleticsSync(opts: { fromPage?: number; toPage?: number; order?: "asc"|"desc" }): Promise<SyncSummary>`
+- `src/lib/sync-scottish-athletics.server.ts` → `export async function runScottishAthleticsSync(): Promise<SyncSummary>`
 
-### 4. (Optional, ask first) Manual "Run now" buttons
-Trigger the sync endpoints from the admin page so we don't have to wait for Monday to validate fixes. Re-uses the existing `IMPORT_SECRET` header path. Happy to include or leave for a follow-up.
+`SyncSummary` is the same shape the routes currently return as JSON (`fetched`, `active`, `written`, `newEvents`, `updatedExisting`, `skippedDupes`, `skippedNoDate`, `failedPages`). The `startSyncRun` call stays inside these functions so every invocation — cron, admin button, future caller — logs a row.
+
+### 2. Rewrite the two route handlers as thin wrappers
+
+`src/routes/api/public/admin/sync-england-athletics.ts` and `sync-scottish-athletics.ts` keep:
+- The `IMPORT_SECRET` env check
+- The `x-admin-secret` timing-safe comparison
+- Query-param parsing (EA only: `from`, `to`, `order`)
+
+Then they call the extracted function and `Response.json(summary)`. No logic duplicated. Cron continues to hit these URLs unchanged.
+
+### 3. Rewrite `triggerSyncRun` to call in-process
+
+In `src/lib/admin-sync.functions.ts`:
+- Drop `fetch`, `getRequest`, `IMPORT_SECRET` from this function entirely (admin cookie is already the auth here — `isAdminAuthenticated()`).
+- Dynamically import the server module inside the handler (same pattern as `supabaseAdmin`, since `.functions.ts` ships to the client bundle):
+  ```
+  if (data.source === "england-athletics") {
+    const { runEnglandAthleticsSync } = await import("@/lib/sync-england-athletics.server");
+    const summary = await runEnglandAthleticsSync({});
+    return { ok: true as const, summary };
+  }
+  ```
+- Wrap in try/catch and surface `error.message` so the toast shows the real reason instead of "fetch failed".
+
+### 4. Verify
+
+- Click "Run England Athletics now" on `/admin/sync-runs` → toast says success, a new row appears with counts (expected: 0 new, ~X updated, since Monday already ingested everything).
+- Click "Run Scottish Athletics now" → same.
+- Confirm the existing cron URL still responds 200 by hitting it with the secret header (no behaviour regression).
 
 ## Files touched
-- `supabase/migrations/<new>.sql` — create `sync_runs` + grants + RLS
-- `src/routes/api/public/admin/sync-england-athletics.ts` — log run
-- `src/routes/api/public/admin/sync-scottish-athletics.ts` — log run
-- `src/lib/admin-sync.functions.ts` (new) — `getSyncRuns` server fn
-- `src/routes/_adminShell.admin.sync-runs.tsx` (new) — admin page
-- `src/routes/_adminShell.tsx` — add nav link
+
+- New: `src/lib/sync-england-athletics.server.ts`, `src/lib/sync-scottish-athletics.server.ts`
+- Edited: `src/routes/api/public/admin/sync-england-athletics.ts`, `src/routes/api/public/admin/sync-scottish-athletics.ts` (shrunk to auth + call)
+- Edited: `src/lib/admin-sync.functions.ts` (`triggerSyncRun` calls in-process)
 
 ## Out of scope
-- Backfilling Monday's run (we'd be guessing the counts; first logged run will be next Monday or whenever you hit "Run now").
-- Any change to the cron schedule itself.
 
-Want me to include the "Run now" buttons in step 4, or keep this read-only for now?
+- Long-running runs: EA sync can take >30s. Worker request timeout still applies whether triggered via HTTP or in-process, so this fix doesn't change that ceiling. If a manual run times out we'd add a background-task pattern in a follow-up.
+- No changes to the cron schedule, the `sync_runs` table, or the page UI.
