@@ -1,9 +1,11 @@
 import { useState, type FormEvent } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { MapPin, Search, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { trackLocationSet } from "@/lib/analytics";
+import { isUkPostcode } from "@/lib/postcode";
 
 
 export type Coords = { lat: number; lng: number; label?: string };
@@ -16,6 +18,7 @@ export function LocationPrompt({ onLocate }: Props) {
   const [postcode, setPostcode] = useState("");
   const [loadingGeo, setLoadingGeo] = useState(false);
   const [loadingPostcode, setLoadingPostcode] = useState(false);
+  const navigate = useNavigate();
 
   const useDeviceLocation = () => {
     if (!("geolocation" in navigator)) {
@@ -49,6 +52,10 @@ export function LocationPrompt({ onLocate }: Props) {
     e.preventDefault();
     const trimmed = postcode.trim();
     if (!trimmed) return;
+    if (!isUkPostcode(trimmed)) {
+      navigate({ to: "/search", search: { q: trimmed } });
+      return;
+    }
     setLoadingPostcode(true);
     try {
       const res = await fetch(
@@ -91,15 +98,14 @@ export function LocationPrompt({ onLocate }: Props) {
 
       <form onSubmit={submitPostcode} className="flex gap-2">
         <label htmlFor="postcode-input" className="sr-only">
-          Enter a UK postcode
+          Postcode or event name
         </label>
         <Input
           id="postcode-input"
           value={postcode}
           onChange={(e) => setPostcode(e.target.value)}
-          placeholder="Enter a postcode (e.g. SW1A 1AA)"
+          placeholder="Postcode or event name"
           className="h-14 text-base"
-          autoComplete="postal-code"
         />
         <Button
           type="submit"
@@ -107,7 +113,7 @@ export function LocationPrompt({ onLocate }: Props) {
           variant="secondary"
           disabled={loadingPostcode || !postcode.trim()}
           className="h-14 px-4"
-          aria-label="Search by postcode"
+          aria-label="Search"
         >
           {loadingPostcode ? (
             <Loader2 className="h-5 w-5 animate-spin" />
