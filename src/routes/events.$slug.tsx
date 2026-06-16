@@ -431,6 +431,9 @@ function EventDetailPage() {
                       region: e.region,
                       link_type: primaryCta!.linkType,
                       proximity: proximity ?? "future",
+                      event_name: e.name,
+                      distance: e.distances ?? "unknown",
+                      discipline: e.discipline ?? "road",
                     })
                   }
                 >

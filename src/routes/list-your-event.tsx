@@ -13,6 +13,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import { SITE_URL } from "@/lib/site";
 import { submitListing } from "@/lib/admin.functions";
+import { track } from "@/lib/analytics";
 
 const submissionSchema = z.object({
   event_details: z
@@ -94,6 +95,7 @@ function ListYourEventPage() {
           claim_slug: claim ?? null,
         },
       });
+      track("Form: Submission", { form: "list-your-event" });
       setSubmitted(true);
     } catch (err) {
       console.error(err);
