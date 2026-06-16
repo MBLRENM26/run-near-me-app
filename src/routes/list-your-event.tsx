@@ -95,6 +95,7 @@ function ListYourEventPage() {
           claim_slug: claim ?? null,
         },
       });
+      track("Form: Submission", { form: "list-your-event" });
       setSubmitted(true);
     } catch (err) {
       console.error(err);
