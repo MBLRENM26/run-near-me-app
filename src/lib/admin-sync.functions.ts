@@ -1,53 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getRequest } from "@tanstack/react-start/server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { isAdminAuthenticated } from "@/lib/admin-session.server";
 
-export const SYNC_SOURCES = ["england-athletics", "scottish-athletics"] as const;
+export const SYNC_SOURCES = [
+  "england-athletics",
+  "scottish-athletics",
+] as const;
 export type SyncSource = (typeof SYNC_SOURCES)[number];
-
-const SOURCE_PATHS: Record<SyncSource, string> = {
-  "england-athletics": "/api/public/admin/sync-england-athletics",
-  "scottish-athletics": "/api/public/admin/sync-scottish-athletics",
-};
-
-export const triggerSyncRun = createServerFn({ method: "POST" })
-  .inputValidator((input: { source: SyncSource }) => {
-    if (!SYNC_SOURCES.includes(input.source)) {
-      throw new Error("Invalid source");
-    }
-    return input;
-  })
-  .handler(async ({ data }) => {
-    if (!isAdminAuthenticated()) throw new Error("Unauthorized");
-    const secret = process.env.IMPORT_SECRET;
-    if (!secret) throw new Error("Server not configured: IMPORT_SECRET missing");
-
-    const req = getRequest();
-    const origin = new URL(req.url).origin;
-    const url = `${origin}${SOURCE_PATHS[data.source]}`;
-
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "x-admin-secret": secret },
-    });
-    const text = await res.text();
-    let parsed: Record<string, unknown> | null = null;
-    try {
-      const j = JSON.parse(text);
-      if (j && typeof j === "object") parsed = j as Record<string, unknown>;
-    } catch {
-      // keep as text
-    }
-    if (!res.ok) {
-      const msg =
-        parsed && typeof parsed.error === "string"
-          ? parsed.error
-          : `Sync failed (${res.status})`;
-      throw new Error(msg);
-    }
-    return { ok: true as const, summary: text.slice(0, 2000) };
-  });
 
 export type SyncRun = {
   id: string;
@@ -82,3 +41,43 @@ export const getSyncRuns = createServerFn({ method: "GET" }).handler(
     return (data ?? []) as SyncRun[];
   },
 );
+
+export const triggerSyncRun = createServerFn({ method: "POST" })
+  .inputValidator((input: { source: SyncSource }) => {
+    if (!SYNC_SOURCES.includes(input.source)) {
+      throw new Error("Invalid source");
+    }
+    return input;
+  })
+  .handler(async ({ data }) => {
+    if (!isAdminAuthenticated()) throw new Error("Unauthorized");
+
+    try {
+      if (data.source === "england-athletics") {
+        const { runEnglandAthleticsSync } = await import(
+          "@/lib/sync-england-athletics.server"
+        );
+        const result = await runEnglandAthleticsSync({});
+        return {
+          ok: true as const,
+          newEvents: result.newEvents,
+          updatedExisting: result.updatedExisting,
+          written: result.written,
+          fetched: result.fetched,
+        };
+      }
+      const { runScottishAthleticsSync } = await import(
+        "@/lib/sync-scottish-athletics.server"
+      );
+      const result = await runScottishAthleticsSync();
+      return {
+        ok: true as const,
+        newEvents: result.newEvents,
+        updatedExisting: result.updatedExisting,
+        written: result.written,
+        fetched: result.fetched,
+      };
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : String(err));
+    }
+  });
