@@ -178,10 +178,14 @@ export const Route = createFileRoute("/api/public/admin/sync-scottish-athletics"
           .eq("status", "ACTIVE")
           .or("region.eq.Scotland,country.eq.Scotland");
         if (exErr) {
+          await run.finish({ status: "error", error_message: exErr.message, fetched: all.length, active: running.length });
           return Response.json({ error: exErr.message }, { status: 500 });
         }
         const existingSlugs = new Map(
           (existing ?? []).map((e) => [e.slug, e.norm_id]),
+        );
+        const existingNormIds = new Set(
+          (existing ?? []).map((e) => e.norm_id).filter(Boolean) as string[],
         );
         const existingNameDate = new Set(
           (existing ?? []).map(
@@ -197,6 +201,8 @@ export const Route = createFileRoute("/api/public/admin/sync-scottish-athletics"
         const rows: EventInsert[] = [];
         let skippedDupes = 0;
         let skippedNoDate = 0;
+        let newEvents = 0;
+        let updatedExisting = 0;
 
         for (const e of running) {
           const name = cleanName(e.EventName);
