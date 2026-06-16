@@ -26,21 +26,26 @@ import { Route as R5kRacesRouteImport } from './routes/5k-races'
 import { Route as R10kRacesRouteImport } from './routes/10k-races'
 import { Route as SlugRouteImport } from './routes/$slug'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as RunningClubsIndexRouteImport } from './routes/running-clubs.index'
 import { Route as ParkrunEventsIndexRouteImport } from './routes/parkrun-events.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as RunningEventsSlugRouteImport } from './routes/running-events.$slug'
+import { Route as RunningClubsSlugRouteImport } from './routes/running-clubs.$slug'
 import { Route as ParkrunEventsSlugRouteImport } from './routes/parkrun-events.$slug'
 import { Route as EventsSlugRouteImport } from './routes/events.$slug'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as RunningEventsSlugDistanceRouteImport } from './routes/running-events.$slug_.$distance'
+import { Route as RunningClubsSlugClaimRouteImport } from './routes/running-clubs.$slug.claim'
 import { Route as ParkrunEventsRegionRegionRouteImport } from './routes/parkrun-events.region.$region'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as ApiPublicTrackSearchClickRouteImport } from './routes/api/public/track-search-click'
 import { Route as ApiPublicTrackSearchRouteImport } from './routes/api/public/track-search'
 import { Route as ApiPublicImportEventsRouteImport } from './routes/api/public/import-events'
+import { Route as ApiPublicImportClubsRouteImport } from './routes/api/public/import-clubs'
 import { Route as AdminShellAdminSyncRunsRouteImport } from './routes/_adminShell.admin.sync-runs'
 import { Route as AdminShellAdminSearchRouteImport } from './routes/_adminShell.admin.search'
+import { Route as AdminShellAdminClubClaimsRouteImport } from './routes/_adminShell.admin.club-claims'
 import { Route as AdminShellAdminClaimsRouteImport } from './routes/_adminShell.admin.claims'
 import { Route as AdminShellAdminEventsIndexRouteImport } from './routes/_adminShell.admin.events.index'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
@@ -136,6 +141,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RunningClubsIndexRoute = RunningClubsIndexRouteImport.update({
+  id: '/running-clubs/',
+  path: '/running-clubs/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ParkrunEventsIndexRoute = ParkrunEventsIndexRouteImport.update({
   id: '/parkrun-events/',
   path: '/parkrun-events/',
@@ -149,6 +159,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const RunningEventsSlugRoute = RunningEventsSlugRouteImport.update({
   id: '/running-events/$slug',
   path: '/running-events/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RunningClubsSlugRoute = RunningClubsSlugRouteImport.update({
+  id: '/running-clubs/$slug',
+  path: '/running-clubs/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ParkrunEventsSlugRoute = ParkrunEventsSlugRouteImport.update({
@@ -177,6 +192,11 @@ const RunningEventsSlugDistanceRoute =
     path: '/running-events/$slug/$distance',
     getParentRoute: () => rootRouteImport,
   } as any)
+const RunningClubsSlugClaimRoute = RunningClubsSlugClaimRouteImport.update({
+  id: '/claim',
+  path: '/claim',
+  getParentRoute: () => RunningClubsSlugRoute,
+} as any)
 const ParkrunEventsRegionRegionRoute =
   ParkrunEventsRegionRegionRouteImport.update({
     id: '/parkrun-events/region/$region',
@@ -204,6 +224,11 @@ const ApiPublicImportEventsRoute = ApiPublicImportEventsRouteImport.update({
   path: '/api/public/import-events',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicImportClubsRoute = ApiPublicImportClubsRouteImport.update({
+  id: '/api/public/import-clubs',
+  path: '/api/public/import-clubs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminShellAdminSyncRunsRoute = AdminShellAdminSyncRunsRouteImport.update({
   id: '/admin/sync-runs',
   path: '/admin/sync-runs',
@@ -214,6 +239,12 @@ const AdminShellAdminSearchRoute = AdminShellAdminSearchRouteImport.update({
   path: '/admin/search',
   getParentRoute: () => AdminShellRoute,
 } as any)
+const AdminShellAdminClubClaimsRoute =
+  AdminShellAdminClubClaimsRouteImport.update({
+    id: '/admin/club-claims',
+    path: '/admin/club-claims',
+    getParentRoute: () => AdminShellRoute,
+  } as any)
 const AdminShellAdminClaimsRoute = AdminShellAdminClaimsRouteImport.update({
   id: '/admin/claims',
   path: '/admin/claims',
@@ -294,17 +325,22 @@ export interface FileRoutesByFullPath {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/events/$slug': typeof EventsSlugRoute
   '/parkrun-events/$slug': typeof ParkrunEventsSlugRoute
+  '/running-clubs/$slug': typeof RunningClubsSlugRouteWithChildren
   '/running-events/$slug': typeof RunningEventsSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/parkrun-events/': typeof ParkrunEventsIndexRoute
+  '/running-clubs/': typeof RunningClubsIndexRoute
   '/admin/claims': typeof AdminShellAdminClaimsRoute
+  '/admin/club-claims': typeof AdminShellAdminClubClaimsRoute
   '/admin/search': typeof AdminShellAdminSearchRoute
   '/admin/sync-runs': typeof AdminShellAdminSyncRunsRoute
+  '/api/public/import-clubs': typeof ApiPublicImportClubsRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
   '/api/public/track-search': typeof ApiPublicTrackSearchRoute
   '/api/public/track-search-click': typeof ApiPublicTrackSearchClickRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/parkrun-events/region/$region': typeof ParkrunEventsRegionRegionRoute
+  '/running-clubs/$slug/claim': typeof RunningClubsSlugClaimRoute
   '/running-events/$slug/$distance': typeof RunningEventsSlugDistanceRoute
   '/admin/events/$id': typeof AdminShellAdminEventsIdRoute
   '/admin/events/duplicates': typeof AdminShellAdminEventsDuplicatesRoute
@@ -337,17 +373,22 @@ export interface FileRoutesByTo {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/events/$slug': typeof EventsSlugRoute
   '/parkrun-events/$slug': typeof ParkrunEventsSlugRoute
+  '/running-clubs/$slug': typeof RunningClubsSlugRouteWithChildren
   '/running-events/$slug': typeof RunningEventsSlugRoute
   '/admin': typeof AdminIndexRoute
   '/parkrun-events': typeof ParkrunEventsIndexRoute
+  '/running-clubs': typeof RunningClubsIndexRoute
   '/admin/claims': typeof AdminShellAdminClaimsRoute
+  '/admin/club-claims': typeof AdminShellAdminClubClaimsRoute
   '/admin/search': typeof AdminShellAdminSearchRoute
   '/admin/sync-runs': typeof AdminShellAdminSyncRunsRoute
+  '/api/public/import-clubs': typeof ApiPublicImportClubsRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
   '/api/public/track-search': typeof ApiPublicTrackSearchRoute
   '/api/public/track-search-click': typeof ApiPublicTrackSearchClickRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/parkrun-events/region/$region': typeof ParkrunEventsRegionRegionRoute
+  '/running-clubs/$slug/claim': typeof RunningClubsSlugClaimRoute
   '/running-events/$slug/$distance': typeof RunningEventsSlugDistanceRoute
   '/admin/events/$id': typeof AdminShellAdminEventsIdRoute
   '/admin/events/duplicates': typeof AdminShellAdminEventsDuplicatesRoute
@@ -382,17 +423,22 @@ export interface FileRoutesById {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/events/$slug': typeof EventsSlugRoute
   '/parkrun-events/$slug': typeof ParkrunEventsSlugRoute
+  '/running-clubs/$slug': typeof RunningClubsSlugRouteWithChildren
   '/running-events/$slug': typeof RunningEventsSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/parkrun-events/': typeof ParkrunEventsIndexRoute
+  '/running-clubs/': typeof RunningClubsIndexRoute
   '/_adminShell/admin/claims': typeof AdminShellAdminClaimsRoute
+  '/_adminShell/admin/club-claims': typeof AdminShellAdminClubClaimsRoute
   '/_adminShell/admin/search': typeof AdminShellAdminSearchRoute
   '/_adminShell/admin/sync-runs': typeof AdminShellAdminSyncRunsRoute
+  '/api/public/import-clubs': typeof ApiPublicImportClubsRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
   '/api/public/track-search': typeof ApiPublicTrackSearchRoute
   '/api/public/track-search-click': typeof ApiPublicTrackSearchClickRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/parkrun-events/region/$region': typeof ParkrunEventsRegionRegionRoute
+  '/running-clubs/$slug/claim': typeof RunningClubsSlugClaimRoute
   '/running-events/$slug_/$distance': typeof RunningEventsSlugDistanceRoute
   '/_adminShell/admin/events/$id': typeof AdminShellAdminEventsIdRoute
   '/_adminShell/admin/events/duplicates': typeof AdminShellAdminEventsDuplicatesRoute
@@ -427,17 +473,22 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/events/$slug'
     | '/parkrun-events/$slug'
+    | '/running-clubs/$slug'
     | '/running-events/$slug'
     | '/admin/'
     | '/parkrun-events/'
+    | '/running-clubs/'
     | '/admin/claims'
+    | '/admin/club-claims'
     | '/admin/search'
     | '/admin/sync-runs'
+    | '/api/public/import-clubs'
     | '/api/public/import-events'
     | '/api/public/track-search'
     | '/api/public/track-search-click'
     | '/lovable/email/suppression'
     | '/parkrun-events/region/$region'
+    | '/running-clubs/$slug/claim'
     | '/running-events/$slug/$distance'
     | '/admin/events/$id'
     | '/admin/events/duplicates'
@@ -470,17 +521,22 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/events/$slug'
     | '/parkrun-events/$slug'
+    | '/running-clubs/$slug'
     | '/running-events/$slug'
     | '/admin'
     | '/parkrun-events'
+    | '/running-clubs'
     | '/admin/claims'
+    | '/admin/club-claims'
     | '/admin/search'
     | '/admin/sync-runs'
+    | '/api/public/import-clubs'
     | '/api/public/import-events'
     | '/api/public/track-search'
     | '/api/public/track-search-click'
     | '/lovable/email/suppression'
     | '/parkrun-events/region/$region'
+    | '/running-clubs/$slug/claim'
     | '/running-events/$slug/$distance'
     | '/admin/events/$id'
     | '/admin/events/duplicates'
@@ -514,17 +570,22 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/events/$slug'
     | '/parkrun-events/$slug'
+    | '/running-clubs/$slug'
     | '/running-events/$slug'
     | '/admin/'
     | '/parkrun-events/'
+    | '/running-clubs/'
     | '/_adminShell/admin/claims'
+    | '/_adminShell/admin/club-claims'
     | '/_adminShell/admin/search'
     | '/_adminShell/admin/sync-runs'
+    | '/api/public/import-clubs'
     | '/api/public/import-events'
     | '/api/public/track-search'
     | '/api/public/track-search-click'
     | '/lovable/email/suppression'
     | '/parkrun-events/region/$region'
+    | '/running-clubs/$slug/claim'
     | '/running-events/$slug_/$distance'
     | '/_adminShell/admin/events/$id'
     | '/_adminShell/admin/events/duplicates'
@@ -559,9 +620,12 @@ export interface RootRouteChildren {
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   EventsSlugRoute: typeof EventsSlugRoute
   ParkrunEventsSlugRoute: typeof ParkrunEventsSlugRoute
+  RunningClubsSlugRoute: typeof RunningClubsSlugRouteWithChildren
   RunningEventsSlugRoute: typeof RunningEventsSlugRoute
   AdminIndexRoute: typeof AdminIndexRoute
   ParkrunEventsIndexRoute: typeof ParkrunEventsIndexRoute
+  RunningClubsIndexRoute: typeof RunningClubsIndexRoute
+  ApiPublicImportClubsRoute: typeof ApiPublicImportClubsRoute
   ApiPublicImportEventsRoute: typeof ApiPublicImportEventsRoute
   ApiPublicTrackSearchRoute: typeof ApiPublicTrackSearchRoute
   ApiPublicTrackSearchClickRoute: typeof ApiPublicTrackSearchClickRoute
@@ -697,6 +761,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/running-clubs/': {
+      id: '/running-clubs/'
+      path: '/running-clubs'
+      fullPath: '/running-clubs/'
+      preLoaderRoute: typeof RunningClubsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/parkrun-events/': {
       id: '/parkrun-events/'
       path: '/parkrun-events'
@@ -716,6 +787,13 @@ declare module '@tanstack/react-router' {
       path: '/running-events/$slug'
       fullPath: '/running-events/$slug'
       preLoaderRoute: typeof RunningEventsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/running-clubs/$slug': {
+      id: '/running-clubs/$slug'
+      path: '/running-clubs/$slug'
+      fullPath: '/running-clubs/$slug'
+      preLoaderRoute: typeof RunningClubsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/parkrun-events/$slug': {
@@ -753,6 +831,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RunningEventsSlugDistanceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/running-clubs/$slug/claim': {
+      id: '/running-clubs/$slug/claim'
+      path: '/claim'
+      fullPath: '/running-clubs/$slug/claim'
+      preLoaderRoute: typeof RunningClubsSlugClaimRouteImport
+      parentRoute: typeof RunningClubsSlugRoute
+    }
     '/parkrun-events/region/$region': {
       id: '/parkrun-events/region/$region'
       path: '/parkrun-events/region/$region'
@@ -788,6 +873,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicImportEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/import-clubs': {
+      id: '/api/public/import-clubs'
+      path: '/api/public/import-clubs'
+      fullPath: '/api/public/import-clubs'
+      preLoaderRoute: typeof ApiPublicImportClubsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_adminShell/admin/sync-runs': {
       id: '/_adminShell/admin/sync-runs'
       path: '/admin/sync-runs'
@@ -800,6 +892,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/search'
       fullPath: '/admin/search'
       preLoaderRoute: typeof AdminShellAdminSearchRouteImport
+      parentRoute: typeof AdminShellRoute
+    }
+    '/_adminShell/admin/club-claims': {
+      id: '/_adminShell/admin/club-claims'
+      path: '/admin/club-claims'
+      fullPath: '/admin/club-claims'
+      preLoaderRoute: typeof AdminShellAdminClubClaimsRouteImport
       parentRoute: typeof AdminShellRoute
     }
     '/_adminShell/admin/claims': {
@@ -877,6 +976,7 @@ declare module '@tanstack/react-router' {
 
 interface AdminShellRouteChildren {
   AdminShellAdminClaimsRoute: typeof AdminShellAdminClaimsRoute
+  AdminShellAdminClubClaimsRoute: typeof AdminShellAdminClubClaimsRoute
   AdminShellAdminSearchRoute: typeof AdminShellAdminSearchRoute
   AdminShellAdminSyncRunsRoute: typeof AdminShellAdminSyncRunsRoute
   AdminShellAdminEventsIdRoute: typeof AdminShellAdminEventsIdRoute
@@ -886,6 +986,7 @@ interface AdminShellRouteChildren {
 
 const AdminShellRouteChildren: AdminShellRouteChildren = {
   AdminShellAdminClaimsRoute: AdminShellAdminClaimsRoute,
+  AdminShellAdminClubClaimsRoute: AdminShellAdminClubClaimsRoute,
   AdminShellAdminSearchRoute: AdminShellAdminSearchRoute,
   AdminShellAdminSyncRunsRoute: AdminShellAdminSyncRunsRoute,
   AdminShellAdminEventsIdRoute: AdminShellAdminEventsIdRoute,
@@ -896,6 +997,17 @@ const AdminShellRouteChildren: AdminShellRouteChildren = {
 const AdminShellRouteWithChildren = AdminShellRoute._addFileChildren(
   AdminShellRouteChildren,
 )
+
+interface RunningClubsSlugRouteChildren {
+  RunningClubsSlugClaimRoute: typeof RunningClubsSlugClaimRoute
+}
+
+const RunningClubsSlugRouteChildren: RunningClubsSlugRouteChildren = {
+  RunningClubsSlugClaimRoute: RunningClubsSlugClaimRoute,
+}
+
+const RunningClubsSlugRouteWithChildren =
+  RunningClubsSlugRoute._addFileChildren(RunningClubsSlugRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -919,9 +1031,12 @@ const rootRouteChildren: RootRouteChildren = {
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   EventsSlugRoute: EventsSlugRoute,
   ParkrunEventsSlugRoute: ParkrunEventsSlugRoute,
+  RunningClubsSlugRoute: RunningClubsSlugRouteWithChildren,
   RunningEventsSlugRoute: RunningEventsSlugRoute,
   AdminIndexRoute: AdminIndexRoute,
   ParkrunEventsIndexRoute: ParkrunEventsIndexRoute,
+  RunningClubsIndexRoute: RunningClubsIndexRoute,
+  ApiPublicImportClubsRoute: ApiPublicImportClubsRoute,
   ApiPublicImportEventsRoute: ApiPublicImportEventsRoute,
   ApiPublicTrackSearchRoute: ApiPublicTrackSearchRoute,
   ApiPublicTrackSearchClickRoute: ApiPublicTrackSearchClickRoute,
