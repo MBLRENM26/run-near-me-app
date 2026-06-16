@@ -6,6 +6,7 @@ import {
   getRegionDistanceMatrix,
 } from "@/lib/events.functions";
 import { getParkrunList } from "@/lib/parkrun.functions";
+import { getAllClubSlugs } from "@/lib/clubs.functions";
 import { DISTANCE_PAGE_LIST } from "@/lib/distance-filters";
 
 export const Route = createFileRoute("/sitemap.xml")({
@@ -50,6 +51,17 @@ export const Route = createFileRoute("/sitemap.xml")({
             }));
         } catch (err) {
           console.error("Sitemap: failed to load region×distance matrix", err);
+        }
+
+        let clubEntries: { slug: string; lastmod: string }[] = [];
+        try {
+          const slugs = await getAllClubSlugs();
+          clubEntries = slugs.map((s) => ({
+            slug: s.slug,
+            lastmod: (s.created_at ?? today).slice(0, 10),
+          }));
+        } catch (err) {
+          console.error("Sitemap: failed to load club slugs", err);
         }
 
         const urls = [
@@ -113,6 +125,18 @@ export const Route = createFileRoute("/sitemap.xml")({
             lastmod: e.lastmod,
             priority: "0.7",
             changefreq: "weekly",
+          })),
+          {
+            loc: `${SITE_URL}/running-clubs`,
+            lastmod: today,
+            priority: "0.8",
+            changefreq: "weekly",
+          },
+          ...clubEntries.map((c) => ({
+            loc: `${SITE_URL}/running-clubs/${c.slug}`,
+            lastmod: c.lastmod,
+            priority: "0.5",
+            changefreq: "monthly",
           })),
         ];
 
