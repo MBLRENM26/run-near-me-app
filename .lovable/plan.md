@@ -1,41 +1,44 @@
-Three small Plausible additions, all in one PR. No UI changes, no business-logic changes.
+P1 Structured Data sprint. Two of the four items are already live in the codebase, so this plan only covers the two that still need work.
 
-## 1. `Search Performed` event
+## Already done (no work needed)
 
-**File:** `src/routes/search.tsx`
+- **Item 3 — "Other races in {Town}" block.** `events.$slug.tsx` already renders this (lines 590–618) gated on `sameTown.length >= 3`, sourced from the loader's same-town query in `events.functions.ts` (ACTIVE, future, excludes current event, limit 6 in DB).
+- **Item 4 — "Listed on {date}" byline.** `events.$slug.tsx` already renders `listingAdded` from `formatListingAdded(e.norm_created_at, e.created_at)`. No "last updated" claim is made.
 
-Inside the existing `useEffect` that runs once per resolved query (the same one that POSTs to `/api/public/track-search`), add a `track("Search Performed", { query: q, results_count: results.length, has_results: results.length > 0 })` call. Skip when `isPostcode` is true (postcode lookups redirect to the homepage — they aren't text searches). Fires once per loader resolution, not per keystroke, because the loader has already returned by then.
+If you want either of those tweaked (copy, placement, threshold), say so and I'll fold it in — otherwise we leave them.
 
-Add `import { track } from "@/lib/analytics"`.
+## Item 1 — Enrich homepage JSON-LD
 
-## 2. Enriched `Entry Click`
+**File:** `src/routes/index.tsx` (the `scripts` array in `head()`, currently only has a minimal WebSite block).
 
-**Files:** `src/lib/analytics.ts`, `src/routes/events.$slug.tsx`
+Replace the single WebSite block with two blocks:
 
-Merge — keep existing props, add new ones alongside.
+1. **Organization** — `name: SITE_NAME`, `url: SITE_URL`, `description` (one sentence, same tone as existing meta), `logo: ${SITE_URL}/favicon.svg` (the file we already ship; swap to a dedicated PNG later if/when we have one).
+2. **WebSite** — keep current fields, add `potentialAction` SearchAction pointing at `/search?q={search_term_string}` with `query-input: "required name=search_term_string"`.
 
-In `analytics.ts`, extend `trackEntryClick`'s prop type to also accept:
-- `event_name: string`
-- `distance?: string | null`
-- `discipline?: string | null`
+No visual change. No new assets generated.
 
-In `events.$slug.tsx` the call site already has `e` in scope. Pass:
-- `event_name: e.name`
-- `distance: e.distances ?? "unknown"` (the event shape uses `distances` string, not `distance_tags[]`)
-- `discipline: e.discipline ?? "road"`
+## Item 2 — BreadcrumbList JSON-LD on region and distance pages
 
-Existing `slug`, `region`, `link_type`, `proximity` are untouched, so current Plausible breakdowns keep working.
+Two file groups still missing BreadcrumbList (RegionDistancePage and event/parkrun pages already have it):
 
-## 3. `Form: Submission` event
+**a. Region pages** — `src/routes/running-events.$slug.tsx`
+Add a second JSON-LD script next to the existing CollectionPage block:
+`Home → {Region name}` (2 items, position 1 = Home → `SITE_URL`, position 2 = region name → `${SITE_URL}/running-events/{slug}`).
 
-**File:** `src/routes/list-your-event.tsx`
+**b. Distance pages** — `src/components/distance/DistancePage.tsx` (shared by `5k-races`, `10k-races`, `half-marathons`, `marathons`, `trail-running-events`, `ultra-marathons`)
+Add BreadcrumbList alongside the existing CollectionPage + FAQ scripts:
+`Home → {cfg.shortName} Races` (2 items, leaf URL = `${SITE_URL}${cfg.path}`).
 
-After `await submit(...)` resolves successfully (just before `setSubmitted(true)`), fire `track("Form: Submission", { form: "list-your-event" })`. No `county` prop — the form has no county field today, and regex-parsing it from free text would be junk data. Revisit when the organiser-claim flow adds a proper location field.
-
-Add `import { track } from "@/lib/analytics"`.
+Both use the same shape already present in `events.$slug.tsx` and `RegionDistancePage.tsx` — copy that pattern, no new helper needed.
 
 ## Out of scope
 
-- Adding a county input to the submission form.
-- Replacing existing `Entry Click` props (we merge instead).
-- Any change to the Plausible loader / goal config in `__root.tsx`.
+- Generating a proper square logo asset (favicon.svg is fine for now; revisit when we have brand artwork).
+- Touching event-page or parkrun-page JSON-LD (already correct).
+- Any UI change.
+- `last_verified_at` — explicitly parked until we have a real timestamp.
+
+## Verification
+
+After build: view-source on `/`, `/running-events/south-east`, and `/10k-races`, confirm the new `application/ld+json` blocks parse and validate (Schema.org structure, absolute URLs). Existing blocks must remain intact.

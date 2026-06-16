@@ -281,6 +281,15 @@ export function buildDistanceHead(
     })),
   };
 
+  const breadcrumbLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: `${siteUrl}/` },
+      { "@type": "ListItem", position: 2, name: `${cfg.shortName} Races`, item: canonical },
+    ],
+  };
+
   return {
     meta: [
       { title: cfg.metaTitle },
@@ -295,6 +304,10 @@ export function buildDistanceHead(
       {
         type: "application/ld+json",
         children: JSON.stringify(collectionLd),
+      },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify(breadcrumbLd),
       },
       {
         type: "application/ld+json",

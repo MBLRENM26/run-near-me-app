@@ -88,11 +88,31 @@ export const Route = createFileRoute("/")({
         type: "application/ld+json",
         children: JSON.stringify({
           "@context": "https://schema.org",
+          "@type": "Organization",
+          name: SITE_NAME,
+          url: SITE_URL,
+          description:
+            "UK running event finder — 5K, 10K, half marathons, marathons, trail and ultra races near you.",
+          logo: `${SITE_URL}/favicon.svg`,
+        }),
+      },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
           "@type": "WebSite",
           name: SITE_NAME,
           url: SITE_URL,
           description:
             "Discover running events near you across the UK — 5K to ultra, sorted by distance.",
+          potentialAction: {
+            "@type": "SearchAction",
+            target: {
+              "@type": "EntryPoint",
+              urlTemplate: `${SITE_URL}/search?q={search_term_string}`,
+            },
+            "query-input": "required name=search_term_string",
+          },
         }),
       },
     ],
