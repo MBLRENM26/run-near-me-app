@@ -131,6 +131,13 @@ export type Database = {
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "event_edits_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "public_events"
+            referencedColumns: ["id"]
+          },
         ]
       }
       events: {
@@ -257,6 +264,13 @@ export type Database = {
             columns: ["duplicate_of"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_duplicate_of_fkey"
+            columns: ["duplicate_of"]
+            isOneToOne: false
+            referencedRelation: "public_events"
             referencedColumns: ["id"]
           },
         ]
@@ -442,7 +456,111 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_events: {
+        Row: {
+          country: string | null
+          county: string | null
+          created_at: string | null
+          date_from: string | null
+          date_is_estimated: boolean | null
+          date_raw: string | null
+          date_to: string | null
+          discipline: string | null
+          distance_tags: string[] | null
+          distances: string | null
+          entry_fee: string | null
+          entry_url: string | null
+          id: string | null
+          is_featured: boolean | null
+          is_recurring: boolean | null
+          is_upcoming: boolean | null
+          lat: number | null
+          licensed: string | null
+          lng: number | null
+          location_raw: string | null
+          name: string | null
+          norm_created_at: string | null
+          norm_id: string | null
+          organiser: string | null
+          organiser_url: string | null
+          region: string | null
+          series_key: string | null
+          slug: string | null
+          sort_date: string | null
+          status: string | null
+          terrain_tags: string[] | null
+          town: string | null
+        }
+        Insert: {
+          country?: string | null
+          county?: string | null
+          created_at?: string | null
+          date_from?: string | null
+          date_is_estimated?: boolean | null
+          date_raw?: string | null
+          date_to?: string | null
+          discipline?: string | null
+          distance_tags?: string[] | null
+          distances?: string | null
+          entry_fee?: string | null
+          entry_url?: string | null
+          id?: string | null
+          is_featured?: boolean | null
+          is_recurring?: boolean | null
+          is_upcoming?: boolean | null
+          lat?: number | null
+          licensed?: string | null
+          lng?: number | null
+          location_raw?: string | null
+          name?: string | null
+          norm_created_at?: string | null
+          norm_id?: string | null
+          organiser?: string | null
+          organiser_url?: string | null
+          region?: string | null
+          series_key?: string | null
+          slug?: string | null
+          sort_date?: string | null
+          status?: string | null
+          terrain_tags?: string[] | null
+          town?: string | null
+        }
+        Update: {
+          country?: string | null
+          county?: string | null
+          created_at?: string | null
+          date_from?: string | null
+          date_is_estimated?: boolean | null
+          date_raw?: string | null
+          date_to?: string | null
+          discipline?: string | null
+          distance_tags?: string[] | null
+          distances?: string | null
+          entry_fee?: string | null
+          entry_url?: string | null
+          id?: string | null
+          is_featured?: boolean | null
+          is_recurring?: boolean | null
+          is_upcoming?: boolean | null
+          lat?: number | null
+          licensed?: string | null
+          lng?: number | null
+          location_raw?: string | null
+          name?: string | null
+          norm_created_at?: string | null
+          norm_id?: string | null
+          organiser?: string | null
+          organiser_url?: string | null
+          region?: string | null
+          series_key?: string | null
+          slug?: string | null
+          sort_date?: string | null
+          status?: string | null
+          terrain_tags?: string[] | null
+          town?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       delete_email: {
