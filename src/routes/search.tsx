@@ -88,6 +88,11 @@ function SearchPage() {
     if (!q || isPostcode) return;
     let cancelled = false;
     setSearchLogId(null);
+    track("Search Performed", {
+      query: q,
+      results_count: results.length,
+      has_results: results.length > 0,
+    });
     fetch("/api/public/track-search", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
