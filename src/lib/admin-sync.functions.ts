@@ -1,6 +1,52 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getRequest } from "@tanstack/react-start/server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { isAdminAuthenticated } from "@/lib/admin-session.server";
+
+export const SYNC_SOURCES = ["england-athletics", "scottish-athletics"] as const;
+export type SyncSource = (typeof SYNC_SOURCES)[number];
+
+const SOURCE_PATHS: Record<SyncSource, string> = {
+  "england-athletics": "/api/public/admin/sync-england-athletics",
+  "scottish-athletics": "/api/public/admin/sync-scottish-athletics",
+};
+
+export const triggerSyncRun = createServerFn({ method: "POST" })
+  .inputValidator((input: { source: SyncSource }) => {
+    if (!SYNC_SOURCES.includes(input.source)) {
+      throw new Error("Invalid source");
+    }
+    return input;
+  })
+  .handler(async ({ data }) => {
+    if (!isAdminAuthenticated()) throw new Error("Unauthorized");
+    const secret = process.env.IMPORT_SECRET;
+    if (!secret) throw new Error("Server not configured: IMPORT_SECRET missing");
+
+    const req = getRequest();
+    const origin = new URL(req.url).origin;
+    const url = `${origin}${SOURCE_PATHS[data.source]}`;
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "x-admin-secret": secret },
+    });
+    const text = await res.text();
+    let body: unknown = text;
+    try {
+      body = JSON.parse(text);
+    } catch {
+      // keep as text
+    }
+    if (!res.ok) {
+      const msg =
+        typeof body === "object" && body && "error" in body
+          ? String((body as { error: unknown }).error)
+          : `Sync failed (${res.status})`;
+      throw new Error(msg);
+    }
+    return { ok: true, result: body };
+  });
 
 export type SyncRun = {
   id: string;
