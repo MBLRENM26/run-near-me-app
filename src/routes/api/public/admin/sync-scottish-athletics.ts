@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { timingSafeEqual } from "crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { startSyncRun } from "@/lib/sync-run-log.server";
 
 // Syncs running events from the Scottish Athletics public event browser
 // (JustGo widget API) into the events table. Idempotent: upserts on norm_id
