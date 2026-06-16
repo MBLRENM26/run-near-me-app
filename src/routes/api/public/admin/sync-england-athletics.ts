@@ -165,6 +165,8 @@ export const Route = createFileRoute(
           return Response.json({ error: "Unauthorized" }, { status: 401 });
         }
 
+        const run = await startSyncRun("england-athletics");
+
         // Optional page range for chunked runs: ?from=1&to=30
         // Optional ?order=desc to sweep the feed in reverse — covers events
         // stranded on pages where the EA API 500s in ascending order.
