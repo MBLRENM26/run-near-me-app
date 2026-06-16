@@ -272,14 +272,34 @@ export const Route = createFileRoute("/api/public/admin/sync-scottish-athletics"
           .upsert(rows, { onConflict: "norm_id" })
           .select("id");
         if (error) {
+          await run.finish({
+            status: "error",
+            error_message: error.message,
+            fetched: all.length,
+            active: running.length,
+          });
           return Response.json({ error: error.message }, { status: 500 });
         }
+
+        const written = data?.length ?? 0;
+        await run.finish({
+          status: "success",
+          fetched: all.length,
+          active: running.length,
+          written,
+          new_events: newEvents,
+          updated_existing: updatedExisting,
+          skipped_dupes: skippedDupes,
+          skipped_no_date: skippedNoDate,
+        });
 
         return Response.json({
           ok: true,
           fetched: all.length,
           running: running.length,
-          written: data?.length ?? 0,
+          written,
+          newEvents,
+          updatedExisting,
           skippedDupes,
           skippedNoDate,
         });
