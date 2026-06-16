@@ -1,26 +1,25 @@
-## What's happening
+## Recommendation: wipe and re-ingest
 
-1. **Test data**: The `verify-*` rows in `clubs` are already gone (cleanup ran last session — current count is 0). No action needed.
-2. **Slug 500s**: `clubs.slug` has a `UNIQUE` constraint, but `import-clubs.ts` upserts on `norm_id` only. When two different clubs (different `norm_id`) generate the same slug, Postgres throws `23505` and the endpoint returns 500. Need a `-2`, `-3`, … suffix fallback.
+A quick sample of the 2,558 rows shows three kinds of junk mixed in, not just events:
 
-## Fix
+- **Real clubs** — "Mansfield Harriers", "Lonely Goat RC", "Hillsborough & Rivelin RC"
+- **Events/races** — "Hove Prom 10k", "Bolsover 10k", "Worthington 6 2026", "Even Splits Leeds 5k Series"
+- **Bare first names (people)** — "Jennifer", "Susan", "Jez", "George", "Hannah"
 
-Edit `src/routes/api/public/import-clubs.ts`:
+A name-pattern delete would catch most races but miss the people rows and risk false positives on legit clubs (e.g. anything with "Runners" / "AC" / "Tri"). A clean wipe is safer than regex surgery at this volume.
 
-- After validation, collect each accepted row's candidate slug (`c.slug?.trim() || slugify(c.name) || c.norm_id`).
-- Resolve collisions before the upsert:
-  1. Query `clubs` for any existing row whose `slug` starts with one of the candidate bases AND whose `norm_id` is NOT in the incoming batch (these are the rows we'd collide with — rows we're updating keep their slug).
-  2. Build a `Set<string>` of taken slugs from that query.
-  3. For each row, if its candidate slug is in the taken set OR already assigned to an earlier row in the same batch, append `-2`, `-3`, … until free. Add the chosen slug to the taken set.
-- Upsert as today.
+`club_claims` is currently empty (0 rows), so nothing user-generated is lost.
 
-This handles both DB-vs-batch collisions and within-batch collisions, and leaves the existing slug stable for rows being updated (matched by `norm_id`).
+## Plan
 
-## Then
+1. **Migration** — `TRUNCATE public.clubs RESTART IDENTITY CASCADE;`
+   - Resets the table to empty, drops any FK-linked rows (only `club_claims`, which is already empty).
+2. **You re-run the ingest** with the upstream fix (`c.type === 'club'` filter applied before posting to `/api/public/import-clubs`).
+3. The existing slug-collision handler we added last turn will handle any genuine duplicate slugs in the new clean batch.
 
-Republish so the new endpoint is live for Dex's next ingest.
+## Not in scope
 
-## Notes
+- No code changes on Lovable's side — the import endpoint is fine; the fix is upstream in your ingest script.
+- No changes to `club_claims`, RLS, or grants.
 
-- Cleanup migration is not needed — `verify-%` rows are already 0.
-- No schema change; pure handler logic.
+Approve and I'll run the truncate migration so you can re-ingest into a clean table.
