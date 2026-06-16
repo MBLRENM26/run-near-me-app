@@ -14,6 +14,99 @@ export type Database = {
   }
   public: {
     Tables: {
+      clubs: {
+        Row: {
+          affiliation_number: string | null
+          claimed_at: string | null
+          claimed_by: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          country: string | null
+          county: string | null
+          created_at: string
+          disciplines: string[]
+          governing_body: string
+          id: string
+          is_claimed: boolean
+          last_verified_at: string | null
+          lat: number | null
+          lng: number | null
+          name: string
+          norm_created_at: string | null
+          norm_id: string
+          postcode: string | null
+          region: string | null
+          slug: string
+          source: string | null
+          source_url: string | null
+          status: string
+          town: string | null
+          tsv: unknown
+          updated_at: string
+          website_url: string | null
+        }
+        Insert: {
+          affiliation_number?: string | null
+          claimed_at?: string | null
+          claimed_by?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          country?: string | null
+          county?: string | null
+          created_at?: string
+          disciplines?: string[]
+          governing_body: string
+          id?: string
+          is_claimed?: boolean
+          last_verified_at?: string | null
+          lat?: number | null
+          lng?: number | null
+          name: string
+          norm_created_at?: string | null
+          norm_id: string
+          postcode?: string | null
+          region?: string | null
+          slug: string
+          source?: string | null
+          source_url?: string | null
+          status?: string
+          town?: string | null
+          tsv?: unknown
+          updated_at?: string
+          website_url?: string | null
+        }
+        Update: {
+          affiliation_number?: string | null
+          claimed_at?: string | null
+          claimed_by?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          country?: string | null
+          county?: string | null
+          created_at?: string
+          disciplines?: string[]
+          governing_body?: string
+          id?: string
+          is_claimed?: boolean
+          last_verified_at?: string | null
+          lat?: number | null
+          lng?: number | null
+          name?: string
+          norm_created_at?: string | null
+          norm_id?: string
+          postcode?: string | null
+          region?: string | null
+          slug?: string
+          source?: string | null
+          source_url?: string | null
+          status?: string
+          town?: string | null
+          tsv?: unknown
+          updated_at?: string
+          website_url?: string | null
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
@@ -456,6 +549,75 @@ export type Database = {
       }
     }
     Views: {
+      public_clubs: {
+        Row: {
+          affiliation_number: string | null
+          claimed_at: string | null
+          country: string | null
+          county: string | null
+          created_at: string | null
+          disciplines: string[] | null
+          governing_body: string | null
+          id: string | null
+          is_claimed: boolean | null
+          last_verified_at: string | null
+          lat: number | null
+          lng: number | null
+          name: string | null
+          norm_created_at: string | null
+          postcode: string | null
+          region: string | null
+          slug: string | null
+          status: string | null
+          town: string | null
+          website_url: string | null
+        }
+        Insert: {
+          affiliation_number?: string | null
+          claimed_at?: string | null
+          country?: string | null
+          county?: string | null
+          created_at?: string | null
+          disciplines?: string[] | null
+          governing_body?: string | null
+          id?: string | null
+          is_claimed?: boolean | null
+          last_verified_at?: string | null
+          lat?: number | null
+          lng?: number | null
+          name?: string | null
+          norm_created_at?: string | null
+          postcode?: string | null
+          region?: string | null
+          slug?: string | null
+          status?: string | null
+          town?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          affiliation_number?: string | null
+          claimed_at?: string | null
+          country?: string | null
+          county?: string | null
+          created_at?: string | null
+          disciplines?: string[] | null
+          governing_body?: string | null
+          id?: string | null
+          is_claimed?: boolean | null
+          last_verified_at?: string | null
+          lat?: number | null
+          lng?: number | null
+          name?: string | null
+          norm_created_at?: string | null
+          postcode?: string | null
+          region?: string | null
+          slug?: string | null
+          status?: string | null
+          town?: string | null
+          website_url?: string | null
+        }
+        Relationships: []
+      }
       public_events: {
         Row: {
           country: string | null
