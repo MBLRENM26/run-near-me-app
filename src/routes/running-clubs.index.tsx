@@ -13,7 +13,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { listClubs } from "@/lib/clubs.functions";
+import { listClubs, type ClubListItem } from "@/lib/clubs.functions";
 import { REGIONS } from "@/lib/regions";
 import { SITE_URL, SITE_NAME } from "@/lib/site";
 
@@ -173,7 +173,7 @@ function ClubsIndexPage() {
         </div>
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2 mt-6">
-          {clubs.map((c) => (
+          {clubs.map((c: ClubListItem) => (
             <li
               key={c.id}
               className="rounded-xl border border-border bg-card p-4 shadow-card hover:shadow-card-hover transition-shadow"
