@@ -1,51 +1,75 @@
-## Goal
+# TBC date refresh + targeted edits
 
-Export the events that need real dates so you can work through them and update.
+One `supabase--insert` data-change covering everything below. No schema changes.
 
-## What I found
+## 1. CSV bulk date backfill (108 rows)
 
-Running counts against `events` (ACTIVE, non-duplicate):
+For every `id` in `July TBC — 108 dates to update.csv`, set:
 
-| Metric | Count |
+- `date_from`  = `found_date`
+- `date_to`    = `found_date`
+- `sort_date`  = `found_date`
+- `date_raw`   = `to_char(found_date, 'FMDay, FMDD FMMonth YYYY')` → e.g. `Sunday, 5 July 2026`
+- `date_is_estimated` = `false`
+- `updated_at` = `now()`
+
+3 `past_confirmed` rows handled the same way — `status` stays `ACTIVE`, search filters them out via `sort_date >= CURRENT_DATE`.
+
+Implementation: single `UPDATE events SET ... FROM (VALUES (id, found_date), ...) AS v(id, d) WHERE events.id = v.id::uuid`.
+
+## 2. Individual date corrections
+
+| Event | ID | New date |
+|---|---|---|
+| Hampton Court Palace 10K | `43a9e5ff` | 2026-10-11 |
+| Hyde Park 5K & 10K (One Race) | `1dd53e5b` | 2026-09-26 |
+| Regent's Park 5K & 10K | `1a7a728a` | 2026-06-27 |
+
+Same six fields as section 1 (incl. `date_is_estimated = false`, regenerated `date_raw`).
+
+## 3. Richmond — no action needed on existing rows
+
+- **RunThrough Richmond Park Half (28 Jun 2026)** already exists as `a26062aa` with the correct date — leave as-is.
+- **RNLI Half Marathon Richmond** (`06dacc5a`) — you can't find it on the web, it's estimated, no source. **Set `status = 'HIDDEN'`** rather than guess a date. Confirm if you'd prefer to keep it ACTIVE estimated instead.
+- One Race "Richmond 7 June 2026" version — no matching row in DB; **not created** in this run (creating new events is out of scope here; flag if you want a follow-up to add it).
+
+## 4. Status → HIDDEN
+
+| Event | ID |
 |---|---|
-| Total active events | 5,296 |
-| `date_from IS NULL` | 1,395 |
-| ↳ of which `source = 'parkrun'` | 1,390 |
-| ↳ other (real gaps) | 5 |
-| `date_is_estimated = true` | 650 |
+| East Finchley Half Marathon | `e6cd197f` |
+| Tempos Summer 5K Series Race 4 | `405be6ce` |
+| Titan Ultra Fest | `d0fd90f5` |
+| Burton & District Triathlon Festival (closest match to "Trail Festival") | `213329d3` |
+| RNLI Half Marathon Richmond (see §3) | `06dacc5a` |
 
-The `date_from IS NULL` query you suggested is mostly noise — 1,390 of the 1,395 nulls are weekly parkruns, which legitimately have no fixed date. Only 5 non-parkrun events truly have no date at all.
+## 5. Town corrections
 
-The real "TBC" problem is **`date_is_estimated = true`** — 650 events with month-only `date_raw` like `"June 2026"`, where `sort_date` was pinned to the 1st of the month as a placeholder. These are the ones that need real published dates from the organiser.
+| Event | ID | New town |
+|---|---|---|
+| Wild One | `c35a5653` | Worcester |
+| Swan Challenge | `07f9ce3f` | Coombe Abbey Park |
+| Whitemoor 5 Miler | `d81e3292` | March |
 
-All 650 have `source = NULL` and (in the sample I checked) `organiser_url = NULL` — they came in via an early import without source attribution, so the CSV can't link you back to where they came from. You'll have to Google each one.
+(Ultra 5K Kempston `e44dbf10` and Timber Trails Bromsgrove `b52dfa4e` already have correct towns — no UPDATE needed for town.)
 
-## Proposed export
+## 6. Duplicate flags
 
-One CSV at `/mnt/documents/tbc-events.csv` with the 650 estimated-date events, plus a small second CSV for the 5 true-null non-parkruns:
+| Keep (canonical) | Mark as duplicate_of canonical |
+|---|---|
+| Ultra 5K Kempston `e44dbf10` | `da6547b8` (Ultra 5K Dereham row) → `status='DUPLICATE'`, `duplicate_of = e44dbf10` |
+| Timber Trails Bromsgrove `b52dfa4e` | `7264fcf1` (Coalville row) → `status='DUPLICATE'`, `duplicate_of = b52dfa4e` |
 
-**`tbc-events-estimated.csv`** (650 rows)
-Columns: `id, name, slug, town, county, country, date_raw, sort_date, distances, entry_url, organiser_url`
+## 7. Timber Trails date
 
-Ordered by `sort_date, name` so you can work month-by-month and prioritise events that are nearly upon us.
+Set canonical `b52dfa4e` to **2026-07-05** (all six date fields per §1 pattern).
 
-**`tbc-events-null-date.csv`** (5 rows)
-Same columns, the genuine no-date stragglers.
+---
 
-I'd also add a `public_url` column (`https://runningeventsnearme.com/events/{slug}`) so you can click straight to the live page while you research.
+## Out of scope / flagged for follow-up
 
-## Recommendation for the workflow itself
+- Creating a new One Race "Richmond Park 7 June 2026" row.
+- Hyde Park / Richmond — only one organiser kept per location as you instructed; if other organisers should also be listed, that's a separate add-event task.
+- Burton & District **Trail** Festival — only the Triathlon Festival exists in DB; if Trail is a real distinct event, it would need to be added.
 
-Since none of these have a source URL, a CSV is the right tool — but consider:
-
-1. **Triage by `sort_date`** — fix anything in the next ~3 months first; June 2026+ can wait.
-2. **Bulk-suspend the long tail?** Anything with `sort_date > CURRENT_DATE + 12 months` and no organiser URL is low-value SEO clutter. Worth a separate conversation about whether to set `status='HIDDEN'` until a real date is known.
-3. **Stop accepting estimated dates on future imports** — the scraper change to reject month-only dates is a separate small ticket worth queuing.
-
-Happy to also build a small admin screen for working through these in-app (search + edit date + save) instead of CSV-out-then-SQL-back, if that's preferable — let me know.
-
-## Out of scope
-
-- Any actual date corrections (manual research task).
-- Changing parkrun handling — null `date_from` is correct for them.
-- Admin UI for TBC fixing (mentioned as an option above, not in this plan).
+Reply "go" and I'll execute as one `supabase--insert` data change.
