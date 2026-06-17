@@ -1,39 +1,31 @@
-## 1. Within-batch slug collision — already handled
+## Goal
 
-Re-read of `src/routes/api/public/import-clubs.ts` (lines 128-147):
+Search currently includes events whose `sort_date` is up to 14 days in the past (and ranks them alongside upcoming ones), so a query like "kent 5k" can return slots filled by races that have already happened. We want all 20 results to be upcoming/active events.
 
-```ts
-const taken = new Set<string>();
-for (const r of existing ?? []) {
-  if (!normIds.includes(r.norm_id) && r.slug) taken.add(r.slug);
-}
+## Change
 
-const rows = draft.map(({ row, baseSlug }) => {
-  let slug = baseSlug;
-  let n = 2;
-  while (taken.has(slug)) {
-    slug = `${baseSlug}-${n}`.slice(0, 120);
-    n += 1;
-  }
-  taken.add(slug);   // ← reserves this slug for the rest of the batch
-  ...
-});
+Update the `search_events_v1` Postgres function via a migration to drop the 14-day grace window — only return events where `sort_date IS NULL OR sort_date >= CURRENT_DATE`.
+
+Specifically, change the WHERE clause from:
+
+```sql
+AND (e.sort_date IS NULL OR e.sort_date >= CURRENT_DATE - 14)
 ```
 
-Because each resolved slug is added to `taken` before the next row is processed, two rows in the **same batch** with the same `baseSlug` (e.g. two "Edinburgh AC" entries) will deterministically get `edinburgh-ac` and `edinburgh-ac-2`. No fix needed for Scottish / Welsh / NI ingests — the same logic protects them.
+to:
 
-Cross-batch collisions are also covered: by the time batch N+1 runs, batch N's slugs are in the DB and the `OR` lookup pulls them into `taken`.
+```sql
+AND (e.sort_date IS NULL OR e.sort_date >= CURRENT_DATE)
+```
 
-**One latent risk worth flagging (not fixing now):** the lookup uses `.or(slug.eq.X,slug.like.X-%)` across every baseSlug in the batch. With 500 rows that OR-list is large and, more importantly, the response itself is subject to PostgREST's row cap — see point 2.
+Signature, return columns, ranking, and the 20-result limit stay the same. The `is_past` flag in the return type becomes effectively always `false` for date-known rows, but we'll leave the column in place so `search.functions.ts` and the "Past event" badge in `src/routes/search.tsx` keep working without churn (the badge just won't render anymore).
 
-## 2. `db-max-rows = 100` — not set in this project, and you don't want it at 100
+## Why not filter in the handler
 
-There is no `db-max-rows` in `supabase/config.toml` or anywhere else in the repo. Lovable Cloud's PostgREST runs at its platform default (effectively uncapped for our purposes; certainly not 100).
+Filtering after the RPC returns would shrink the result list below 20 whenever past events were in the top-ranked set. Filtering in SQL keeps the ranker choosing from a larger pool of upcoming events, so the user reliably gets 20 relevant active results.
 
-If it *were* set to 100, the slug-collision lookup in `import-clubs` would silently truncate at 100 existing rows for a 500-row batch — meaning duplicate slugs could slip through and the `upsert` would fail on the unique index. Same risk applies to any admin list/search server fn that does a single `.select()` expecting >100 rows.
+## Out of scope
 
-**Recommendation:** leave it unset (current state). If you ever want a global safety cap, set it to something like 10,000 — but explicitly raise/paginate the import-clubs lookup before doing so.
-
-## Action
-
-Nothing to change. Both items are already in a good state — answering the questions, not editing code.
+- Date-estimated events (`date_is_estimated = true`) and events with `sort_date IS NULL` continue to appear — they're not known-past.
+- No change to the homepage radius search or distance/region pages.
+- No change to the search UI; the past-event badge code stays but won't trigger.
