@@ -1,31 +1,51 @@
 ## Goal
 
-Search currently includes events whose `sort_date` is up to 14 days in the past (and ranks them alongside upcoming ones), so a query like "kent 5k" can return slots filled by races that have already happened. We want all 20 results to be upcoming/active events.
+Export the events that need real dates so you can work through them and update.
 
-## Change
+## What I found
 
-Update the `search_events_v1` Postgres function via a migration to drop the 14-day grace window — only return events where `sort_date IS NULL OR sort_date >= CURRENT_DATE`.
+Running counts against `events` (ACTIVE, non-duplicate):
 
-Specifically, change the WHERE clause from:
+| Metric | Count |
+|---|---|
+| Total active events | 5,296 |
+| `date_from IS NULL` | 1,395 |
+| ↳ of which `source = 'parkrun'` | 1,390 |
+| ↳ other (real gaps) | 5 |
+| `date_is_estimated = true` | 650 |
 
-```sql
-AND (e.sort_date IS NULL OR e.sort_date >= CURRENT_DATE - 14)
-```
+The `date_from IS NULL` query you suggested is mostly noise — 1,390 of the 1,395 nulls are weekly parkruns, which legitimately have no fixed date. Only 5 non-parkrun events truly have no date at all.
 
-to:
+The real "TBC" problem is **`date_is_estimated = true`** — 650 events with month-only `date_raw` like `"June 2026"`, where `sort_date` was pinned to the 1st of the month as a placeholder. These are the ones that need real published dates from the organiser.
 
-```sql
-AND (e.sort_date IS NULL OR e.sort_date >= CURRENT_DATE)
-```
+All 650 have `source = NULL` and (in the sample I checked) `organiser_url = NULL` — they came in via an early import without source attribution, so the CSV can't link you back to where they came from. You'll have to Google each one.
 
-Signature, return columns, ranking, and the 20-result limit stay the same. The `is_past` flag in the return type becomes effectively always `false` for date-known rows, but we'll leave the column in place so `search.functions.ts` and the "Past event" badge in `src/routes/search.tsx` keep working without churn (the badge just won't render anymore).
+## Proposed export
 
-## Why not filter in the handler
+One CSV at `/mnt/documents/tbc-events.csv` with the 650 estimated-date events, plus a small second CSV for the 5 true-null non-parkruns:
 
-Filtering after the RPC returns would shrink the result list below 20 whenever past events were in the top-ranked set. Filtering in SQL keeps the ranker choosing from a larger pool of upcoming events, so the user reliably gets 20 relevant active results.
+**`tbc-events-estimated.csv`** (650 rows)
+Columns: `id, name, slug, town, county, country, date_raw, sort_date, distances, entry_url, organiser_url`
+
+Ordered by `sort_date, name` so you can work month-by-month and prioritise events that are nearly upon us.
+
+**`tbc-events-null-date.csv`** (5 rows)
+Same columns, the genuine no-date stragglers.
+
+I'd also add a `public_url` column (`https://runningeventsnearme.com/events/{slug}`) so you can click straight to the live page while you research.
+
+## Recommendation for the workflow itself
+
+Since none of these have a source URL, a CSV is the right tool — but consider:
+
+1. **Triage by `sort_date`** — fix anything in the next ~3 months first; June 2026+ can wait.
+2. **Bulk-suspend the long tail?** Anything with `sort_date > CURRENT_DATE + 12 months` and no organiser URL is low-value SEO clutter. Worth a separate conversation about whether to set `status='HIDDEN'` until a real date is known.
+3. **Stop accepting estimated dates on future imports** — the scraper change to reject month-only dates is a separate small ticket worth queuing.
+
+Happy to also build a small admin screen for working through these in-app (search + edit date + save) instead of CSV-out-then-SQL-back, if that's preferable — let me know.
 
 ## Out of scope
 
-- Date-estimated events (`date_is_estimated = true`) and events with `sort_date IS NULL` continue to appear — they're not known-past.
-- No change to the homepage radius search or distance/region pages.
-- No change to the search UI; the past-event badge code stays but won't trigger.
+- Any actual date corrections (manual research task).
+- Changing parkrun handling — null `date_from` is correct for them.
+- Admin UI for TBC fixing (mentioned as an option above, not in this plan).
