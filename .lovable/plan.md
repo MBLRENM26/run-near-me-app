@@ -1,50 +1,36 @@
-## Why the North Downs Run regressed
+# Exclude Lovable traffic from analytics
 
-On the event page (`src/routes/events.$slug.tsx` ~line 413) the "type" line renders a single value:
+## Why
+The Plausible script in `src/routes/__root.tsx` loads on every host the app is served from — including the Lovable editor iframe (`lovable.dev`) and the preview hosts (`*.lovable.app`, e.g. `id-preview--…lovable.app`, `project--…lovable.app`). Every time you (or anyone) opens the editor or a preview link, those pageviews and dwell time get sent to Plausible and skew the real numbers.
 
-```ts
-const distance = e.distances?.trim() || e.discipline?.trim();
-```
+We want pageviews to be sent **only** from the canonical production hostnames:
+- `runningeventsnearme.com`
+- `www.runningeventsnearme.com`
 
-So one text field is doing two jobs. When `distances` was empty we fell through to `discipline` ("multi terrain"). The moment you typed `30k` into `distances`, the same line started showing `30k` and the terrain label disappeared — nothing was lost in the DB, the UI just had only one slot.
+Everything else (lovable.dev, *.lovable.app, localhost, custom preview domains) should be a silent no-op.
 
-The DB already has the right separate fields (`distances`, `discipline`, `distance_tags[]`, `terrain_tags[]`), they just aren't all surfaced.
+## What changes
 
-## Fix (small, ~1 hour)
+**One file: `src/routes/__root.tsx`** — replace the two `scripts:` entries that load Plausible with a single inline gate plus a conditional loader. New behaviour:
 
-1. **Expose structured fields in `getEventBySlug`** (`src/lib/events.functions.ts`): add `distance_tags`, `terrain_tags` to the SELECT and to `EventDetail`. Still no `source`/`source_url` (per the link-trust rule).
-2. **Replace the single "distance" line with a small facts block** on `events.$slug.tsx`. Each fact is its own row, each only renders if populated:
-   - Distance — prefer `distances` text, else humanised `distance_tags`
-   - Terrain — from `terrain_tags` (Road / Trail / Multi-terrain / Fell), else `discipline` if it looks like a terrain word
-   - Date, Location (already there)
-3. **Independent rendering** means: adding `30k` to `distances` no longer hides the terrain tag, because terrain comes from a different field.
+1. Inline script runs first in `<head>`. It defines `window.plausible` as a queue stub (same as today) **but** checks `location.hostname` first:
+   - If hostname is in the allow-list (`runningeventsnearme.com`, `www.runningeventsnearme.com`) → install the real queue stub and dynamically inject the `pa-…js` script tag.
+   - Otherwise → install a no-op `window.plausible = function(){}` so every `track(...)` call across the app silently does nothing, and the external script is never loaded.
 
-That's the whole fix for the regression.
+2. Remove the unconditional `<script src="https://plausible.io/js/pa-…js" async>` from the `scripts:` array — it gets injected by the gate above only on production hosts.
 
-## Pattern for adding rich fields later (elevation, surface, lap count, chip timing, baggage, etc.)
+Net effect:
+- No Plausible script on lovable.dev, *.lovable.app, localhost, or any unknown host.
+- No pageviews, no custom events (`Entry Click`, `Filter`, `Region View`, etc.) from those hosts.
+- Zero changes needed in `src/lib/analytics.ts` or any call site — the existing `track()` wrapper already no-ops when `window.plausible` is missing or a stub.
+- SSR safe: the inline script only runs in the browser; SSR HTML is unchanged.
 
-This is the part worth committing to now so it doesn't get messy:
+## Out of scope
+- No change to the Plausible dashboard config; nothing to do there.
+- Not adding a "track preview as separate site" flow — the request is to stop tracking them, full stop.
+- Custom domains beyond the two above aren't tracked; if you add more production domains later, extend the allow-list in this same file.
 
-**Schema rule** — every rich field is its own nullable column (or array). Never a free-text "description" that mixes facts.
-
-**Render rule** — every fact renders only when populated; no field depends on another being empty. The facts block is just `[ { label, value, icon } ].filter(v => v.value).map(...)`.
-
-**Verification rule (optional, recommended)** — add one `verified_fields jsonb` column on `events`, shape `{ "elevation_m": { "verified_at": "...", "by": "admin" }, ... }`. The UI shows a small "Verified" tick next to any field present in that map. Scraped values render plain; admin-confirmed values render verified. This is what lets you "show all relevant fields that are verified and populated" without per-field boolean columns sprawling.
-
-**Admin rule** — `_adminShell.admin.events.$id.tsx` already has the tag editor pattern; new rich fields slot in next to it. Saving a field stamps `verified_fields[field] = { verified_at: now() }`.
-
-## Complexity
-
-- Immediate fix: tiny — one server fn SELECT, one render block, no migration.
-- Rich-fields pattern: low — one `jsonb` column + a `<Fact>` component. Each new field after that is ~3 lines (column + admin input + fact row).
-- No new tables, no new routes, no new packages.
-
-## Out of scope for this plan
-
-Actually adding elevation/surface/etc. columns — call those out when you want them and I'll add them one by one under this pattern.
-
-## Technical detail
-
-- Files touched: `src/lib/events.functions.ts` (SELECT + type), `src/routes/events.$slug.tsx` (facts block), optionally a new `src/components/events/EventFacts.tsx`.
-- Migration: none for the fix; one `ALTER TABLE events ADD COLUMN verified_fields jsonb DEFAULT '{}'::jsonb` if you want the verification layer now.
-- Honours `mem://constraints/no-source-attribution` — no `source`/`source_url` added to the public SELECT.
+## Verification
+After deploy:
+- Open the editor / a `*.lovable.app` preview, DevTools → Network: no request to `plausible.io/js/pa-…js`, no request to `plausible.io/api/event`.
+- Open `https://runningeventsnearme.com`: both requests fire as today.
