@@ -254,7 +254,8 @@ function EventDetailPage() {
 
   const dateLabel = formatEventDate(e);
   const loc = locationLabel(e.town, e.county);
-  const distance = e.distances?.trim() || e.discipline?.trim();
+  const distance = e.distances?.trim() || null;
+  const terrainLabel = formatTerrain(e.terrain_tags, e.discipline);
   const regionSlug = regionSlugFromName(e.region);
 
   // Imminent (within 7 days) or past events don't promise open entries.
