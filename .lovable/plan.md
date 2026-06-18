@@ -1,75 +1,50 @@
-# TBC date refresh + targeted edits
+## Why the North Downs Run regressed
 
-One `supabase--insert` data-change covering everything below. No schema changes.
+On the event page (`src/routes/events.$slug.tsx` ~line 413) the "type" line renders a single value:
 
-## 1. CSV bulk date backfill (108 rows)
+```ts
+const distance = e.distances?.trim() || e.discipline?.trim();
+```
 
-For every `id` in `July TBC — 108 dates to update.csv`, set:
+So one text field is doing two jobs. When `distances` was empty we fell through to `discipline` ("multi terrain"). The moment you typed `30k` into `distances`, the same line started showing `30k` and the terrain label disappeared — nothing was lost in the DB, the UI just had only one slot.
 
-- `date_from`  = `found_date`
-- `date_to`    = `found_date`
-- `sort_date`  = `found_date`
-- `date_raw`   = `to_char(found_date, 'FMDay, FMDD FMMonth YYYY')` → e.g. `Sunday, 5 July 2026`
-- `date_is_estimated` = `false`
-- `updated_at` = `now()`
+The DB already has the right separate fields (`distances`, `discipline`, `distance_tags[]`, `terrain_tags[]`), they just aren't all surfaced.
 
-3 `past_confirmed` rows handled the same way — `status` stays `ACTIVE`, search filters them out via `sort_date >= CURRENT_DATE`.
+## Fix (small, ~1 hour)
 
-Implementation: single `UPDATE events SET ... FROM (VALUES (id, found_date), ...) AS v(id, d) WHERE events.id = v.id::uuid`.
+1. **Expose structured fields in `getEventBySlug`** (`src/lib/events.functions.ts`): add `distance_tags`, `terrain_tags` to the SELECT and to `EventDetail`. Still no `source`/`source_url` (per the link-trust rule).
+2. **Replace the single "distance" line with a small facts block** on `events.$slug.tsx`. Each fact is its own row, each only renders if populated:
+   - Distance — prefer `distances` text, else humanised `distance_tags`
+   - Terrain — from `terrain_tags` (Road / Trail / Multi-terrain / Fell), else `discipline` if it looks like a terrain word
+   - Date, Location (already there)
+3. **Independent rendering** means: adding `30k` to `distances` no longer hides the terrain tag, because terrain comes from a different field.
 
-## 2. Individual date corrections
+That's the whole fix for the regression.
 
-| Event | ID | New date |
-|---|---|---|
-| Hampton Court Palace 10K | `43a9e5ff` | 2026-10-11 |
-| Hyde Park 5K & 10K (One Race) | `1dd53e5b` | 2026-09-26 |
-| Regent's Park 5K & 10K | `1a7a728a` | 2026-06-27 |
+## Pattern for adding rich fields later (elevation, surface, lap count, chip timing, baggage, etc.)
 
-Same six fields as section 1 (incl. `date_is_estimated = false`, regenerated `date_raw`).
+This is the part worth committing to now so it doesn't get messy:
 
-## 3. Richmond — no action needed on existing rows
+**Schema rule** — every rich field is its own nullable column (or array). Never a free-text "description" that mixes facts.
 
-- **RunThrough Richmond Park Half (28 Jun 2026)** already exists as `a26062aa` with the correct date — leave as-is.
-- **RNLI Half Marathon Richmond** (`06dacc5a`) — you can't find it on the web, it's estimated, no source. **Set `status = 'HIDDEN'`** rather than guess a date. Confirm if you'd prefer to keep it ACTIVE estimated instead.
-- One Race "Richmond 7 June 2026" version — no matching row in DB; **not created** in this run (creating new events is out of scope here; flag if you want a follow-up to add it).
+**Render rule** — every fact renders only when populated; no field depends on another being empty. The facts block is just `[ { label, value, icon } ].filter(v => v.value).map(...)`.
 
-## 4. Status → HIDDEN
+**Verification rule (optional, recommended)** — add one `verified_fields jsonb` column on `events`, shape `{ "elevation_m": { "verified_at": "...", "by": "admin" }, ... }`. The UI shows a small "Verified" tick next to any field present in that map. Scraped values render plain; admin-confirmed values render verified. This is what lets you "show all relevant fields that are verified and populated" without per-field boolean columns sprawling.
 
-| Event | ID |
-|---|---|
-| East Finchley Half Marathon | `e6cd197f` |
-| Tempos Summer 5K Series Race 4 | `405be6ce` |
-| Titan Ultra Fest | `d0fd90f5` |
-| Burton & District Triathlon Festival (closest match to "Trail Festival") | `213329d3` |
-| RNLI Half Marathon Richmond (see §3) | `06dacc5a` |
+**Admin rule** — `_adminShell.admin.events.$id.tsx` already has the tag editor pattern; new rich fields slot in next to it. Saving a field stamps `verified_fields[field] = { verified_at: now() }`.
 
-## 5. Town corrections
+## Complexity
 
-| Event | ID | New town |
-|---|---|---|
-| Wild One | `c35a5653` | Worcester |
-| Swan Challenge | `07f9ce3f` | Coombe Abbey Park |
-| Whitemoor 5 Miler | `d81e3292` | March |
+- Immediate fix: tiny — one server fn SELECT, one render block, no migration.
+- Rich-fields pattern: low — one `jsonb` column + a `<Fact>` component. Each new field after that is ~3 lines (column + admin input + fact row).
+- No new tables, no new routes, no new packages.
 
-(Ultra 5K Kempston `e44dbf10` and Timber Trails Bromsgrove `b52dfa4e` already have correct towns — no UPDATE needed for town.)
+## Out of scope for this plan
 
-## 6. Duplicate flags
+Actually adding elevation/surface/etc. columns — call those out when you want them and I'll add them one by one under this pattern.
 
-| Keep (canonical) | Mark as duplicate_of canonical |
-|---|---|
-| Ultra 5K Kempston `e44dbf10` | `da6547b8` (Ultra 5K Dereham row) → `status='DUPLICATE'`, `duplicate_of = e44dbf10` |
-| Timber Trails Bromsgrove `b52dfa4e` | `7264fcf1` (Coalville row) → `status='DUPLICATE'`, `duplicate_of = b52dfa4e` |
+## Technical detail
 
-## 7. Timber Trails date
-
-Set canonical `b52dfa4e` to **2026-07-05** (all six date fields per §1 pattern).
-
----
-
-## Out of scope / flagged for follow-up
-
-- Creating a new One Race "Richmond Park 7 June 2026" row.
-- Hyde Park / Richmond — only one organiser kept per location as you instructed; if other organisers should also be listed, that's a separate add-event task.
-- Burton & District **Trail** Festival — only the Triathlon Festival exists in DB; if Trail is a real distinct event, it would need to be added.
-
-Reply "go" and I'll execute as one `supabase--insert` data change.
+- Files touched: `src/lib/events.functions.ts` (SELECT + type), `src/routes/events.$slug.tsx` (facts block), optionally a new `src/components/events/EventFacts.tsx`.
+- Migration: none for the fix; one `ALTER TABLE events ADD COLUMN verified_fields jsonb DEFAULT '{}'::jsonb` if you want the verification layer now.
+- Honours `mem://constraints/no-source-attribution` — no `source`/`source_url` added to the public SELECT.
