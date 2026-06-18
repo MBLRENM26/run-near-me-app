@@ -825,7 +825,6 @@ export type Database = {
           name: string
           organiser_url: string
           slug: string
-          source_url: string
           town: string
         }[]
       }
