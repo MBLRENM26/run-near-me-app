@@ -52,6 +52,8 @@ export type EventDetail = {
   region: string | null;
   distances: string | null;
   discipline: string | null;
+  distance_tags: string[] | null;
+  terrain_tags: string[] | null;
   entry_fee: string | null;
   entry_url: string | null;
   organiser_url: string | null;
