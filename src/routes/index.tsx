@@ -150,7 +150,7 @@ function HomePage() {
   const setEventType = (t: EventType) =>
     navigate({ search: (prev: HomeSearch) => ({ ...prev, type: t }) });
 
-  const { data: nearbyEvents, isLoading } = useQuery({
+  const { data: nearbyEvents, isLoading, error: nearbyError } = useQuery({
     queryKey: ["events", "nearby", coords?.lat, coords?.lng, radius],
     enabled: !!coords,
     queryFn: async () => {
@@ -160,7 +160,10 @@ function HomePage() {
         p_radius_miles: radius,
         p_max_results: 500,
       });
-      if (error) throw error;
+      if (error) {
+        console.error("[home/nearby] rpc failed", error);
+        throw error;
+      }
       return data;
     },
   });
