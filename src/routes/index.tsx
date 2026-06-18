@@ -1,6 +1,6 @@
-import { useMemo } from "react";
+import { Suspense, useMemo } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { SITE_URL, SITE_NAME } from "@/lib/site";
+import { SITE_URL, SITE_NAME, SOCIALS } from "@/lib/site";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/site/Header";
@@ -22,6 +22,10 @@ import { matchesEventType, type EventType } from "@/lib/distance";
 import { MapPin } from "lucide-react";
 import { DistanceNav } from "@/components/distance/DistanceNav";
 import { classifyEventLink } from "@/lib/link-trust";
+import {
+  LiveEventCounter,
+  liveStatsQueryOptions,
+} from "@/components/home/LiveEventCounter";
 
 type HomeSearch = {
   lat?: number;
@@ -94,6 +98,7 @@ export const Route = createFileRoute("/")({
           description:
             "UK running event finder — 5K, 10K, half marathons, marathons, trail and ultra races near you.",
           logo: `${SITE_URL}/favicon.svg`,
+          sameAs: SOCIALS.map((s) => s.href),
         }),
       },
       {
@@ -117,6 +122,12 @@ export const Route = createFileRoute("/")({
       },
     ],
   }),
+  loader: ({ context }) => {
+    // Prime the live-stats cache so the hero counter SSRs with a real number
+    // (no hydration flash, no layout shift). Don't await — if the count fails
+    // the component shows nothing rather than blocking the homepage.
+    void context.queryClient.prefetchQuery(liveStatsQueryOptions);
+  },
   component: HomePage,
 });
 
@@ -257,7 +268,7 @@ function HomePage() {
             <LocationPrompt onLocate={setCoords} />
           </div>
 
-          {coords?.label && (
+          {coords?.label ? (
             <p className="mt-4 text-sm text-muted-foreground inline-flex items-center gap-1.5">
               <MapPin className="h-4 w-4 text-primary" />
               Showing events near{" "}
@@ -265,6 +276,12 @@ function HomePage() {
                 {coords.label}
               </span>
             </p>
+          ) : (
+            <div className="mt-6">
+              <Suspense fallback={null}>
+                <LiveEventCounter />
+              </Suspense>
+            </div>
           )}
         </section>
 
