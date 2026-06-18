@@ -1,101 +1,44 @@
-Three small, self-contained additions. None touch business logic, none require schema changes, each independently shippable.
+## What's actually happening
 
-## 1. Social links
+The code in `src/components/events/LocationPrompt.tsx` is correct. The browser is genuinely returning `PERMISSION_DENIED`, and there are two likely reasons:
 
-**`src/lib/site.ts`** — add a typed `SOCIALS` array:
+1. **The Lovable preview iframe doesn't grant geolocation.** Cross-origin iframes need an explicit `allow="geolocation"` permissions-policy attribute on the `<iframe>` tag to be allowed to prompt for location. The preview iframe (`id-preview--…lovable.app`) doesn't set this, so `getCurrentPosition` is auto-rejected without ever showing a prompt. **This will work fine on the published domain** (`runningeventsnearme.com`) where the site is top-level, not in an iframe.
+2. **A previous denial is cached.** If you (or anyone) hit "Block" once on `runningeventsnearme.com`, Chrome/Safari remembers it per-origin until you clear it via the address-bar padlock.
 
-```ts
-export const SOCIALS = [
-  { label: "Instagram", handle: "@runningeventsnearme", href: "https://instagram.com/runningeventsnearme" },
-  { label: "TikTok",    handle: "@runningeventsnearme", href: "https://tiktok.com/@runningeventsnearme" },
-  // X + LinkedIn added once handles are registered
-] as const;
-```
+So this is a real-world UX issue worth tightening, not a code bug. The current toast says "Try a postcode instead" but doesn't tell the user *why* or *how to fix it*.
 
-**`src/components/site/Footer.tsx`** — small icon row sourced from `SOCIALS`. lucide-react `Instagram` already available; TikTok via a small inline SVG (lucide doesn't ship one). Icons `aria-label`'d, open in new tab with `rel="noopener noreferrer"`, `h-5 w-5`, muted → primary on hover.
+## Proposed changes (small, presentation-only)
 
-**`src/routes/__root.tsx`** — extend the existing Organization JSON-LD with `sameAs: [...]` from `SOCIALS` so Google connects the brand to the socials.
+**1. Detect permission state up front using the Permissions API.**
+Before calling `getCurrentPosition`, query `navigator.permissions.query({ name: "geolocation" })`. If `state === "denied"`, skip the geolocation call entirely and show a more helpful message:
 
-Header stays minimal — no social icons there.
+> "Location is blocked for this site. Tap the padlock in your address bar → Site settings → Allow location. Or use a postcode."
 
-## 2. Brand assets
+Safari doesn't support the Permissions API for geolocation — fall back to the current flow there (try, catch denial).
 
-Current "two feet" is the lucide `Footprints` icon — fine placeholder but not ownable. Recommended:
+**2. Detect iframe context and tell the truth.**
+If `window.self !== window.top` (running inside the Lovable preview iframe) AND we get `PERMISSION_DENIED`, show:
 
-1. **Generate a proper two-feet mark** (`src/assets/logo-mark.png`, 512×512, transparent) — stylised footprints with implied forward motion, single colour using `--primary`. Swap into Header in place of the lucide icon.
-2. **Favicon set** derived from the mark — replace `public/favicon.svg`, `favicon.png`, `apple-touch-icon.png`.
-3. **OG share image** (`public/og-image.png`, 1200×630, premium tier for legible type) — mark + wordmark + tagline "Find your next race" on brand-coloured background. Replaces existing `og-image.png`.
-4. **Header wordmark** stays as today; only the icon container is swapped.
+> "Location can't be used inside the preview. It will work on the live site, or use a postcode."
 
-Note: social/search platforms cache OG images. After swap you'll need to force a refresh in each platform's link debugger (LinkedIn Post Inspector, X Card Validator, Facebook Sharing Debugger) to see the new image immediately.
+This stops you (and any other preview viewers) thinking the live site is broken.
 
-### About page rewrite (`src/routes/about.tsx`) — final copy
+**3. Keep the existing postcode fallback prominent.**
+No change — it already works. We're just making the error toasts truthful.
 
-> **What this is**
->
-> Running Events Near Me is a free UK race directory. 5Ks to ultras, road to trail, parkrun to multi-terrain — searchable by postcode, region, and distance. No account. No sign-up. Just races.
->
-> **Why it exists**
->
-> Finding a race near you shouldn't take longer than running one. Race listings in the UK are scattered across governing body portals, club websites, and Facebook groups nobody checks. This is the place that pulls it all together.
->
-> **How the data works**
->
-> Events are sourced from England Athletics, Scottish Athletics, Welsh Athletics, Athletics NI, individual research and organiser submissions. Every listing links directly to the official organiser page (or booking page if no website), for entries, pricing, and the details that change. We don't publish prices. Things move. Check the source before you travel.
+**4. De-dupe the toast.**
+Pass `{ id: "geo-denied" }` to `toast.error` so rapid double-clicks don't stack two identical toasts (saw this in the session replay).
 
-**CTA block** at the bottom:
+## Files touched
 
-> Got a race that isn't listed? Running a club?
->
-> Both are free. Both link back to you — not to us.
->
-> **[ Submit an event ]** **[ Claim your club ]**
+- `src/components/events/LocationPrompt.tsx` — only file changed. ~25 lines added inside `useDeviceLocation`. No new deps, no API/DB changes, no analytics changes.
 
-Buttons link to `/list-your-event` and `/running-clubs` respectively (matches existing routes). Page `head()` updated: title "About — Running Events Near Me", new description derived from the opening paragraph, canonical + og:url self-referencing `/about`.
+## What this does NOT do
 
-## 3. Live "active events" ticker
+- Doesn't try to make geolocation work inside the preview iframe — that requires a platform change to the iframe's `allow` attribute, which isn't in our code.
+- Doesn't change the postcode flow, the search route, or analytics events.
+- Doesn't add a new component or hook.
 
-Single-purpose component on the homepage hero. Counts ACTIVE, non-duplicate events. Naturally ticks up when cron syncs publish new events or when you flip a hidden event live.
+## Verification
 
-**New: `src/lib/stats.functions.ts`**
-
-```ts
-export const getLiveStats = createServerFn({ method: "GET" }).handler(async () => {
-  const supabasePublic = createClient<Database>(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_PUBLISHABLE_KEY!,
-    { auth: { persistSession: false, autoRefreshToken: false } },
-  );
-  const { count } = await supabasePublic
-    .from("events")
-    .select("id", { count: "exact", head: true })
-    .eq("status", "ACTIVE")
-    .is("duplicate_of", null);
-  return { activeEvents: count ?? 0, updatedAt: new Date().toISOString() };
-});
-```
-
-Uses the server publishable client (no service-role leak, no admin client in a `.functions.ts` — matches existing project rules). Existing `events` SELECT policy already allows anon reads; no DB changes.
-
-**New: `src/components/home/LiveEventCounter.tsx`**
-
-- `useSuspenseQuery({ queryKey: ["live-stats"], queryFn: getLiveStats, refetchInterval: 60_000, refetchIntervalInBackground: false })`.
-- ~30 lines: `useEffect` + `requestAnimationFrame` counts from previous → new value over 800ms with easeOutCubic. No new dependency.
-- Renders large number + small caption "UK races live right now". `aria-live="polite"`.
-- Respects `prefers-reduced-motion` — snaps instead of animating.
-
-**`src/routes/index.tsx`**
-
-- Loader calls `context.queryClient.ensureQueryData({ queryKey: ["live-stats"], queryFn: getLiveStats })` so initial number is SSR'd (no hydration flash, no layout shift).
-- `<LiveEventCounter />` placed in the hero beneath `LocationPrompt` as a one-line stat strip — easy to extend later ("X added this week") without restructuring.
-
-**Explicitly NOT doing:**
-- No counter table cron increments. DB count is already the source of truth.
-- No realtime subscription. 60s polling is enough and costs nothing.
-- No cron-side wiring.
-
-## Order of work
-
-1. Socials — `site.ts` + `Footer.tsx` + JSON-LD.
-2. Live counter — server fn + component + loader wiring + hero placement.
-3. Brand assets — generate mark/favicon/OG, swap into Header + `public/`, rewrite `about.tsx` with the copy above.
+Manual: in the preview, click "Use my location" → expect the new iframe-specific toast. On the published site in a fresh browser profile, click → expect the native browser permission prompt. If denied, expect the new "unblock via padlock" toast on the next click.
