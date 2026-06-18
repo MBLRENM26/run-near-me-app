@@ -1,44 +1,33 @@
-## What's actually happening
+### Problem
 
-The code in `src/components/events/LocationPrompt.tsx` is correct. The browser is genuinely returning `PERMISSION_DENIED`, and there are two likely reasons:
+On the live site, "Use my location" from Greenhithe (Kent) shows **"No events within 25 miles"**, even though the DB has **392 events / 144 parkruns within 25 mi of Greenhithe**. The UI gives no signal whether (a) geolocation returned the wrong coords or (b) the Supabase RPC silently errored — both look identical right now.
 
-1. **The Lovable preview iframe doesn't grant geolocation.** Cross-origin iframes need an explicit `allow="geolocation"` permissions-policy attribute on the `<iframe>` tag to be allowed to prompt for location. The preview iframe (`id-preview--…lovable.app`) doesn't set this, so `getCurrentPosition` is auto-rejected without ever showing a prompt. **This will work fine on the published domain** (`runningeventsnearme.com`) where the site is top-level, not in an iframe.
-2. **A previous denial is cached.** If you (or anyone) hit "Block" once on `runningeventsnearme.com`, Chrome/Safari remembers it per-origin until you clear it via the address-bar padlock.
+### Fix (3 small, additive changes)
 
-So this is a real-world UX issue worth tightening, not a code bug. The current toast says "Try a postcode instead" but doesn't tell the user *why* or *how to fix it*.
+**1. Reverse-geocode device coords → real place name** (`src/components/events/LocationPrompt.tsx`)
 
-## Proposed changes (small, presentation-only)
+After `getCurrentPosition` succeeds, call `https://api.postcodes.io/postcodes?lon=…&lat=…` (same provider already used for postcode lookup, no new dep, no key) and use the nearest postcode/admin district as the label. Fall back to "Your location" if it fails.
 
-**1. Detect permission state up front using the Permissions API.**
-Before calling `getCurrentPosition`, query `navigator.permissions.query({ name: "geolocation" })`. If `state === "denied"`, skip the geolocation call entirely and show a more helpful message:
+Why: turns the generic "Your location" into e.g. "DA9 9…" or "Dartford" — instantly tells you whether geolocation landed in the right place. This alone diagnoses case (a).
 
-> "Location is blocked for this site. Tap the padlock in your address bar → Site settings → Allow location. Or use a postcode."
+**2. Surface RPC errors in the nearby query** (`src/routes/index.tsx`)
 
-Safari doesn't support the Permissions API for geolocation — fall back to the current flow there (try, catch denial).
+Pull `error` off `useQuery` and render a distinct state above the empty card when present: *"Couldn't load events right now. Please try again."* (no raw error text to the user, but log details to console so I can read them in your next message). Diagnoses case (b).
 
-**2. Detect iframe context and tell the truth.**
-If `window.self !== window.top` (running inside the Lovable preview iframe) AND we get `PERMISSION_DENIED`, show:
+**3. Add a "Why am I seeing this?" hint to the empty state**
 
-> "Location can't be used inside the preview. It will work on the live site, or use a postcode."
+When 0 results, show a one-line note: *"Showing events near {label} ({lat.toFixed(2)}, {lng.toFixed(2)})"*. If the coords look wrong, you'll see it immediately and can use a postcode instead.
 
-This stops you (and any other preview viewers) thinking the live site is broken.
+### Out of scope (deliberate)
 
-**3. Keep the existing postcode fallback prominent.**
-No change — it already works. We're just making the error toasts truthful.
+- Not changing the `events_within_radius` RPC — verified working, returns 392 results for your coords.
+- Not touching parkrun filtering — they're included in the RPC and rendered in their own block already.
+- Not adding a "promote my own race" admin flow — separate request. Once we know the live site can reach the DB, the right path for races you're running is to mark them `is_featured = true` in admin so they surface in "Featured events near you".
 
-**4. De-dupe the toast.**
-Pass `{ id: "geo-denied" }` to `toast.error` so rapid double-clicks don't stack two identical toasts (saw this in the session replay).
+### Technical notes
 
-## Files touched
+- Reverse geocode endpoint: `GET https://api.postcodes.io/postcodes?lon={lng}&lat={lat}&limit=1&radius=2000`. Returns `result[0].postcode` and `result[0].admin_district`. Free, no key, already trusted by this codebase.
+- Keep the call non-blocking: set coords immediately with `"Your location"`, then patch the label once the lookup resolves so the events query isn't delayed.
+- Error logging: `console.error("[home/nearby]", error)` only — no toast spam, no PII.
 
-- `src/components/events/LocationPrompt.tsx` — only file changed. ~25 lines added inside `useDeviceLocation`. No new deps, no API/DB changes, no analytics changes.
-
-## What this does NOT do
-
-- Doesn't try to make geolocation work inside the preview iframe — that requires a platform change to the iframe's `allow` attribute, which isn't in our code.
-- Doesn't change the postcode flow, the search route, or analytics events.
-- Doesn't add a new component or hook.
-
-## Verification
-
-Manual: in the preview, click "Use my location" → expect the new iframe-specific toast. On the published site in a fresh browser profile, click → expect the native browser permission prompt. If denied, expect the new "unblock via padlock" toast on the next click.
+After you ship this and reload on the live site, your next screenshot will tell us in one glance which of the two causes it is, and we fix from there.
