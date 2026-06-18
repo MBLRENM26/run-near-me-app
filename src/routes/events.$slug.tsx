@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { Calendar, MapPin, Tag, ExternalLink } from "lucide-react";
+import { Calendar, MapPin, Tag, ExternalLink, Mountain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Breadcrumb,
