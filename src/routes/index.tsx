@@ -150,7 +150,7 @@ function HomePage() {
   const setEventType = (t: EventType) =>
     navigate({ search: (prev: HomeSearch) => ({ ...prev, type: t }) });
 
-  const { data: nearbyEvents, isLoading } = useQuery({
+  const { data: nearbyEvents, isLoading, error: nearbyError } = useQuery({
     queryKey: ["events", "nearby", coords?.lat, coords?.lng, radius],
     enabled: !!coords,
     queryFn: async () => {
@@ -160,7 +160,10 @@ function HomePage() {
         p_radius_miles: radius,
         p_max_results: 500,
       });
-      if (error) throw error;
+      if (error) {
+        console.error("[home/nearby] rpc failed", error);
+        throw error;
+      }
       return data;
     },
   });
@@ -301,6 +304,15 @@ function HomePage() {
               <p className="text-center text-muted-foreground py-12">
                 Loading events…
               </p>
+            ) : nearbyError ? (
+              <div className="text-center py-16 rounded-2xl border border-dashed border-destructive/40 bg-destructive/5">
+                <p className="text-lg font-medium text-foreground">
+                  Couldn't load events right now
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Please refresh the page or try a postcode instead.
+                </p>
+              </div>
             ) : visibleEvents.length === 0 ? (
               <div className="text-center py-16 rounded-2xl border border-dashed border-border bg-muted/30">
                 <p className="text-lg font-medium text-foreground">
@@ -309,6 +321,11 @@ function HomePage() {
                 <p className="mt-1 text-sm text-muted-foreground">
                   Try widening your radius or changing the event type.
                 </p>
+                {coords && (
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    Searching near {coords.label ?? "your location"} ({coords.lat.toFixed(2)}, {coords.lng.toFixed(2)})
+                  </p>
+                )}
               </div>
             ) : (
               <>

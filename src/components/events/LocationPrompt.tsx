@@ -67,11 +67,25 @@ export function LocationPrompt({ onLocate }: Props) {
       (pos) => {
         setLoadingGeo(false);
         trackLocationSet("device");
-        onLocate({
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-          label: "Your location",
-        });
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        // Set coords immediately so the events query starts; patch the label
+        // once reverse-geocode resolves (non-blocking, never errors out).
+        onLocate({ lat, lng, label: "Your location" });
+        void (async () => {
+          try {
+            const res = await fetch(
+              `https://api.postcodes.io/postcodes?lon=${lng}&lat=${lat}&limit=1&radius=2000`,
+            );
+            const json = await res.json();
+            const hit = json?.result?.[0];
+            const label: string | undefined =
+              hit?.admin_district ?? hit?.postcode ?? undefined;
+            if (label) onLocate({ lat, lng, label });
+          } catch {
+            // keep "Your location" fallback
+          }
+        })();
       },
       (err) => {
         setLoadingGeo(false);
