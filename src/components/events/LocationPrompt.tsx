@@ -20,11 +20,48 @@ export function LocationPrompt({ onLocate }: Props) {
   const [loadingPostcode, setLoadingPostcode] = useState(false);
   const navigate = useNavigate();
 
-  const useDeviceLocation = () => {
+  const inIframe = () => {
+    try {
+      return window.self !== window.top;
+    } catch {
+      return true;
+    }
+  };
+
+  const showDeniedToast = () => {
+    if (inIframe()) {
+      toast.error(
+        "Location can't be used inside the preview. It works on the live site, or use a postcode.",
+        { id: "geo-denied" },
+      );
+    } else {
+      toast.error(
+        "Location is blocked. Tap the padlock in your address bar → Site settings → Allow location. Or use a postcode.",
+        { id: "geo-denied" },
+      );
+    }
+  };
+
+  const useDeviceLocation = async () => {
     if (!("geolocation" in navigator)) {
       toast.error("Your browser doesn't support location access.");
       return;
     }
+
+    // Pre-check permission state where supported (skips the doomed prompt).
+    try {
+      const perms = (navigator as Navigator & { permissions?: Permissions }).permissions;
+      if (perms?.query) {
+        const status = await perms.query({ name: "geolocation" as PermissionName });
+        if (status.state === "denied") {
+          showDeniedToast();
+          return;
+        }
+      }
+    } catch {
+      // Safari / unsupported — fall through to getCurrentPosition.
+    }
+
     setLoadingGeo(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -38,11 +75,13 @@ export function LocationPrompt({ onLocate }: Props) {
       },
       (err) => {
         setLoadingGeo(false);
-        toast.error(
-          err.code === err.PERMISSION_DENIED
-            ? "Location permission denied. Try a postcode instead."
-            : "Couldn't get your location. Try a postcode instead.",
-        );
+        if (err.code === err.PERMISSION_DENIED) {
+          showDeniedToast();
+        } else {
+          toast.error("Couldn't get your location. Try a postcode instead.", {
+            id: "geo-denied",
+          });
+        }
       },
       { enableHighAccuracy: false, timeout: 8000 },
     );
