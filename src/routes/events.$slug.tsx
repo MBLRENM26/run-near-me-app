@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { Calendar, MapPin, Tag, ExternalLink } from "lucide-react";
+import { Calendar, MapPin, Tag, ExternalLink, Mountain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Breadcrumb,
@@ -48,6 +48,32 @@ function locationLabel(town: string | null, county: string | null): string {
     return town.trim();
   }
   return [town, county].filter(Boolean).join(", ");
+}
+
+// Humanise terrain_tags into a display label. Falls back to `discipline` text
+// when no structured tags are present (older rows). Rendered independently
+// from the distance line so adding a distance never displaces terrain.
+const TERRAIN_LABELS: Record<string, string> = {
+  road: "Road",
+  trail: "Trail",
+  "multi-terrain": "Multi-terrain",
+  fell: "Fell",
+  "cross-country": "Cross-country",
+  obstacle: "Obstacle",
+  track: "Track",
+  parkrun: "parkrun",
+  "night-trail": "Night trail",
+};
+function formatTerrain(
+  tags: string[] | null | undefined,
+  discipline: string | null | undefined,
+): string | null {
+  const labelled = (tags ?? [])
+    .map((t) => TERRAIN_LABELS[t] ?? null)
+    .filter((v): v is string => !!v);
+  if (labelled.length > 0) return labelled.join(" / ");
+  const d = discipline?.trim();
+  return d && d.length > 0 ? d : null;
 }
 
 import { classifyEventLink, isTrustedLink } from "@/lib/link-trust";
@@ -254,7 +280,8 @@ function EventDetailPage() {
 
   const dateLabel = formatEventDate(e);
   const loc = locationLabel(e.town, e.county);
-  const distance = e.distances?.trim() || e.discipline?.trim();
+  const distance = e.distances?.trim() || null;
+  const terrainLabel = formatTerrain(e.terrain_tags, e.discipline);
   const regionSlug = regionSlugFromName(e.region);
 
   // Imminent (within 7 days) or past events don't promise open entries.
@@ -414,6 +441,12 @@ function EventDetailPage() {
               <div className="flex items-center gap-2">
                 <Tag className="h-4 w-4 shrink-0" />
                 <span>{distance}</span>
+              </div>
+            )}
+            {terrainLabel && (
+              <div className="flex items-center gap-2">
+                <Mountain className="h-4 w-4 shrink-0" />
+                <span>{terrainLabel}</span>
               </div>
             )}
           </div>
