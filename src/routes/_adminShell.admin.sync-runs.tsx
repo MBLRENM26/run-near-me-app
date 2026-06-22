@@ -169,7 +169,10 @@ function AdminSyncRunsPage() {
             </Button>
           );
         })}
+        <SyncSecretButton />
       </div>
+
+
 
 
       {isLoading && <p className="mt-8 text-muted-foreground">Loading…</p>}
