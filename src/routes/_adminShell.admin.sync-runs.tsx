@@ -218,6 +218,27 @@ function AdminSyncRunsPage() {
   );
 }
 
+function SyncSecretButton() {
+  const seed = useServerFn(seedImportSecretInVault);
+  const m = useMutation({
+    mutationFn: () => seed(),
+    onSuccess: () => toast.success("Import secret copied to vault"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Failed to seed vault"),
+  });
+  return (
+    <Button
+      size="sm"
+      variant="ghost"
+      disabled={m.isPending}
+      onClick={() => m.mutate()}
+      title="One-off: copy IMPORT_SECRET env var into vault.secrets so pg_cron can authenticate"
+    >
+      {m.isPending ? "Syncing…" : "Sync secret to vault"}
+    </Button>
+  );
+}
+
 function Row({ r }: { r: SyncRun }) {
   const skipped = (r.skipped_dupes ?? 0) + (r.skipped_no_date ?? 0);
   return (
