@@ -116,3 +116,60 @@ export const triggerSyncRun = createServerFn({ method: "POST" })
     return { ok: true as const, started: true as const };
   });
 
+export type EnglandAthleticsChunkResult = {
+  ok: true;
+  fromPage: number;
+  toPage: number;
+  lastPage: number;
+  done: boolean;
+  newEvents: number;
+  updatedExisting: number;
+  written: number;
+  fetched: number;
+  failedPages: number;
+};
+
+// Run a single page range of the EA sync, synchronously. The admin UI
+// loops chunks until `done` is true; the weekly pg_cron does the same
+// via a Postgres driver function. Each chunk is small enough to finish
+// inside the Cloudflare Worker response window, so sync_runs rows never
+// dangle in "running".
+export const triggerEnglandAthleticsChunk = createServerFn({ method: "POST" })
+  .inputValidator((input: { fromPage: number; toPage: number }) => {
+    const fromPage = Math.floor(input.fromPage);
+    const toPage = Math.floor(input.toPage);
+    if (!Number.isFinite(fromPage) || fromPage < 1) {
+      throw new Error("fromPage must be >= 1");
+    }
+    if (!Number.isFinite(toPage) || toPage < fromPage) {
+      throw new Error("toPage must be >= fromPage");
+    }
+    if (toPage - fromPage > 49) {
+      throw new Error("chunk too large (max 50 pages)");
+    }
+    return { fromPage, toPage };
+  })
+  .handler(async ({ data }): Promise<EnglandAthleticsChunkResult> => {
+    if (!isAdminAuthenticated()) throw new Error("Unauthorized");
+    const { runEnglandAthleticsSync } = await import(
+      "@/lib/sync-england-athletics.server"
+    );
+    const r = await runEnglandAthleticsSync({
+      fromPage: data.fromPage,
+      toPage: data.toPage,
+    });
+    return {
+      ok: true,
+      fromPage: data.fromPage,
+      toPage: data.toPage,
+      lastPage: r.lastPage,
+      done: r.done,
+      newEvents: r.newEvents,
+      updatedExisting: r.updatedExisting,
+      written: r.written,
+      fetched: r.fetched,
+      failedPages: r.failedPages.length,
+    };
+  });
+
+
