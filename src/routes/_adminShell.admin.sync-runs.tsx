@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -6,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import {
   getSyncRuns,
   triggerSyncRun,
+  triggerEnglandAthleticsChunk,
+  seedImportSecretInVault,
   SYNC_SOURCES,
   type SyncRun,
   type SyncSource,
@@ -21,6 +24,10 @@ const SOURCE_LABEL: Record<SyncSource, string> = {
 };
 
 const STALE_AFTER_MS = 10 * 60 * 1000; // 10 minutes
+
+// EA driver settings (mirrors the Postgres driver run by the weekly cron).
+const EA_CHUNK_SIZE = 20;
+const EA_MAX_CHUNKS = 20; // safety cap; real exit is `done = true`
 
 function isStale(run: SyncRun): boolean {
   if (run.status !== "running") return false;
@@ -48,16 +55,15 @@ function AdminSyncRunsPage() {
   });
 
   const trigger = useServerFn(triggerSyncRun);
+  const triggerEaChunk = useServerFn(triggerEnglandAthleticsChunk);
 
+  // Drives Scottish (still a one-shot — finishes in ~4s).
   const runMutation = useMutation({
     mutationFn: (source: SyncSource) => trigger({ data: { source } }),
     onMutate: async () => {
-      // Surface the freshly-inserted `running` row asap
       await qc.invalidateQueries({ queryKey: ["admin", "sync-runs"] });
     },
     onSettled: () => {
-      // Always refetch — even when the client fetch timed out, the server
-      // may have written a finished row by now.
       qc.invalidateQueries({ queryKey: ["admin", "sync-runs"] });
     },
     onSuccess: (res, source) => {
@@ -76,10 +82,60 @@ function AdminSyncRunsPage() {
     },
   });
 
+  // EA-specific: loop chunks of EA_CHUNK_SIZE pages until the API reports
+  // we've reached the last page. Each chunk writes its own sync_runs row.
+  const [eaRunning, setEaRunning] = useState(false);
+
+  async function runEnglandAthleticsChunked() {
+    if (eaRunning) return;
+    setEaRunning(true);
+    let fromPage = 1;
+    let chunkIndex = 0;
+    let totals = { newEvents: 0, updatedExisting: 0, written: 0 };
+    try {
+      while (chunkIndex < EA_MAX_CHUNKS) {
+        chunkIndex += 1;
+        const toPage = fromPage + EA_CHUNK_SIZE - 1;
+        let res;
+        try {
+          res = await triggerEaChunk({ data: { fromPage, toPage } });
+        } catch (err) {
+          toast.error(
+            `EA chunk ${chunkIndex} (pages ${fromPage}-${toPage}) failed: ${
+              err instanceof Error ? err.message : String(err)
+            }`,
+          );
+          break;
+        }
+        totals.newEvents += res.newEvents;
+        totals.updatedExisting += res.updatedExisting;
+        totals.written += res.written;
+        await qc.invalidateQueries({ queryKey: ["admin", "sync-runs"] });
+        toast.message(
+          `EA chunk ${chunkIndex} (pages ${fromPage}-${Math.min(
+            toPage,
+            res.lastPage,
+          )}): ${res.newEvents} new, ${res.updatedExisting} updated${
+            res.failedPages > 0 ? ` — ${res.failedPages} failed pages` : ""
+          }`,
+        );
+        if (res.done) break;
+        fromPage = toPage + 1;
+      }
+      toast.success(
+        `EA sync complete — ${totals.newEvents} new, ${totals.updatedExisting} updated across ${chunkIndex} chunk(s)`,
+      );
+    } finally {
+      setEaRunning(false);
+      qc.invalidateQueries({ queryKey: ["admin", "sync-runs"] });
+    }
+  }
+
   // A source is "busy" if a mutation is in flight, OR its most recent row is
   // still actively running (not yet stale).
   function isSourceBusy(source: SyncSource): boolean {
-    if (runMutation.isPending) return true;
+    if (source === "england-athletics" && eaRunning) return true;
+    if (source !== "england-athletics" && runMutation.isPending) return true;
     const latest = data?.find((r) => r.source === source);
     if (!latest) return false;
     return latest.status === "running" && !isStale(latest);
@@ -97,19 +153,27 @@ function AdminSyncRunsPage() {
       <div className="mt-4 flex flex-wrap gap-2">
         {SYNC_SOURCES.map((s) => {
           const busy = isSourceBusy(s);
+          const onClick =
+            s === "england-athletics"
+              ? () => runEnglandAthleticsChunked()
+              : () => runMutation.mutate(s);
           return (
             <Button
               key={s}
               size="sm"
               variant="outline"
               disabled={busy}
-              onClick={() => runMutation.mutate(s)}
+              onClick={onClick}
             >
               {busy ? "Running…" : `Run ${SOURCE_LABEL[s]} now`}
             </Button>
           );
         })}
+        <SyncSecretButton />
       </div>
+
+
+
 
       {isLoading && <p className="mt-8 text-muted-foreground">Loading…</p>}
       {error && (
@@ -151,6 +215,27 @@ function AdminSyncRunsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+function SyncSecretButton() {
+  const seed = useServerFn(seedImportSecretInVault);
+  const m = useMutation({
+    mutationFn: () => seed(),
+    onSuccess: () => toast.success("Import secret copied to vault"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Failed to seed vault"),
+  });
+  return (
+    <Button
+      size="sm"
+      variant="ghost"
+      disabled={m.isPending}
+      onClick={() => m.mutate()}
+      title="One-off: copy IMPORT_SECRET env var into vault.secrets so pg_cron can authenticate"
+    >
+      {m.isPending ? "Syncing…" : "Sync secret to vault"}
+    </Button>
   );
 }
 
