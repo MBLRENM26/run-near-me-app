@@ -8,6 +8,7 @@ import {
   getSyncRuns,
   triggerSyncRun,
   triggerEnglandAthleticsChunk,
+  seedImportSecretInVault,
   SYNC_SOURCES,
   type SyncRun,
   type SyncSource,
