@@ -50,6 +50,10 @@ export type EnglandAthleticsSyncResult = {
   skippedDupes: number;
   skippedNoDate: number;
   failedPages: number[];
+  // Last page EA reported (1-based). Drivers loop until done = true.
+  lastPage: number;
+  // True when this chunk reached the final page of EA's feed.
+  done: boolean;
 };
 
 function slugify(input: string): string {
