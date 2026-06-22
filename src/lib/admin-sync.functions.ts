@@ -172,4 +172,20 @@ export const triggerEnglandAthleticsChunk = createServerFn({ method: "POST" })
     };
   });
 
+// One-off bootstrap: copy the current IMPORT_SECRET env value into
+// vault.secrets as `import_secret` so the weekly pg_cron jobs can send
+// it as the x-admin-secret header. Safe to re-run; updates in place.
+export const seedImportSecretInVault = createServerFn({ method: "POST" })
+  .handler(async (): Promise<{ ok: true }> => {
+    if (!isAdminAuthenticated()) throw new Error("Unauthorized");
+    const value = process.env.IMPORT_SECRET;
+    if (!value) throw new Error("IMPORT_SECRET env var not set on server");
+    const { error } = await supabaseAdmin.rpc("set_import_secret", {
+      p_value: value,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
+
 
