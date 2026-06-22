@@ -845,6 +845,7 @@ export type Database = {
           read_ct: number
         }[]
       }
+      run_england_athletics_chunked: { Args: never; Returns: Json }
       search_events_v1: {
         Args: { lim?: number; q: string }
         Returns: {
@@ -860,6 +861,7 @@ export type Database = {
           town: string
         }[]
       }
+      set_import_secret: { Args: { p_value: string }; Returns: undefined }
       slugify: { Args: { input: string }; Returns: string }
     }
     Enums: {
