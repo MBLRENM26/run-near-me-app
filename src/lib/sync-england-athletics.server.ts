@@ -333,6 +333,8 @@ export async function runEnglandAthleticsSync(
       skippedDupes,
       skippedNoDate,
       failedPages,
+      lastPage,
+      done: lastPage <= toParam,
     };
   } catch (err) {
     // run.finish may already have been called on the typed error paths above;
