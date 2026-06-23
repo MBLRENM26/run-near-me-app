@@ -1,126 +1,42 @@
-# Fix EA sync — authed cron + self-terminating chunked runs
+## What's currently tracked
 
-Two fixes, both small. Chunk size is fixed; **number of chunks is dynamic** — we stop as soon as EA's `meta.last_page` tells us we're done. Most weeks that'll be 3-4 chunks; busier parts of the year 6-7.
+All custom events go through `src/lib/analytics.ts → track()` (Plausible). The script is gated to production domain in `src/routes/__root.tsx`, so nothing fires on previews/localhost.
 
-## 1. Cron auth — send `x-admin-secret` from vault
+| Goal name | Where it fires | Props |
+|---|---|---|
+| `Entry Click` | Primary CTA on `events/$slug` only | slug, region, link_type (`entry` / `organiser-site` / `organiser-other`), proximity, event_name, distance, discipline |
+| `Club Website Click` | Club page CTA | slug, host, kind |
+| `Club Page View` | Club page mount | slug, region, is_claimed, governing_body |
+| `Claim Interest` | Claim CTA on events | slug, region |
+| `Region View` | Region listings | region, total_events |
+| `Filter` | Radius / distance / month chips | page, filter_type, value |
+| `Location Set` | Postcode / device prompt | method |
+| `Search Performed` | `/search` submit | (search) |
+| `Form: Submission` | List-your-event & club claim | form |
 
-Confirmed root cause: both weekly `pg_cron` jobs 401 because they send only `apikey` (Supabase anon) where the routes require `x-admin-secret: $IMPORT_SECRET`. `net._http_response` shows `401 Unauthorized` for the last two Monday runs.
+Card clicks in listings (`EventCard`) are internal `<Link>`s — no external link tracking is needed there.
 
-**Steps**
+## What this means for "runner conversion"
 
-1. Store `IMPORT_SECRET` value in `vault.secrets` as `import_secret`. Same pattern the email-queue cron uses for `email_queue_service_role_key`.
-2. `cron.unschedule` + `cron.schedule` both jobs (`weekly-sync-england-athletics`, `weekly-sync-scottish-athletics`) so headers include `x-admin-secret` from the decrypted vault secret. Drop the inert `apikey` header.
-3. **EA cron also switches to the chunked driver below** (sync-scottish stays as one shot — it finishes in 4s).
+The closest thing to a runner conversion is **`Entry Click`** with `link_type = "entry"`. The wiring is correct:
 
-No route changes.
+- `link_type` is set from `classifyEventLink(e.entry_url|organiser_url)` so it cleanly splits real entry pages from organiser homepages, matching the link-trust policy.
+- `proximity` distinguishes `future` / `today` / `imminent` / `past` clicks.
+- `region`, `distance`, `discipline` let you slice by audience.
 
-## 2. Self-terminating chunked EA driver
+So if Plausible's "Goals" tab looks empty, it isn't a tracking-code bug — it's that Plausible only counts an event as a **conversion** once you've added it as a Custom Event Goal in the dashboard. None of these goals exist there yet (that's a manual one-off in Plausible UI).
 
-The pattern: fetch a chunk of N pages (default **20**), look at `meta.last_page` returned by EA, decide whether another chunk is needed. Loop until done. Each chunk fits comfortably inside the worker response budget, so `run.finish(...)` always executes — no more dangling `running` rows.
+## Gaps worth fixing
 
-### A. `src/lib/sync-england-athletics.server.ts`
+1. **Past-event organiser link is untracked.** The "Visit organiser website" link inside the `isPast` block (`events/$slug` ~L488–500) has no `onClick`. Today these clicks are invisible. Fire `Entry Click` with `link_type = "organiser-site"`, `proximity = "past"` so they roll up alongside live conversions.
+2. **`proximity ?? "future"` fallback is misleading.** `eventProximity(e)` always returns one of the four values, but the `??` makes a past CTA potentially report as `future` if the value were ever falsy. Pass `proximity` directly (typed) — small correctness tidy.
+3. **No `Pageview` → `Entry Click` funnel breakdown exposed.** Once goals are registered in Plausible, the same `slug` prop is already on both `pageview` (URL) and `Entry Click`, so a per-event conversion rate is available — no code change needed, just dashboard setup.
+4. **Optional polish:** `Search Performed` doesn't currently include the query or result count in the snippet I read — confirm before next iteration whether you want CTR-style funnel data from search.
 
-- `EnglandAthleticsSyncResult` already includes `fetched`. Add **`lastPage: number`** and **`done: boolean`** — `done = toPage >= lastPage`.
-- The function already tracks `lastPage` internally from the last successful `fetchPage`; just surface it. Trivial change.
+## Recommended next steps (need your call before I touch anything)
 
-### B. `src/routes/api/public/admin/sync-england-athletics.ts`
+- **A.** Add tracking to the past-event organiser link + drop the `?? "future"` fallback. ~5 lines in `src/routes/events.$slug.tsx`. Low risk.
+- **B.** Same as A, plus a one-page README at `.lovable/analytics.md` listing every goal + props so the Plausible dashboard can be set up to match. No runtime impact.
+- **C.** Leave code untouched; I write up exactly which goals to add in Plausible's UI and you do it there.
 
-- No logic change — it already accepts `?from=&to=` and forwards them. The new fields ride through in the response JSON automatically.
-
-### C. `src/lib/admin-sync.functions.ts`
-
-- Add `triggerEnglandAthleticsChunk({ fromPage, toPage })`:
-  - Auth via `isAdminAuthenticated()`.
-  - Calls `runEnglandAthleticsSync({ fromPage, toPage })` and returns the result synchronously (no `Promise.race`, no ack timer).
-  - Returns the full result including `lastPage` and `done`.
-- `triggerSyncRun` stays put for Scottish.
-
-### D. `src/routes/_adminShell.admin.sync-runs.tsx`
-
-Client-side driver loop for the EA button:
-
-```text
-chunkSize = 20
-fromPage = 1
-loop:
-  result = await triggerEnglandAthleticsChunk({ fromPage, toPage: fromPage + chunkSize - 1 })
-  invalidate(['admin','sync-runs'])             // table refreshes live
-  toast "EA chunk X — N new, M updated"
-  if (result.done) break
-  if (chunk errored) toast error, break         // don't loop forever on a bad chunk
-  fromPage += chunkSize
-final toast: "EA sync complete — X new, Y updated across Z chunks"
-```
-
-Button disabled while the loop runs. Scottish button unchanged.
-
-### E. EA cron — driver function in Postgres
-
-Uses `pg_net`'s `http_post` + `http_collect_response` to make each chunk synchronous inside the cron tick. Pattern:
-
-```text
-create function public.run_england_athletics_chunked() returns void language plpgsql as $$
-declare
-  v_secret text;
-  v_from   int := 1;
-  v_chunk  int := 20;
-  v_req_id bigint;
-  v_resp   record;
-  v_done   boolean := false;
-  v_last   int := 1;
-  v_safety int := 0;       -- hard cap so a broken loop can't run forever
-begin
-  select decrypted_secret into v_secret
-    from vault.decrypted_secrets where name = 'import_secret';
-
-  while not v_done and v_safety < 20 loop
-    v_safety := v_safety + 1;
-    select net.http_post(
-      url     := 'https://project--<id>.lovable.app/api/public/admin/sync-england-athletics?from=' || v_from || '&to=' || (v_from + v_chunk - 1),
-      headers := jsonb_build_object('Content-Type','application/json','x-admin-secret', v_secret),
-      body    := '{}'::jsonb,
-      timeout_milliseconds := 60000
-    ) into v_req_id;
-
-    select * into v_resp from net.http_collect_response(v_req_id, async := false);
-    -- parse v_resp.content json -> done, lastPage; on http error, exit
-    v_done := (v_resp.status_code = 200) and ((v_resp.content::jsonb ->> 'done')::boolean = true);
-    v_from := v_from + v_chunk;
-  end loop;
-end;
-$$;
-```
-
-The `weekly-sync-england-athletics` cron then becomes a one-liner:
-`SELECT public.run_england_athletics_chunked();`
-
-Why this works:
-- Each `http_collect_response(..., async := false)` blocks the cron tick until the chunk returns. The cron tick itself can run as long as Postgres allows — it's not subject to the Cloudflare Worker limit. Only the *individual chunk* is.
-- `v_safety := 20` caps the loop at 400 pages, well above EA's current ~120. Belt-and-braces; the real exit is `done = true`.
-
-### F. Stuck rows
-
-No DB write. The two `running` EA rows from today already display as "stale" in the UI after 10 minutes.
-
-## What we are *not* changing
-
-- `MAX_PAGES = 120` cap inside `runEnglandAthleticsSync` — still there as a final safety net.
-- `fetchPageSafe` retry policy (3 × 15s).
-- Scottish path, anywhere.
-- Anon-public route prefix model.
-
-## Files touched
-
-- `supabase/migrations/<timestamp>_cron_ea_chunked.sql`
-  1. Insert `import_secret` into vault (idempotent: `on conflict do update`).
-  2. `create or replace function public.run_england_athletics_chunked()`.
-  3. `cron.unschedule` + `cron.schedule` both EA and Scottish jobs with the new commands.
-- `src/lib/sync-england-athletics.server.ts` — add `lastPage` + `done` to the result.
-- `src/lib/admin-sync.functions.ts` — add `triggerEnglandAthleticsChunk`.
-- `src/routes/_adminShell.admin.sync-runs.tsx` — client driver loop for the EA button.
-
-## Verification once shipped
-
-1. Click "Run England Athletics now" — watch chunks appear in the table live, stop at chunk 4-7 with `done = true`.
-2. Manually invoke the cron driver: `SELECT public.run_england_athletics_chunked();` — same outcome.
-3. Check `net._http_response` for 200s on each chunk's URL.
+Tell me A / B / C (or another combination) and whether you want the search-funnel work (#4) folded in.
