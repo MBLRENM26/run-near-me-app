@@ -50,11 +50,23 @@ export const trackEntryClick = (props: {
   slug: string;
   region?: string | null;
   link_type: "entry" | "organiser-site" | "organiser-other";
-  proximity: "future" | "today" | "imminent" | "past";
+  /** `null` is normalised to `"future"` so dashboards have one consistent bucket for upcoming events. */
+  proximity: "future" | "today" | "imminent" | "past" | null;
   event_name: string;
   distance?: string | null;
   discipline?: string | null;
-}) => track("Entry Click", props);
+}) =>
+  track("Entry Click", {
+    ...props,
+    proximity: props.proximity ?? "future",
+  });
+
+export const trackSearchResultClick = (props: {
+  query: string;
+  slug: string;
+  position: number;
+  results_count: number;
+}) => track("Search Result Click", props);
 
 export const trackLocationSet = (method: "device" | "postcode") =>
   track("Location Set", { method });
