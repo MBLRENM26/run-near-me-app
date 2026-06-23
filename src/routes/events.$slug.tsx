@@ -463,7 +463,7 @@ function EventDetailPage() {
                       slug: e.slug,
                       region: e.region,
                       link_type: primaryCta!.linkType,
-                      proximity: proximity ?? "future",
+                      proximity,
                       event_name: e.name,
                       distance: e.distances ?? "unknown",
                       discipline: e.discipline ?? "road",
