@@ -491,6 +491,17 @@ function EventDetailPage() {
                     href={pastOrganiserLink.href}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() =>
+                      trackEntryClick({
+                        slug: e.slug,
+                        region: e.region,
+                        link_type: "organiser-site",
+                        proximity: "past",
+                        event_name: e.name,
+                        distance: e.distances ?? "unknown",
+                        discipline: e.discipline ?? "road",
+                      })
+                    }
                     className="font-medium text-primary hover:underline"
                   >
                     Visit organiser website
