@@ -9,7 +9,7 @@ import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { HeaderSearch } from "@/components/site/HeaderSearch";
 import { searchEvents, type SearchResult } from "@/lib/search.functions";
-import { track } from "@/lib/analytics";
+import { track, trackSearchResultClick } from "@/lib/analytics";
 import { isUkPostcode, geocodePostcode } from "@/lib/postcode";
 import { formatEventDate } from "@/lib/date";
 import { Loader2 } from "lucide-react";
