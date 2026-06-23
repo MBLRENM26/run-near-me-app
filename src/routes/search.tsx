@@ -112,6 +112,13 @@ function SearchPage() {
   }, [q, isPostcode, results.length]);
 
   const trackClick = (slug: string, position: number) => {
+    // Plausible goal — works without a server-side log id, so we always fire it.
+    trackSearchResultClick({
+      query: q,
+      slug,
+      position,
+      results_count: results.length,
+    });
     if (!searchLogId) return;
     // Fire-and-forget — must not block navigation. Use keepalive so the
     // request survives the page transition.
