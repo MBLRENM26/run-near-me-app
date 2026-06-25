@@ -47,6 +47,12 @@ function AdminLayout() {
               Club claims
             </Link>
             <Link
+              to="/admin/clubs"
+              className="text-sm font-medium text-foreground hover:text-primary"
+            >
+              Clubs
+            </Link>
+            <Link
               to="/admin/events"
               className="text-sm font-medium text-foreground hover:text-primary"
             >
