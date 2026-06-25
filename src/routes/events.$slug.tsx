@@ -389,7 +389,9 @@ function EventDetailPage() {
       <Header />
       <main className="flex-1">
         <section className="mx-auto max-w-3xl px-4 pt-10 pb-12">
+          <BackToSearchBar />
           <Breadcrumb>
+
             <BreadcrumbList>
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>
