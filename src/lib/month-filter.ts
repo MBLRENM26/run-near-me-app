@@ -98,12 +98,16 @@ export function formatMonthLabelLong(m: MonthKey): string {
   return `${FULL_MONTH_NAMES[idx]} ${yr}`;
 }
 
-export type MonthSearch = { month?: MonthKey };
+import { pickFromSearch, type FromSearch } from "./from-search";
 
-/** TanStack `validateSearch` for the month query param. */
+export type MonthSearch = { month?: MonthKey } & FromSearch;
+
+/** TanStack `validateSearch` for the month query param + back-to-search pair. */
 export function monthSearchValidator(
   raw: Record<string, unknown>,
 ): MonthSearch {
   const v = raw.month;
-  return isMonthKey(v) ? { month: v } : {};
+  const base: MonthSearch = isMonthKey(v) ? { month: v } : {};
+  return { ...base, ...pickFromSearch(raw) };
 }
+

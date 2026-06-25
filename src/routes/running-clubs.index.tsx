@@ -16,11 +16,16 @@ import {
 import { listClubs, type ClubListItem } from "@/lib/clubs.functions";
 import { REGIONS } from "@/lib/regions";
 import { SITE_URL, SITE_NAME } from "@/lib/site";
+import { BackToSearchBar } from "@/components/site/BackToSearchBar";
+
 
 const searchSchema = z.object({
   region: z.string().max(100).optional(),
   page: z.coerce.number().int().min(1).max(500).optional(),
+  from: z.literal("search").optional(),
+  fromQ: z.string().max(80).optional(),
 });
+
 
 const PAGE_SIZE = 50;
 
@@ -133,7 +138,9 @@ function ClubsIndexPage() {
 
   return (
     <FullShell>
+      <BackToSearchBar />
       <Breadcrumb className="mb-4">
+
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink asChild>

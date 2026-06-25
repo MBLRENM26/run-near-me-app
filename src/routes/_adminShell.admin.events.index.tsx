@@ -178,6 +178,13 @@ function AdminEventsPage() {
             >
               Find duplicates
             </Link>
+            <Link
+              to="/admin/events/enrich-dates"
+              className="inline-flex h-9 items-center rounded-md border border-input bg-background px-3 text-sm hover:bg-accent"
+            >
+              Enrich dates
+            </Link>
+
             <Button
               size="sm"
               variant="outline"

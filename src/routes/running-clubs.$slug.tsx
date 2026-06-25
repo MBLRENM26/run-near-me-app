@@ -16,6 +16,9 @@ import { getClubPageData } from "@/lib/clubs.functions";
 import { classifyEventLink, isTrustedLink } from "@/lib/link-trust";
 import { SITE_URL, SITE_NAME } from "@/lib/site";
 import { track } from "@/lib/analytics";
+import { fromSearchValidator } from "@/lib/from-search";
+import { BackToSearchBar } from "@/components/site/BackToSearchBar";
+
 
 const GOVERNING_BODY_LABEL: Record<string, string> = {
   "england-athletics": "England Athletics",
@@ -25,7 +28,9 @@ const GOVERNING_BODY_LABEL: Record<string, string> = {
 };
 
 export const Route = createFileRoute("/running-clubs/$slug")({
+  validateSearch: fromSearchValidator,
   loader: ({ params }) => getClubPageData({ data: { slug: params.slug } }),
+
   head: ({ params, loaderData }) => {
     const c = loaderData?.club;
     const canonical = `${SITE_URL}/running-clubs/${params.slug}`;
@@ -167,7 +172,9 @@ function ClubDetailPage() {
 
   return (
     <FullShell>
+      <BackToSearchBar />
       <Breadcrumb className="mb-4">
+
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink asChild>

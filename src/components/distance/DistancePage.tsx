@@ -3,6 +3,8 @@ import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { ArrowLeft, ChevronRight, X } from "lucide-react";
 import { trackRegionView } from "@/lib/analytics";
 import { Header } from "@/components/site/Header";
+import { BackToSearchBar } from "@/components/site/BackToSearchBar";
+
 import { Footer } from "@/components/site/Footer";
 import { EventCard, type EventCardData } from "@/components/events/EventCard";
 import { MonthFilter } from "@/components/events/MonthFilter";
@@ -83,6 +85,7 @@ export function DistancePage({ cfg, data }: DistancePageProps) {
       <Header />
       <main className="flex-1">
         <section className="mx-auto max-w-6xl px-4 pt-10 pb-6">
+          <BackToSearchBar />
           <Link
             to="/"
             className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -90,6 +93,7 @@ export function DistancePage({ cfg, data }: DistancePageProps) {
             <ArrowLeft className="h-4 w-4" />
             Back to all events
           </Link>
+
           <h1 className="mt-4 text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
             {cfg.h1}
           </h1>

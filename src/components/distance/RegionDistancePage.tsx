@@ -3,6 +3,8 @@ import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { ArrowLeft, ChevronRight, X } from "lucide-react";
 import { trackRegionView } from "@/lib/analytics";
 import { Header } from "@/components/site/Header";
+import { BackToSearchBar } from "@/components/site/BackToSearchBar";
+
 import { Footer } from "@/components/site/Footer";
 import { EventCard, type EventCardData } from "@/components/events/EventCard";
 import { MonthFilter } from "@/components/events/MonthFilter";
@@ -88,7 +90,9 @@ export function RegionDistancePage({
       <Header />
       <main className="flex-1">
         <section className="mx-auto max-w-6xl px-4 pt-10 pb-6">
+          <BackToSearchBar />
           <nav
+
             aria-label="Breadcrumb"
             className="flex items-center gap-1.5 text-sm text-muted-foreground"
           >

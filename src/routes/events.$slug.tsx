@@ -36,6 +36,9 @@ import {
 } from "@/lib/date";
 import { REGIONS } from "@/lib/regions";
 import { SITE_URL } from "@/lib/site";
+import { fromSearchValidator } from "@/lib/from-search";
+import { BackToSearchBar } from "@/components/site/BackToSearchBar";
+
 
 function regionSlugFromName(name: string | null | undefined): string | null {
   if (!name) return null;
@@ -80,7 +83,9 @@ import { classifyEventLink, isTrustedLink } from "@/lib/link-trust";
 import { trackEntryClick, trackClaimInterest } from "@/lib/analytics";
 
 export const Route = createFileRoute("/events/$slug")({
+  validateSearch: fromSearchValidator,
   loader: ({ params }) => getEventPageData({ data: { slug: params.slug } }),
+
   head: ({ params, loaderData }) => {
     const e = loaderData?.event;
     const canonical = `${SITE_URL}/events/${params.slug}`;
@@ -384,7 +389,9 @@ function EventDetailPage() {
       <Header />
       <main className="flex-1">
         <section className="mx-auto max-w-3xl px-4 pt-10 pb-12">
+          <BackToSearchBar />
           <Breadcrumb>
+
             <BreadcrumbList>
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>

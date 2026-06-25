@@ -1,52 +1,52 @@
-# Add clubs to search + admin club management
+## Two pieces of work
 
-Right now `/search` only hits events, and the admin only has a Club **claims** queue — there's no way to list, create, or edit clubs themselves. This plan adds both.
+### 1. Back-to-search affordance (sitewide)
 
-## 1. Clubs in site search
+**Problem:** Event and club page breadcrumbs are `Home → Region → Event` and `Home → Running clubs → Club`. Neither knows you arrived from `/search?q=…`, so once you've done `search → race → club` the browser back stack loses your result set.
 
-Extend the search results page so a query like "aspire" returns matching clubs alongside events.
+**Fix:**
+- In `src/routes/search.tsx`, append `?from=search&fromQ={q}` to every event and club result link.
+- New `src/components/site/BackToSearchBar.tsx` — reads `from` / `fromQ` via `useSearch({ strict: false })`. When `from === "search"` and `fromQ` is non-empty, renders a chip above the breadcrumb:
+  > ← Back to search results for "*{q}*"
+  linking to `/search?q={fromQ}`.
+- Mount on every public content page reachable from search: `events.$slug`, `running-events.$slug`, `running-events.$slug_.$distance`, `running-clubs.$slug`, `running-clubs.$slug.claim`, `running-clubs.index`, distance pages, region pages, parkrun pages.
+- Onward links from these pages (linked club on an event page, events list on a club page, etc.) forward `from=search&fromQ` when present so the chip survives a second hop.
+- Each affected route adds `from: z.enum(["search"]).optional()` + `fromQ: z.string().max(80).optional()` to `validateSearch` via `fallback()`.
+- Analytics: fire `track("Back to search clicked", { q })` when the chip is used.
 
-- New SQL function `search_clubs_v1(q text, lim int)` — ts_rank over a tsvector on `clubs.name`, `town`, `county` (weighted), restricted to `status = 'ACTIVE'`. Mirrors `search_events_v1`. Returns only public-safe columns (`id, slug, name, town, county, region, governing_body, is_claimed`).
-- Add `tsv` generated column + GIN index on `clubs` (same shape as events) via migration.
-- New server fn `searchClubs` in `src/lib/search.functions.ts` returning `ClubSearchResult[]`.
-- `/search` loader runs `searchEvents` and `searchClubs` in parallel; page renders two sections: **Events** then **Clubs** (each section hidden when empty, "No results" copy updated to mention both).
-- Club rows link to `/running-clubs/$slug` with town/county and a small "Claimed" badge when `is_claimed`.
-- Analytics: extend `track("Search Performed", …)` payload with `clubs_count`; click tracking already keyed by slug works as-is.
+No DB changes. No schema/contract changes.
 
-Postcode flow and existing event behaviour are unchanged.
+### 2. Admin date-enrichment importer
 
-## 2. Admin: clubs list, create, edit
+**Need.** Two distinct backlogs:
+- 535 events with `date_is_estimated = true` — your CSV addresses 208 of these and overwrites 1 confirmed date.
+- 1,395 events with `sort_date IS NULL` — separate workstream; same importer will handle them when you have data.
 
-New section in the admin shell, sitting next to existing **Club claims**.
+**Build:**
+- New admin route `/admin/events/enrich-dates` (gated by existing `requireAdminOrThrow`).
+- CSV paste OR upload. Required columns: `id`, `sort_date`. Optional: `date_raw`, `date_is_estimated` (default `false`), `date_from`, `date_to`. Extra columns ignored — matches your file shape exactly.
+- **Dry-run preview is mandatory** before any write. Preview shows:
+  - Matched / unmatched ids
+  - Per-row diff: current `sort_date` / `date_raw` / `date_is_estimated` → proposed
+  - Three buckets, colour-coded: *no-op* (identical), *safe change* (filling null or replacing estimated), *overwrite confirmed* (current `sort_date` is non-null and `date_is_estimated = false`)
+- Overwrites of confirmed dates are **skipped by default**. Operator must tick a per-row "force" checkbox (or a global "force all overwrites" toggle) to include them. For your file this surfaces the single row that would clobber a confirmed date so you can decide.
+- Commit writes via a new `applyDateEnrichments` server fn using `supabaseAdmin`. Updates `sort_date`, `date_raw`, `date_is_estimated`, plus `updated_at = now()`.
+- Audit: one `sync_runs` row per import (`source: 'manual-date-enrich'`, totals + summary JSON). Visible in the existing admin sync-runs page.
+- Hard limit 5,000 rows per import (your file is 208; backlog batches stay well under).
 
-- Header nav: add **Clubs** link in `src/routes/_adminShell.tsx`.
-- New route `/_adminShell/admin/clubs` — paginated list with:
-  - Search box (name / town / slug)
-  - Filters: governing body, region, status, claimed/unclaimed
-  - Columns: name, slug, town, county, region, governing body, claimed, status
-  - "New club" button → `/admin/clubs/new`
-- New route `/_adminShell/admin/clubs/$id` — full edit form covering every editable field on `clubs` (name, slug, governing_body, affiliation_number, town/county/region/country/postcode, lat/lng, website_url, contact_email, contact_phone, disciplines, status, is_claimed/claimed_by/claimed_at). Includes "Delete club" (soft-delete via `status = 'INACTIVE'`).
-- New route `/_adminShell/admin/clubs/new` — same form, blank, generates slug from name if left empty (reusing the slugify logic from the import route), uniqueness-checked server-side.
-- New server fns in `src/lib/admin-clubs.functions.ts` (extending the existing file), all gated by `requireAdminOrThrow()`:
-  - `listAdminClubs({ q, governing_body, region, status, claimed, limit, offset })`
-  - `getAdminClub({ id })`
-  - `createAdminClub(payload)` — sets `norm_id = 'manual:<uuid>'` so it never collides with importer rows, runs slug-uniqueness check.
-  - `updateAdminClub({ id, patch })`
-  - `setClubStatus({ id, status })` for soft delete / reactivate.
-- Validation: Zod schemas mirroring the importer's `ClubRowSchema`, plus the same `classifyEventLink` aggregator-host guard on `website_url`.
+**Out of scope (for this turn):**
+- Slug/name fuzzy matching — id-keyed only, which is what your file uses.
+- Editing other event fields (location, distance, etc.) — dates only.
 
-## Technical notes
+### Order
 
-- All new admin fns use `supabaseAdmin` inside the handler (existing pattern in `admin-clubs.functions.ts`).
-- Search RPC is `SECURITY INVOKER` + `SET search_path = public`, same pattern as `search_events_v1`.
-- Migration order per house rules: `CREATE` → `GRANT` → `ENABLE RLS` → `CREATE POLICY`. The new search RPC needs `GRANT EXECUTE … TO anon, authenticated` so the publishable server path can call it; admin fns continue to use service role.
-- No changes to `clubs` RLS policies, the public `public_clubs` view, or the importer endpoint.
-- No design changes beyond reusing existing admin form/table primitives (`Input`, `Select`, `Button`, `Textarea`).
+1. Ship the back-to-search chip (small).
+2. Ship the date-enrichment importer.
+3. You run the CSV through dry-run → commit. We can then talk about sourcing dates for the 1,395 dateless rows.
 
-## Out of scope
+### Technical notes
 
-- Bulk edit / CSV import via UI (importer endpoint already exists).
-- Merging duplicate clubs (mirror of the events-duplicates tool) — happy to add as a follow-up if you want it.
-- Map-pin / geocoding helper inside the admin form (lat/lng stays manual for now).
-
-Shall I build it?
+- BackToSearchBar uses `useSearch({ strict: false })` so it works under any route without per-route typing.
+- Search-param forwarding from event/club pages uses a tiny helper `withFromSearch(search)` so we don't sprinkle conditionals across links.
+- Importer parses CSV client-side (PapaParse, already a transitive dep — confirm before adding) to keep the preview snappy, then ships the parsed rows to the server fn for validation + write. Server re-validates with Zod; never trust client parsing.
+- No migrations.
