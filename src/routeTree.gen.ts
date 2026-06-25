@@ -55,6 +55,7 @@ import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/e
 import { Route as ApiPublicAdminSyncScottishAthleticsRouteImport } from './routes/api/public/admin/sync-scottish-athletics'
 import { Route as ApiPublicAdminSyncEnglandAthleticsRouteImport } from './routes/api/public/admin/sync-england-athletics'
 import { Route as ApiPublicAdminFixEventUrlsRouteImport } from './routes/api/public/admin/fix-event-urls'
+import { Route as AdminShellAdminEventsEnrichDatesRouteImport } from './routes/_adminShell.admin.events.enrich-dates'
 import { Route as AdminShellAdminEventsDuplicatesRouteImport } from './routes/_adminShell.admin.events.duplicates'
 import { Route as AdminShellAdminEventsIdRouteImport } from './routes/_adminShell.admin.events.$id'
 import { Route as AdminShellAdminClubsNewRouteImport } from './routes/_adminShell.admin.clubs.new'
@@ -301,6 +302,12 @@ const ApiPublicAdminFixEventUrlsRoute =
     path: '/api/public/admin/fix-event-urls',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AdminShellAdminEventsEnrichDatesRoute =
+  AdminShellAdminEventsEnrichDatesRouteImport.update({
+    id: '/admin/events/enrich-dates',
+    path: '/admin/events/enrich-dates',
+    getParentRoute: () => AdminShellRoute,
+  } as any)
 const AdminShellAdminEventsDuplicatesRoute =
   AdminShellAdminEventsDuplicatesRouteImport.update({
     id: '/admin/events/duplicates',
@@ -365,6 +372,7 @@ export interface FileRoutesByFullPath {
   '/admin/clubs/new': typeof AdminShellAdminClubsNewRoute
   '/admin/events/$id': typeof AdminShellAdminEventsIdRoute
   '/admin/events/duplicates': typeof AdminShellAdminEventsDuplicatesRoute
+  '/admin/events/enrich-dates': typeof AdminShellAdminEventsEnrichDatesRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
   '/api/public/admin/sync-england-athletics': typeof ApiPublicAdminSyncEnglandAthleticsRoute
   '/api/public/admin/sync-scottish-athletics': typeof ApiPublicAdminSyncScottishAthleticsRoute
@@ -416,6 +424,7 @@ export interface FileRoutesByTo {
   '/admin/clubs/new': typeof AdminShellAdminClubsNewRoute
   '/admin/events/$id': typeof AdminShellAdminEventsIdRoute
   '/admin/events/duplicates': typeof AdminShellAdminEventsDuplicatesRoute
+  '/admin/events/enrich-dates': typeof AdminShellAdminEventsEnrichDatesRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
   '/api/public/admin/sync-england-athletics': typeof ApiPublicAdminSyncEnglandAthleticsRoute
   '/api/public/admin/sync-scottish-athletics': typeof ApiPublicAdminSyncScottishAthleticsRoute
@@ -469,6 +478,7 @@ export interface FileRoutesById {
   '/_adminShell/admin/clubs/new': typeof AdminShellAdminClubsNewRoute
   '/_adminShell/admin/events/$id': typeof AdminShellAdminEventsIdRoute
   '/_adminShell/admin/events/duplicates': typeof AdminShellAdminEventsDuplicatesRoute
+  '/_adminShell/admin/events/enrich-dates': typeof AdminShellAdminEventsEnrichDatesRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
   '/api/public/admin/sync-england-athletics': typeof ApiPublicAdminSyncEnglandAthleticsRoute
   '/api/public/admin/sync-scottish-athletics': typeof ApiPublicAdminSyncScottishAthleticsRoute
@@ -522,6 +532,7 @@ export interface FileRouteTypes {
     | '/admin/clubs/new'
     | '/admin/events/$id'
     | '/admin/events/duplicates'
+    | '/admin/events/enrich-dates'
     | '/api/public/admin/fix-event-urls'
     | '/api/public/admin/sync-england-athletics'
     | '/api/public/admin/sync-scottish-athletics'
@@ -573,6 +584,7 @@ export interface FileRouteTypes {
     | '/admin/clubs/new'
     | '/admin/events/$id'
     | '/admin/events/duplicates'
+    | '/admin/events/enrich-dates'
     | '/api/public/admin/fix-event-urls'
     | '/api/public/admin/sync-england-athletics'
     | '/api/public/admin/sync-scottish-athletics'
@@ -625,6 +637,7 @@ export interface FileRouteTypes {
     | '/_adminShell/admin/clubs/new'
     | '/_adminShell/admin/events/$id'
     | '/_adminShell/admin/events/duplicates'
+    | '/_adminShell/admin/events/enrich-dates'
     | '/api/public/admin/fix-event-urls'
     | '/api/public/admin/sync-england-athletics'
     | '/api/public/admin/sync-scottish-athletics'
@@ -1001,6 +1014,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAdminFixEventUrlsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_adminShell/admin/events/enrich-dates': {
+      id: '/_adminShell/admin/events/enrich-dates'
+      path: '/admin/events/enrich-dates'
+      fullPath: '/admin/events/enrich-dates'
+      preLoaderRoute: typeof AdminShellAdminEventsEnrichDatesRouteImport
+      parentRoute: typeof AdminShellRoute
+    }
     '/_adminShell/admin/events/duplicates': {
       id: '/_adminShell/admin/events/duplicates'
       path: '/admin/events/duplicates'
@@ -1041,6 +1061,7 @@ interface AdminShellRouteChildren {
   AdminShellAdminClubsNewRoute: typeof AdminShellAdminClubsNewRoute
   AdminShellAdminEventsIdRoute: typeof AdminShellAdminEventsIdRoute
   AdminShellAdminEventsDuplicatesRoute: typeof AdminShellAdminEventsDuplicatesRoute
+  AdminShellAdminEventsEnrichDatesRoute: typeof AdminShellAdminEventsEnrichDatesRoute
   AdminShellAdminClubsIndexRoute: typeof AdminShellAdminClubsIndexRoute
   AdminShellAdminEventsIndexRoute: typeof AdminShellAdminEventsIndexRoute
 }
@@ -1054,6 +1075,7 @@ const AdminShellRouteChildren: AdminShellRouteChildren = {
   AdminShellAdminClubsNewRoute: AdminShellAdminClubsNewRoute,
   AdminShellAdminEventsIdRoute: AdminShellAdminEventsIdRoute,
   AdminShellAdminEventsDuplicatesRoute: AdminShellAdminEventsDuplicatesRoute,
+  AdminShellAdminEventsEnrichDatesRoute: AdminShellAdminEventsEnrichDatesRoute,
   AdminShellAdminClubsIndexRoute: AdminShellAdminClubsIndexRoute,
   AdminShellAdminEventsIndexRoute: AdminShellAdminEventsIndexRoute,
 }
