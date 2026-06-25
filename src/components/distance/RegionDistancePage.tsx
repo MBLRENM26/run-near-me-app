@@ -3,6 +3,8 @@ import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { ArrowLeft, ChevronRight, X } from "lucide-react";
 import { trackRegionView } from "@/lib/analytics";
 import { Header } from "@/components/site/Header";
+import { BackToSearchBar } from "@/components/site/BackToSearchBar";
+
 import { Footer } from "@/components/site/Footer";
 import { EventCard, type EventCardData } from "@/components/events/EventCard";
 import { MonthFilter } from "@/components/events/MonthFilter";
