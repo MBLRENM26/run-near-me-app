@@ -16,6 +16,11 @@ import {
 } from "@/lib/event-tags";
 import { REGIONS, slugToRegion } from "@/lib/regions";
 import { sortEstimatedLastWithinMonth } from "@/lib/month-filter";
+import {
+  computeIndexability,
+  normaliseEventName,
+  type IndexabilityResult,
+} from "@/lib/event-indexability";
 
 // During the transition window, an event matches a distance page if its
 // parsed tag arrays match OR (for un-backfilled rows with empty tags) the
