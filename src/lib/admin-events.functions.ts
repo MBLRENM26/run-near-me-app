@@ -192,7 +192,12 @@ export const listAdminEvents = createServerFn({ method: "POST" })
 
     if (data.missing_town) query = query.or(TOWN_MISSING);
     if (data.missing_distances) query = query.or(DIST_MISSING);
-    if (data.missing_date) query = query.or(DATE_MISSING);
+    if (data.missing_date) {
+      // Parkruns are weekly recurring and don't carry a sort_date — exclude
+      // them from the "needs a date" backlog so the count reflects real
+      // one-off races that genuinely need sourcing.
+      query = query.or(DATE_MISSING).not("name", "ilike", "%parkrun%");
+    }
     if (data.missing_terrain_tags)
       query = query.filter("terrain_tags", "eq", "{}");
     if (data.incomplete_any) {
