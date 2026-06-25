@@ -712,34 +712,58 @@ export const getEventPageData = createServerFn({ method: "GET" })
     }
 
     // ----- Indexability decision -----
-    // Fetch ACTIVE candidate siblings whose name shares the current
-    // event's first two tokens (covers "Race for Life ...", "Pretty
-    // Muddy ...", "Tatton Park ...", "Holme Pierrepont ..." style
-    // series). Narrowed JS-side by exact normalised-name match. Cheap
-    // for unique events (most rows) — heavier only for true series
-    // members, which is exactly the population we care about.
+    // Find sibling instances by TWO signals, unioned by id:
+    //  (a) Normalised name match — catches "Trunce Series Race N",
+    //      "Tatton Park 5K & 10K — {month}", "{venue} Grand Prix Race N".
+    //  (b) Slug stem match (everything before the last segment) —
+    //      catches city-suffix series the name keeps unique:
+    //      `pretty-muddy-{city}`, `race-for-life-{city}`,
+    //      `holme-pierrepont-grand-prix-race-N`.
+    // Earliest upcoming instance in the union stays indexable; the
+    // rest get noindex. See computeIndexability for the rule.
     const todayIso = new Date().toISOString().slice(0, 10);
-    let indexability: IndexabilityResult;
+    const sibMap = new Map<string, { id: string; sort_date: string | null }>();
     const currentNorm = normaliseEventName(event.name);
     const tokens = currentNorm.split(" ").filter(Boolean);
-    if (tokens.length === 0) {
-      indexability = computeIndexability(event, [], todayIso);
-    } else {
+    if (tokens.length > 0) {
       const prefix = tokens.slice(0, Math.min(2, tokens.length)).join(" ");
-      const { data: sibRows } = await supabaseAdmin
+      const { data: nameRows } = await supabaseAdmin
         .from("events")
         .select("id, name, sort_date")
         .eq("status", "ACTIVE")
         .ilike("name", `${prefix}%`)
         .limit(200);
-      const siblings = (sibRows ?? [])
-        .filter((r) => normaliseEventName((r.name as string) ?? "") === currentNorm)
-        .map((r) => ({
+      for (const r of nameRows ?? []) {
+        if (normaliseEventName((r.name as string) ?? "") !== currentNorm) continue;
+        sibMap.set(r.id as string, {
           id: r.id as string,
           sort_date: r.sort_date as string | null,
-        }));
-      indexability = computeIndexability(event, siblings, todayIso);
+        });
+      }
     }
+    const stem = slugStem(event.slug);
+    if (stem) {
+      const { data: stemRows } = await supabaseAdmin
+        .from("events")
+        .select("id, sort_date")
+        .eq("status", "ACTIVE")
+        .ilike("slug", `${stem}-%`)
+        .limit(200);
+      for (const r of stemRows ?? []) {
+        sibMap.set(r.id as string, {
+          id: r.id as string,
+          sort_date: r.sort_date as string | null,
+        });
+      }
+    }
+    // Always include the current event so single-occurrence events
+    // don't accidentally trigger the ≥2 check via an empty map.
+    sibMap.set(event.id, { id: event.id, sort_date: event.sort_date });
+    const indexability: IndexabilityResult = computeIndexability(
+      event,
+      Array.from(sibMap.values()),
+      todayIso,
+    );
 
     return { event, related, sameTown, indexability };
   });
