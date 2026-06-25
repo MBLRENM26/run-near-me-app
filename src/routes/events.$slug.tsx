@@ -11,7 +11,9 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
+import { RaceReminderSignup } from "@/components/events/RaceReminderSignup";
 import { getEventPageData } from "@/lib/events.functions";
+
 import {
   buildAboutParagraph,
   distancePlural,
