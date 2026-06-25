@@ -16,6 +16,12 @@ import {
 } from "@/lib/event-tags";
 import { REGIONS, slugToRegion } from "@/lib/regions";
 import { sortEstimatedLastWithinMonth } from "@/lib/month-filter";
+import {
+  computeIndexability,
+  normaliseEventName,
+  slugStem,
+  type IndexabilityResult,
+} from "@/lib/event-indexability";
 
 // During the transition window, an event matches a distance page if its
 // parsed tag arrays match OR (for un-backfilled rows with empty tags) the
@@ -107,11 +113,18 @@ export const getAllActiveSlugs = createServerFn({ method: "GET" })
 export const lookupEventSlug = createServerFn({ method: "GET" })
   .inputValidator((input: unknown) => slugSchema.parse(input))
   .handler(async ({ data }): Promise<{ exists: boolean }> => {
+    // Past events deliberately excluded: this fn powers the legacy flat-URL
+    // catch-all `/$slug` redirect. Redirecting past slugs into the real
+    // event route feeds soft-404 candidates back into Google's crawl queue.
+    // Direct visits to `/events/{slug}` still serve the page (with a
+    // noindex meta — see src/lib/event-indexability.ts).
+    const today = new Date().toISOString().slice(0, 10);
     const { data: row, error } = await supabaseAdmin
       .from("events")
       .select("slug")
       .eq("slug", data.slug)
       .eq("status", "ACTIVE")
+      .or(`sort_date.gte.${today},sort_date.is.null`)
       .maybeSingle();
     if (error) throw new Error(error.message);
     return { exists: !!row };
@@ -471,6 +484,13 @@ export type EventPageData = {
   related: RelatedEvents;
   /** Other upcoming events in the same town as the current event. */
   sameTown: SameTownEvent[];
+  /**
+   * Search-index decision for this event page. Computed server-side
+   * from past/slug-suffix/orphan/duplicate-sibling rules so the
+   * `head()` function (which has no DB access) can wire up the
+   * `robots` meta and decide whether to ship Event JSON-LD.
+   */
+  indexability: import("@/lib/event-indexability").IndexabilityResult;
 };
 
 export const getEventPageData = createServerFn({ method: "GET" })
@@ -691,7 +711,61 @@ export const getEventPageData = createServerFn({ method: "GET" })
       }
     }
 
-    return { event, related, sameTown };
+    // ----- Indexability decision -----
+    // Find sibling instances by TWO signals, unioned by id:
+    //  (a) Normalised name match — catches "Trunce Series Race N",
+    //      "Tatton Park 5K & 10K — {month}", "{venue} Grand Prix Race N".
+    //  (b) Slug stem match (everything before the last segment) —
+    //      catches city-suffix series the name keeps unique:
+    //      `pretty-muddy-{city}`, `race-for-life-{city}`,
+    //      `holme-pierrepont-grand-prix-race-N`.
+    // Earliest upcoming instance in the union stays indexable; the
+    // rest get noindex. See computeIndexability for the rule.
+    const todayIso = new Date().toISOString().slice(0, 10);
+    const sibMap = new Map<string, { id: string; sort_date: string | null }>();
+    const currentNorm = normaliseEventName(event.name);
+    const tokens = currentNorm.split(" ").filter(Boolean);
+    if (tokens.length > 0) {
+      const prefix = tokens.slice(0, Math.min(2, tokens.length)).join(" ");
+      const { data: nameRows } = await supabaseAdmin
+        .from("events")
+        .select("id, name, sort_date")
+        .eq("status", "ACTIVE")
+        .ilike("name", `${prefix}%`)
+        .limit(200);
+      for (const r of nameRows ?? []) {
+        if (normaliseEventName((r.name as string) ?? "") !== currentNorm) continue;
+        sibMap.set(r.id as string, {
+          id: r.id as string,
+          sort_date: r.sort_date as string | null,
+        });
+      }
+    }
+    const stem = slugStem(event.slug);
+    if (stem) {
+      const { data: stemRows } = await supabaseAdmin
+        .from("events")
+        .select("id, sort_date")
+        .eq("status", "ACTIVE")
+        .ilike("slug", `${stem}-%`)
+        .limit(200);
+      for (const r of stemRows ?? []) {
+        sibMap.set(r.id as string, {
+          id: r.id as string,
+          sort_date: r.sort_date as string | null,
+        });
+      }
+    }
+    // Always include the current event so single-occurrence events
+    // don't accidentally trigger the ≥2 check via an empty map.
+    sibMap.set(event.id, { id: event.id, sort_date: event.sort_date });
+    const indexability: IndexabilityResult = computeIndexability(
+      event,
+      Array.from(sibMap.values()),
+      todayIso,
+    );
+
+    return { event, related, sameTown, indexability };
   });
 
 

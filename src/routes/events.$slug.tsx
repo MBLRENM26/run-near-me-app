@@ -167,8 +167,14 @@ export const Route = createFileRoute("/events/$slug")({
       : (isoDate(e.date_from) ?? isoDate(e.sort_date));
     const endISO = isoDate(e.date_to) ?? startISO;
 
+    // Indexability gate: when the event is a series-instance duplicate,
+    // an orphan, slug-suffix duplicate, or past, we noindex the page and
+    // skip Event JSON-LD entirely (stale `startDate` + thin/duplicate
+    // content is the canonical soft-404 signal Google was hitting).
+    const indexable = loaderData?.indexability?.indexable ?? true;
+
     let jsonLd: Record<string, unknown> | null = null;
-    if (startISO) {
+    if (startISO && indexable) {
       jsonLd = {
         "@context": "https://schema.org",
         "@type": "Event",
@@ -265,6 +271,9 @@ export const Route = createFileRoute("/events/$slug")({
       meta: [
         { title: titleSpec },
         { name: "description", content: description },
+        ...(indexable
+          ? []
+          : [{ name: "robots", content: "noindex, follow" }]),
         { property: "og:title", content: titleSpec },
         { property: "og:description", content: description },
         { property: "og:type", content: "website" },
