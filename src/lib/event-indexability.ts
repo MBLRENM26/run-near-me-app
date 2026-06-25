@@ -53,6 +53,19 @@ export function slugIsSuffixDuplicate(slug: string): boolean {
   return SLUG_SUFFIX_DUPLICATE_RE.test(slug);
 }
 
+/**
+ * Series stem: drops the last hyphen segment from slugs with ≥3
+ * segments. Catches city-suffix and date-suffix series the name
+ * normaliser misses (`race-for-life-{city}`, `pretty-muddy-{city}`,
+ * `holme-pierrepont-grand-prix-race-N`). Returns null when the slug
+ * is too short to safely strip.
+ */
+export function slugStem(slug: string): string | null {
+  const parts = slug.split("-");
+  if (parts.length < 3) return null;
+  return parts.slice(0, -1).join("-");
+}
+
 export type IndexabilityInput = {
   id: string;
   slug: string;
