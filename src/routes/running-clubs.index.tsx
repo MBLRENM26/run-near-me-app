@@ -20,7 +20,10 @@ import { SITE_URL, SITE_NAME } from "@/lib/site";
 const searchSchema = z.object({
   region: z.string().max(100).optional(),
   page: z.coerce.number().int().min(1).max(500).optional(),
+  from: z.literal("search").optional(),
+  fromQ: z.string().max(80).optional(),
 });
+
 
 const PAGE_SIZE = 50;
 
