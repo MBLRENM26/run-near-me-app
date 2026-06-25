@@ -1,22 +1,42 @@
-# Apply the 208 safe changes now
+## Goal
 
-Both the preview iframe and the published URL talk to the same database, so committing from the iframe writes the dates straight into production. The published-URL "Unauthorized" is just a separate cookie/session quirk on that host — it doesn't affect the integrity of the import you've already previewed.
+Find out why the admin session cookie verifies in the iframe preview but rejects on `run-near-me-app.lovable.app` / `runningeventsnearme.com`, without changing behaviour yet.
 
-## Do this now
+## Step 1 — Add temporary logging
 
-1. Click **Apply changes** in the iframe and confirm the prompt.
-2. Wait for the result panel — you should see `Written: 208`, `Failed: 0`, `Unmatched: 0`, `Protected: 0`. Anything non-zero in `Failed` or `Unmatched`, tell me and I'll dig in.
-3. Spot-check 1–2 events on the public site (or via Admin → Events) to confirm the new dates show up and `date_is_estimated` is correct.
+In the server function backing `previewDateEnrichments` (and the shared admin-session verifier it calls), log on every call:
 
-## Then — fix the published-URL auth (separate workstream, no rush)
+- whether the `admin_session` cookie arrived at all
+- the cookie's `host` / `domain` as the server sees it (request `Host` header + `Origin`)
+- whether HMAC verification passed, and if not, the failure reason (bad signature, expired, malformed)
+- whether `ADMIN_SESSION_SECRET` is present at runtime (boolean only — never the value)
 
-You don't need this resolved to do the import, but it's worth fixing so future enrichment runs work from anywhere. Once you confirm the 208 wrote cleanly, I'll:
+No PII, no secret values, no cookie payload — just shape and pass/fail flags.
 
-1. Add a one-line server log in `previewDateEnrichments` recording whether the `admin_session` cookie arrived and whether the HMAC verified.
-2. Ask you to retry on `run-near-me-app.lovable.app` once.
-3. Read `server-function-logs` to see exactly which branch fails — almost certainly either (a) the cookie isn't being sent on the published host (likely a `sameSite`/domain mismatch between `run-near-me-app.lovable.app` and your custom domain `runningeventsnearme.com`) or (b) `ADMIN_SESSION_SECRET` differs between deployments and HMAC verify fails.
-4. Fix the actual cause and remove the temporary log.
+## Step 2 — Reproduce on the published URL
 
-## Out of scope this turn
+User signs into admin on `run-near-me-app.lovable.app`, opens the date-enrich page, clicks Preview, hits the Unauthorized toast.
 
-No code changes — just commit the import you've already validated.
+## Step 3 — Read logs
+
+Pull `server-function-logs` (published deployment) filtered by the function name. The diagnostic lines will show which of these is true:
+
+- cookie missing → `sameSite`/domain mismatch on the Set-Cookie
+- cookie present, HMAC fails → `ADMIN_SESSION_SECRET` differs between iframe and published worker envs, or signing differs
+- cookie present, HMAC ok, but rejected later → expiry or role check
+
+## Step 4 — Decide
+
+Based on the log result, either:
+- park the fix (if root cause is clear and low-impact for terminal-style usage), or
+- write a targeted fix in a follow-up plan (one line change in most of the likely causes).
+
+## Step 5 — Remove the diagnostic logs
+
+Always — they're temporary instrumentation, not permanent telemetry.
+
+## Out of scope this plan
+
+- Changing cookie attributes, secret values, or verification logic
+- Touching the iframe flow (it works)
+- Any UI changes
