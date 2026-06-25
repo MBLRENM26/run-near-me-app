@@ -144,6 +144,7 @@ function RegionPage() {
       <Header />
       <main className="flex-1">
         <section className="mx-auto max-w-6xl px-4 pt-10 pb-6">
+          <BackToSearchBar />
           <Link
             to="/"
             className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -151,6 +152,7 @@ function RegionPage() {
             <ArrowLeft className="h-4 w-4" />
             Back to all events
           </Link>
+
           <h1 className="mt-4 text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
             Running events in {region.name}
           </h1>
