@@ -52,6 +52,7 @@ import { Route as AdminShellAdminClubsIndexRouteImport } from './routes/_adminSh
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
+import { Route as ApiPublicHooksSendRaceRemindersRouteImport } from './routes/api/public/hooks/send-race-reminders'
 import { Route as ApiPublicAdminSyncScottishAthleticsRouteImport } from './routes/api/public/admin/sync-scottish-athletics'
 import { Route as ApiPublicAdminSyncEnglandAthleticsRouteImport } from './routes/api/public/admin/sync-england-athletics'
 import { Route as ApiPublicAdminFixEventUrlsRouteImport } from './routes/api/public/admin/fix-event-urls'
@@ -284,6 +285,12 @@ const LovableEmailQueueProcessRoute =
     path: '/lovable/email/queue/process',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksSendRaceRemindersRoute =
+  ApiPublicHooksSendRaceRemindersRouteImport.update({
+    id: '/api/public/hooks/send-race-reminders',
+    path: '/api/public/hooks/send-race-reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicAdminSyncScottishAthleticsRoute =
   ApiPublicAdminSyncScottishAthleticsRouteImport.update({
     id: '/api/public/admin/sync-scottish-athletics',
@@ -376,6 +383,7 @@ export interface FileRoutesByFullPath {
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
   '/api/public/admin/sync-england-athletics': typeof ApiPublicAdminSyncEnglandAthleticsRoute
   '/api/public/admin/sync-scottish-athletics': typeof ApiPublicAdminSyncScottishAthleticsRoute
+  '/api/public/hooks/send-race-reminders': typeof ApiPublicHooksSendRaceRemindersRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
@@ -428,6 +436,7 @@ export interface FileRoutesByTo {
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
   '/api/public/admin/sync-england-athletics': typeof ApiPublicAdminSyncEnglandAthleticsRoute
   '/api/public/admin/sync-scottish-athletics': typeof ApiPublicAdminSyncScottishAthleticsRoute
+  '/api/public/hooks/send-race-reminders': typeof ApiPublicHooksSendRaceRemindersRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
@@ -482,6 +491,7 @@ export interface FileRoutesById {
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
   '/api/public/admin/sync-england-athletics': typeof ApiPublicAdminSyncEnglandAthleticsRoute
   '/api/public/admin/sync-scottish-athletics': typeof ApiPublicAdminSyncScottishAthleticsRoute
+  '/api/public/hooks/send-race-reminders': typeof ApiPublicHooksSendRaceRemindersRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
@@ -536,6 +546,7 @@ export interface FileRouteTypes {
     | '/api/public/admin/fix-event-urls'
     | '/api/public/admin/sync-england-athletics'
     | '/api/public/admin/sync-scottish-athletics'
+    | '/api/public/hooks/send-race-reminders'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
@@ -588,6 +599,7 @@ export interface FileRouteTypes {
     | '/api/public/admin/fix-event-urls'
     | '/api/public/admin/sync-england-athletics'
     | '/api/public/admin/sync-scottish-athletics'
+    | '/api/public/hooks/send-race-reminders'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
@@ -641,6 +653,7 @@ export interface FileRouteTypes {
     | '/api/public/admin/fix-event-urls'
     | '/api/public/admin/sync-england-athletics'
     | '/api/public/admin/sync-scottish-athletics'
+    | '/api/public/hooks/send-race-reminders'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
@@ -685,6 +698,7 @@ export interface RootRouteChildren {
   ApiPublicAdminFixEventUrlsRoute: typeof ApiPublicAdminFixEventUrlsRoute
   ApiPublicAdminSyncEnglandAthleticsRoute: typeof ApiPublicAdminSyncEnglandAthleticsRoute
   ApiPublicAdminSyncScottishAthleticsRoute: typeof ApiPublicAdminSyncScottishAthleticsRoute
+  ApiPublicHooksSendRaceRemindersRoute: typeof ApiPublicHooksSendRaceRemindersRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
   LovableEmailTransactionalSendRoute: typeof LovableEmailTransactionalSendRoute
@@ -993,6 +1007,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/send-race-reminders': {
+      id: '/api/public/hooks/send-race-reminders'
+      path: '/api/public/hooks/send-race-reminders'
+      fullPath: '/api/public/hooks/send-race-reminders'
+      preLoaderRoute: typeof ApiPublicHooksSendRaceRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/admin/sync-scottish-athletics': {
       id: '/api/public/admin/sync-scottish-athletics'
       path: '/api/public/admin/sync-scottish-athletics'
@@ -1134,6 +1155,7 @@ const rootRouteChildren: RootRouteChildren = {
     ApiPublicAdminSyncEnglandAthleticsRoute,
   ApiPublicAdminSyncScottishAthleticsRoute:
     ApiPublicAdminSyncScottishAthleticsRoute,
+  ApiPublicHooksSendRaceRemindersRoute: ApiPublicHooksSendRaceRemindersRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
   LovableEmailTransactionalSendRoute: LovableEmailTransactionalSendRoute,

@@ -44,23 +44,24 @@ export const Route = createFileRoute("/running-events/$slug")({
   head: ({ params }) => {
     const region = slugToRegion(params.slug);
     const name = region?.name ?? "UK";
+    const year = new Date().getUTCFullYear();
     const canonical = `${SITE_URL}/running-events/${params.slug}`;
+    const title = `Running Events in ${name} ${year} — 5K, 10K, Half Marathon & More | Running Events Near Me`;
+    const description = `Upcoming running events in ${name} for ${year}. Browse 5K, 10K, half marathons, marathons, trail and ultra races by date and enter direct.`;
     return {
       meta: [
-        { title: `Running Events in ${name} — UK Race Finder` },
-        {
-          name: "description",
-          content: `Browse upcoming running events in ${name}. 5K, 10K, half marathons, marathons, trail and ultra races.`,
-        },
-        { property: "og:title", content: `Running Events in ${name}` },
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
         {
           property: "og:description",
-          content: `Find your next race in ${name} — UK running events near you.`,
+          content: description,
         },
         { property: "og:type", content: "website" },
         { property: "og:url", content: canonical },
       ],
       links: [{ rel: "canonical", href: canonical }],
+
       scripts: [
         {
           type: "application/ld+json",
