@@ -223,6 +223,7 @@ function SearchPage() {
                       <Link
                         to="/events/$slug"
                         params={{ slug: r.slug }}
+                        search={{ from: "search", fromQ: q }}
                         onClick={() => trackClick(r.slug, i + 1)}
                         className="flex flex-col gap-0.5 px-4 py-3 hover:bg-muted/50 transition-colors"
                       >
@@ -242,6 +243,7 @@ function SearchPage() {
                       </Link>
                     </li>
                   );
+
                 })}
               </ul>
             </section>
