@@ -107,11 +107,18 @@ export const getAllActiveSlugs = createServerFn({ method: "GET" })
 export const lookupEventSlug = createServerFn({ method: "GET" })
   .inputValidator((input: unknown) => slugSchema.parse(input))
   .handler(async ({ data }): Promise<{ exists: boolean }> => {
+    // Past events deliberately excluded: this fn powers the legacy flat-URL
+    // catch-all `/$slug` redirect. Redirecting past slugs into the real
+    // event route feeds soft-404 candidates back into Google's crawl queue.
+    // Direct visits to `/events/{slug}` still serve the page (with a
+    // noindex meta — see src/lib/event-indexability.ts).
+    const today = new Date().toISOString().slice(0, 10);
     const { data: row, error } = await supabaseAdmin
       .from("events")
       .select("slug")
       .eq("slug", data.slug)
       .eq("status", "ACTIVE")
+      .or(`sort_date.gte.${today},sort_date.is.null`)
       .maybeSingle();
     if (error) throw new Error(error.message);
     return { exists: !!row };
