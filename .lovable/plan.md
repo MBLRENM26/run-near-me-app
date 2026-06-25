@@ -1,42 +1,18 @@
 ## Goal
 
-Find out why the admin session cookie verifies in the iframe preview but rejects on `run-near-me-app.lovable.app` / `runningeventsnearme.com`, without changing behaviour yet.
+Remove the temporary `[admin-auth-diag]` logging added last turn. The published-URL issue was a stale deploy — the auth code itself is fine.
 
-## Step 1 — Add temporary logging
+## Changes
 
-In the server function backing `previewDateEnrichments` (and the shared admin-session verifier it calls), log on every call:
+1. **`src/lib/admin-date-enrich.functions.ts`**
+   - Drop the `getRequestHeader` import.
+   - Drop `diagnoseAdminAuth` from the `admin-session.server` import.
+   - Restore `requireAdminOrThrow` to its original two-line form.
 
-- whether the `admin_session` cookie arrived at all
-- the cookie's `host` / `domain` as the server sees it (request `Host` header + `Origin`)
-- whether HMAC verification passed, and if not, the failure reason (bad signature, expired, malformed)
-- whether `ADMIN_SESSION_SECRET` is present at runtime (boolean only — never the value)
+2. **`src/lib/admin-session.server.ts`**
+   - Remove the exported `diagnoseAdminAuth` function.
 
-No PII, no secret values, no cookie payload — just shape and pass/fail flags.
+## Out of scope
 
-## Step 2 — Reproduce on the published URL
-
-User signs into admin on `run-near-me-app.lovable.app`, opens the date-enrich page, clicks Preview, hits the Unauthorized toast.
-
-## Step 3 — Read logs
-
-Pull `server-function-logs` (published deployment) filtered by the function name. The diagnostic lines will show which of these is true:
-
-- cookie missing → `sameSite`/domain mismatch on the Set-Cookie
-- cookie present, HMAC fails → `ADMIN_SESSION_SECRET` differs between iframe and published worker envs, or signing differs
-- cookie present, HMAC ok, but rejected later → expiry or role check
-
-## Step 4 — Decide
-
-Based on the log result, either:
-- park the fix (if root cause is clear and low-impact for terminal-style usage), or
-- write a targeted fix in a follow-up plan (one line change in most of the likely causes).
-
-## Step 5 — Remove the diagnostic logs
-
-Always — they're temporary instrumentation, not permanent telemetry.
-
-## Out of scope this plan
-
-- Changing cookie attributes, secret values, or verification logic
-- Touching the iframe flow (it works)
-- Any UI changes
+- No behaviour changes to auth, cookies, or the enrichment flow.
+- No other files.
