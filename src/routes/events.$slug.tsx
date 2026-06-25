@@ -80,7 +80,9 @@ import { classifyEventLink, isTrustedLink } from "@/lib/link-trust";
 import { trackEntryClick, trackClaimInterest } from "@/lib/analytics";
 
 export const Route = createFileRoute("/events/$slug")({
+  validateSearch: fromSearchValidator,
   loader: ({ params }) => getEventPageData({ data: { slug: params.slug } }),
+
   head: ({ params, loaderData }) => {
     const e = loaderData?.event;
     const canonical = `${SITE_URL}/events/${params.slug}`;
