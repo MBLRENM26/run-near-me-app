@@ -265,6 +265,15 @@ export function buildDistanceHead(
   const total = data?.total ?? 0;
   const description = cfg.metaDescription(total);
   const canonical = `${siteUrl}${canonicalPath}`;
+  // Append live count to the title when known — front-loads volume,
+  // gives the listing a "fresh / actively curated" signal in SERPs.
+  const title =
+    total > 0
+      ? cfg.metaTitle.replace(
+          / — Running Events Near Me$/,
+          ` — ${total.toLocaleString()} Upcoming | Running Events Near Me`,
+        )
+      : cfg.metaTitle;
 
   const collectionLd = {
     "@context": "https://schema.org",
@@ -296,13 +305,14 @@ export function buildDistanceHead(
 
   return {
     meta: [
-      { title: cfg.metaTitle },
+      { title },
       { name: "description", content: description },
-      { property: "og:title", content: cfg.metaTitle },
+      { property: "og:title", content: title },
       { property: "og:description", content: description },
       { property: "og:type", content: "website" },
       { property: "og:url", content: canonical },
     ],
+
     links: [{ rel: "canonical", href: canonical }],
     scripts: [
       {
