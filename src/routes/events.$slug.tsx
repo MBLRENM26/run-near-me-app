@@ -100,17 +100,24 @@ export const Route = createFileRoute("/events/$slug")({
     const loc = locationLabel(e.town, e.county);
     const place = e.town || e.county || "";
 
-    // Title: "{Name} {Year} — {Day Month}, {Town} | Entry & Info"
-    // (month only for estimated dates; date/place segments drop out when unknown)
+    // Title: "{Name} {Year} — {Distance}, {Town}, {Day Month} | Entry & Info"
+    // Front-loads name + distance + location + date for CTR; any unknown
+    // segment is dropped rather than fudged.
     const shortDate = shortEventDate(e);
-    const mid = [shortDate || null, place || null].filter(Boolean).join(", ");
+    const distLabel = (e.distances?.trim() || e.discipline?.trim() || "").trim();
+    const distForTitle =
+      distLabel && distLabel.toLowerCase() !== "running" ? distLabel : "";
+    const mid = [distForTitle || null, place || null, shortDate || null]
+      .filter(Boolean)
+      .join(", ");
     const titleSpec =
       `${[e.name, year].filter(Boolean).join(" ")}` +
       (mid ? ` — ${mid}` : "") +
       ` | Entry & Info`;
 
     const dateLabel = formatEventDate(e);
-    const distance = e.distances?.trim() || e.discipline?.trim() || "running";
+    const distance = distLabel || "running";
+
 
     const headProximity = eventProximity(e);
     const headIsPast = headProximity === "past";
