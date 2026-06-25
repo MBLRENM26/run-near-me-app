@@ -710,7 +710,37 @@ export const getEventPageData = createServerFn({ method: "GET" })
       }
     }
 
-    return { event, related, sameTown };
+    // ----- Indexability decision -----
+    // Fetch ACTIVE candidate siblings whose name shares the current
+    // event's first two tokens (covers "Race for Life ...", "Pretty
+    // Muddy ...", "Tatton Park ...", "Holme Pierrepont ..." style
+    // series). Narrowed JS-side by exact normalised-name match. Cheap
+    // for unique events (most rows) — heavier only for true series
+    // members, which is exactly the population we care about.
+    const todayIso = new Date().toISOString().slice(0, 10);
+    let indexability: IndexabilityResult;
+    const currentNorm = normaliseEventName(event.name);
+    const tokens = currentNorm.split(" ").filter(Boolean);
+    if (tokens.length === 0) {
+      indexability = computeIndexability(event, [], todayIso);
+    } else {
+      const prefix = tokens.slice(0, Math.min(2, tokens.length)).join(" ");
+      const { data: sibRows } = await supabaseAdmin
+        .from("events")
+        .select("id, name, sort_date")
+        .eq("status", "ACTIVE")
+        .ilike("name", `${prefix}%`)
+        .limit(200);
+      const siblings = (sibRows ?? [])
+        .filter((r) => normaliseEventName((r.name as string) ?? "") === currentNorm)
+        .map((r) => ({
+          id: r.id as string,
+          sort_date: r.sort_date as string | null,
+        }));
+      indexability = computeIndexability(event, siblings, todayIso);
+    }
+
+    return { event, related, sameTown, indexability };
   });
 
 
