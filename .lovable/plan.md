@@ -1,42 +1,47 @@
-## What's currently tracked
+## Problem
 
-All custom events go through `src/lib/analytics.ts → track()` (Plausible). The script is gated to production domain in `src/routes/__root.tsx`, so nothing fires on previews/localhost.
+Admin login fails inside the Lovable preview iframe. The password is correct — the server accepts it and returns `ok: true` — but the session cookie set by `issueAdminSession()` is being dropped by the browser because the preview runs inside a cross-site iframe. The follow-up `adminCheckSession()` call then sees no cookie and bounces back to `/admin/login`, which looks like "password rejected".
 
-| Goal name | Where it fires | Props |
-|---|---|---|
-| `Entry Click` | Primary CTA on `events/$slug` only | slug, region, link_type (`entry` / `organiser-site` / `organiser-other`), proximity, event_name, distance, discipline |
-| `Club Website Click` | Club page CTA | slug, host, kind |
-| `Club Page View` | Club page mount | slug, region, is_claimed, governing_body |
-| `Claim Interest` | Claim CTA on events | slug, region |
-| `Region View` | Region listings | region, total_events |
-| `Filter` | Radius / distance / month chips | page, filter_type, value |
-| `Location Set` | Postcode / device prompt | method |
-| `Search Performed` | `/search` submit | (search) |
-| `Form: Submission` | List-your-event & club claim | form |
+Current cookie attributes in `src/lib/admin-session.server.ts`:
 
-Card clicks in listings (`EventCard`) are internal `<Link>`s — no external link tracking is needed there.
+```
+httpOnly: true
+secure:   true
+sameSite: "lax"   ← blocked in third-party iframe contexts
+path:     "/"
+```
 
-## What this means for "runner conversion"
+Modern Chrome / Safari only send `SameSite=Lax` cookies on top-level navigations from the same site. The Lovable editor loads `id-preview--…lovable.app` inside an iframe whose top frame is `lovable.dev`, so the cookie is treated as third-party and silently discarded.
 
-The closest thing to a runner conversion is **`Entry Click`** with `link_type = "entry"`. The wiring is correct:
+## Fix
 
-- `link_type` is set from `classifyEventLink(e.entry_url|organiser_url)` so it cleanly splits real entry pages from organiser homepages, matching the link-trust policy.
-- `proximity` distinguishes `future` / `today` / `imminent` / `past` clicks.
-- `region`, `distance`, `discipline` let you slice by audience.
+Switch the admin session cookie to `SameSite=None; Secure` so it is allowed in cross-site iframe contexts, while keeping `httpOnly` and the HMAC-signed payload (so security is unchanged). `SameSite=None` requires `Secure`, which we already set.
 
-So if Plausible's "Goals" tab looks empty, it isn't a tracking-code bug — it's that Plausible only counts an event as a **conversion** once you've added it as a Custom Event Goal in the dashboard. None of these goals exist there yet (that's a manual one-off in Plausible UI).
+Apply the same change to the matching `deleteCookie` call so logout still clears it.
 
-## Gaps worth fixing
+### File to change
 
-1. **Past-event organiser link is untracked.** The "Visit organiser website" link inside the `isPast` block (`events/$slug` ~L488–500) has no `onClick`. Today these clicks are invisible. Fire `Entry Click` with `link_type = "organiser-site"`, `proximity = "past"` so they roll up alongside live conversions.
-2. **`proximity ?? "future"` fallback is misleading.** `eventProximity(e)` always returns one of the four values, but the `??` makes a past CTA potentially report as `future` if the value were ever falsy. Pass `proximity` directly (typed) — small correctness tidy.
-3. **No `Pageview` → `Entry Click` funnel breakdown exposed.** Once goals are registered in Plausible, the same `slug` prop is already on both `pageview` (URL) and `Entry Click`, so a per-event conversion rate is available — no code change needed, just dashboard setup.
-4. **Optional polish:** `Search Performed` doesn't currently include the query or result count in the snippet I read — confirm before next iteration whether you want CTR-style funnel data from search.
+`src/lib/admin-session.server.ts`
+- `issueAdminSession`: `sameSite: "lax"` → `sameSite: "none"`
+- `clearAdminSession`: `sameSite: "lax"` → `sameSite: "none"`
 
-## Recommended next steps (need your call before I touch anything)
+No other files need to change. `isAdminAuthenticated`, `verifyAdminPassword`, and the admin server functions stay as-is.
 
-- **A.** Add tracking to the past-event organiser link + drop the `?? "future"` fallback. ~5 lines in `src/routes/events.$slug.tsx`. Low risk.
-- **B.** Same as A, plus a one-page README at `.lovable/analytics.md` listing every goal + props so the Plausible dashboard can be set up to match. No runtime impact.
-- **C.** Leave code untouched; I write up exactly which goals to add in Plausible's UI and you do it there.
+## Verification
 
-Tell me A / B / C (or another combination) and whether you want the search-funnel work (#4) folded in.
+1. Open `/admin/login` in the preview iframe, submit the correct password → should land on `/admin/claims`.
+2. Refresh `/admin/claims` → should stay logged in (cookie persisted).
+3. Click "Log out" → should return to `/admin/login` and a refresh should not auto-restore the session.
+4. Sanity-check the published site (`runningeventsnearme.com/admin/login`) still works — `SameSite=None; Secure` is valid there too.
+
+## Why this is safe
+
+- Cookie remains `httpOnly` (JS can't read it) and HMAC-signed with `ADMIN_SESSION_SECRET` (can't be forged).
+- `Secure` is enforced, so it only travels over HTTPS.
+- No CSRF surface widened: the only state-changing admin endpoints already require this cookie *and* are protected by `requireAdminOrThrow()`; admin mutations are triggered from your own admin UI, not from arbitrary third-party origins. If you later want belt-and-braces CSRF protection for admin POSTs, that's a separate follow-up (custom header check on admin server fns).
+
+## Not doing
+
+- Not touching `ADMIN_PASSWORD` or `ADMIN_SESSION_SECRET` — both are set and working.
+- Not changing the login UI or routing.
+- Not republishing required for testing in the preview iframe (server change deploys immediately); the published site picks it up on next publish but already works there today since it's top-level.

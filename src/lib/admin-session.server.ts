@@ -27,7 +27,7 @@ export function issueAdminSession(): void {
   setCookie(COOKIE_NAME, `${payload}.${sig}`, {
     httpOnly: true,
     secure: true,
-    sameSite: "lax",
+    sameSite: "none",
     maxAge: MAX_AGE_SECONDS,
     path: "/",
   });
@@ -37,7 +37,7 @@ export function clearAdminSession(): void {
   deleteCookie(COOKIE_NAME, {
     path: "/",
     secure: true,
-    sameSite: "lax",
+    sameSite: "none",
   });
 }
 
