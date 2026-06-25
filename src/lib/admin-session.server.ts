@@ -64,6 +64,31 @@ export function isAdminAuthenticated(): boolean {
   return true;
 }
 
+// TEMP DIAGNOSTIC — remove after debugging published-URL auth issue.
+export function diagnoseAdminAuth(): {
+  secret_present: boolean;
+  cookie_present: boolean;
+  cookie_well_formed: boolean;
+  hmac_ok: boolean;
+  expired: boolean;
+  reason: string;
+} {
+  const secret_present = !!process.env.ADMIN_SESSION_SECRET && process.env.ADMIN_SESSION_SECRET.length >= 16;
+  const raw = getCookie(COOKIE_NAME);
+  if (!raw) return { secret_present, cookie_present: false, cookie_well_formed: false, hmac_ok: false, expired: false, reason: "no_cookie" };
+  const [payload, sig] = raw.split(".");
+  if (!payload || !sig) return { secret_present, cookie_present: true, cookie_well_formed: false, hmac_ok: false, expired: false, reason: "malformed" };
+  let expected: string;
+  try { expected = sign(payload); } catch { return { secret_present, cookie_present: true, cookie_well_formed: true, hmac_ok: false, expired: false, reason: "no_secret" }; }
+  const a = Buffer.from(sig, "hex");
+  const b = Buffer.from(expected, "hex");
+  const hmac_ok = a.length === b.length && a.length > 0 && timingSafeEqual(a, b);
+  if (!hmac_ok) return { secret_present, cookie_present: true, cookie_well_formed: true, hmac_ok: false, expired: false, reason: "bad_signature" };
+  const expMs = Number(payload);
+  const expired = !Number.isFinite(expMs) || expMs < Date.now();
+  return { secret_present, cookie_present: true, cookie_well_formed: true, hmac_ok: true, expired, reason: expired ? "expired" : "ok" };
+}
+
 export function verifyAdminPassword(input: string): boolean {
   const expected = process.env.ADMIN_PASSWORD;
   if (!expected) return false;
