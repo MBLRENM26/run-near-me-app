@@ -48,6 +48,7 @@ import { Route as AdminShellAdminSearchRouteImport } from './routes/_adminShell.
 import { Route as AdminShellAdminClubClaimsRouteImport } from './routes/_adminShell.admin.club-claims'
 import { Route as AdminShellAdminClaimsRouteImport } from './routes/_adminShell.admin.claims'
 import { Route as AdminShellAdminEventsIndexRouteImport } from './routes/_adminShell.admin.events.index'
+import { Route as AdminShellAdminClubsIndexRouteImport } from './routes/_adminShell.admin.clubs.index'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -56,6 +57,8 @@ import { Route as ApiPublicAdminSyncEnglandAthleticsRouteImport } from './routes
 import { Route as ApiPublicAdminFixEventUrlsRouteImport } from './routes/api/public/admin/fix-event-urls'
 import { Route as AdminShellAdminEventsDuplicatesRouteImport } from './routes/_adminShell.admin.events.duplicates'
 import { Route as AdminShellAdminEventsIdRouteImport } from './routes/_adminShell.admin.events.$id'
+import { Route as AdminShellAdminClubsNewRouteImport } from './routes/_adminShell.admin.clubs.new'
+import { Route as AdminShellAdminClubsIdRouteImport } from './routes/_adminShell.admin.clubs.$id'
 
 const UltraMarathonsRoute = UltraMarathonsRouteImport.update({
   id: '/ultra-marathons',
@@ -256,6 +259,12 @@ const AdminShellAdminEventsIndexRoute =
     path: '/admin/events/',
     getParentRoute: () => AdminShellRoute,
   } as any)
+const AdminShellAdminClubsIndexRoute =
+  AdminShellAdminClubsIndexRouteImport.update({
+    id: '/admin/clubs/',
+    path: '/admin/clubs/',
+    getParentRoute: () => AdminShellRoute,
+  } as any)
 const LovableEmailTransactionalSendRoute =
   LovableEmailTransactionalSendRouteImport.update({
     id: '/lovable/email/transactional/send',
@@ -303,6 +312,16 @@ const AdminShellAdminEventsIdRoute = AdminShellAdminEventsIdRouteImport.update({
   path: '/admin/events/$id',
   getParentRoute: () => AdminShellRoute,
 } as any)
+const AdminShellAdminClubsNewRoute = AdminShellAdminClubsNewRouteImport.update({
+  id: '/admin/clubs/new',
+  path: '/admin/clubs/new',
+  getParentRoute: () => AdminShellRoute,
+} as any)
+const AdminShellAdminClubsIdRoute = AdminShellAdminClubsIdRouteImport.update({
+  id: '/admin/clubs/$id',
+  path: '/admin/clubs/$id',
+  getParentRoute: () => AdminShellRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -342,6 +361,8 @@ export interface FileRoutesByFullPath {
   '/parkrun-events/region/$region': typeof ParkrunEventsRegionRegionRoute
   '/running-clubs/$slug/claim': typeof RunningClubsSlugClaimRoute
   '/running-events/$slug/$distance': typeof RunningEventsSlugDistanceRoute
+  '/admin/clubs/$id': typeof AdminShellAdminClubsIdRoute
+  '/admin/clubs/new': typeof AdminShellAdminClubsNewRoute
   '/admin/events/$id': typeof AdminShellAdminEventsIdRoute
   '/admin/events/duplicates': typeof AdminShellAdminEventsDuplicatesRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
@@ -350,6 +371,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/admin/clubs/': typeof AdminShellAdminClubsIndexRoute
   '/admin/events/': typeof AdminShellAdminEventsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -390,6 +412,8 @@ export interface FileRoutesByTo {
   '/parkrun-events/region/$region': typeof ParkrunEventsRegionRegionRoute
   '/running-clubs/$slug/claim': typeof RunningClubsSlugClaimRoute
   '/running-events/$slug/$distance': typeof RunningEventsSlugDistanceRoute
+  '/admin/clubs/$id': typeof AdminShellAdminClubsIdRoute
+  '/admin/clubs/new': typeof AdminShellAdminClubsNewRoute
   '/admin/events/$id': typeof AdminShellAdminEventsIdRoute
   '/admin/events/duplicates': typeof AdminShellAdminEventsDuplicatesRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
@@ -398,6 +422,7 @@ export interface FileRoutesByTo {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/admin/clubs': typeof AdminShellAdminClubsIndexRoute
   '/admin/events': typeof AdminShellAdminEventsIndexRoute
 }
 export interface FileRoutesById {
@@ -440,6 +465,8 @@ export interface FileRoutesById {
   '/parkrun-events/region/$region': typeof ParkrunEventsRegionRegionRoute
   '/running-clubs/$slug/claim': typeof RunningClubsSlugClaimRoute
   '/running-events/$slug_/$distance': typeof RunningEventsSlugDistanceRoute
+  '/_adminShell/admin/clubs/$id': typeof AdminShellAdminClubsIdRoute
+  '/_adminShell/admin/clubs/new': typeof AdminShellAdminClubsNewRoute
   '/_adminShell/admin/events/$id': typeof AdminShellAdminEventsIdRoute
   '/_adminShell/admin/events/duplicates': typeof AdminShellAdminEventsDuplicatesRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
@@ -448,6 +475,7 @@ export interface FileRoutesById {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/_adminShell/admin/clubs/': typeof AdminShellAdminClubsIndexRoute
   '/_adminShell/admin/events/': typeof AdminShellAdminEventsIndexRoute
 }
 export interface FileRouteTypes {
@@ -490,6 +518,8 @@ export interface FileRouteTypes {
     | '/parkrun-events/region/$region'
     | '/running-clubs/$slug/claim'
     | '/running-events/$slug/$distance'
+    | '/admin/clubs/$id'
+    | '/admin/clubs/new'
     | '/admin/events/$id'
     | '/admin/events/duplicates'
     | '/api/public/admin/fix-event-urls'
@@ -498,6 +528,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/admin/clubs/'
     | '/admin/events/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -538,6 +569,8 @@ export interface FileRouteTypes {
     | '/parkrun-events/region/$region'
     | '/running-clubs/$slug/claim'
     | '/running-events/$slug/$distance'
+    | '/admin/clubs/$id'
+    | '/admin/clubs/new'
     | '/admin/events/$id'
     | '/admin/events/duplicates'
     | '/api/public/admin/fix-event-urls'
@@ -546,6 +579,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/admin/clubs'
     | '/admin/events'
   id:
     | '__root__'
@@ -587,6 +621,8 @@ export interface FileRouteTypes {
     | '/parkrun-events/region/$region'
     | '/running-clubs/$slug/claim'
     | '/running-events/$slug_/$distance'
+    | '/_adminShell/admin/clubs/$id'
+    | '/_adminShell/admin/clubs/new'
     | '/_adminShell/admin/events/$id'
     | '/_adminShell/admin/events/duplicates'
     | '/api/public/admin/fix-event-urls'
@@ -595,6 +631,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/_adminShell/admin/clubs/'
     | '/_adminShell/admin/events/'
   fileRoutesById: FileRoutesById
 }
@@ -915,6 +952,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminShellAdminEventsIndexRouteImport
       parentRoute: typeof AdminShellRoute
     }
+    '/_adminShell/admin/clubs/': {
+      id: '/_adminShell/admin/clubs/'
+      path: '/admin/clubs'
+      fullPath: '/admin/clubs/'
+      preLoaderRoute: typeof AdminShellAdminClubsIndexRouteImport
+      parentRoute: typeof AdminShellRoute
+    }
     '/lovable/email/transactional/send': {
       id: '/lovable/email/transactional/send'
       path: '/lovable/email/transactional/send'
@@ -971,6 +1015,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminShellAdminEventsIdRouteImport
       parentRoute: typeof AdminShellRoute
     }
+    '/_adminShell/admin/clubs/new': {
+      id: '/_adminShell/admin/clubs/new'
+      path: '/admin/clubs/new'
+      fullPath: '/admin/clubs/new'
+      preLoaderRoute: typeof AdminShellAdminClubsNewRouteImport
+      parentRoute: typeof AdminShellRoute
+    }
+    '/_adminShell/admin/clubs/$id': {
+      id: '/_adminShell/admin/clubs/$id'
+      path: '/admin/clubs/$id'
+      fullPath: '/admin/clubs/$id'
+      preLoaderRoute: typeof AdminShellAdminClubsIdRouteImport
+      parentRoute: typeof AdminShellRoute
+    }
   }
 }
 
@@ -979,8 +1037,11 @@ interface AdminShellRouteChildren {
   AdminShellAdminClubClaimsRoute: typeof AdminShellAdminClubClaimsRoute
   AdminShellAdminSearchRoute: typeof AdminShellAdminSearchRoute
   AdminShellAdminSyncRunsRoute: typeof AdminShellAdminSyncRunsRoute
+  AdminShellAdminClubsIdRoute: typeof AdminShellAdminClubsIdRoute
+  AdminShellAdminClubsNewRoute: typeof AdminShellAdminClubsNewRoute
   AdminShellAdminEventsIdRoute: typeof AdminShellAdminEventsIdRoute
   AdminShellAdminEventsDuplicatesRoute: typeof AdminShellAdminEventsDuplicatesRoute
+  AdminShellAdminClubsIndexRoute: typeof AdminShellAdminClubsIndexRoute
   AdminShellAdminEventsIndexRoute: typeof AdminShellAdminEventsIndexRoute
 }
 
@@ -989,8 +1050,11 @@ const AdminShellRouteChildren: AdminShellRouteChildren = {
   AdminShellAdminClubClaimsRoute: AdminShellAdminClubClaimsRoute,
   AdminShellAdminSearchRoute: AdminShellAdminSearchRoute,
   AdminShellAdminSyncRunsRoute: AdminShellAdminSyncRunsRoute,
+  AdminShellAdminClubsIdRoute: AdminShellAdminClubsIdRoute,
+  AdminShellAdminClubsNewRoute: AdminShellAdminClubsNewRoute,
   AdminShellAdminEventsIdRoute: AdminShellAdminEventsIdRoute,
   AdminShellAdminEventsDuplicatesRoute: AdminShellAdminEventsDuplicatesRoute,
+  AdminShellAdminClubsIndexRoute: AdminShellAdminClubsIndexRoute,
   AdminShellAdminEventsIndexRoute: AdminShellAdminEventsIndexRoute,
 }
 

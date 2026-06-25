@@ -8,7 +8,12 @@ import { z } from "zod";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { HeaderSearch } from "@/components/site/HeaderSearch";
-import { searchEvents, type SearchResult } from "@/lib/search.functions";
+import {
+  searchEvents,
+  searchClubs,
+  type SearchResult,
+  type ClubSearchResult,
+} from "@/lib/search.functions";
 import { track, trackSearchResultClick } from "@/lib/analytics";
 import { isUkPostcode, geocodePostcode } from "@/lib/postcode";
 import { formatEventDate } from "@/lib/date";
@@ -21,6 +26,7 @@ const searchSchema = z.object({
 type LoaderData = {
   q: string;
   results: SearchResult[];
+  clubs: ClubSearchResult[];
   isPostcode: boolean;
 };
 
@@ -32,13 +38,16 @@ export const Route = createFileRoute("/search")({
   loaderDeps: ({ search }) => ({ q: search.q }),
   loader: async ({ deps }): Promise<LoaderData> => {
     const q = deps.q.trim();
-    if (!q) return { q: "", results: [], isPostcode: false };
+    if (!q) return { q: "", results: [], clubs: [], isPostcode: false };
     if (isUkPostcode(q)) {
       // Don't run a text search for postcodes — the page redirects on mount.
-      return { q, results: [], isPostcode: true };
+      return { q, results: [], clubs: [], isPostcode: true };
     }
-    const results = await searchEvents({ data: { q } });
-    return { q, results, isPostcode: false };
+    const [results, clubs] = await Promise.all([
+      searchEvents({ data: { q } }),
+      searchClubs({ data: { q } }),
+    ]);
+    return { q, results, clubs, isPostcode: false };
   },
   head: ({ loaderData }) => {
     const q = loaderData?.q ?? "";
@@ -56,7 +65,7 @@ export const Route = createFileRoute("/search")({
 });
 
 function SearchPage() {
-  const { q, results, isPostcode } = Route.useLoaderData() as LoaderData;
+  const { q, results, clubs, isPostcode } = Route.useLoaderData() as LoaderData;
   const navigate = useNavigate();
   const [searchLogId, setSearchLogId] = useState<string | null>(null);
 
@@ -91,12 +100,13 @@ function SearchPage() {
     track("Search Performed", {
       query: q,
       results_count: results.length,
-      has_results: results.length > 0,
+      clubs_count: clubs.length,
+      has_results: results.length + clubs.length > 0,
     });
     fetch("/api/public/track-search", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ q, results_count: results.length }),
+      body: JSON.stringify({ q, results_count: results.length + clubs.length }),
     })
       .then((r) => (r.ok ? r.json() : null))
       .then((data: { search_log_id?: string } | null) => {
@@ -109,7 +119,7 @@ function SearchPage() {
     return () => {
       cancelled = true;
     };
-  }, [q, isPostcode, results.length]);
+  }, [q, isPostcode, results.length, clubs.length]);
 
   const trackClick = (slug: string, position: number) => {
     // Plausible goal — works without a server-side log id, so we always fire it.
@@ -157,10 +167,10 @@ function SearchPage() {
             </div>
           )}
 
-          {!isPostcode && q && results.length === 0 && (
+          {!isPostcode && q && results.length === 0 && clubs.length === 0 && (
             <div className="mt-10 rounded-2xl border border-dashed border-border bg-muted/30 p-8 text-center">
               <p className="text-lg font-medium text-foreground">
-                No events match "{q}"
+                No events or clubs match "{q}"
               </p>
               <p className="mt-2 text-sm text-muted-foreground">
                 Try a different spelling, a town name, or browse by distance
@@ -186,21 +196,21 @@ function SearchPage() {
                   Half marathons
                 </Link>
                 <Link
-                  to="/marathons"
+                  to="/running-clubs"
                   className="rounded-md border border-border bg-card px-3 py-1.5 font-medium text-foreground hover:border-primary"
                 >
-                  Marathons
+                  Running clubs
                 </Link>
               </div>
             </div>
           )}
 
           {!isPostcode && q && results.length > 0 && (
-            <>
-              <p className="mt-3 text-sm text-muted-foreground">
-                {results.length} result{results.length === 1 ? "" : "s"}
-              </p>
-              <ul className="mt-5 divide-y divide-border rounded-2xl border border-border bg-card">
+            <section className="mt-8">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                Events ({results.length})
+              </h2>
+              <ul className="mt-3 divide-y divide-border rounded-2xl border border-border bg-card">
                 {results.map((r, i) => {
                   const dateLabel = formatEventDate({
                     date_raw: null,
@@ -234,7 +244,44 @@ function SearchPage() {
                   );
                 })}
               </ul>
-            </>
+            </section>
+          )}
+
+          {!isPostcode && q && clubs.length > 0 && (
+            <section className="mt-8">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                Running clubs ({clubs.length})
+              </h2>
+              <ul className="mt-3 divide-y divide-border rounded-2xl border border-border bg-card">
+                {clubs.map((c, i) => {
+                  const loc = [c.town, c.county].filter(Boolean).join(", ");
+                  return (
+                    <li key={c.id}>
+                      <Link
+                        to="/running-clubs/$slug"
+                        params={{ slug: c.slug }}
+                        onClick={() =>
+                          trackClick(`club:${c.slug}`, results.length + i + 1)
+                        }
+                        className="flex flex-col gap-0.5 px-4 py-3 hover:bg-muted/50 transition-colors"
+                      >
+                        <span className="flex items-center gap-2 font-medium text-foreground">
+                          {c.name}
+                          {c.is_claimed && (
+                            <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-normal text-primary">
+                              Claimed
+                            </span>
+                          )}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          {[loc, c.region].filter(Boolean).join(" · ")}
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
           )}
 
           {!q && !isPostcode && (
