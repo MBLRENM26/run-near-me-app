@@ -28,7 +28,9 @@ const GOVERNING_BODY_LABEL: Record<string, string> = {
 };
 
 export const Route = createFileRoute("/running-clubs/$slug")({
+  validateSearch: fromSearchValidator,
   loader: ({ params }) => getClubPageData({ data: { slug: params.slug } }),
+
   head: ({ params, loaderData }) => {
     const c = loaderData?.club;
     const canonical = `${SITE_URL}/running-clubs/${params.slug}`;
