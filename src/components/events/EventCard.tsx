@@ -75,7 +75,7 @@ export function EventCard({ event }: { event: EventCardData }) {
       </div>
 
       <div className="space-y-1.5 text-sm text-muted-foreground">
-        {event.date_raw && (
+        {event.date_raw ? (
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 shrink-0" />
             <span>
@@ -85,7 +85,16 @@ export function EventCard({ event }: { event: EventCardData }) {
               )}
             </span>
           </div>
-        )}
+        ) : isParkrunEvent(event) ? (
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 shrink-0" />
+            <span>
+              {event.name.toLowerCase().includes("junior")
+                ? "Every Sunday at 9:30am"
+                : "Every Saturday at 9:00am"}
+            </span>
+          </div>
+        ) : null}
         <div className="flex items-center gap-2">
           <MapPin className="h-4 w-4 shrink-0" />
           <span>
