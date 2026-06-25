@@ -20,6 +20,17 @@ export type SearchResult = {
   is_past: boolean;
 };
 
+export type ClubSearchResult = {
+  id: string;
+  slug: string;
+  name: string;
+  town: string | null;
+  county: string | null;
+  region: string | null;
+  governing_body: string;
+  is_claimed: boolean;
+};
+
 /**
  * Full-text event search. Backed by `search_events_v1` (ts_rank over a
  * weighted tsvector on name/town/county). Filters out duplicates and
@@ -38,4 +49,22 @@ export const searchEvents = createServerFn({ method: "GET" })
       return [];
     }
     return (rows ?? []) as SearchResult[];
+  });
+
+/**
+ * Full-text club search. Backed by `search_clubs_v1`. Only ACTIVE clubs,
+ * public-safe columns only (no source/source_url).
+ */
+export const searchClubs = createServerFn({ method: "GET" })
+  .inputValidator((input: unknown) => inputSchema.parse(input))
+  .handler(async ({ data }): Promise<ClubSearchResult[]> => {
+    const { data: rows, error } = await supabaseAdmin.rpc(
+      "search_clubs_v1",
+      { q: data.q, lim: data.limit ?? 20 },
+    );
+    if (error) {
+      console.error("[searchClubs] rpc error", error);
+      return [];
+    }
+    return (rows ?? []) as ClubSearchResult[];
   });

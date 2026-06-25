@@ -8,7 +8,12 @@ import { z } from "zod";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { HeaderSearch } from "@/components/site/HeaderSearch";
-import { searchEvents, type SearchResult } from "@/lib/search.functions";
+import {
+  searchEvents,
+  searchClubs,
+  type SearchResult,
+  type ClubSearchResult,
+} from "@/lib/search.functions";
 import { track, trackSearchResultClick } from "@/lib/analytics";
 import { isUkPostcode, geocodePostcode } from "@/lib/postcode";
 import { formatEventDate } from "@/lib/date";
@@ -21,6 +26,7 @@ const searchSchema = z.object({
 type LoaderData = {
   q: string;
   results: SearchResult[];
+  clubs: ClubSearchResult[];
   isPostcode: boolean;
 };
 
@@ -32,13 +38,16 @@ export const Route = createFileRoute("/search")({
   loaderDeps: ({ search }) => ({ q: search.q }),
   loader: async ({ deps }): Promise<LoaderData> => {
     const q = deps.q.trim();
-    if (!q) return { q: "", results: [], isPostcode: false };
+    if (!q) return { q: "", results: [], clubs: [], isPostcode: false };
     if (isUkPostcode(q)) {
       // Don't run a text search for postcodes — the page redirects on mount.
-      return { q, results: [], isPostcode: true };
+      return { q, results: [], clubs: [], isPostcode: true };
     }
-    const results = await searchEvents({ data: { q } });
-    return { q, results, isPostcode: false };
+    const [results, clubs] = await Promise.all([
+      searchEvents({ data: { q } }),
+      searchClubs({ data: { q } }),
+    ]);
+    return { q, results, clubs, isPostcode: false };
   },
   head: ({ loaderData }) => {
     const q = loaderData?.q ?? "";
