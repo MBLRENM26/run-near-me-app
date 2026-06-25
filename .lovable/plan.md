@@ -1,4 +1,11 @@
 
+## Sprint A.5 — SHIPPED 2026-06-25
+
+Soft 404 fix deployed: noindex for past, slug-suffix-duplicate, orphan, and series-sibling events (earliest upcoming in each cluster stays indexable). Past events also dropped from the legacy `/$slug` redirect lookup, and Event JSON-LD is suppressed on noindexed pages. Implementation: `src/lib/event-indexability.ts` (rules), `src/lib/events.functions.ts` (sibling fetch via normalised-name + slug-stem union, computed in `getEventPageData`), `src/routes/events.$slug.tsx` (robots meta + JSON-LD gate), `src/lib/events.functions.ts:lookupEventSlug` (past-slug exclusion). Verification: spot-check view-source on a Pretty Muddy / Race for Life cluster after deploy — earliest date should be indexable, rest should carry `<meta name="robots" content="noindex, follow">` and no Event JSON-LD. Recheck GSC soft 404 count in 2–6 weeks; do NOT manually resubmit the sitemap until after this ships.
+
+---
+
+
 ## Sprint A.5 — clear the 323 soft 404s
 
 All 323 are `/events/{slug}` pages. 271 (84%) are ACTIVE future events in duplicate-series clusters; 46 are ACTIVE past. The fix is targeted `noindex, follow` + dropping stale Event JSON-LD, with one indexed instance per series preserved so brand queries still land somewhere.
