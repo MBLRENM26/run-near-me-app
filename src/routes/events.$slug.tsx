@@ -567,8 +567,16 @@ function EventDetailPage() {
           )}
 
 
+          <div className="mt-8">
+            <RaceReminderSignup
+              eventId={e.id}
+              eventName={e.name}
+              sortDate={e.sort_date ?? null}
+            />
+          </div>
 
           {showClaim && (
+
             <div className="mt-10 rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-card">
               <h2 className="text-xl font-semibold text-foreground">
                 Are you the organiser?
