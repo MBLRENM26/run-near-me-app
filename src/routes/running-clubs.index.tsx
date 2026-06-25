@@ -138,7 +138,9 @@ function ClubsIndexPage() {
 
   return (
     <FullShell>
+      <BackToSearchBar />
       <Breadcrumb className="mb-4">
+
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
