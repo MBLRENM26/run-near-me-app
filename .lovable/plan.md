@@ -1,38 +1,22 @@
-# Diagnose the "Unauthorized" toast on date-enrichment preview
+# Apply the 208 safe changes now
 
-## What we know
+Both the preview iframe and the published URL talk to the same database, so committing from the iframe writes the dates straight into production. The published-URL "Unauthorized" is just a separate cookie/session quirk on that host — it doesn't affect the integrity of the import you've already previewed.
 
-- You're already on `/admin/events/enrich-dates`, so the admin cookie loaded fine for the GET that rendered the page.
-- The CSV parsed client-side (you saw 209 rows in the preview window before clicking the button), so the toast came from the server function's `requireAdminOrThrow()` call (the only place that throws the literal string "Unauthorized").
-- Server logs for the last hour show **zero POSTs** to the project — only the GET that loaded the page. That means the POST either never reached the server (preview-iframe proxy ate it) or it was rejected before logging.
-- Other admin write fns (editing a race) worked for you earlier in the same session, which points away from the admin cookie itself being broken and toward something specific to this request (most likely the preview iframe + POST body combo).
+## Do this now
 
-There's a known platform issue where the Lovable preview's fetch proxy interferes with certain POST requests inside the iframe. The cleanest way to rule that in or out is to run the exact same import once against the published URL.
+1. Click **Apply changes** in the iframe and confirm the prompt.
+2. Wait for the result panel — you should see `Written: 208`, `Failed: 0`, `Unmatched: 0`, `Protected: 0`. Anything non-zero in `Failed` or `Unmatched`, tell me and I'll dig in.
+3. Spot-check 1–2 events on the public site (or via Admin → Events) to confirm the new dates show up and `date_is_estimated` is correct.
 
-## Step 1 — Confirm it's the preview iframe (no code changes)
+## Then — fix the published-URL auth (separate workstream, no rush)
 
-Ask you to:
+You don't need this resolved to do the import, but it's worth fixing so future enrichment runs work from anywhere. Once you confirm the 208 wrote cleanly, I'll:
 
-1. Open the published admin: `https://run-near-me-app.lovable.app/admin/events/enrich-dates`
-2. Sign in with the admin password.
-3. Upload the same `ALL-confirmed-migration.csv` and click **Preview changes**.
+1. Add a one-line server log in `previewDateEnrichments` recording whether the `admin_session` cookie arrived and whether the HMAC verified.
+2. Ask you to retry on `run-near-me-app.lovable.app` once.
+3. Read `server-function-logs` to see exactly which branch fails — almost certainly either (a) the cookie isn't being sent on the published host (likely a `sameSite`/domain mismatch between `run-near-me-app.lovable.app` and your custom domain `runningeventsnearme.com`) or (b) `ADMIN_SESSION_SECRET` differs between deployments and HMAC verify fails.
+4. Fix the actual cause and remove the temporary log.
 
-Two outcomes:
+## Out of scope this turn
 
-- **Works on published** → confirmed preview-iframe issue. We do the actual 209-row import there. No code change needed for this run. I'll then add a small in-page banner on `/admin/events/enrich-dates` noting "run this on the published URL if preview hangs" so future-you doesn't get tripped up.
-- **Still says Unauthorized on published** → it's a real bug. Move to Step 2.
-
-## Step 2 — Only if published also fails
-
-Add temporary server-side logging in `previewDateEnrichments`' handler (before `requireAdminOrThrow`) to print whether the `admin_session` cookie was present and whether HMAC verify passed. Re-run, read `server-function-logs`, then fix the actual cause (likely cookie attributes or HMAC mismatch). Remove the logging after.
-
-## Out of scope for this turn
-
-- No DB writes, no schema changes, no importer logic changes.
-- Not switching the importer to the `x-admin-secret` header path — that's a fallback only if the cookie auth turns out to be genuinely broken.
-
-## Technical notes
-
-- `requireAdminOrThrow()` in `src/lib/admin-date-enrich.functions.ts` is the only source of the `"Unauthorized"` message; it reads `getCookie("admin_session")` and verifies the HMAC in `src/lib/admin-session.server.ts`.
-- The session cookie is set with `sameSite: "none"; secure: true`, which is why it works inside the preview iframe at all — but some browsers/profiles block third-party cookies on POST specifically.
-- If we end up needing a code fallback, the cleanest one is a new `/api/public/admin/enrich-dates` server route guarded by `IMPORT_SECRET` (the same pattern the EA/SA sync routes use), with the operator pasting the secret once into a localStorage-backed field on the importer page.
+No code changes — just commit the import you've already validated.
