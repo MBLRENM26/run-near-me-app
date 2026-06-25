@@ -271,6 +271,9 @@ export const Route = createFileRoute("/events/$slug")({
       meta: [
         { title: titleSpec },
         { name: "description", content: description },
+        ...(indexable
+          ? []
+          : [{ name: "robots", content: "noindex, follow" }]),
         { property: "og:title", content: titleSpec },
         { property: "og:description", content: description },
         { property: "og:type", content: "website" },
