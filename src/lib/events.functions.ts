@@ -19,6 +19,7 @@ import { sortEstimatedLastWithinMonth } from "@/lib/month-filter";
 import {
   computeIndexability,
   normaliseEventName,
+  slugStem,
   type IndexabilityResult,
 } from "@/lib/event-indexability";
 
