@@ -478,6 +478,13 @@ export type EventPageData = {
   related: RelatedEvents;
   /** Other upcoming events in the same town as the current event. */
   sameTown: SameTownEvent[];
+  /**
+   * Search-index decision for this event page. Computed server-side
+   * from past/slug-suffix/orphan/duplicate-sibling rules so the
+   * `head()` function (which has no DB access) can wire up the
+   * `robots` meta and decide whether to ship Event JSON-LD.
+   */
+  indexability: import("@/lib/event-indexability").IndexabilityResult;
 };
 
 export const getEventPageData = createServerFn({ method: "GET" })
