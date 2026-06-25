@@ -16,6 +16,8 @@ import {
 import { listClubs, type ClubListItem } from "@/lib/clubs.functions";
 import { REGIONS } from "@/lib/regions";
 import { SITE_URL, SITE_NAME } from "@/lib/site";
+import { BackToSearchBar } from "@/components/site/BackToSearchBar";
+
 
 const searchSchema = z.object({
   region: z.string().max(100).optional(),
