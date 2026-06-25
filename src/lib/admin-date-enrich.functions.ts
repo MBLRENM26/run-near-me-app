@@ -1,8 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { diagnoseAdminAuth, isAdminAuthenticated } from "@/lib/admin-session.server";
+import { isAdminAuthenticated } from "@/lib/admin-session.server";
 
 // Admin date-enrichment importer.
 //
@@ -12,13 +11,6 @@ import { diagnoseAdminAuth, isAdminAuthenticated } from "@/lib/admin-session.ser
 // (`force_ids`).
 
 function requireAdminOrThrow() {
-  // TEMP DIAGNOSTIC — remove after debugging published-URL auth issue.
-  const diag = diagnoseAdminAuth();
-  console.log("[admin-auth-diag]", JSON.stringify({
-    host: getRequestHeader("host") ?? null,
-    origin: getRequestHeader("origin") ?? null,
-    ...diag,
-  }));
   if (!isAdminAuthenticated()) {
     throw new Error("Unauthorized");
   }
