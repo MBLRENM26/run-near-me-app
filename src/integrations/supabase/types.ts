@@ -242,6 +242,51 @@ export type Database = {
         }
         Relationships: []
       }
+      email_subscriptions: {
+        Row: {
+          created_at: string
+          email: string
+          event_id: string
+          id: string
+          kind: string
+          reminder_sent_at: string | null
+          unsubscribe_token: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          event_id: string
+          id?: string
+          kind?: string
+          reminder_sent_at?: string | null
+          unsubscribe_token?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          event_id?: string
+          id?: string
+          kind?: string
+          reminder_sent_at?: string | null
+          unsubscribe_token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_subscriptions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_subscriptions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "public_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_unsubscribe_tokens: {
         Row: {
           created_at: string
