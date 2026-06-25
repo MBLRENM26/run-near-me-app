@@ -90,7 +90,9 @@ export function RegionDistancePage({
       <Header />
       <main className="flex-1">
         <section className="mx-auto max-w-6xl px-4 pt-10 pb-6">
+          <BackToSearchBar />
           <nav
+
             aria-label="Breadcrumb"
             className="flex items-center gap-1.5 text-sm text-muted-foreground"
           >
