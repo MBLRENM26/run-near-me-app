@@ -846,6 +846,19 @@ export type Database = {
         }[]
       }
       run_england_athletics_chunked: { Args: never; Returns: Json }
+      search_clubs_v1: {
+        Args: { lim?: number; q: string }
+        Returns: {
+          county: string
+          governing_body: string
+          id: string
+          is_claimed: boolean
+          name: string
+          region: string
+          slug: string
+          town: string
+        }[]
+      }
       search_events_v1: {
         Args: { lim?: number; q: string }
         Returns: {
