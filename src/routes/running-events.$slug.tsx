@@ -11,6 +11,8 @@ import { MonthFilter } from "@/components/events/MonthFilter";
 import { Toaster } from "@/components/ui/sonner";
 import { slugToRegion } from "@/lib/regions";
 import { SITE_URL } from "@/lib/site";
+import { BackToSearchBar } from "@/components/site/BackToSearchBar";
+
 import { DistanceNav } from "@/components/distance/DistanceNav";
 import {
   availableMonths,
