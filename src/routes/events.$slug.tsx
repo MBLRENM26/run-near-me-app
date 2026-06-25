@@ -36,6 +36,9 @@ import {
 } from "@/lib/date";
 import { REGIONS } from "@/lib/regions";
 import { SITE_URL } from "@/lib/site";
+import { fromSearchValidator } from "@/lib/from-search";
+import { BackToSearchBar } from "@/components/site/BackToSearchBar";
+
 
 function regionSlugFromName(name: string | null | undefined): string | null {
   if (!name) return null;
