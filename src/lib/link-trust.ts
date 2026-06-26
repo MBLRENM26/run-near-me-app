@@ -40,8 +40,47 @@ const AGGREGATOR_HOSTS = [
   "athleticsni.org",
 ];
 
+/**
+ * Third-party entry / booking / timing platforms. NOT aggregators — these
+ * host real event-specific entry pages, so `classifyEventLink` still
+ * returns `entry` / `organiser-site` for them and the event page may
+ * render "Enter now" pointing at one. They just don't count as the
+ * organiser's OWN website, so `hasOrganiserOwnedLink` rejects them —
+ * which means events whose ONLY link is on one of these platforms are
+ * excluded from discovery surfaces (homepage, region / distance landing
+ * pages, "other races near you", etc.).
+ *
+ * See mem://constraints/scraped-data-trust.
+ */
+const ENTRY_PLATFORM_HOSTS = [
+  "sientries.co.uk",
+  "eventrac.co.uk",
+  "entrycentral.com",
+  "racebest.com",
+  "bookitzone.com",
+  "evententry.co.uk",
+  "evensplits.events",
+  "race-nation.co.uk",
+  "runnation.co.uk",
+  "totalracetiming.co.uk",
+  "ukrunningevents.co.uk",
+  "nice-work.org.uk",
+  "raceforlife.cancerresearchuk.org",
+  // Governing-body multi-tenant entry platforms (covers e.g.
+  // scottishathletics.justgo.com, englandathletics.sport80.com, plus any
+  // other club/federation tenants on the same platform).
+  "justgo.com",
+  "sport80.com",
+];
+
 function isAggregatorHost(host: string): boolean {
   return AGGREGATOR_HOSTS.some((a) => host === a || host.endsWith(`.${a}`));
+}
+
+export function isEntryPlatformHost(host: string | null | undefined): boolean {
+  if (!host) return false;
+  const h = host.replace(/^www\./, "").toLowerCase();
+  return ENTRY_PLATFORM_HOSTS.some((p) => h === p || h.endsWith(`.${p}`));
 }
 
 /** Repair protocol-less URLs ("www.runbournemouth.com") and validate. */
