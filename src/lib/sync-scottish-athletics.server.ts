@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { startSyncRun } from "@/lib/sync-run-log.server";
+import { loadScottishClubWebsiteMap } from "@/lib/sync-scottish-athletics-clubs.server";
 
 // Syncs running events from the Scottish Athletics public event browser
 // (JustGo widget API) into the events table. Idempotent: upserts on norm_id
