@@ -119,21 +119,14 @@ export const getEventBySlug = createServerFn({ method: "GET" })
 
 export const getAllActiveSlugs = createServerFn({ method: "GET" })
   .handler(async (): Promise<{ slug: string; sort_date: string | null }[]> => {
-    const pageSize = 1000;
-    const all: { slug: string; sort_date: string | null }[] = [];
-    for (let from = 0; ; from += pageSize) {
-      const { data, error } = await supabaseAdmin
+    return fetchAllRows<{ slug: string; sort_date: string | null }>((from, to) =>
+      supabaseAdmin
         .from("events")
         .select("slug, sort_date")
         .eq("status", "ACTIVE")
         .not("slug", "is", null)
-        .range(from, from + pageSize - 1);
-      if (error) throw new Error(error.message);
-      if (!data || data.length === 0) break;
-      all.push(...(data as { slug: string; sort_date: string | null }[]));
-      if (data.length < pageSize) break;
-    }
-    return all;
+        .range(from, to),
+    );
   });
 
 export const lookupEventSlug = createServerFn({ method: "GET" })
