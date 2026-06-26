@@ -199,53 +199,63 @@ export const getEventsByDistance = createServerFn({ method: "GET" })
     // Fetch all active future events with a non-null distances field, then
     // filter in JS. The tag-based matcher is exact; the legacy substring
     // fallback only fires for rows whose tags haven't been backfilled yet.
-    const pageSize = 1000;
-    const all: DistanceEvent[] = [];
-    for (let from = 0; ; from += pageSize) {
-      const { data: rows, error } = await supabaseAdmin
+    type Row = {
+      id: string;
+      slug: string | null;
+      name: string;
+      date_raw: string | null;
+      sort_date: string | null;
+      town: string | null;
+      county: string | null;
+      region: string | null;
+      distances: string | null;
+      distance_tags: string[] | null;
+      terrain_tags: string[] | null;
+      entry_fee: string | null;
+      entry_url: string | null;
+      organiser_url: string | null;
+      is_featured: boolean | null;
+      date_is_estimated: boolean | null;
+      is_recurring: boolean | null;
+    };
+    const rows = await fetchAllRows<Row>((from, to) =>
+      supabaseAdmin
         .from("events")
-        .select(
-          "id, slug, name, date_raw, sort_date, town, county, region, distances, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, is_featured, date_is_estimated, is_recurring",
-        )
+        .select(DISCOVERY_EVENT_COLUMNS)
         .eq("status", "ACTIVE")
         .or(`sort_date.gte.${today},sort_date.is.null`)
-        .or(
-          "lat.is.null,and(lat.gte.49.9,lat.lte.60.9,lng.gte.-8.6,lng.lte.1.8)",
-        )
+        .or(UK_BOUNDS_OR_NULL)
         .order("sort_date", { ascending: true, nullsFirst: false })
-        .range(from, from + pageSize - 1);
-      if (error) throw new Error(error.message);
-      if (!rows || rows.length === 0) break;
-      for (const r of rows) {
-        const match = rowMatchesDistanceKey(
-          {
-            distances: r.distances as string | null,
-            distance_tags: r.distance_tags as string[] | null,
-            terrain_tags: r.terrain_tags as string[] | null,
-          },
-          cfg.key,
-        );
-        if (match) {
-          all.push({
-            id: r.id as string,
-            slug: r.slug as string | null,
-            name: r.name as string,
-            date_raw: r.date_raw as string | null,
-            sort_date: r.sort_date as string | null,
-            town: r.town as string | null,
-            county: r.county as string | null,
-            region: r.region as string | null,
-            distance_type: r.distances as string | null,
-            entry_fee: r.entry_fee as string | null,
-            entry_url: r.entry_url as string | null,
-            organiser_url: r.organiser_url as string | null,
-            is_featured: !!r.is_featured,
-            date_is_estimated: !!r.date_is_estimated,
-            is_recurring: !!r.is_recurring,
-          });
-        }
-      }
-      if (rows.length < pageSize) break;
+        .range(from, to),
+    );
+    const all: DistanceEvent[] = [];
+    for (const r of rows) {
+      const match = rowMatchesDistanceKey(
+        {
+          distances: r.distances,
+          distance_tags: r.distance_tags,
+          terrain_tags: r.terrain_tags,
+        },
+        cfg.key,
+      );
+      if (!match) continue;
+      all.push({
+        id: r.id,
+        slug: r.slug,
+        name: r.name,
+        date_raw: r.date_raw,
+        sort_date: r.sort_date,
+        town: r.town,
+        county: r.county,
+        region: r.region,
+        distance_type: r.distances,
+        entry_fee: r.entry_fee,
+        entry_url: r.entry_url,
+        organiser_url: r.organiser_url,
+        is_featured: !!r.is_featured,
+        date_is_estimated: !!r.date_is_estimated,
+        is_recurring: !!r.is_recurring,
+      });
     }
 
     // Discovery-surface trust gate: only include events with a link on
