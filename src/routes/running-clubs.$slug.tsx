@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { ExternalLink, MapPin } from "lucide-react";
 import { Header } from "@/components/site/Header";
@@ -29,6 +29,9 @@ const GOVERNING_BODY_LABEL: Record<string, string> = {
 
 export const Route = createFileRoute("/running-clubs/$slug")({
   validateSearch: fromSearchValidator,
+  beforeLoad: ({ params }) => {
+    if (!/^[a-z0-9-]+$/.test(params.slug)) throw notFound();
+  },
   loader: ({ params }) => getClubPageData({ data: { slug: params.slug } }),
 
   head: ({ params, loaderData }) => {
