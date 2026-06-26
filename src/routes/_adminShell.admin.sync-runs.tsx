@@ -21,6 +21,7 @@ export const Route = createFileRoute("/_adminShell/admin/sync-runs")({
 const SOURCE_LABEL: Record<SyncSource, string> = {
   "england-athletics": "England Athletics",
   "scottish-athletics": "Scottish Athletics",
+  "scottish-athletics-clubs": "Scottish Athletics clubs",
 };
 
 const STALE_AFTER_MS = 10 * 60 * 1000; // 10 minutes
