@@ -23,6 +23,31 @@ import {
   type IndexabilityResult,
 } from "@/lib/event-indexability";
 import { hasOrganiserOwnedLink } from "@/lib/link-trust";
+import { DISCOVERY_EVENT_COLUMNS, UK_BOUNDS_OR_NULL } from "@/lib/events-query";
+
+/**
+ * Run a Supabase select in 1000-row pages until exhausted, returning all
+ * rows. The caller builds the query inside `build(from, to)` so it can
+ * apply any `.eq` / `.or` / `.order` it needs. Pure scaffolding extraction
+ * — replaces five copies of the same `for (let from = 0; ;)` loop.
+ */
+async function fetchAllRows<T>(
+  build: (
+    from: number,
+    to: number,
+  ) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
+  pageSize = 1000,
+): Promise<T[]> {
+  const all: T[] = [];
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await build(from, from + pageSize - 1);
+    if (error) throw new Error(error.message);
+    const rows = data ?? [];
+    all.push(...rows);
+    if (rows.length < pageSize) break;
+  }
+  return all;
+}
 
 // During the transition window, an event matches a distance page if its
 // parsed tag arrays match OR (for un-backfilled rows with empty tags) the
@@ -94,21 +119,14 @@ export const getEventBySlug = createServerFn({ method: "GET" })
 
 export const getAllActiveSlugs = createServerFn({ method: "GET" })
   .handler(async (): Promise<{ slug: string; sort_date: string | null }[]> => {
-    const pageSize = 1000;
-    const all: { slug: string; sort_date: string | null }[] = [];
-    for (let from = 0; ; from += pageSize) {
-      const { data, error } = await supabaseAdmin
+    return fetchAllRows<{ slug: string; sort_date: string | null }>((from, to) =>
+      supabaseAdmin
         .from("events")
         .select("slug, sort_date")
         .eq("status", "ACTIVE")
         .not("slug", "is", null)
-        .range(from, from + pageSize - 1);
-      if (error) throw new Error(error.message);
-      if (!data || data.length === 0) break;
-      all.push(...(data as { slug: string; sort_date: string | null }[]));
-      if (data.length < pageSize) break;
-    }
-    return all;
+        .range(from, to),
+    );
   });
 
 export const lookupEventSlug = createServerFn({ method: "GET" })
@@ -181,53 +199,63 @@ export const getEventsByDistance = createServerFn({ method: "GET" })
     // Fetch all active future events with a non-null distances field, then
     // filter in JS. The tag-based matcher is exact; the legacy substring
     // fallback only fires for rows whose tags haven't been backfilled yet.
-    const pageSize = 1000;
-    const all: DistanceEvent[] = [];
-    for (let from = 0; ; from += pageSize) {
-      const { data: rows, error } = await supabaseAdmin
+    type Row = {
+      id: string;
+      slug: string | null;
+      name: string;
+      date_raw: string | null;
+      sort_date: string | null;
+      town: string | null;
+      county: string | null;
+      region: string | null;
+      distances: string | null;
+      distance_tags: string[] | null;
+      terrain_tags: string[] | null;
+      entry_fee: string | null;
+      entry_url: string | null;
+      organiser_url: string | null;
+      is_featured: boolean | null;
+      date_is_estimated: boolean | null;
+      is_recurring: boolean | null;
+    };
+    const rows = await fetchAllRows<Row>((from, to) =>
+      supabaseAdmin
         .from("events")
-        .select(
-          "id, slug, name, date_raw, sort_date, town, county, region, distances, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, is_featured, date_is_estimated, is_recurring",
-        )
+        .select(DISCOVERY_EVENT_COLUMNS)
         .eq("status", "ACTIVE")
         .or(`sort_date.gte.${today},sort_date.is.null`)
-        .or(
-          "lat.is.null,and(lat.gte.49.9,lat.lte.60.9,lng.gte.-8.6,lng.lte.1.8)",
-        )
+        .or(UK_BOUNDS_OR_NULL)
         .order("sort_date", { ascending: true, nullsFirst: false })
-        .range(from, from + pageSize - 1);
-      if (error) throw new Error(error.message);
-      if (!rows || rows.length === 0) break;
-      for (const r of rows) {
-        const match = rowMatchesDistanceKey(
-          {
-            distances: r.distances as string | null,
-            distance_tags: r.distance_tags as string[] | null,
-            terrain_tags: r.terrain_tags as string[] | null,
-          },
-          cfg.key,
-        );
-        if (match) {
-          all.push({
-            id: r.id as string,
-            slug: r.slug as string | null,
-            name: r.name as string,
-            date_raw: r.date_raw as string | null,
-            sort_date: r.sort_date as string | null,
-            town: r.town as string | null,
-            county: r.county as string | null,
-            region: r.region as string | null,
-            distance_type: r.distances as string | null,
-            entry_fee: r.entry_fee as string | null,
-            entry_url: r.entry_url as string | null,
-            organiser_url: r.organiser_url as string | null,
-            is_featured: !!r.is_featured,
-            date_is_estimated: !!r.date_is_estimated,
-            is_recurring: !!r.is_recurring,
-          });
-        }
-      }
-      if (rows.length < pageSize) break;
+        .range(from, to),
+    );
+    const all: DistanceEvent[] = [];
+    for (const r of rows) {
+      const match = rowMatchesDistanceKey(
+        {
+          distances: r.distances,
+          distance_tags: r.distance_tags,
+          terrain_tags: r.terrain_tags,
+        },
+        cfg.key,
+      );
+      if (!match) continue;
+      all.push({
+        id: r.id,
+        slug: r.slug,
+        name: r.name,
+        date_raw: r.date_raw,
+        sort_date: r.sort_date,
+        town: r.town,
+        county: r.county,
+        region: r.region,
+        distance_type: r.distances,
+        entry_fee: r.entry_fee,
+        entry_url: r.entry_url,
+        organiser_url: r.organiser_url,
+        is_featured: !!r.is_featured,
+        date_is_estimated: !!r.date_is_estimated,
+        is_recurring: !!r.is_recurring,
+      });
     }
 
     // Discovery-surface trust gate: only include events with a link on
@@ -289,52 +317,59 @@ export const getEventsByRegionAndDistance = createServerFn({ method: "GET" })
 
     // Pull all active future events for this region with a non-null
     // distances field — volume per region is small.
-    const pageSize = 1000;
     type RowWithTags = DistanceEvent & {
       _distance_tags: string[] | null;
       _terrain_tags: string[] | null;
     };
-    const all: RowWithTags[] = [];
-    for (let from = 0; ; from += pageSize) {
-      const { data: rows, error } = await supabaseAdmin
+    type Row = {
+      id: string;
+      slug: string | null;
+      name: string;
+      date_raw: string | null;
+      sort_date: string | null;
+      town: string | null;
+      county: string | null;
+      region: string | null;
+      distances: string | null;
+      distance_tags: string[] | null;
+      terrain_tags: string[] | null;
+      entry_fee: string | null;
+      entry_url: string | null;
+      organiser_url: string | null;
+      is_featured: boolean | null;
+      date_is_estimated: boolean | null;
+      is_recurring: boolean | null;
+    };
+    const rows = await fetchAllRows<Row>((from, to) =>
+      supabaseAdmin
         .from("events")
-        .select(
-          "id, slug, name, date_raw, sort_date, town, county, region, distances, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, is_featured, date_is_estimated, is_recurring",
-        )
+        .select(DISCOVERY_EVENT_COLUMNS)
         .eq("status", "ACTIVE")
         .eq("region", region.name)
         .or(`sort_date.gte.${today},sort_date.is.null`)
-        .or(
-          "lat.is.null,and(lat.gte.49.9,lat.lte.60.9,lng.gte.-8.6,lng.lte.1.8)",
-        )
+        .or(UK_BOUNDS_OR_NULL)
         .order("sort_date", { ascending: true, nullsFirst: false })
-        .range(from, from + pageSize - 1);
-      if (error) throw new Error(error.message);
-      if (!rows || rows.length === 0) break;
-      for (const r of rows) {
-        all.push({
-          id: r.id as string,
-          slug: r.slug as string | null,
-          name: r.name as string,
-          date_raw: r.date_raw as string | null,
-          sort_date: r.sort_date as string | null,
-          town: r.town as string | null,
-          county: r.county as string | null,
-          region: r.region as string | null,
-          distance_type: r.distances as string | null,
-          entry_fee: r.entry_fee as string | null,
-          entry_url: r.entry_url as string | null,
-          organiser_url: r.organiser_url as string | null,
-          
-          is_featured: !!r.is_featured,
-          date_is_estimated: !!r.date_is_estimated,
-          is_recurring: !!r.is_recurring,
-          _distance_tags: r.distance_tags as string[] | null,
-          _terrain_tags: r.terrain_tags as string[] | null,
-        });
-      }
-      if (rows.length < pageSize) break;
-    }
+        .range(from, to),
+    );
+    const all: RowWithTags[] = rows.map((r) => ({
+      id: r.id,
+      slug: r.slug,
+      name: r.name,
+      date_raw: r.date_raw,
+      sort_date: r.sort_date,
+      town: r.town,
+      county: r.county,
+      region: r.region,
+      distance_type: r.distances,
+      entry_fee: r.entry_fee,
+      entry_url: r.entry_url,
+      organiser_url: r.organiser_url,
+      is_featured: !!r.is_featured,
+      date_is_estimated: !!r.date_is_estimated,
+      is_recurring: !!r.is_recurring,
+      _distance_tags: r.distance_tags,
+      _terrain_tags: r.terrain_tags,
+    }));
 
     // Discovery-surface trust gate (same policy as getEventsByDistance).
     // Filter BEFORE computing otherDistanceCounts so the counts shown in
@@ -401,20 +436,18 @@ export type RegionDistanceMatrixRow = {
 export const getRegionDistanceMatrix = createServerFn({ method: "GET" })
   .handler(async (): Promise<RegionDistanceMatrixRow[]> => {
     const today = new Date().toISOString().slice(0, 10);
-    const pageSize = 1000;
 
     // Pull every active future event with a region + distances/tags in one pass.
     type MatrixRow = {
-      region: string;
+      region: string | null;
       distances: string | null;
       distance_tags: string[] | null;
       terrain_tags: string[] | null;
       entry_url: string | null;
       organiser_url: string | null;
     };
-    const rows: MatrixRow[] = [];
-    for (let from = 0; ; from += pageSize) {
-      const { data, error } = await supabaseAdmin
+    const raw = await fetchAllRows<MatrixRow>((from, to) =>
+      supabaseAdmin
         .from("events")
         .select(
           "region, distances, distance_tags, terrain_tags, entry_url, organiser_url",
@@ -422,26 +455,12 @@ export const getRegionDistanceMatrix = createServerFn({ method: "GET" })
         .eq("status", "ACTIVE")
         .not("region", "is", null)
         .or(`sort_date.gte.${today},sort_date.is.null`)
-        .or(
-          "lat.is.null,and(lat.gte.49.9,lat.lte.60.9,lng.gte.-8.6,lng.lte.1.8)",
-        )
-        .range(from, from + pageSize - 1);
-      if (error) throw new Error(error.message);
-      if (!data || data.length === 0) break;
-      for (const r of data) {
-        if (r.region) {
-          rows.push({
-            region: r.region as string,
-            distances: (r.distances as string | null) ?? null,
-            distance_tags: (r.distance_tags as string[] | null) ?? null,
-            terrain_tags: (r.terrain_tags as string[] | null) ?? null,
-            entry_url: (r.entry_url as string | null) ?? null,
-            organiser_url: (r.organiser_url as string | null) ?? null,
-          });
-        }
-      }
-      if (data.length < pageSize) break;
-    }
+        .or(UK_BOUNDS_OR_NULL)
+        .range(from, to),
+    );
+    const rows = raw.filter(
+      (r): r is MatrixRow & { region: string } => !!r.region,
+    );
 
     const counts = new Map<string, number>();
     for (const r of rows) {
@@ -588,7 +607,6 @@ export const getEventPageData = createServerFn({ method: "GET" })
 
     if (event.region) {
       const today = new Date().toISOString().slice(0, 10);
-      const pageSize = 1000;
       type Row = RelatedEvent & {
         distances: string | null;
         distance_tags: string[] | null;
@@ -596,43 +614,52 @@ export const getEventPageData = createServerFn({ method: "GET" })
         entry_url: string | null;
         organiser_url: string | null;
       };
-      const all: Row[] = [];
-      for (let from = 0; ; from += pageSize) {
-        const { data: rows, error: relErr } = await supabaseAdmin
+      type RawRow = {
+        id: string;
+        slug: string | null;
+        name: string;
+        date_raw: string | null;
+        sort_date: string | null;
+        date_is_estimated: boolean | null;
+        town: string | null;
+        county: string | null;
+        distances: string | null;
+        distance_tags: string[] | null;
+        terrain_tags: string[] | null;
+        entry_url: string | null;
+        organiser_url: string | null;
+      };
+      const rawRows = await fetchAllRows<RawRow>((from, to) =>
+        supabaseAdmin
           .from("events")
           .select(
             "id, slug, name, date_raw, sort_date, date_is_estimated, town, county, distances, distance_tags, terrain_tags, entry_url, organiser_url",
           )
           .eq("status", "ACTIVE")
-          .eq("region", event.region)
+          .eq("region", event.region!)
           .not("slug", "is", null)
           .or(`sort_date.gte.${today},sort_date.is.null`)
-          .or(
-            "lat.is.null,and(lat.gte.49.9,lat.lte.60.9,lng.gte.-8.6,lng.lte.1.8)",
-          )
+          .or(UK_BOUNDS_OR_NULL)
           .order("sort_date", { ascending: true, nullsFirst: false })
-          .range(from, from + pageSize - 1);
-        if (relErr) throw new Error(relErr.message);
-        if (!rows || rows.length === 0) break;
-        for (const r of rows) {
-          all.push({
-            id: r.id as string,
-            slug: r.slug as string,
-            name: r.name as string,
-            date_raw: r.date_raw as string | null,
-            sort_date: r.sort_date as string | null,
-            date_is_estimated: !!r.date_is_estimated,
-            town: r.town as string | null,
-            county: r.county as string | null,
-            distances: r.distances as string | null,
-            distance_tags: r.distance_tags as string[] | null,
-            terrain_tags: r.terrain_tags as string[] | null,
-            entry_url: r.entry_url as string | null,
-            organiser_url: r.organiser_url as string | null,
-          });
-        }
-        if (rows.length < pageSize) break;
-      }
+          .range(from, to),
+      );
+      const all: Row[] = rawRows
+        .filter((r): r is RawRow & { slug: string } => !!r.slug)
+        .map((r) => ({
+          id: r.id,
+          slug: r.slug,
+          name: r.name,
+          date_raw: r.date_raw,
+          sort_date: r.sort_date,
+          date_is_estimated: !!r.date_is_estimated,
+          town: r.town,
+          county: r.county,
+          distances: r.distances,
+          distance_tags: r.distance_tags,
+          terrain_tags: r.terrain_tags,
+          entry_url: r.entry_url,
+          organiser_url: r.organiser_url,
+        }));
 
       // Discovery-surface trust gate — "other races near you" should
       // only recommend events with an organiser-owned link. The current
