@@ -464,7 +464,7 @@ function HomePage() {
                     date_raw: e.date_raw,
                     town: e.town,
                     county: e.county,
-                    distance_type: e.distance_type,
+                    distance_type: e.distances,
                     entry_fee: e.entry_fee,
                     entry_url: e.entry_url,
                     organiser_url: e.organiser_url,
