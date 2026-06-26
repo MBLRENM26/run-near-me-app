@@ -172,6 +172,7 @@ function AdminSyncRunsPage() {
           );
         })}
         <SyncSecretButton />
+        <ScottishBackfillButton />
       </div>
 
 
