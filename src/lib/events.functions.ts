@@ -607,7 +607,6 @@ export const getEventPageData = createServerFn({ method: "GET" })
 
     if (event.region) {
       const today = new Date().toISOString().slice(0, 10);
-      const pageSize = 1000;
       type Row = RelatedEvent & {
         distances: string | null;
         distance_tags: string[] | null;
@@ -615,43 +614,52 @@ export const getEventPageData = createServerFn({ method: "GET" })
         entry_url: string | null;
         organiser_url: string | null;
       };
-      const all: Row[] = [];
-      for (let from = 0; ; from += pageSize) {
-        const { data: rows, error: relErr } = await supabaseAdmin
+      type RawRow = {
+        id: string;
+        slug: string | null;
+        name: string;
+        date_raw: string | null;
+        sort_date: string | null;
+        date_is_estimated: boolean | null;
+        town: string | null;
+        county: string | null;
+        distances: string | null;
+        distance_tags: string[] | null;
+        terrain_tags: string[] | null;
+        entry_url: string | null;
+        organiser_url: string | null;
+      };
+      const rawRows = await fetchAllRows<RawRow>((from, to) =>
+        supabaseAdmin
           .from("events")
           .select(
             "id, slug, name, date_raw, sort_date, date_is_estimated, town, county, distances, distance_tags, terrain_tags, entry_url, organiser_url",
           )
           .eq("status", "ACTIVE")
-          .eq("region", event.region)
+          .eq("region", event.region!)
           .not("slug", "is", null)
           .or(`sort_date.gte.${today},sort_date.is.null`)
-          .or(
-            "lat.is.null,and(lat.gte.49.9,lat.lte.60.9,lng.gte.-8.6,lng.lte.1.8)",
-          )
+          .or(UK_BOUNDS_OR_NULL)
           .order("sort_date", { ascending: true, nullsFirst: false })
-          .range(from, from + pageSize - 1);
-        if (relErr) throw new Error(relErr.message);
-        if (!rows || rows.length === 0) break;
-        for (const r of rows) {
-          all.push({
-            id: r.id as string,
-            slug: r.slug as string,
-            name: r.name as string,
-            date_raw: r.date_raw as string | null,
-            sort_date: r.sort_date as string | null,
-            date_is_estimated: !!r.date_is_estimated,
-            town: r.town as string | null,
-            county: r.county as string | null,
-            distances: r.distances as string | null,
-            distance_tags: r.distance_tags as string[] | null,
-            terrain_tags: r.terrain_tags as string[] | null,
-            entry_url: r.entry_url as string | null,
-            organiser_url: r.organiser_url as string | null,
-          });
-        }
-        if (rows.length < pageSize) break;
-      }
+          .range(from, to),
+      );
+      const all: Row[] = rawRows
+        .filter((r): r is RawRow & { slug: string } => !!r.slug)
+        .map((r) => ({
+          id: r.id,
+          slug: r.slug,
+          name: r.name,
+          date_raw: r.date_raw,
+          sort_date: r.sort_date,
+          date_is_estimated: !!r.date_is_estimated,
+          town: r.town,
+          county: r.county,
+          distances: r.distances,
+          distance_tags: r.distance_tags,
+          terrain_tags: r.terrain_tags,
+          entry_url: r.entry_url,
+          organiser_url: r.organiser_url,
+        }));
 
       // Discovery-surface trust gate — "other races near you" should
       // only recommend events with an organiser-owned link. The current
