@@ -55,6 +55,8 @@ export const trackEntryClick = (props: {
   event_name: string;
   distance?: string | null;
   discipline?: string | null;
+  /** Hostname of the outbound URL, `www.` stripped. Omitted when the URL is unparseable. */
+  entry_domain?: string;
 }) =>
   track("Entry Click", {
     ...props,
