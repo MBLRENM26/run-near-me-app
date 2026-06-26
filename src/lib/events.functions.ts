@@ -336,6 +336,14 @@ export const getEventsByRegionAndDistance = createServerFn({ method: "GET" })
       if (rows.length < pageSize) break;
     }
 
+    // Discovery-surface trust gate (same policy as getEventsByDistance).
+    // Filter BEFORE computing otherDistanceCounts so the counts shown in
+    // the "other distances in this region" panel match what users will
+    // actually see when they click through.
+    const trusted = all.filter((e) =>
+      hasOrganiserOwnedLink(e.entry_url, e.organiser_url),
+    );
+
     const rowMatches = (e: RowWithTags, key: DistanceKey) =>
       rowMatchesDistanceKey(
         {
@@ -346,7 +354,7 @@ export const getEventsByRegionAndDistance = createServerFn({ method: "GET" })
         key,
       );
 
-    // Bucket the same fetched rows by every distance for the
+    // Bucket the (trust-filtered) rows by every distance for the
     // "other distances in this region" panel.
     const otherDistanceCounts: Record<DistanceKey, number> = {
       "5k": 0,
@@ -356,14 +364,14 @@ export const getEventsByRegionAndDistance = createServerFn({ method: "GET" })
       trail: 0,
       ultra: 0,
     };
-    for (const e of all) {
+    for (const e of trusted) {
       for (const p of DISTANCE_PAGE_LIST) {
         if (rowMatches(e, p.key)) otherDistanceCounts[p.key]++;
       }
     }
 
     const matched = sortEstimatedLastWithinMonth(
-      all.filter((e) => rowMatches(e, cfg.key)),
+      trusted.filter((e) => rowMatches(e, cfg.key)),
     );
 
     // Drop the private tag fields before returning.
