@@ -84,6 +84,18 @@ export const triggerSyncRun = createServerFn({ method: "POST" })
           fetched: r.fetched,
         };
       }
+      if (data.source === "scottish-athletics-clubs") {
+        const { runScottishAthleticsClubsSync } = await import(
+          "@/lib/sync-scottish-athletics-clubs.server"
+        );
+        const r = await runScottishAthleticsClubsSync();
+        return {
+          newEvents: r.newClubs,
+          updatedExisting: r.updatedExisting,
+          written: r.written,
+          fetched: r.fetched,
+        };
+      }
       const { runScottishAthleticsSync } = await import(
         "@/lib/sync-scottish-athletics.server"
       );
