@@ -691,6 +691,8 @@ export const getEventPageData = createServerFn({ method: "GET" })
           town: string | null;
           county: string | null;
           distance_type: string | null;
+          entry_url: string | null;
+          organiser_url: string | null;
           date_is_estimated: boolean | null;
           distance_miles: number | null;
         }>) {
@@ -698,6 +700,8 @@ export const getEventPageData = createServerFn({ method: "GET" })
           // The RPC predates tag arrays; keep the legacy substring filter
           // here. Could be upgraded if/when the RPC starts returning tags.
           if (cfg && !matchesDistance(r.distance_type, cfg)) continue;
+          // Discovery-surface trust gate (same as the region fallback).
+          if (!hasOrganiserOwnedLink(r.entry_url, r.organiser_url)) continue;
           picked.push({
             id: r.id,
             slug: r.slug,
