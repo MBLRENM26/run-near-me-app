@@ -181,9 +181,7 @@ function HomePage() {
         .slice(0, 10);
       const { data, error } = await supabase
         .from("events")
-        .select(
-          "id, slug, name, date_raw, town, county, distance_type:distances, entry_fee, entry_url, organiser_url, is_featured, date_is_estimated",
-        )
+        .select(DISCOVERY_EVENT_COLUMNS)
         .eq("status", "ACTIVE")
         .eq("date_is_estimated", false)
         .gte("sort_date", from)
