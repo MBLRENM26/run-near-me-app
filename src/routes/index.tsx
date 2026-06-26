@@ -22,6 +22,7 @@ import { matchesEventType, type EventType } from "@/lib/distance";
 import { MapPin } from "lucide-react";
 import { DistanceNav } from "@/components/distance/DistanceNav";
 import { hasOrganiserOwnedLink } from "@/lib/link-trust";
+import { DISCOVERY_EVENT_COLUMNS } from "@/lib/events-query";
 import {
   LiveEventCounter,
   liveStatsQueryOptions,
