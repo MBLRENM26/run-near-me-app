@@ -84,7 +84,8 @@ function formatTerrain(
 import { classifyEventLink, isTrustedLink } from "@/lib/link-trust";
 import { trackEntryClick, trackClaimInterest } from "@/lib/analytics";
 
-function hostnameOf(url: string): string | undefined {
+function hostnameOf(url: string | null | undefined): string | undefined {
+  if (!url) return undefined;
   try {
     return new URL(url).hostname.replace(/^www\./, "");
   } catch {
