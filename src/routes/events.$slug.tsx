@@ -84,6 +84,15 @@ function formatTerrain(
 import { classifyEventLink, isTrustedLink } from "@/lib/link-trust";
 import { trackEntryClick, trackClaimInterest } from "@/lib/analytics";
 
+function hostnameOf(url: string | null | undefined): string | undefined {
+  if (!url) return undefined;
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return undefined;
+  }
+}
+
 export const Route = createFileRoute("/events/$slug")({
   validateSearch: fromSearchValidator,
   loader: ({ params }) => getEventPageData({ data: { slug: params.slug } }),
@@ -492,6 +501,7 @@ function EventDetailPage() {
                       event_name: e.name,
                       distance: e.distances ?? "unknown",
                       discipline: e.discipline ?? "road",
+                      entry_domain: hostnameOf(primaryCta!.href),
                     })
                   }
                 >
@@ -525,6 +535,7 @@ function EventDetailPage() {
                         event_name: e.name,
                         distance: e.distances ?? "unknown",
                         discipline: e.discipline ?? "road",
+                        entry_domain: hostnameOf(pastOrganiserLink!.href),
                       })
                     }
                     className="font-medium text-primary hover:underline"
