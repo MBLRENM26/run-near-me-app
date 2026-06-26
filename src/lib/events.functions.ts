@@ -230,21 +230,30 @@ export const getEventsByDistance = createServerFn({ method: "GET" })
       if (rows.length < pageSize) break;
     }
 
+    // Discovery-surface trust gate: only include events with a link on
+    // the organiser's own site (not aggregator, not third-party entry
+    // platform). Event detail pages still render "Enter now" for these
+    // — we just don't recommend them from landing pages. See
+    // src/lib/link-trust.ts and mem://constraints/scraped-data-trust.
+    const trusted = all.filter((e) =>
+      hasOrganiserOwnedLink(e.entry_url, e.organiser_url),
+    );
+
     // Group by region for the regional breakdown section.
     const counts = new Map<string, number>();
-    for (const e of all) {
+    for (const e of trusted) {
       if (e.region) counts.set(e.region, (counts.get(e.region) ?? 0) + 1);
     }
     const regionCounts = Array.from(counts.entries())
       .map(([region, count]) => ({ region, count }))
       .sort((a, b) => b.count - a.count);
 
-    const sorted = sortEstimatedLastWithinMonth(all);
+    const sorted = sortEstimatedLastWithinMonth(trusted);
 
     return {
       events: sorted.slice(0, DISPLAY_LIMIT),
       regionCounts,
-      total: all.length,
+      total: trusted.length,
     };
   });
 
