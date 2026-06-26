@@ -23,6 +23,31 @@ import {
   type IndexabilityResult,
 } from "@/lib/event-indexability";
 import { hasOrganiserOwnedLink } from "@/lib/link-trust";
+import { DISCOVERY_EVENT_COLUMNS, UK_BOUNDS_OR_NULL } from "@/lib/events-query";
+
+/**
+ * Run a Supabase select in 1000-row pages until exhausted, returning all
+ * rows. The caller builds the query inside `build(from, to)` so it can
+ * apply any `.eq` / `.or` / `.order` it needs. Pure scaffolding extraction
+ * — replaces five copies of the same `for (let from = 0; ;)` loop.
+ */
+async function fetchAllRows<T>(
+  build: (
+    from: number,
+    to: number,
+  ) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
+  pageSize = 1000,
+): Promise<T[]> {
+  const all: T[] = [];
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await build(from, from + pageSize - 1);
+    if (error) throw new Error(error.message);
+    const rows = data ?? [];
+    all.push(...rows);
+    if (rows.length < pageSize) break;
+  }
+  return all;
+}
 
 // During the transition window, an event matches a distance page if its
 // parsed tag arrays match OR (for un-backfilled rows with empty tags) the
