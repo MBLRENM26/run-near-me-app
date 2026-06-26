@@ -133,7 +133,12 @@ function RegionPage() {
         all.push(...(data as EventCardData[]));
         if (data.length < pageSize) break;
       }
-      return sortEstimatedLastWithinMonth(all);
+      // Discovery-surface trust gate: only recommend events with an
+      // organiser-owned link. See src/lib/link-trust.ts.
+      const trusted = all.filter((e) =>
+        hasOrganiserOwnedLink(e.entry_url, e.organiser_url),
+      );
+      return sortEstimatedLastWithinMonth(trusted);
     },
   });
 
