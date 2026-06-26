@@ -84,6 +84,14 @@ function formatTerrain(
 import { classifyEventLink, isTrustedLink } from "@/lib/link-trust";
 import { trackEntryClick, trackClaimInterest } from "@/lib/analytics";
 
+function hostnameOf(url: string): string | undefined {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return undefined;
+  }
+}
+
 export const Route = createFileRoute("/events/$slug")({
   validateSearch: fromSearchValidator,
   loader: ({ params }) => getEventPageData({ data: { slug: params.slug } }),
