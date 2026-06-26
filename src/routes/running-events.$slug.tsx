@@ -118,20 +118,21 @@ function RegionPage() {
       for (let from = 0; ; from += pageSize) {
         const { data, error } = await supabase
           .from("events")
-          .select(
-            "id, slug, name, date_raw, sort_date, town, county, distance_type:distances, entry_fee, entry_url, organiser_url, is_featured, date_is_estimated",
-          )
+          .select(DISCOVERY_EVENT_COLUMNS)
           .eq("region", region.name)
           .eq("status", "ACTIVE")
           .or(`sort_date.gte.${today},sort_date.is.null`)
-          .or(
-            "lat.is.null,and(lat.gte.49.9,lat.lte.60.9,lng.gte.-8.6,lng.lte.1.8)",
-          )
+          .or(UK_BOUNDS_OR_NULL)
           .order("sort_date", { ascending: true, nullsFirst: false })
           .range(from, from + pageSize - 1);
         if (error) throw error;
         if (!data || data.length === 0) break;
-        all.push(...(data as EventCardData[]));
+        all.push(
+          ...(data.map((r) => ({
+            ...r,
+            distance_type: r.distances,
+          })) as EventCardData[]),
+        );
         if (data.length < pageSize) break;
       }
       // Discovery-surface trust gate: only recommend events with an
