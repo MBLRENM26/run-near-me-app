@@ -242,6 +242,7 @@ function HomePage() {
   const featuredNearby: EventCardData[] = useMemo(() => {
     return eventsWithDistance
       .filter((e) => e.is_featured)
+      .filter((e) => hasOrganiserOwnedLink(e.entry_url, e.organiser_url))
       .sort((a, b) => a.distanceMiles! - b.distanceMiles!);
   }, [eventsWithDistance]);
 
