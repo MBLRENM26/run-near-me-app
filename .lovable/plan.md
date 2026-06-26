@@ -1,80 +1,80 @@
-# Plan: Homepage filter fix + DRY pass
+# Scottish Athletics organiser_url backfill + sync fix
 
-Two tightly-scoped changes. No behaviour change anywhere except item 1.
+## What the probing confirmed
 
-## 1. Fix homepage geo-radius results (HIGH severity bug)
+The Scottish Athletics club finder is a JustGo widget on the same `WidgetService.mvc/ExecuteWidgetCommandAlt` endpoint we already call for events. No scraping needed.
 
-**Problem:** When a user enters a location, results from the `events_within_radius` RPC are rendered without the `hasOrganiserOwnedLink` gate. Events whose only link is on sientries / justgo / sport80 / etc. appear here even though they're suppressed on every other discovery surface.
+- **List** (`GetFilterData`, Area=Club, WebletId=`64728f3b-...-e70f15955657`) returns 139 clubs with `Name`, `Address`, `Latlng`, `EmailAddress`, `SyncGuid`. No website on the list row.
+- **Detail** (`GetDetails`, Area=Club, by `SyncGuid`) returns `Website` (e.g. `"AberdeenAAC.co.uk"` — bare host, needs normalising), `SocialMediaInfo`, region, disciplines.
 
-**Fix:** In `src/routes/index.tsx`, filter `eventsWithDistance` through `hasOrganiserOwnedLink` before it feeds into `visibleEvents` / `races` / `parkruns` / `featuredNearby`. One filter, applied once at the source.
+139 clubs ≈ 141 HTTP calls per full pull, well within the worker budget.
 
-```ts
-const eventsWithDistance = useMemo(() => {
-  if (!nearbyEvents) return [];
-  return nearbyEvents
-    .filter((e) => hasOrganiserOwnedLink(e.entry_url, e.organiser_url))
-    .map((e) => ({ ...mapping... }));
-}, [nearbyEvents]);
-```
+## Schema notes (verified)
 
-This means `featuredNearby` no longer needs its own redundant filter call — remove it.
+- `clubs` has unique constraints on **both** `norm_id` and `slug`. Either works as the `onConflict` target, but the dual constraint means an English club sharing the same slug would block a Scottish insert even when `onConflict='norm_id'` matched nothing. Mirror the events-sync pattern: upsert on `norm_id`, and on slug collision with a row that has a different `norm_id`, suffix the slug (`<slug>-scotland`).
+- `clubs.source` is a free-text column. Use the value `"scottish-athletics"` consistently — same string everywhere (sync writes, backfill query, future read filters). The sync **run name** in `sync_runs.source` is a different field and is allowed to be `"scottish-athletics-clubs"` to distinguish it from the events sync run.
 
-## 2. DRY pass — three small extractions, no behaviour change
+## Plan
 
-### 2a. UK bounding-box filter → named constant
-Currently the string `"lat.is.null,and(lat.gte.49.9,lat.lte.60.9,lng.gte.-8.6,lng.lte.1.8)"` is repeated 4× in `events.functions.ts` (lines 195, 307, 425, 610).
+### 1. New sync: Scottish Athletics clubs → `clubs` table
 
-Extract to top of file:
-```ts
-const UK_BOUNDS_OR_NULL =
-  "lat.is.null,and(lat.gte.49.9,lat.lte.60.9,lng.gte.-8.6,lng.lte.1.8)";
-```
-Replace all 4 call sites with `.or(UK_BOUNDS_OR_NULL)`.
+New file `src/lib/sync-scottish-athletics-clubs.server.ts`, mirroring `sync-scottish-athletics.server.ts`:
 
-### 2b. Discovery event column list → shared constant
-Currently 4 diverging variants of the events SELECT column list:
-- `events.functions.ts:190` (full)
-- `events.functions.ts:302` (full, identical to 190)
-- `running-events.$slug.tsx:121` (missing region, distance_tags, terrain_tags, is_recurring)
-- `index.tsx:184` (missing sort_date)
+- Paginate `GetFilterData` for Area=Club to collect all `SyncGuid`s.
+- For each, call `GetDetails` to get `Website` and `SocialMediaInfo`.
+- Normalise `Website`: trim, add `https://` if missing scheme, drop trailing slash, lowercase host. Skip values that aren't plausible URLs (no dot, contains spaces, etc.).
+- Build slug from `Name`; on collision with a different `norm_id`, suffix with `-scotland`.
+- Upsert on **`norm_id`** with: `norm_id = scottishathletics-<slug>`, `slug`, `name`, `town`, `county`, `region` = "Scotland", `country` = "Scotland", `lat`, `lng`, `website_url`, `contact_email`, `governing_body` = "scottish-athletics", **`source` = "scottish-athletics"**, `source_url` = JustGo profile URL, `status` = "ACTIVE".
+- Logs via `startSyncRun("scottish-athletics-clubs")` (this string only lives in `sync_runs.source`, not on club rows).
 
-**Decision:** Define a single canonical list for discovery surfaces in `src/lib/events-columns.ts`:
-```ts
-export const DISCOVERY_EVENT_COLUMNS =
-  "id, slug, name, date_raw, sort_date, town, county, region, distances, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, is_featured, date_is_estimated, is_recurring";
-```
-Use it at all 4 sites. The two client-side routes will start selecting a few extra columns they currently don't (region, distance_tags, terrain_tags, is_recurring, sort_date) — this is harmless (small payload increase, no PII), and the mem note about "canonical public column list" is preserved: we're keeping it narrow, just centralised. Confirms the "never leak source / source_url" rule is enforced in one place.
+Wire it in:
+- Add `"scottish-athletics-clubs"` to `SYNC_SOURCES` in `src/lib/admin-sync.functions.ts` and dispatch in `triggerSyncRun`.
+- Add an admin button on `_adminShell.admin.sync-runs.tsx` to trigger manually.
+- Public endpoint `src/routes/api/public/admin/sync-scottish-athletics-clubs.ts` (same `x-admin-secret` shape) so a weekly `pg_cron` can call it later. We do **not** schedule the cron in this PR.
 
-### 2c. Paginated fetch loop → helper
-The "fetch in 1000-row pages until you have N or run out" pattern is repeated 5× in `events.functions.ts` (lines 186, 298, 416, 600, plus inline in getEventPageData). Extract to a private helper in the same file:
+### 2. Part 1 — Backfill the 96 existing events
 
-```ts
-async function fetchAllPages<T>(
-  buildQuery: (from: number, to: number) => PostgrestFilterBuilder<...>,
-  pageSize = 1000,
-): Promise<T[]> { ... }
-```
+One-off admin server function `backfillScottishOrganiserUrls` in `src/lib/admin-events.functions.ts`:
 
-Keep it file-private for now (not exported) — if a second file ever needs it we promote it then. Avoids over-engineering.
+- Select active upcoming events with `source = 'scottishathletics'` and `(organiser_url IS NULL OR organiser_url = '')` and non-null `organiser`.
+- Look up `clubs` rows where **`source = 'scottish-athletics'`** (same string the sync writes) and `slugify(name) = slugify(organiser)`. Case-insensitive equality only — no fuzzy matching in v1.
+- Where matched and the club has a non-null `website_url`, update `events.organiser_url`.
+- Return `{ matched, updated, unmatched: string[] }` so the admin UI surfaces non-club organisers ("Blast Running", individuals) that stay NULL by design.
 
-## Out of scope (deferred, per your call)
+Triggered once from the admin sync-runs page after the clubs sync has run.
 
-- Region page → SSR loader pattern (item 4 in audit)
-- Splitting `events.functions.ts` into discovery vs detail files (item 5)
-- `events.$slug.tsx` size (item 7)
-- `.lovable/plan.md` staleness (item 8) — will refresh as part of this PR's plan doc
+### 3. Part 2 — Wire matching into the events sync going forward
 
-## Verification
+In `src/lib/sync-scottish-athletics.server.ts`, after collecting `rows` but before the upsert:
 
-1. `bun run tsgo` — clean.
-2. Homepage with location set: confirm Holme Moss Fell Race (sientries-only) no longer appears in the nearby grid (it should still appear on its own event page).
-3. Spot-check `/trail-running-events`, `/running-events/yorkshire`, and `/running-events/yorkshire/marathons` — counts unchanged (these already used the gate).
-4. Grep confirms only 1 occurrence of the bounds string and 1 of the column list across `src/`.
+- Build `Map<slugifiedName, website_url>` by reading `clubs` where `source = 'scottish-athletics'` and `website_url IS NOT NULL` (single SELECT).
+- For each row, set `organiser_url = map.get(slugify(row.organiser))` when present. Leave `NULL` otherwise.
+- **Never** set `organiser_url` to the JustGo `Directlink` — that's the booking platform.
 
-## Files touched
+### 4. Rollout order
 
-- `src/routes/index.tsx` — add filter at source, remove redundant filter from `featuredNearby`, use shared column constant
-- `src/lib/events.functions.ts` — extract bounds constant + paginated fetch helper, use shared column constant
-- `src/routes/running-events.$slug.tsx` — use shared column constant
-- `src/lib/events-columns.ts` — NEW, single constant
-- `.lovable/plan.md` — replace stale link-trust plan with this one
+1. Ship the code.
+2. Admin: trigger "Sync Scottish Athletics clubs" → verify ~139 rows with most `website_url` populated.
+3. Admin: trigger "Backfill Scottish organiser URLs" → expect ~60–75 of the 96 to be filled.
+4. Spot-check Scottish events reappear on homepage radius + region pages.
+5. Next Monday's 03:00 events cron picks up new events with `organiser_url` already set.
+
+### 5. Out of scope
+
+- Adding a weekly `pg_cron` schedule for the new clubs sync (one-line SQL follow-up).
+- Fuzzy / token-based organiser→club matching (only add if step 3 shows it's needed).
+- Backfilling clubs from other governing bodies.
+- Surfacing the new clubs anywhere in the UI.
+
+## Files
+
+**New:**
+- `src/lib/sync-scottish-athletics-clubs.server.ts`
+- `src/routes/api/public/admin/sync-scottish-athletics-clubs.ts`
+
+**Edited:**
+- `src/lib/sync-scottish-athletics.server.ts` (organiser→website lookup before upsert)
+- `src/lib/admin-sync.functions.ts` (`SYNC_SOURCES`, `triggerSyncRun` dispatch)
+- `src/lib/admin-events.functions.ts` (new `backfillScottishOrganiserUrls`)
+- `src/routes/_adminShell.admin.sync-runs.tsx` (buttons for new sync + backfill)
+- `mem://index.md` + new memory entry once shipped

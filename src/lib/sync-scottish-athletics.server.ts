@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { startSyncRun } from "@/lib/sync-run-log.server";
+import { loadScottishClubWebsiteMap } from "@/lib/sync-scottish-athletics-clubs.server";
 
 // Syncs running events from the Scottish Athletics public event browser
 // (JustGo widget API) into the events table. Idempotent: upserts on norm_id
@@ -154,6 +155,13 @@ export async function runScottishAthleticsSync(): Promise<ScottishAthleticsSyncR
 
     const running = all.filter((e) => INCLUDED_CATEGORIES.has(e.EventCategory));
 
+    // Map of slugified organiser/club name → club website. Lets us
+    // populate organiser_url for events whose only link is on the JustGo
+    // booking subdomain. Falls back to NULL when no club match exists.
+    const clubWebsiteMap = await loadScottishClubWebsiteMap().catch(
+      () => new Map<string, string>(),
+    );
+
     const { data: existing, error: exErr } = await supabaseAdmin
       .from("events")
       .select("slug, name, date_from, norm_id")
@@ -223,6 +231,12 @@ export async function runScottishAthleticsSync(): Promise<ScottishAthleticsSyncR
       const finalNormId = `scottishathletics-${slug}`;
       if (existingNormIds.has(finalNormId)) updatedExisting++;
       else newEvents++;
+      const organiser = e.EntityInfo?.Name?.trim() || null;
+      // Match organiser → real club website. Never use JustGo's Directlink
+      // here — that's the booking platform, not the organiser's site.
+      const organiserUrl = organiser
+        ? clubWebsiteMap.get(slugify(organiser)) ?? null
+        : null;
       rows.push({
         norm_id: finalNormId,
         name,
@@ -240,7 +254,8 @@ export async function runScottishAthleticsSync(): Promise<ScottishAthleticsSyncR
         distances: distancesFromName(name),
         discipline: e.EventCategory,
         entry_url: e.Directlink || null,
-        organiser: e.EntityInfo?.Name?.trim() || null,
+        organiser,
+        organiser_url: organiserUrl,
         entry_fee: e.PriceSettings?.DisplayPrice?.trim() || null,
         source: "scottishathletics",
         source_url: e.Directlink || null,

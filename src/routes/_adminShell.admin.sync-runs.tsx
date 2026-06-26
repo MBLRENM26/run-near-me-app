@@ -13,6 +13,7 @@ import {
   type SyncRun,
   type SyncSource,
 } from "@/lib/admin-sync.functions";
+import { backfillScottishOrganiserUrls } from "@/lib/admin-events.functions";
 
 export const Route = createFileRoute("/_adminShell/admin/sync-runs")({
   component: AdminSyncRunsPage,
@@ -21,6 +22,7 @@ export const Route = createFileRoute("/_adminShell/admin/sync-runs")({
 const SOURCE_LABEL: Record<SyncSource, string> = {
   "england-athletics": "England Athletics",
   "scottish-athletics": "Scottish Athletics",
+  "scottish-athletics-clubs": "Scottish Athletics clubs",
 };
 
 const STALE_AFTER_MS = 10 * 60 * 1000; // 10 minutes
@@ -170,6 +172,7 @@ function AdminSyncRunsPage() {
           );
         })}
         <SyncSecretButton />
+        <ScottishBackfillButton />
       </div>
 
 
@@ -235,6 +238,34 @@ function SyncSecretButton() {
       title="One-off: copy IMPORT_SECRET env var into vault.secrets so pg_cron can authenticate"
     >
       {m.isPending ? "Syncing…" : "Sync secret to vault"}
+    </Button>
+  );
+}
+
+function ScottishBackfillButton() {
+  const run = useServerFn(backfillScottishOrganiserUrls);
+  const m = useMutation({
+    mutationFn: () => run(),
+    onSuccess: (r) => {
+      toast.success(
+        `Backfill done: ${r.updated}/${r.scanned} updated, ${r.unmatched.length} unmatched organisers`,
+      );
+      if (r.unmatched.length > 0) {
+        console.info("[scottish-backfill] unmatched organisers:", r.unmatched);
+      }
+    },
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Backfill failed"),
+  });
+  return (
+    <Button
+      size="sm"
+      variant="ghost"
+      disabled={m.isPending}
+      onClick={() => m.mutate()}
+      title="One-off: fill organiser_url on Scottish events by matching organiser names against the clubs table"
+    >
+      {m.isPending ? "Backfilling…" : "Backfill Scottish organiser URLs"}
     </Button>
   );
 }

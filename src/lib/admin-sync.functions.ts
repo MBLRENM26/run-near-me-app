@@ -5,6 +5,7 @@ import { isAdminAuthenticated } from "@/lib/admin-session.server";
 export const SYNC_SOURCES = [
   "england-athletics",
   "scottish-athletics",
+  "scottish-athletics-clubs",
 ] as const;
 export type SyncSource = (typeof SYNC_SOURCES)[number];
 
@@ -78,6 +79,18 @@ export const triggerSyncRun = createServerFn({ method: "POST" })
         const r = await runEnglandAthleticsSync({});
         return {
           newEvents: r.newEvents,
+          updatedExisting: r.updatedExisting,
+          written: r.written,
+          fetched: r.fetched,
+        };
+      }
+      if (data.source === "scottish-athletics-clubs") {
+        const { runScottishAthleticsClubsSync } = await import(
+          "@/lib/sync-scottish-athletics-clubs.server"
+        );
+        const r = await runScottishAthleticsClubsSync();
+        return {
+          newEvents: r.newClubs,
           updatedExisting: r.updatedExisting,
           written: r.written,
           fetched: r.fetched,

@@ -1076,3 +1076,76 @@ export const markClusterAsSeries = createServerFn({ method: "POST" })
     return { ok: true, marked, series_key: key };
   });
 
+// One-off: fill organiser_url on Scottish Athletics events by matching
+// the scraped organiser name against the clubs table (populated by the
+// scottish-athletics-clubs sync). Idempotent — safe to re-run.
+export type ScottishOrganiserBackfillResult = {
+  ok: true;
+  scanned: number;
+  matched: number;
+  updated: number;
+  unmatched: string[];
+};
+
+function slugifyName(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+export const backfillScottishOrganiserUrls = createServerFn({ method: "POST" })
+  .handler(async (): Promise<ScottishOrganiserBackfillResult> => {
+    requireAdminOrThrow();
+
+    const { data: events, error: evErr } = await supabaseAdmin
+      .from("events")
+      .select("id, organiser, organiser_url")
+      .eq("source", "scottishathletics")
+      .eq("status", "ACTIVE")
+      .or("organiser_url.is.null,organiser_url.eq.")
+      .not("organiser", "is", null);
+    if (evErr) throw new Error(evErr.message);
+
+    const { data: clubs, error: clErr } = await supabaseAdmin
+      .from("clubs")
+      .select("name, website_url")
+      .eq("source", "scottish-athletics")
+      .not("website_url", "is", null);
+    if (clErr) throw new Error(clErr.message);
+
+    const map = new Map<string, string>();
+    for (const c of clubs ?? []) {
+      if (c.name && c.website_url) map.set(slugifyName(c.name), c.website_url);
+    }
+
+    let matched = 0;
+    let updated = 0;
+    const unmatchedSet = new Set<string>();
+    for (const ev of events ?? []) {
+      const o = ev.organiser?.trim();
+      if (!o) continue;
+      const hit = map.get(slugifyName(o));
+      if (!hit) {
+        unmatchedSet.add(o);
+        continue;
+      }
+      matched++;
+      const { error: upErr } = await supabaseAdmin
+        .from("events")
+        .update({ organiser_url: hit })
+        .eq("id", ev.id);
+      if (!upErr) updated++;
+    }
+
+    return {
+      ok: true,
+      scanned: events?.length ?? 0,
+      matched,
+      updated,
+      unmatched: Array.from(unmatchedSet).sort(),
+    };
+  });
+
+
