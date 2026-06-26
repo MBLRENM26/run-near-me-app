@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
 import { Calendar, MapPin, Tag, ExternalLink, Mountain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -95,6 +95,11 @@ function hostnameOf(url: string | null | undefined): string | undefined {
 
 export const Route = createFileRoute("/events/$slug")({
   validateSearch: fromSearchValidator,
+  beforeLoad: ({ params }) => {
+    // Guard against malformed slugs (e.g. literal "$slug" from stale crawls)
+    // so they return a clean 404 instead of falling through to a 5xx.
+    if (!/^[a-z0-9-]+$/.test(params.slug)) throw notFound();
+  },
   loader: ({ params }) => getEventPageData({ data: { slug: params.slug } }),
 
   head: ({ params, loaderData }) => {

@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
 import { ArrowLeft, ExternalLink, MapPin } from "lucide-react";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
@@ -11,6 +11,9 @@ import { REGIONS } from "@/lib/regions";
 const REGION_BY_SLUG = Object.fromEntries(REGIONS.map((r) => [r.slug, r]));
 
 export const Route = createFileRoute("/parkrun-events/$slug")({
+  beforeLoad: ({ params }) => {
+    if (!/^[a-z0-9-]+$/.test(params.slug)) throw notFound();
+  },
   loader: ({ params }) => getParkrunBySlug({ data: { slug: params.slug } }),
   head: ({ params, loaderData }) => {
     const canonical = `${SITE_URL}/parkrun-events/${params.slug}`;
