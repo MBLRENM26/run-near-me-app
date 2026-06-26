@@ -733,7 +733,7 @@ export const getEventPageData = createServerFn({ method: "GET" })
       const { data: townRows, error: townErr } = await supabaseAdmin
         .from("events")
         .select(
-          "id, slug, name, date_raw, sort_date, date_is_estimated, town, county",
+          "id, slug, name, date_raw, sort_date, date_is_estimated, town, county, entry_url, organiser_url",
         )
         .eq("status", "ACTIVE")
         .ilike("town", eventTown)
@@ -741,9 +741,18 @@ export const getEventPageData = createServerFn({ method: "GET" })
         .not("slug", "is", null)
         .or(`sort_date.gte.${today},sort_date.is.null`)
         .order("sort_date", { ascending: true, nullsFirst: false })
-        .limit(6);
+        .limit(50);
       if (!townErr && townRows) {
         for (const r of townRows) {
+          // Discovery-surface trust gate — same-town suggestions only
+          // recommend events with an organiser-owned link.
+          if (
+            !hasOrganiserOwnedLink(
+              r.entry_url as string | null,
+              r.organiser_url as string | null,
+            )
+          )
+            continue;
           sameTown.push({
             id: r.id as string,
             slug: r.slug as string,
@@ -754,6 +763,7 @@ export const getEventPageData = createServerFn({ method: "GET" })
             town: r.town as string | null,
             county: r.county as string | null,
           });
+          if (sameTown.length >= 6) break;
         }
       }
     }
