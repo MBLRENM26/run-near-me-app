@@ -129,6 +129,60 @@ export const getAllActiveSlugs = createServerFn({ method: "GET" })
     );
   });
 
+/**
+ * Returns ACTIVE event slugs that pass the same indexability rules used
+ * by `<meta robots>` on `/events/{slug}` (see src/lib/event-indexability.ts).
+ *
+ * Used by the sitemap so we only ask Google to crawl URLs we'd actually
+ * index. Filters out: past events, slug-suffix duplicates (-race-N,
+ * -{month}, dated suffixes), orphans (no link AND no organiser), and
+ * series duplicates that aren't the earliest upcoming sibling.
+ */
+export const getIndexableEventSlugsForSitemap = createServerFn({ method: "GET" })
+  .handler(async (): Promise<{ slug: string; sort_date: string | null }[]> => {
+    const today = new Date().toISOString().slice(0, 10);
+
+    type Row = {
+      id: string;
+      slug: string;
+      name: string;
+      sort_date: string | null;
+      entry_url: string | null;
+      organiser_url: string | null;
+      organiser: string | null;
+    };
+
+    const rows = await fetchAllRows<Row>((from, to) =>
+      supabaseAdmin
+        .from("events")
+        .select("id, slug, name, sort_date, entry_url, organiser_url, organiser")
+        .eq("status", "ACTIVE")
+        .not("slug", "is", null)
+        .or(`sort_date.gte.${today},sort_date.is.null`)
+        .range(from, to),
+    );
+
+    // Group siblings by normalised name so computeIndexability can decide
+    // duplicate-sibling status. Each event appears in its own group.
+    const siblingsByName = new Map<string, { id: string; sort_date: string | null }[]>();
+    for (const r of rows) {
+      const key = normaliseEventName(r.name);
+      const list = siblingsByName.get(key);
+      const entry = { id: r.id, sort_date: r.sort_date };
+      if (list) list.push(entry);
+      else siblingsByName.set(key, [entry]);
+    }
+
+    return rows
+      .filter((r) => {
+        const siblings = siblingsByName.get(normaliseEventName(r.name)) ?? [];
+        const result = computeIndexability(r, siblings, today);
+        return result.indexable;
+      })
+      .map((r) => ({ slug: r.slug, sort_date: r.sort_date }));
+  });
+
+
 export const lookupEventSlug = createServerFn({ method: "GET" })
   .inputValidator((input: unknown) => slugSchema.parse(input))
   .handler(async ({ data }): Promise<{ exists: boolean }> => {

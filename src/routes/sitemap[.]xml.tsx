@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { REGIONS } from "@/lib/regions";
 import { SITE_URL } from "@/lib/site";
 import {
-  getAllActiveSlugs,
+  getIndexableEventSlugsForSitemap,
   getRegionDistanceMatrix,
 } from "@/lib/events.functions";
 import { getParkrunList } from "@/lib/parkrun.functions";
@@ -17,17 +17,17 @@ export const Route = createFileRoute("/sitemap.xml")({
 
         let eventEntries: { slug: string; lastmod: string }[] = [];
         try {
-          const slugs = await getAllActiveSlugs();
-          eventEntries = slugs
-            // Exclude past events from the sitemap (pages stay live, but we
-            // don't ask Google to crawl stale race dates — soft-404 risk).
-            .filter((s) => !s.sort_date || s.sort_date >= today)
-            .map((s) => ({
-              slug: s.slug,
-              // lastmod must not be a future date — clamp to today.
-              lastmod:
-                s.sort_date && s.sort_date < today ? s.sort_date : today,
-            }));
+          // Mirror the per-page indexability rule so we don't ask Google to
+          // crawl URLs that emit <meta robots="noindex"> (see
+          // src/lib/event-indexability.ts). This excludes past events,
+          // slug-suffix duplicates, orphans, and non-earliest series siblings.
+          const slugs = await getIndexableEventSlugsForSitemap();
+          eventEntries = slugs.map((s) => ({
+            slug: s.slug,
+            // lastmod must not be a future date — clamp to today.
+            lastmod:
+              s.sort_date && s.sort_date < today ? s.sort_date : today,
+          }));
         } catch (err) {
           console.error("Sitemap: failed to load event slugs", err);
         }
