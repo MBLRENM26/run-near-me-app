@@ -526,6 +526,7 @@ function EventDetailPage() {
                         event_name: e.name,
                         distance: e.distances ?? "unknown",
                         discipline: e.discipline ?? "road",
+                        entry_domain: hostnameOf(pastOrganiserLink!.href),
                       })
                     }
                     className="font-medium text-primary hover:underline"
