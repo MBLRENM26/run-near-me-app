@@ -16,7 +16,7 @@ once the goal has been added and an event has fired.
 
 | Goal name | Fired from | Props |
 |---|---|---|
-| `Entry Click` | Primary CTA on `/events/$slug`; past-event "Visit organiser website" link in the same route | `slug`, `region`, `link_type` (`entry` \| `organiser-site` \| `organiser-other`), `proximity` (`future` \| `today` \| `imminent` \| `past`), `event_name`, `distance`, `discipline` |
+| `Entry Click` | Primary CTA on `/events/$slug`; past-event "Visit organiser website" link in the same route | `slug`, `region`, `link_type` (`entry` \| `organiser-site` \| `organiser-other`), `proximity` (`future` \| `today` \| `imminent` \| `past`), `event_name`, `distance`, `discipline`, `entry_domain` (hostname of outbound URL, `www.` stripped; omitted when the URL is unparseable — register under Plausible → Site Settings → Custom Properties to make it filterable) |
 | `Club Website Click` | Club page CTA (`/running-clubs/$slug`) | `slug`, `host`, `kind` (link-trust kind) |
 | `Club Page View` | Club page mount | `slug`, `region`, `is_claimed`, `governing_body` |
 | `Claim Interest` | "Claim this event" CTA on `/events/$slug` | `slug`, `region` |
