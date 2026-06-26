@@ -22,6 +22,7 @@ import {
   slugStem,
   type IndexabilityResult,
 } from "@/lib/event-indexability";
+import { hasOrganiserOwnedLink } from "@/lib/link-trust";
 
 // During the transition window, an event matches a distance page if its
 // parsed tag arrays match OR (for un-backfilled rows with empty tags) the
@@ -229,21 +230,30 @@ export const getEventsByDistance = createServerFn({ method: "GET" })
       if (rows.length < pageSize) break;
     }
 
+    // Discovery-surface trust gate: only include events with a link on
+    // the organiser's own site (not aggregator, not third-party entry
+    // platform). Event detail pages still render "Enter now" for these
+    // — we just don't recommend them from landing pages. See
+    // src/lib/link-trust.ts and mem://constraints/scraped-data-trust.
+    const trusted = all.filter((e) =>
+      hasOrganiserOwnedLink(e.entry_url, e.organiser_url),
+    );
+
     // Group by region for the regional breakdown section.
     const counts = new Map<string, number>();
-    for (const e of all) {
+    for (const e of trusted) {
       if (e.region) counts.set(e.region, (counts.get(e.region) ?? 0) + 1);
     }
     const regionCounts = Array.from(counts.entries())
       .map(([region, count]) => ({ region, count }))
       .sort((a, b) => b.count - a.count);
 
-    const sorted = sortEstimatedLastWithinMonth(all);
+    const sorted = sortEstimatedLastWithinMonth(trusted);
 
     return {
       events: sorted.slice(0, DISPLAY_LIMIT),
       regionCounts,
-      total: all.length,
+      total: trusted.length,
     };
   });
 
@@ -326,6 +336,14 @@ export const getEventsByRegionAndDistance = createServerFn({ method: "GET" })
       if (rows.length < pageSize) break;
     }
 
+    // Discovery-surface trust gate (same policy as getEventsByDistance).
+    // Filter BEFORE computing otherDistanceCounts so the counts shown in
+    // the "other distances in this region" panel match what users will
+    // actually see when they click through.
+    const trusted = all.filter((e) =>
+      hasOrganiserOwnedLink(e.entry_url, e.organiser_url),
+    );
+
     const rowMatches = (e: RowWithTags, key: DistanceKey) =>
       rowMatchesDistanceKey(
         {
@@ -336,7 +354,7 @@ export const getEventsByRegionAndDistance = createServerFn({ method: "GET" })
         key,
       );
 
-    // Bucket the same fetched rows by every distance for the
+    // Bucket the (trust-filtered) rows by every distance for the
     // "other distances in this region" panel.
     const otherDistanceCounts: Record<DistanceKey, number> = {
       "5k": 0,
@@ -346,14 +364,14 @@ export const getEventsByRegionAndDistance = createServerFn({ method: "GET" })
       trail: 0,
       ultra: 0,
     };
-    for (const e of all) {
+    for (const e of trusted) {
       for (const p of DISTANCE_PAGE_LIST) {
         if (rowMatches(e, p.key)) otherDistanceCounts[p.key]++;
       }
     }
 
     const matched = sortEstimatedLastWithinMonth(
-      all.filter((e) => rowMatches(e, cfg.key)),
+      trusted.filter((e) => rowMatches(e, cfg.key)),
     );
 
     // Drop the private tag fields before returning.
@@ -391,12 +409,16 @@ export const getRegionDistanceMatrix = createServerFn({ method: "GET" })
       distances: string | null;
       distance_tags: string[] | null;
       terrain_tags: string[] | null;
+      entry_url: string | null;
+      organiser_url: string | null;
     };
     const rows: MatrixRow[] = [];
     for (let from = 0; ; from += pageSize) {
       const { data, error } = await supabaseAdmin
         .from("events")
-        .select("region, distances, distance_tags, terrain_tags")
+        .select(
+          "region, distances, distance_tags, terrain_tags, entry_url, organiser_url",
+        )
         .eq("status", "ACTIVE")
         .not("region", "is", null)
         .or(`sort_date.gte.${today},sort_date.is.null`)
@@ -413,6 +435,8 @@ export const getRegionDistanceMatrix = createServerFn({ method: "GET" })
             distances: (r.distances as string | null) ?? null,
             distance_tags: (r.distance_tags as string[] | null) ?? null,
             terrain_tags: (r.terrain_tags as string[] | null) ?? null,
+            entry_url: (r.entry_url as string | null) ?? null,
+            organiser_url: (r.organiser_url as string | null) ?? null,
           });
         }
       }
@@ -421,6 +445,9 @@ export const getRegionDistanceMatrix = createServerFn({ method: "GET" })
 
     const counts = new Map<string, number>();
     for (const r of rows) {
+      // Discovery-surface trust gate — match the landing-page filter so
+      // the matrix counts agree with what users actually see.
+      if (!hasOrganiserOwnedLink(r.entry_url, r.organiser_url)) continue;
       for (const p of DISTANCE_PAGE_LIST) {
         if (rowMatchesDistanceKey(r, p.key)) {
           const key = `${r.region}::${p.key}`;
@@ -566,13 +593,15 @@ export const getEventPageData = createServerFn({ method: "GET" })
         distances: string | null;
         distance_tags: string[] | null;
         terrain_tags: string[] | null;
+        entry_url: string | null;
+        organiser_url: string | null;
       };
       const all: Row[] = [];
       for (let from = 0; ; from += pageSize) {
         const { data: rows, error: relErr } = await supabaseAdmin
           .from("events")
           .select(
-            "id, slug, name, date_raw, sort_date, date_is_estimated, town, county, distances, distance_tags, terrain_tags",
+            "id, slug, name, date_raw, sort_date, date_is_estimated, town, county, distances, distance_tags, terrain_tags, entry_url, organiser_url",
           )
           .eq("status", "ACTIVE")
           .eq("region", event.region)
@@ -598,14 +627,26 @@ export const getEventPageData = createServerFn({ method: "GET" })
             distances: r.distances as string | null,
             distance_tags: r.distance_tags as string[] | null,
             terrain_tags: r.terrain_tags as string[] | null,
+            entry_url: r.entry_url as string | null,
+            organiser_url: r.organiser_url as string | null,
           });
         }
         if (rows.length < pageSize) break;
       }
 
+      // Discovery-surface trust gate — "other races near you" should
+      // only recommend events with an organiser-owned link. The current
+      // event itself is exempt (it's not being recommended). See
+      // mem://constraints/scraped-data-trust.
+      const trusted = all.filter(
+        (r) =>
+          r.id === event.id ||
+          hasOrganiserOwnedLink(r.entry_url, r.organiser_url),
+      );
+
       const matched = related.distanceKey
-        ? all.filter((r) => rowMatchesDistanceKey(r, related.distanceKey!))
-        : all;
+        ? trusted.filter((r) => rowMatchesDistanceKey(r, related.distanceKey!))
+        : trusted;
 
       // Count includes the event itself (drives the "one of N" prose and the
       // "View all N" footer link — both region+distance scoped).
@@ -613,10 +654,12 @@ export const getEventPageData = createServerFn({ method: "GET" })
       related.events = matched
         .filter((r) => r.id !== event.id)
         .slice(0, 6)
-        .map(({ distances: _d, distance_tags: _dt, terrain_tags: _tt, ...rest }) => {
+        .map(({ distances: _d, distance_tags: _dt, terrain_tags: _tt, entry_url: _eu, organiser_url: _ou, ...rest }) => {
           void _d;
           void _dt;
           void _tt;
+          void _eu;
+          void _ou;
           return rest;
         });
     }
@@ -648,6 +691,8 @@ export const getEventPageData = createServerFn({ method: "GET" })
           town: string | null;
           county: string | null;
           distance_type: string | null;
+          entry_url: string | null;
+          organiser_url: string | null;
           date_is_estimated: boolean | null;
           distance_miles: number | null;
         }>) {
@@ -655,6 +700,8 @@ export const getEventPageData = createServerFn({ method: "GET" })
           // The RPC predates tag arrays; keep the legacy substring filter
           // here. Could be upgraded if/when the RPC starts returning tags.
           if (cfg && !matchesDistance(r.distance_type, cfg)) continue;
+          // Discovery-surface trust gate (same as the region fallback).
+          if (!hasOrganiserOwnedLink(r.entry_url, r.organiser_url)) continue;
           picked.push({
             id: r.id,
             slug: r.slug,
@@ -686,7 +733,7 @@ export const getEventPageData = createServerFn({ method: "GET" })
       const { data: townRows, error: townErr } = await supabaseAdmin
         .from("events")
         .select(
-          "id, slug, name, date_raw, sort_date, date_is_estimated, town, county",
+          "id, slug, name, date_raw, sort_date, date_is_estimated, town, county, entry_url, organiser_url",
         )
         .eq("status", "ACTIVE")
         .ilike("town", eventTown)
@@ -694,9 +741,18 @@ export const getEventPageData = createServerFn({ method: "GET" })
         .not("slug", "is", null)
         .or(`sort_date.gte.${today},sort_date.is.null`)
         .order("sort_date", { ascending: true, nullsFirst: false })
-        .limit(6);
+        .limit(50);
       if (!townErr && townRows) {
         for (const r of townRows) {
+          // Discovery-surface trust gate — same-town suggestions only
+          // recommend events with an organiser-owned link.
+          if (
+            !hasOrganiserOwnedLink(
+              r.entry_url as string | null,
+              r.organiser_url as string | null,
+            )
+          )
+            continue;
           sameTown.push({
             id: r.id as string,
             slug: r.slug as string,
@@ -707,6 +763,7 @@ export const getEventPageData = createServerFn({ method: "GET" })
             town: r.town as string | null,
             county: r.county as string | null,
           });
+          if (sameTown.length >= 6) break;
         }
       }
     }

@@ -21,7 +21,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { matchesEventType, type EventType } from "@/lib/distance";
 import { MapPin } from "lucide-react";
 import { DistanceNav } from "@/components/distance/DistanceNav";
-import { classifyEventLink } from "@/lib/link-trust";
+import { hasOrganiserOwnedLink } from "@/lib/link-trust";
 import {
   LiveEventCounter,
   liveStatsQueryOptions,
@@ -198,16 +198,9 @@ function HomePage() {
         .order("sort_date", { ascending: true })
         .limit(20);
       if (error) throw error;
-      const trusted = (data ?? []).filter((e) => {
-        const a = classifyEventLink(e.entry_url).kind;
-        const b = classifyEventLink(e.organiser_url).kind;
-        return (
-          a === "entry" ||
-          a === "organiser-site" ||
-          b === "entry" ||
-          b === "organiser-site"
-        );
-      });
+      const trusted = (data ?? []).filter((e) =>
+        hasOrganiserOwnedLink(e.entry_url, e.organiser_url),
+      );
       return trusted.slice(0, 8);
     },
   });
@@ -249,6 +242,7 @@ function HomePage() {
   const featuredNearby: EventCardData[] = useMemo(() => {
     return eventsWithDistance
       .filter((e) => e.is_featured)
+      .filter((e) => hasOrganiserOwnedLink(e.entry_url, e.organiser_url))
       .sort((a, b) => a.distanceMiles! - b.distanceMiles!);
   }, [eventsWithDistance]);
 
