@@ -5,6 +5,7 @@ import { isAdminAuthenticated } from "@/lib/admin-session.server";
 export const SYNC_SOURCES = [
   "england-athletics",
   "scottish-athletics",
+  "scottish-athletics-clubs",
 ] as const;
 export type SyncSource = (typeof SYNC_SOURCES)[number];
 
