@@ -13,6 +13,7 @@ import {
   type SyncRun,
   type SyncSource,
 } from "@/lib/admin-sync.functions";
+import { backfillScottishOrganiserUrls } from "@/lib/admin-events.functions";
 
 export const Route = createFileRoute("/_adminShell/admin/sync-runs")({
   component: AdminSyncRunsPage,
