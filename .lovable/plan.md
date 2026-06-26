@@ -1,85 +1,39 @@
+# Add `entry_domain` to Entry Click tracking
 
-## Sprint A.5 — SHIPPED 2026-06-25
+Agreed with the approach — domain-per-click is the right grain. It's cheap, gives an aggregator/operator breakdown (eventrac.co.uk, letsdothis.com, englandathletics.sport80.com, niceworkraces.com…), and pairs cleanly with the existing `link_type` prop so you can split "entry CTAs landing on aggregators" vs "entry CTAs landing on the organiser's own site". One small refinement below.
 
-Soft 404 fix deployed: noindex for past, slug-suffix-duplicate, orphan, and series-sibling events (earliest upcoming in each cluster stays indexable). Past events also dropped from the legacy `/$slug` redirect lookup, and Event JSON-LD is suppressed on noindexed pages. Implementation: `src/lib/event-indexability.ts` (rules), `src/lib/events.functions.ts` (sibling fetch via normalised-name + slug-stem union, computed in `getEventPageData`), `src/routes/events.$slug.tsx` (robots meta + JSON-LD gate), `src/lib/events.functions.ts:lookupEventSlug` (past-slug exclusion). Verification: spot-check view-source on a Pretty Muddy / Race for Life cluster after deploy — earliest date should be indexable, rest should carry `<meta name="robots" content="noindex, follow">` and no Event JSON-LD. Recheck GSC soft 404 count in 2–6 weeks; do NOT manually resubmit the sitemap until after this ships.
+## Changes
 
----
+### 1. `src/lib/analytics.ts` — extend `trackEntryClick` signature
+Add `entry_domain?: string` to the props type so call sites are type-checked. Keep it optional so a malformed URL (caught by the try/catch) becomes `undefined` and the existing `clean()` helper drops it rather than sending an empty string — empty strings show up in Plausible as a real `(none)` bucket, which is noisier than just omitting the prop.
 
+### 2. `src/routes/events.$slug.tsx` — populate at both call sites
+Two `trackEntryClick` calls:
+- Line ~487: primary CTA (uses `primaryCta.href`)
+- Line ~520: past-event organiser link (uses `pastOrganiserLink.href`)
 
-## Sprint A.5 — clear the 323 soft 404s
+Add to each:
+```ts
+entry_domain: (() => {
+  try { return new URL(primaryCta!.href).hostname.replace(/^www\./, ''); }
+  catch { return undefined; }
+})(),
+```
+(Second call uses `pastOrganiserLink.href`.)
 
-All 323 are `/events/{slug}` pages. 271 (84%) are ACTIVE future events in duplicate-series clusters; 46 are ACTIVE past. The fix is targeted `noindex, follow` + dropping stale Event JSON-LD, with one indexed instance per series preserved so brand queries still land somewhere.
+Extracting a tiny `hostnameOf(url)` helper in the same file keeps both call sites readable; not strictly required.
 
-## What changes
+### 3. Plausible dashboard — register the custom property
+There is no code-side prop allow-list (Plausible auto-surfaces props once they appear), but the property only becomes *filterable / breakdownable* in the UI after it's added under **Site Settings → Custom Properties** for `runningeventsnearme.com`. Add `entry_domain` there once this ships. I'll note it in `.lovable/analytics.md` alongside the `Entry Click` row so it's not lost.
 
-### 1. Per-event indexability rule (new)
+### 4. `.lovable/analytics.md` — document the new prop
+Append `entry_domain` to the `Entry Click` props list with a one-line note ("hostname of outbound URL, `www.` stripped, omitted when URL is unparseable").
 
-A new pure helper `src/lib/event-indexability.ts` returns `{ indexable: boolean, reason?: string }` for an event. An event is **noindex** if **any** of:
+## Out of scope
+- No change to `link_type` semantics — the existing `entry` / `organiser-site` / `organiser-other` classification stays; `entry_domain` is orthogonal.
+- No change to club website clicks (`Club Website Click` already carries `host`, which is the same idea).
+- No backfill — Plausible is forward-only.
 
-- **Past** — `eventProximity(e) === 'past'`.
-- **Slug-suffix duplicate** — slug matches `-race-\d+$` or ends with a month name (`-january` … `-december`).
-- **Orphan** — no `entry_url`, no `organiser_url`, no `description`.
-- **Name-collision sibling** — there are ≥2 ACTIVE events sharing the normalised name AND this event is **not** the earliest upcoming instance in that group.
-
-Indexable cases:
-- Future event, unique normalised name, has at least one official link or description.
-- The earliest upcoming instance of any name-collision group (Race for Life Liverpool's next date stays indexed; the 20 later cities/dates noindex).
-
-### 2. `events.$slug.tsx` — wire up the rule
-
-In `head()`, when `indexable === false`:
-- Add `{ name: "robots", content: "noindex, follow" }`.
-- Drop the Event JSON-LD entirely (keep BreadcrumbList).
-
-Page UI does not change — direct visitors still see the event.
-
-### 3. Loader: surface the data needed to decide
-
-Extend `getEventBySlug` (or add a sibling fn `getEventBySlugWithIndexability`) in `src/lib/events.functions.ts` to also return:
-- `name_sibling_earliest_slug` — slug of the earliest upcoming ACTIVE event sharing the normalised name, or `null` if this event is unique.
-
-Normalisation: lowercase, trim, collapse whitespace, strip trailing year/month suffix from the name (not the slug). Examples that should collide:
-- "Race for Life — Liverpool", "Race for Life - Manchester" → both normalise to "race for life".
-- "Pretty Muddy Glasgow", "Pretty Muddy Edinburgh" → "pretty muddy".
-- "Trunce Series Race 5/6/7/8" → "trunce series race" (number stripped).
-- "Tatton Park 5K & 10K — July" / "— August" → "tatton park 5k & 10k".
-
-`indexable` is computed in the loader from `{event, name_sibling_earliest_slug}` and passed through to `head()` via `loaderData`.
-
-### 4. Past slugs 404 in the legacy redirect
-
-`src/routes/$slug.tsx` calls `lookupEventSlug`. Extend that server fn to treat ACTIVE-but-past events as non-existent for the catch-all redirect — return `{ exists: false }`. The real `/events/{slug}` route still serves the page; only the legacy flat-URL 301 path stops feeding past events back into the crawl set.
-
-### 5. No sitemap resubmission yet
-
-Last sprint's sitemap fix already excludes past events; no further change. Per your direction: don't manually resubmit the sitemap in GSC until A.5 ships, otherwise we re-prompt Google to recrawl the broken set at full volume.
-
-## Expected impact
-
-- **323 soft 404s** → drops to near-zero over 2–6 weeks as Googlebot recrawls and honours `noindex`.
-- **889 discovered-but-not-indexed** → starts clearing as crawl budget redirects. Combined with the Sprint A title rewrite, signals on those pages will be stronger when Google does reach them.
-- **Brand search safety** — one indexed instance per series (next upcoming Race for Life, next upcoming Pretty Muddy, etc.) keeps brand queries landing on a real page.
-- **Zero traffic risk** — the 1,247-impression/day footprint sits on hub pages and unique events, not the duplicate-series instances being noindexed.
-
-## Verification after deploy
-
-1. View-source one known case from the GSC list (e.g. `/events/pretty-muddy-liverpool`) — expect `<meta name="robots" content="noindex, follow">` and no Event JSON-LD.
-2. View-source the earliest upcoming `pretty-muddy-*` event — expect **no** robots meta and Event JSON-LD present.
-3. Spot-check a unique future event (e.g. `/events/the-sandwich-10k-sandwich-2026`) — unchanged, indexable.
-4. GSC URL Inspection on 2–3 noindexed URLs in 24–48h — expect "Excluded by 'noindex' tag" instead of soft 404.
-
-## Files touched
-
-- `src/lib/event-indexability.ts` *(new)* — `computeIndexability(event, siblings) → { indexable, reason }`.
-- `src/lib/events.functions.ts` — extend the event detail query to include sibling-earliest lookup; pass `indexable` through.
-- `src/routes/events.$slug.tsx` — read `indexable` from loader data; add `robots: noindex, follow` and skip Event JSON-LD when false.
-- `src/routes/$slug.tsx` / `lookupEventSlug` — exclude past events from the legacy redirect lookup.
-- `.lovable/plan.md` — record A.5 as shipped.
-
-No DB migration. No new routes. No new tables.
-
-## Deferred (Sprint B candidates, in order)
-
-1. **Series hub pages** — `/series/{stem}` listing all instances; replaces noindex on duplicates with canonical-to-hub. Right endgame for Pretty Muddy / Race for Life / monthly venue series.
-2. **Time-bucketed landing pages** — `/running-events/this-weekend`, `/running-events/next-weekend`, monthly pages (already on the Sprint B shortlist).
-3. **410 Gone** for events confirmed permanently dead — only if `noindex` doesn't clear soft 404s by week 6.
+## Verification
+- Type-check passes (the optional prop addition is the only signature change).
+- After deploy: click an entry CTA on a known event, confirm the `Entry Click` goal in Plausible shows `entry_domain` as a filterable property within ~30s.
