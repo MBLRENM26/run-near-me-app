@@ -436,20 +436,18 @@ export type RegionDistanceMatrixRow = {
 export const getRegionDistanceMatrix = createServerFn({ method: "GET" })
   .handler(async (): Promise<RegionDistanceMatrixRow[]> => {
     const today = new Date().toISOString().slice(0, 10);
-    const pageSize = 1000;
 
     // Pull every active future event with a region + distances/tags in one pass.
     type MatrixRow = {
-      region: string;
+      region: string | null;
       distances: string | null;
       distance_tags: string[] | null;
       terrain_tags: string[] | null;
       entry_url: string | null;
       organiser_url: string | null;
     };
-    const rows: MatrixRow[] = [];
-    for (let from = 0; ; from += pageSize) {
-      const { data, error } = await supabaseAdmin
+    const raw = await fetchAllRows<MatrixRow>((from, to) =>
+      supabaseAdmin
         .from("events")
         .select(
           "region, distances, distance_tags, terrain_tags, entry_url, organiser_url",
@@ -457,26 +455,12 @@ export const getRegionDistanceMatrix = createServerFn({ method: "GET" })
         .eq("status", "ACTIVE")
         .not("region", "is", null)
         .or(`sort_date.gte.${today},sort_date.is.null`)
-        .or(
-          "lat.is.null,and(lat.gte.49.9,lat.lte.60.9,lng.gte.-8.6,lng.lte.1.8)",
-        )
-        .range(from, from + pageSize - 1);
-      if (error) throw new Error(error.message);
-      if (!data || data.length === 0) break;
-      for (const r of data) {
-        if (r.region) {
-          rows.push({
-            region: r.region as string,
-            distances: (r.distances as string | null) ?? null,
-            distance_tags: (r.distance_tags as string[] | null) ?? null,
-            terrain_tags: (r.terrain_tags as string[] | null) ?? null,
-            entry_url: (r.entry_url as string | null) ?? null,
-            organiser_url: (r.organiser_url as string | null) ?? null,
-          });
-        }
-      }
-      if (data.length < pageSize) break;
-    }
+        .or(UK_BOUNDS_OR_NULL)
+        .range(from, to),
+    );
+    const rows = raw.filter(
+      (r): r is MatrixRow & { region: string } => !!r.region,
+    );
 
     const counts = new Map<string, number>();
     for (const r of rows) {
