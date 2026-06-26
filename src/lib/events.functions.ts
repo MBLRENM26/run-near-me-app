@@ -593,13 +593,15 @@ export const getEventPageData = createServerFn({ method: "GET" })
         distances: string | null;
         distance_tags: string[] | null;
         terrain_tags: string[] | null;
+        entry_url: string | null;
+        organiser_url: string | null;
       };
       const all: Row[] = [];
       for (let from = 0; ; from += pageSize) {
         const { data: rows, error: relErr } = await supabaseAdmin
           .from("events")
           .select(
-            "id, slug, name, date_raw, sort_date, date_is_estimated, town, county, distances, distance_tags, terrain_tags",
+            "id, slug, name, date_raw, sort_date, date_is_estimated, town, county, distances, distance_tags, terrain_tags, entry_url, organiser_url",
           )
           .eq("status", "ACTIVE")
           .eq("region", event.region)
@@ -625,14 +627,26 @@ export const getEventPageData = createServerFn({ method: "GET" })
             distances: r.distances as string | null,
             distance_tags: r.distance_tags as string[] | null,
             terrain_tags: r.terrain_tags as string[] | null,
+            entry_url: r.entry_url as string | null,
+            organiser_url: r.organiser_url as string | null,
           });
         }
         if (rows.length < pageSize) break;
       }
 
+      // Discovery-surface trust gate — "other races near you" should
+      // only recommend events with an organiser-owned link. The current
+      // event itself is exempt (it's not being recommended). See
+      // mem://constraints/scraped-data-trust.
+      const trusted = all.filter(
+        (r) =>
+          r.id === event.id ||
+          hasOrganiserOwnedLink(r.entry_url, r.organiser_url),
+      );
+
       const matched = related.distanceKey
-        ? all.filter((r) => rowMatchesDistanceKey(r, related.distanceKey!))
-        : all;
+        ? trusted.filter((r) => rowMatchesDistanceKey(r, related.distanceKey!))
+        : trusted;
 
       // Count includes the event itself (drives the "one of N" prose and the
       // "View all N" footer link — both region+distance scoped).
@@ -640,10 +654,12 @@ export const getEventPageData = createServerFn({ method: "GET" })
       related.events = matched
         .filter((r) => r.id !== event.id)
         .slice(0, 6)
-        .map(({ distances: _d, distance_tags: _dt, terrain_tags: _tt, ...rest }) => {
+        .map(({ distances: _d, distance_tags: _dt, terrain_tags: _tt, entry_url: _eu, organiser_url: _ou, ...rest }) => {
           void _d;
           void _dt;
           void _tt;
+          void _eu;
+          void _ou;
           return rest;
         });
     }
