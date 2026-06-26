@@ -1,80 +1,70 @@
-# Scottish Athletics organiser_url backfill + sync fix
+# Fix: Scottish Athletics clubs sync stuck on "Running…"
 
-## What the probing confirmed
+## Diagnosis
 
-The Scottish Athletics club finder is a JustGo widget on the same `WidgetService.mvc/ExecuteWidgetCommandAlt` endpoint we already call for events. No scraping needed.
+A row exists in `sync_runs` for `scottish-athletics-clubs` with `status='running'`, `started_at` ~now, `finished_at` NULL. That means:
 
-- **List** (`GetFilterData`, Area=Club, WebletId=`64728f3b-...-e70f15955657`) returns 139 clubs with `Name`, `Address`, `Latlng`, `EmailAddress`, `SyncGuid`. No website on the list row.
-- **Detail** (`GetDetails`, Area=Club, by `SyncGuid`) returns `Website` (e.g. `"AberdeenAAC.co.uk"` — bare host, needs normalising), `SocialMediaInfo`, region, disciplines.
+1. The sync started (row was inserted).
+2. The server function hit the 8s ACK timeout in `triggerSyncRun`, returned `{ started: true }`, and the UI started polling.
+3. The Cloudflare Worker invocation **ended when the response was sent**. The `work` promise we kicked off in the background was not held by `ctx.waitUntil`, so the Worker terminated mid-sync. The `sync_runs` row never got a `finish()` update, so the UI polls forever.
 
-139 clubs ≈ 141 HTTP calls per full pull, well within the worker budget.
+Root cause: the current shape (`work` promise + ACK timeout → return early → background continues) does not work on Cloudflare Workers. Background work after the response is killed.
 
-## Schema notes (verified)
+Secondary issue: even if it did keep running, the clubs sync makes ~140 sequential `GetDetails` HTTP calls. At a few hundred ms each that's 30–60s — well past the Worker wall-time budget even without the background-termination bug.
 
-- `clubs` has unique constraints on **both** `norm_id` and `slug`. Either works as the `onConflict` target, but the dual constraint means an English club sharing the same slug would block a Scottish insert even when `onConflict='norm_id'` matched nothing. Mirror the events-sync pattern: upsert on `norm_id`, and on slug collision with a row that has a different `norm_id`, suffix the slug (`<slug>-scotland`).
-- `clubs.source` is a free-text column. Use the value `"scottish-athletics"` consistently — same string everywhere (sync writes, backfill query, future read filters). The sync **run name** in `sync_runs.source` is a different field and is allowed to be `"scottish-athletics-clubs"` to distinguish it from the events sync run.
+## Fix
 
-## Plan
+Make the clubs sync finish **inside the ACK window** so it returns synchronously like the Scottish events sync does, and clear the stuck row.
 
-### 1. New sync: Scottish Athletics clubs → `clubs` table
+### 1. Parallelise detail fetches in `src/lib/sync-scottish-athletics-clubs.server.ts`
 
-New file `src/lib/sync-scottish-athletics-clubs.server.ts`, mirroring `sync-scottish-athletics.server.ts`:
+Replace the sequential `for (const club of all) { await fetchClubDetail(...) }` with a bounded-concurrency batch (concurrency 10). With ~140 clubs that's ~14 rounds; at ~300–500 ms per call it completes in roughly 5–7 s, well under the 8 s ACK budget and comfortably inside the Worker wall-time limit.
 
-- Paginate `GetFilterData` for Area=Club to collect all `SyncGuid`s.
-- For each, call `GetDetails` to get `Website` and `SocialMediaInfo`.
-- Normalise `Website`: trim, add `https://` if missing scheme, drop trailing slash, lowercase host. Skip values that aren't plausible URLs (no dot, contains spaces, etc.).
-- Build slug from `Name`; on collision with a different `norm_id`, suffix with `-scotland`.
-- Upsert on **`norm_id`** with: `norm_id = scottishathletics-<slug>`, `slug`, `name`, `town`, `county`, `region` = "Scotland", `country` = "Scotland", `lat`, `lng`, `website_url`, `contact_email`, `governing_body` = "scottish-athletics", **`source` = "scottish-athletics"**, `source_url` = JustGo profile URL, `status` = "ACTIVE".
-- Logs via `startSyncRun("scottish-athletics-clubs")` (this string only lives in `sync_runs.source`, not on club rows).
+Implementation sketch:
 
-Wire it in:
-- Add `"scottish-athletics-clubs"` to `SYNC_SOURCES` in `src/lib/admin-sync.functions.ts` and dispatch in `triggerSyncRun`.
-- Add an admin button on `_adminShell.admin.sync-runs.tsx` to trigger manually.
-- Public endpoint `src/routes/api/public/admin/sync-scottish-athletics-clubs.ts` (same `x-admin-secret` shape) so a weekly `pg_cron` can call it later. We do **not** schedule the cron in this PR.
+```ts
+const CONCURRENCY = 10;
+const details = new Array<ClubDetail | null>(all.length);
+for (let i = 0; i < all.length; i += CONCURRENCY) {
+  const batch = all.slice(i, i + CONCURRENCY);
+  const results = await Promise.all(
+    batch.map((c) => fetchClubDetail(c.SyncGuid).catch(() => null)),
+  );
+  for (let j = 0; j < results.length; j++) details[i + j] = results[j];
+}
+```
 
-### 2. Part 1 — Backfill the 96 existing events
+Then iterate `all` + `details[i]` together to build the `rows` array (same logic as today, just without the inline `await`).
 
-One-off admin server function `backfillScottishOrganiserUrls` in `src/lib/admin-events.functions.ts`:
+Also tighten the per-call timeout from 15 s → 8 s to fail fast on a stuck request rather than dragging the whole batch.
 
-- Select active upcoming events with `source = 'scottishathletics'` and `(organiser_url IS NULL OR organiser_url = '')` and non-null `organiser`.
-- Look up `clubs` rows where **`source = 'scottish-athletics'`** (same string the sync writes) and `slugify(name) = slugify(organiser)`. Case-insensitive equality only — no fuzzy matching in v1.
-- Where matched and the club has a non-null `website_url`, update `events.organiser_url`.
-- Return `{ matched, updated, unmatched: string[] }` so the admin UI surfaces non-club organisers ("Blast Running", individuals) that stay NULL by design.
+### 2. Return synchronously from `triggerSyncRun` for the clubs source
 
-Triggered once from the admin sync-runs page after the clubs sync has run.
+Today every non-EA source goes through the 8 s ACK race in `src/lib/admin-sync.functions.ts`. That's fine for Scottish events (~4 s) but the background-after-ack pattern is unsafe on Workers in general.
 
-### 3. Part 2 — Wire matching into the events sync going forward
+After step 1 the clubs sync finishes in ~5–7 s, so it will naturally win the ACK race and the UI will show the toast with counts. No code change needed in `admin-sync.functions.ts` — but keep an eye out: if a future run trips the timeout, the row will hang again. Acceptable for now because the EA chunked driver is the long-term pattern for long syncs and clubs are intentionally a single shot.
 
-In `src/lib/sync-scottish-athletics.server.ts`, after collecting `rows` but before the upsert:
+### 3. Clear the stuck row
 
-- Build `Map<slugifiedName, website_url>` by reading `clubs` where `source = 'scottish-athletics'` and `website_url IS NOT NULL` (single SELECT).
-- For each row, set `organiser_url = map.get(slugify(row.organiser))` when present. Leave `NULL` otherwise.
-- **Never** set `organiser_url` to the JustGo `Directlink` — that's the booking platform.
+Mark the existing `running` row as errored so the table reads cleanly and `isSourceBusy` releases the button. One small SQL migration:
 
-### 4. Rollout order
-
-1. Ship the code.
-2. Admin: trigger "Sync Scottish Athletics clubs" → verify ~139 rows with most `website_url` populated.
-3. Admin: trigger "Backfill Scottish organiser URLs" → expect ~60–75 of the 96 to be filled.
-4. Spot-check Scottish events reappear on homepage radius + region pages.
-5. Next Monday's 03:00 events cron picks up new events with `organiser_url` already set.
-
-### 5. Out of scope
-
-- Adding a weekly `pg_cron` schedule for the new clubs sync (one-line SQL follow-up).
-- Fuzzy / token-based organiser→club matching (only add if step 3 shows it's needed).
-- Backfilling clubs from other governing bodies.
-- Surfacing the new clubs anywhere in the UI.
+```sql
+update public.sync_runs
+   set status = 'error',
+       finished_at = now(),
+       error_message = 'Worker terminated before sync completed (pre-fix)'
+ where source = 'scottish-athletics-clubs'
+   and status = 'running'
+   and finished_at is null;
+```
 
 ## Files
 
-**New:**
-- `src/lib/sync-scottish-athletics-clubs.server.ts`
-- `src/routes/api/public/admin/sync-scottish-athletics-clubs.ts`
+- `src/lib/sync-scottish-athletics-clubs.server.ts` — parallelise `fetchClubDetail`, tighten timeout
+- new migration — clear the stuck `sync_runs` row
 
-**Edited:**
-- `src/lib/sync-scottish-athletics.server.ts` (organiser→website lookup before upsert)
-- `src/lib/admin-sync.functions.ts` (`SYNC_SOURCES`, `triggerSyncRun` dispatch)
-- `src/lib/admin-events.functions.ts` (new `backfillScottishOrganiserUrls`)
-- `src/routes/_adminShell.admin.sync-runs.tsx` (buttons for new sync + backfill)
-- `mem://index.md` + new memory entry once shipped
+## Out of scope
+
+- Switching the clubs sync to the EA-style chunked driver (not needed at 140 clubs)
+- Adding `ctx.waitUntil` plumbing for true background work (no current use case once clubs sync fits in ACK)
+- Re-running the backfill — user can click "Backfill Scottish organiser URLs" once the clubs sync finishes successfully
