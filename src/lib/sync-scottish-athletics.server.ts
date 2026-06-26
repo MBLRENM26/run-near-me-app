@@ -155,6 +155,13 @@ export async function runScottishAthleticsSync(): Promise<ScottishAthleticsSyncR
 
     const running = all.filter((e) => INCLUDED_CATEGORIES.has(e.EventCategory));
 
+    // Map of slugified organiser/club name → club website. Lets us
+    // populate organiser_url for events whose only link is on the JustGo
+    // booking subdomain. Falls back to NULL when no club match exists.
+    const clubWebsiteMap = await loadScottishClubWebsiteMap().catch(
+      () => new Map<string, string>(),
+    );
+
     const { data: existing, error: exErr } = await supabaseAdmin
       .from("events")
       .select("slug, name, date_from, norm_id")
