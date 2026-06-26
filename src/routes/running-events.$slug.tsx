@@ -13,6 +13,7 @@ import { slugToRegion } from "@/lib/regions";
 import { SITE_URL } from "@/lib/site";
 import { BackToSearchBar } from "@/components/site/BackToSearchBar";
 import { hasOrganiserOwnedLink } from "@/lib/link-trust";
+import { DISCOVERY_EVENT_COLUMNS, UK_BOUNDS_OR_NULL } from "@/lib/events-query";
 
 
 import { DistanceNav } from "@/components/distance/DistanceNav";
