@@ -242,6 +242,34 @@ function SyncSecretButton() {
   );
 }
 
+function ScottishBackfillButton() {
+  const run = useServerFn(backfillScottishOrganiserUrls);
+  const m = useMutation({
+    mutationFn: () => run(),
+    onSuccess: (r) => {
+      toast.success(
+        `Backfill done: ${r.updated}/${r.scanned} updated, ${r.unmatched.length} unmatched organisers`,
+      );
+      if (r.unmatched.length > 0) {
+        console.info("[scottish-backfill] unmatched organisers:", r.unmatched);
+      }
+    },
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Backfill failed"),
+  });
+  return (
+    <Button
+      size="sm"
+      variant="ghost"
+      disabled={m.isPending}
+      onClick={() => m.mutate()}
+      title="One-off: fill organiser_url on Scottish events by matching organiser names against the clubs table"
+    >
+      {m.isPending ? "Backfilling…" : "Backfill Scottish organiser URLs"}
+    </Button>
+  );
+}
+
 function Row({ r }: { r: SyncRun }) {
   const skipped = (r.skipped_dupes ?? 0) + (r.skipped_no_date ?? 0);
   return (
