@@ -198,16 +198,9 @@ function HomePage() {
         .order("sort_date", { ascending: true })
         .limit(20);
       if (error) throw error;
-      const trusted = (data ?? []).filter((e) => {
-        const a = classifyEventLink(e.entry_url).kind;
-        const b = classifyEventLink(e.organiser_url).kind;
-        return (
-          a === "entry" ||
-          a === "organiser-site" ||
-          b === "entry" ||
-          b === "organiser-site"
-        );
-      });
+      const trusted = (data ?? []).filter((e) =>
+        hasOrganiserOwnedLink(e.entry_url, e.organiser_url),
+      );
       return trusted.slice(0, 8);
     },
   });
