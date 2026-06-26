@@ -231,6 +231,12 @@ export async function runScottishAthleticsSync(): Promise<ScottishAthleticsSyncR
       const finalNormId = `scottishathletics-${slug}`;
       if (existingNormIds.has(finalNormId)) updatedExisting++;
       else newEvents++;
+      const organiser = e.EntityInfo?.Name?.trim() || null;
+      // Match organiser → real club website. Never use JustGo's Directlink
+      // here — that's the booking platform, not the organiser's site.
+      const organiserUrl = organiser
+        ? clubWebsiteMap.get(slugify(organiser)) ?? null
+        : null;
       rows.push({
         norm_id: finalNormId,
         name,
@@ -248,7 +254,8 @@ export async function runScottishAthleticsSync(): Promise<ScottishAthleticsSyncR
         distances: distancesFromName(name),
         discipline: e.EventCategory,
         entry_url: e.Directlink || null,
-        organiser: e.EntityInfo?.Name?.trim() || null,
+        organiser,
+        organiser_url: organiserUrl,
         entry_fee: e.PriceSettings?.DisplayPrice?.trim() || null,
         source: "scottishathletics",
         source_url: e.Directlink || null,
