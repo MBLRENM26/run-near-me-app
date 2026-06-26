@@ -200,7 +200,7 @@ function HomePage() {
       const trusted = (data ?? []).filter((e) =>
         hasOrganiserOwnedLink(e.entry_url, e.organiser_url),
       );
-      return trusted.slice(0, 8);
+      return trusted.slice(0, 9);
     },
   });
 
