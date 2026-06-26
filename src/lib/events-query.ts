@@ -11,9 +11,9 @@
  * Canonical column list for discovery surfaces (homepage, region pages,
  * distance landing, region×distance, "other races near you").
  *
- * `distance_type:distances` is aliased so rows can be dropped straight into
- * EventCard / EventCardData without a transform step. Server-side handlers
- * read `r.distance_type` (not `r.distances`).
+ * Returns the raw DB column `distances`. Client routes that feed rows
+ * straight into EventCard should map `distance_type: r.distances` after
+ * fetch — see toEventCardData() below.
  *
  * CRITICAL: never add `source` or `source_url` here. Those columns are for
  * provenance/admin only — leaking them into public SSR hydration JSON puts
