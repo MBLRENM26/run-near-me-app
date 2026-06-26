@@ -409,12 +409,16 @@ export const getRegionDistanceMatrix = createServerFn({ method: "GET" })
       distances: string | null;
       distance_tags: string[] | null;
       terrain_tags: string[] | null;
+      entry_url: string | null;
+      organiser_url: string | null;
     };
     const rows: MatrixRow[] = [];
     for (let from = 0; ; from += pageSize) {
       const { data, error } = await supabaseAdmin
         .from("events")
-        .select("region, distances, distance_tags, terrain_tags")
+        .select(
+          "region, distances, distance_tags, terrain_tags, entry_url, organiser_url",
+        )
         .eq("status", "ACTIVE")
         .not("region", "is", null)
         .or(`sort_date.gte.${today},sort_date.is.null`)
@@ -431,6 +435,8 @@ export const getRegionDistanceMatrix = createServerFn({ method: "GET" })
             distances: (r.distances as string | null) ?? null,
             distance_tags: (r.distance_tags as string[] | null) ?? null,
             terrain_tags: (r.terrain_tags as string[] | null) ?? null,
+            entry_url: (r.entry_url as string | null) ?? null,
+            organiser_url: (r.organiser_url as string | null) ?? null,
           });
         }
       }
@@ -439,6 +445,9 @@ export const getRegionDistanceMatrix = createServerFn({ method: "GET" })
 
     const counts = new Map<string, number>();
     for (const r of rows) {
+      // Discovery-surface trust gate — match the landing-page filter so
+      // the matrix counts agree with what users actually see.
+      if (!hasOrganiserOwnedLink(r.entry_url, r.organiser_url)) continue;
       for (const p of DISTANCE_PAGE_LIST) {
         if (rowMatchesDistanceKey(r, p.key)) {
           const key = `${r.region}::${p.key}`;
