@@ -22,6 +22,7 @@ import {
   slugStem,
   type IndexabilityResult,
 } from "@/lib/event-indexability";
+import { hasOrganiserOwnedLink } from "@/lib/link-trust";
 
 // During the transition window, an event matches a distance page if its
 // parsed tag arrays match OR (for un-backfilled rows with empty tags) the
