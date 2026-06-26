@@ -12,6 +12,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { slugToRegion } from "@/lib/regions";
 import { SITE_URL } from "@/lib/site";
 import { BackToSearchBar } from "@/components/site/BackToSearchBar";
+import { hasOrganiserOwnedLink } from "@/lib/link-trust";
+
 
 import { DistanceNav } from "@/components/distance/DistanceNav";
 import {
