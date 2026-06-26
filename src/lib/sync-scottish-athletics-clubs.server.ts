@@ -97,7 +97,7 @@ async function widgetCall<T>(args: unknown[]): Promise<T> {
       "X-Requested-With": "XMLHttpRequest",
     },
     body: JSON.stringify(body),
-    signal: AbortSignal.timeout(15000),
+    signal: AbortSignal.timeout(8000),
   });
   if (!res.ok) throw new Error(`JustGo API returned ${res.status}`);
   const json = (await res.json()) as Array<{
@@ -180,7 +180,10 @@ export async function runScottishAthleticsClubsSync(): Promise<ScottishAthletics
       (existing ?? []).map((c) => c.norm_id).filter(Boolean) as string[],
     );
 
-    // 3. Detail + upsert
+    // 3. Detail (parallel, bounded concurrency) + upsert.
+    // Cloudflare Workers kill the invocation when the response is sent, so
+    // we MUST finish inside the triggerSyncRun ACK window (8s). 140 sequential
+    // GetDetails calls would blow past that; batch them instead.
     type ClubInsert =
       import("@/integrations/supabase/types").Database["public"]["Tables"]["clubs"]["Insert"];
     const rows: ClubInsert[] = [];
@@ -190,15 +193,27 @@ export async function runScottishAthleticsClubsSync(): Promise<ScottishAthletics
     let updatedExisting = 0;
     let withWebsite = 0;
 
-    for (const club of all) {
+    const CONCURRENCY = 12;
+    const details = new Array<ClubDetail | null>(all.length);
+    for (let i = 0; i < all.length; i += CONCURRENCY) {
+      const batch = all.slice(i, i + CONCURRENCY);
+      const results = await Promise.all(
+        batch.map((c) => fetchClubDetail(c.SyncGuid).catch(() => null)),
+      );
+      for (let j = 0; j < results.length; j++) details[i + j] = results[j];
+    }
+
+    for (let i = 0; i < all.length; i++) {
+      const club = all[i];
+      const detail = details[i];
       const name = club.Name?.trim();
       if (!name) {
         skippedNoName++;
         continue;
       }
-      const detail = await fetchClubDetail(club.SyncGuid).catch(() => null);
 
       const baseSlug = slugify(name);
+
       let slug = baseSlug;
       const normId = `scottishathletics-${baseSlug}`;
       const owner = slugOwner.get(slug);
