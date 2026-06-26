@@ -1,45 +1,40 @@
-## What GSC is telling us
+## Goal
 
-Google has `https://runningeventsnearme.com/events/$slug` (the literal template placeholder) in its index queue and our server returns **HTTP 500** for it instead of a clean 404. Confirmed live:
+Stop submitting sitemap URLs we already noindex. Aligning the sitemap with `computeIndexability()` should drop the "Discovered – currently not indexed" bucket significantly and concentrate Google's crawl budget on pages we actually want ranked.
 
-```
-curl -I https://runningeventsnearme.com/events/%24slug
-→ HTTP/2 500
-```
+## What's wrong today
 
-The bad URL is **not** in our sitemap and **not** linked from the homepage, so Google picked it up from an old crawl / external mention. The problem isn't that Google found it — it's that we answer 5xx instead of 404, which is what triggers the "Server error (5xx)" report.
+`src/routes/sitemap[.]xml.tsx` lists every ACTIVE event with a future `sort_date`. The per-page indexability rule (`src/lib/event-indexability.ts`) then noindexes a large slice of those for being:
 
-### Why it 500s today
+- slug-suffix duplicates (`-race-N`, `-{month}`, dated suffixes)
+- orphans (no entry URL, no organiser URL, no organiser)
+- duplicate siblings (series instances that aren't the earliest upcoming)
 
-`src/routes/events.$slug.tsx` has no slug-format guard. The literal `$slug` flows into the loader (`getEventPageData`) and something on that path throws an unhandled error during SSR rather than the intended `throw notFound()`. The flat-slug catch-all `src/routes/$slug.tsx` already guards with `^[a-z0-9-]+$` — the nested event routes don't.
+Result: we ask Google to crawl ~hundreds of URLs that emit `noindex, follow`. That's the primary driver of the GSC report.
 
 ## Fix
 
-Add the same cheap regex guard in `beforeLoad` on the dynamic detail routes so any malformed slug returns 404 before we touch the DB or SSR-render anything.
+Make sitemap inclusion match indexability.
 
-Routes to patch:
-- `src/routes/events.$slug.tsx`
-- `src/routes/running-events.$slug.tsx`
-- `src/routes/running-clubs.$slug.tsx`
-- `src/routes/parkrun-events.$slug.tsx`
-- `src/routes/running-events.$slug_.$distance.tsx` (validate both `slug` and `distance`)
+1. Add a new server fn `getIndexableEventSlugsForSitemap()` in `src/lib/events.functions.ts` that:
+   - Fetches all ACTIVE events with `sort_date >= today OR sort_date IS NULL`, columns: `id, slug, name, sort_date, entry_url, organiser_url, organiser`.
+   - Builds a `Map<normalisedName, SiblingEvent[]>` using `normaliseEventName()`.
+   - For each event, calls `computeIndexability(event, siblings, today)` and keeps only `result.indexable === true`.
+   - Returns `{ slug, sort_date }[]` (same shape callers expect).
 
-Shape:
+2. Update `src/routes/sitemap[.]xml.tsx` to call the new fn instead of `getAllActiveSlugs`. Drop the now-redundant past-event filter (the new fn already enforces it via the date predicate + indexability `past` check).
 
-```ts
-beforeLoad: ({ params }) => {
-  if (!/^[a-z0-9-]+$/.test(params.slug)) throw notFound();
-},
-```
+3. Leave per-page noindex logic untouched — pages stay live for direct visitors, we just stop asking Google to crawl them.
 
-For the distance route also check `params.distance` against the same pattern.
+## Verification
 
-## After deploy
+- Locally curl `/sitemap.xml` and confirm event count drops materially (expect a 20–40% reduction based on the noindex categories).
+- Spot-check a few that should now be gone: `3k-on-the-green-2026-07-31`, anything with `-race-N` suffix, any event with no organiser + no links.
+- Spot-check a few that should still be present: standalone events, the *earliest upcoming* sibling of a series.
+- After deploy: resubmit sitemap in GSC. Allow 1–4 weeks for the "Discovered – currently not indexed" count to drop as Google re-evaluates.
 
-1. Re-curl `/events/%24slug` and confirm 404.
-2. In GSC, open the "Server error (5xx)" report and click **Validate fix**. Google will recrawl the sampled URLs; once they return 404 the issue moves to "Passed".
-3. No sitemap change needed — the URL was never in it.
+## Out of scope
 
-## Out of scope (deferred)
-
-Tracking down *why* the loader path 500s instead of cleanly throwing `notFound()` for a non-matching slug. The guard makes it unreachable from crawlers and typos, so the underlying bug is no longer user-visible. Worth a follow-up if other 5xx reports surface.
+- Forcing Google to crawl faster (not possible).
+- Changing the indexability rules themselves — they're working as designed; the sitemap just wasn't honouring them.
+- Anything about discovery-surface link-trust filtering — separate concern, already correctly applied on listing pages.
