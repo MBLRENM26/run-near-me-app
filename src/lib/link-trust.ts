@@ -123,3 +123,27 @@ export function classifyEventLink(raw: string | null | undefined): ClassifiedLin
 export function isTrustedLink(link: ClassifiedLink): boolean {
   return link.kind === "entry" || link.kind === "organiser-site";
 }
+
+/**
+ * Discovery-grade trust check. True iff at least one of `entryUrl` /
+ * `organiserUrl` resolves to a link on the organiser's OWN site — not
+ * an aggregator, not a third-party entry / booking / timing platform.
+ *
+ * Use for discovery surfaces only (homepage curated lists, region /
+ * distance landing pages, "other races near you", etc.). Event-page
+ * CTAs keep using `classifyEventLink` / `isTrustedLink` directly so
+ * "Enter now → sientries" etc. still works for runners who land on a
+ * specific event page.
+ */
+export function hasOrganiserOwnedLink(
+  entryUrl: string | null | undefined,
+  organiserUrl: string | null | undefined,
+): boolean {
+  for (const raw of [entryUrl, organiserUrl]) {
+    const link = classifyEventLink(raw);
+    if (!isTrustedLink(link)) continue;
+    if (isEntryPlatformHost(link.host)) continue;
+    return true;
+  }
+  return false;
+}
