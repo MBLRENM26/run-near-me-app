@@ -206,21 +206,28 @@ function HomePage() {
 
   const eventsWithDistance: EventCardData[] = useMemo(() => {
     if (!nearbyEvents) return [];
-    return nearbyEvents.map((e) => ({
-      id: e.id,
-      slug: e.slug,
-      name: e.name,
-      date_raw: e.date_raw,
-      town: e.town,
-      county: e.county,
-      distance_type: e.distance_type,
-      entry_fee: e.entry_fee,
-      entry_url: e.entry_url,
-      organiser_url: e.organiser_url,
-      is_featured: e.is_featured,
-      date_is_estimated: e.date_is_estimated,
-      distanceMiles: e.distance_miles,
-    }));
+    // Discovery-surface trust gate: applied here, at the source, so every
+    // downstream slice (races, parkruns, featuredNearby) inherits it.
+    // Events whose only link is on a third-party entry platform are
+    // suppressed from recommendations everywhere — see
+    // src/lib/link-trust.ts and mem://constraints/scraped-data-trust.
+    return nearbyEvents
+      .filter((e) => hasOrganiserOwnedLink(e.entry_url, e.organiser_url))
+      .map((e) => ({
+        id: e.id,
+        slug: e.slug,
+        name: e.name,
+        date_raw: e.date_raw,
+        town: e.town,
+        county: e.county,
+        distance_type: e.distance_type,
+        entry_fee: e.entry_fee,
+        entry_url: e.entry_url,
+        organiser_url: e.organiser_url,
+        is_featured: e.is_featured,
+        date_is_estimated: e.date_is_estimated,
+        distanceMiles: e.distance_miles,
+      }));
   }, [nearbyEvents]);
 
   const visibleEvents: EventCardData[] = useMemo(() => {
@@ -239,9 +246,9 @@ function HomePage() {
   );
 
   const featuredNearby: EventCardData[] = useMemo(() => {
+    // eventsWithDistance is already trust-filtered.
     return eventsWithDistance
       .filter((e) => e.is_featured)
-      .filter((e) => hasOrganiserOwnedLink(e.entry_url, e.organiser_url))
       .sort((a, b) => a.distanceMiles! - b.distanceMiles!);
   }, [eventsWithDistance]);
 
