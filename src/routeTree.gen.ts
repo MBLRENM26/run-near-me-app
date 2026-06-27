@@ -13,6 +13,8 @@ import { Route as UltraMarathonsRouteImport } from './routes/ultra-marathons'
 import { Route as TrailRunningEventsRouteImport } from './routes/trail-running-events'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SearchRouteImport } from './routes/search'
+import { Route as RunningEventsThisWeekendRouteImport } from './routes/running-events-this-weekend'
+import { Route as RunningEventsNextWeekendRouteImport } from './routes/running-events-next-weekend'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as MarathonsRouteImport } from './routes/marathons'
@@ -83,6 +85,18 @@ const SearchRoute = SearchRouteImport.update({
   path: '/search',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RunningEventsThisWeekendRoute =
+  RunningEventsThisWeekendRouteImport.update({
+    id: '/running-events-this-weekend',
+    path: '/running-events-this-weekend',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const RunningEventsNextWeekendRoute =
+  RunningEventsNextWeekendRouteImport.update({
+    id: '/running-events-next-weekend',
+    path: '/running-events-next-weekend',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
   id: '/robots.txt',
   path: '/robots.txt',
@@ -357,6 +371,8 @@ export interface FileRoutesByFullPath {
   '/marathons': typeof MarathonsRoute
   '/privacy': typeof PrivacyRoute
   '/robots.txt': typeof RobotsDottxtRoute
+  '/running-events-next-weekend': typeof RunningEventsNextWeekendRoute
+  '/running-events-this-weekend': typeof RunningEventsThisWeekendRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/trail-running-events': typeof TrailRunningEventsRoute
@@ -411,6 +427,8 @@ export interface FileRoutesByTo {
   '/marathons': typeof MarathonsRoute
   '/privacy': typeof PrivacyRoute
   '/robots.txt': typeof RobotsDottxtRoute
+  '/running-events-next-weekend': typeof RunningEventsNextWeekendRoute
+  '/running-events-this-weekend': typeof RunningEventsThisWeekendRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/trail-running-events': typeof TrailRunningEventsRoute
@@ -467,6 +485,8 @@ export interface FileRoutesById {
   '/marathons': typeof MarathonsRoute
   '/privacy': typeof PrivacyRoute
   '/robots.txt': typeof RobotsDottxtRoute
+  '/running-events-next-weekend': typeof RunningEventsNextWeekendRoute
+  '/running-events-this-weekend': typeof RunningEventsThisWeekendRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/trail-running-events': typeof TrailRunningEventsRoute
@@ -523,6 +543,8 @@ export interface FileRouteTypes {
     | '/marathons'
     | '/privacy'
     | '/robots.txt'
+    | '/running-events-next-weekend'
+    | '/running-events-this-weekend'
     | '/search'
     | '/sitemap.xml'
     | '/trail-running-events'
@@ -577,6 +599,8 @@ export interface FileRouteTypes {
     | '/marathons'
     | '/privacy'
     | '/robots.txt'
+    | '/running-events-next-weekend'
+    | '/running-events-this-weekend'
     | '/search'
     | '/sitemap.xml'
     | '/trail-running-events'
@@ -632,6 +656,8 @@ export interface FileRouteTypes {
     | '/marathons'
     | '/privacy'
     | '/robots.txt'
+    | '/running-events-next-weekend'
+    | '/running-events-this-weekend'
     | '/search'
     | '/sitemap.xml'
     | '/trail-running-events'
@@ -688,6 +714,8 @@ export interface RootRouteChildren {
   MarathonsRoute: typeof MarathonsRoute
   PrivacyRoute: typeof PrivacyRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
+  RunningEventsNextWeekendRoute: typeof RunningEventsNextWeekendRoute
+  RunningEventsThisWeekendRoute: typeof RunningEventsThisWeekendRoute
   SearchRoute: typeof SearchRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TrailRunningEventsRoute: typeof TrailRunningEventsRoute
@@ -746,6 +774,20 @@ declare module '@tanstack/react-router' {
       path: '/search'
       fullPath: '/search'
       preLoaderRoute: typeof SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/running-events-this-weekend': {
+      id: '/running-events-this-weekend'
+      path: '/running-events-this-weekend'
+      fullPath: '/running-events-this-weekend'
+      preLoaderRoute: typeof RunningEventsThisWeekendRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/running-events-next-weekend': {
+      id: '/running-events-next-weekend'
+      path: '/running-events-next-weekend'
+      fullPath: '/running-events-next-weekend'
+      preLoaderRoute: typeof RunningEventsNextWeekendRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/robots.txt': {
@@ -1151,6 +1193,8 @@ const rootRouteChildren: RootRouteChildren = {
   MarathonsRoute: MarathonsRoute,
   PrivacyRoute: PrivacyRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
+  RunningEventsNextWeekendRoute: RunningEventsNextWeekendRoute,
+  RunningEventsThisWeekendRoute: RunningEventsThisWeekendRoute,
   SearchRoute: SearchRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TrailRunningEventsRoute: TrailRunningEventsRoute,

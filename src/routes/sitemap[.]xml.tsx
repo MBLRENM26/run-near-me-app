@@ -85,6 +85,18 @@ export const Route = createFileRoute("/sitemap.xml")({
             changefreq: "weekly",
           })),
           {
+            loc: `${SITE_URL}/running-events-this-weekend`,
+            lastmod: today,
+            priority: "0.9",
+            changefreq: "daily",
+          },
+          {
+            loc: `${SITE_URL}/running-events-next-weekend`,
+            lastmod: today,
+            priority: "0.8",
+            changefreq: "daily",
+          },
+          {
             loc: `${SITE_URL}/parkrun-events`,
             lastmod: today,
             priority: "0.9",
