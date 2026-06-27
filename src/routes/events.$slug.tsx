@@ -580,6 +580,31 @@ function EventDetailPage() {
                   <ExternalLink className="h-4 w-4" />
                 </a>
               </Button>
+              {secondaryCta && (
+                <p className="mt-3 text-sm">
+                  <a
+                    href={secondaryCta.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() =>
+                      trackEntryClick({
+                        slug: e.slug,
+                        region: e.region,
+                        link_type: secondaryCta.linkType,
+                        proximity,
+                        event_name: e.name,
+                        distance: e.distances ?? "unknown",
+                        discipline: e.discipline ?? "road",
+                        entry_domain: hostnameOf(secondaryCta.href),
+                      })
+                    }
+                    className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground hover:underline"
+                  >
+                    <span>{secondaryCta.label}: {secondaryCta.host}</span>
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
+                </p>
+              )}
               {proximityNote && (
                 <p className="mt-3 text-sm text-muted-foreground">
                   {proximityNote}
