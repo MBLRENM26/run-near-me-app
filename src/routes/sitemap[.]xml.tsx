@@ -7,7 +7,9 @@ import {
 } from "@/lib/events.functions";
 import { getParkrunList } from "@/lib/parkrun.functions";
 import { getAllClubSlugs } from "@/lib/clubs.functions";
-import { DISTANCE_PAGE_LIST } from "@/lib/distance-filters";
+import { DISTANCE_PAGE_LIST, type DistanceKey } from "@/lib/distance-filters";
+import { getMonthPageMatrix } from "@/lib/month-page.functions";
+import { monthSlugFromKey, nextNMonthKeys } from "@/lib/month-slug";
 
 export const Route = createFileRoute("/sitemap.xml")({
   server: {
