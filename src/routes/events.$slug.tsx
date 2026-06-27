@@ -360,31 +360,13 @@ function EventDetailPage() {
       .filter((s): s is { key: string; label: string; hub: ReturnType<typeof terrainHubFor> } => s !== null);
 
   // Past events: no entry CTA at all — the race is done. Keep organiser
-  // links accessible inline but stop promising "Enter now" / "View event details".
-  let primaryCta:
-    | { href: string; label: string; linkType: "entry" | "organiser-site" | "organiser-other" }
-    | null = null;
-  if (!isPast) {
-    if (entryLink.kind === "entry") {
-      primaryCta = {
-        href: entryLink.href!,
-        label: proximity ? "View event details" : "Enter now",
-        linkType: "entry",
-      };
-    } else if (entryLink.kind === "organiser-site") {
-      primaryCta = {
-        href: entryLink.href!,
-        label: "Visit organiser website",
-        linkType: "organiser-site",
-      };
-    } else if (isTrustedLink(orgLink)) {
-      primaryCta = {
-        href: orgLink.href!,
-        label: "Visit organiser website",
-        linkType: "organiser-other",
-      };
-    }
-  }
+  // links accessible inline (see pastOrganiserLink below) but stop
+  // promising "Enter now" / "View event details".
+  const proximityForCta =
+    proximity === "today" || proximity === "imminent" ? proximity : null;
+  const ctas = buildEventCtas(e, { isPast, proximity: proximityForCta });
+  const primaryCta = ctas?.primary ?? null;
+  const secondaryCta = ctas?.secondary ?? null;
 
   const proximityNote =
     proximity === "today"
