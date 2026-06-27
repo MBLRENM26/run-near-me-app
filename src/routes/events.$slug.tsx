@@ -570,8 +570,12 @@ function EventDetailPage() {
 
 
           {primaryCta && (
-            <div className="mt-8">
-              <Button asChild size="lg">
+            <div className="mt-8 rounded-2xl border border-primary/20 bg-primary/5 p-5 sm:p-6">
+              <Button
+                asChild
+                size="lg"
+                className="h-12 w-full px-6 text-base font-semibold shadow-card sm:h-14 sm:w-auto sm:px-8 sm:text-lg"
+              >
                 <a
                   href={primaryCta.href}
                   target="_blank"
