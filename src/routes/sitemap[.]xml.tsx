@@ -7,7 +7,10 @@ import {
 } from "@/lib/events.functions";
 import { getParkrunList } from "@/lib/parkrun.functions";
 import { getAllClubSlugs } from "@/lib/clubs.functions";
-import { DISTANCE_PAGE_LIST } from "@/lib/distance-filters";
+import { DISTANCE_PAGE_LIST, type DistanceKey } from "@/lib/distance-filters";
+import { getMonthPageMatrix } from "@/lib/month-page.functions";
+import { monthSlugFromKey, nextNMonthKeys } from "@/lib/month-slug";
+import { COUNTIES, type CountyConfig } from "@/lib/counties";
 
 export const Route = createFileRoute("/sitemap.xml")({
   server: {
@@ -53,6 +56,42 @@ export const Route = createFileRoute("/sitemap.xml")({
           console.error("Sitemap: failed to load region×distance matrix", err);
         }
 
+        // Month landing pages (terrain-agnostic + per distance). Only
+        // include URLs with ≥3 events to avoid thin pages.
+        const monthEntries: { loc: string; priority: string }[] = [];
+        try {
+          const matrix = await getMonthPageMatrix();
+          const monthsWindow = new Set(nextNMonthKeys(12));
+          const distanceSlugByKey: Record<DistanceKey, string> = {
+            "5k": "5k-races",
+            "10k": "10k-races",
+            "half-marathon": "half-marathons",
+            marathon: "marathons",
+            trail: "trail-running-events",
+            ultra: "ultra-marathons",
+          };
+          for (const row of matrix) {
+            if (!monthsWindow.has(row.monthKey)) continue;
+            if (row.total < 3) continue;
+            const slug = monthSlugFromKey(row.monthKey);
+            if (row.distanceKey === "all") {
+              monthEntries.push({
+                loc: `${SITE_URL}/running-events/${slug}`,
+                priority: "0.7",
+              });
+            } else if (row.distanceKey !== "trail") {
+              // Distance × month routes ship for the 5 numeric distances;
+              // trail uses the terrain hub instead.
+              monthEntries.push({
+                loc: `${SITE_URL}/${distanceSlugByKey[row.distanceKey]}/${slug}`,
+                priority: "0.6",
+              });
+            }
+          }
+        } catch (err) {
+          console.error("Sitemap: failed to load month matrix", err);
+        }
+
         let clubEntries: { slug: string; lastmod: string }[] = [];
         try {
           const slugs = await getAllClubSlugs();
@@ -82,6 +121,30 @@ export const Route = createFileRoute("/sitemap.xml")({
             loc: `${SITE_URL}/${p.slug}`,
             lastmod: today,
             priority: "0.9",
+            changefreq: "weekly",
+          })),
+          {
+            loc: `${SITE_URL}/running-events-this-weekend`,
+            lastmod: today,
+            priority: "0.9",
+            changefreq: "daily",
+          },
+          {
+            loc: `${SITE_URL}/running-events-next-weekend`,
+            lastmod: today,
+            priority: "0.8",
+            changefreq: "daily",
+          },
+          ...["road-races", "fell-races", "multi-terrain-races"].map((slug) => ({
+            loc: `${SITE_URL}/${slug}`,
+            lastmod: today,
+            priority: "0.8",
+            changefreq: "weekly",
+          })),
+          ...COUNTIES.map((c: CountyConfig) => ({
+            loc: `${SITE_URL}/running-events-in/${c.slug}`,
+            lastmod: today,
+            priority: "0.7",
             changefreq: "weekly",
           })),
           {
@@ -137,6 +200,12 @@ export const Route = createFileRoute("/sitemap.xml")({
             lastmod: c.lastmod,
             priority: "0.5",
             changefreq: "monthly",
+          })),
+          ...monthEntries.map((m) => ({
+            loc: m.loc,
+            lastmod: today,
+            priority: m.priority,
+            changefreq: "weekly",
           })),
         ];
 

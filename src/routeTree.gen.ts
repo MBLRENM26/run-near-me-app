@@ -13,13 +13,18 @@ import { Route as UltraMarathonsRouteImport } from './routes/ultra-marathons'
 import { Route as TrailRunningEventsRouteImport } from './routes/trail-running-events'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SearchRouteImport } from './routes/search'
+import { Route as RunningEventsThisWeekendRouteImport } from './routes/running-events-this-weekend'
+import { Route as RunningEventsNextWeekendRouteImport } from './routes/running-events-next-weekend'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
+import { Route as RoadRacesRouteImport } from './routes/road-races'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as MultiTerrainRacesRouteImport } from './routes/multi-terrain-races'
 import { Route as MarathonsRouteImport } from './routes/marathons'
 import { Route as ListYourEventRouteImport } from './routes/list-your-event'
 import { Route as JuniorParkrunEventsRouteImport } from './routes/junior-parkrun-events'
 import { Route as IndexDothtmlRouteImport } from './routes/index[.]html'
 import { Route as HalfMarathonsRouteImport } from './routes/half-marathons'
+import { Route as FellRacesRouteImport } from './routes/fell-races'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AdminShellRouteImport } from './routes/_adminShell'
 import { Route as R5kRacesRouteImport } from './routes/5k-races'
@@ -29,12 +34,18 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as RunningClubsIndexRouteImport } from './routes/running-clubs.index'
 import { Route as ParkrunEventsIndexRouteImport } from './routes/parkrun-events.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as UltraMarathonsMonthRouteImport } from './routes/ultra-marathons.$month'
 import { Route as RunningEventsSlugRouteImport } from './routes/running-events.$slug'
+import { Route as RunningEventsInCountyRouteImport } from './routes/running-events-in.$county'
 import { Route as RunningClubsSlugRouteImport } from './routes/running-clubs.$slug'
 import { Route as ParkrunEventsSlugRouteImport } from './routes/parkrun-events.$slug'
+import { Route as MarathonsMonthRouteImport } from './routes/marathons.$month'
+import { Route as HalfMarathonsMonthRouteImport } from './routes/half-marathons.$month'
 import { Route as EventsSlugRouteImport } from './routes/events.$slug'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as R5kRacesMonthRouteImport } from './routes/5k-races.$month'
+import { Route as R10kRacesMonthRouteImport } from './routes/10k-races.$month'
 import { Route as RunningEventsSlugDistanceRouteImport } from './routes/running-events.$slug_.$distance'
 import { Route as RunningClubsSlugClaimRouteImport } from './routes/running-clubs.$slug.claim'
 import { Route as ParkrunEventsRegionRegionRouteImport } from './routes/parkrun-events.region.$region'
@@ -83,14 +94,36 @@ const SearchRoute = SearchRouteImport.update({
   path: '/search',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RunningEventsThisWeekendRoute =
+  RunningEventsThisWeekendRouteImport.update({
+    id: '/running-events-this-weekend',
+    path: '/running-events-this-weekend',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const RunningEventsNextWeekendRoute =
+  RunningEventsNextWeekendRouteImport.update({
+    id: '/running-events-next-weekend',
+    path: '/running-events-next-weekend',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
   id: '/robots.txt',
   path: '/robots.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RoadRacesRoute = RoadRacesRouteImport.update({
+  id: '/road-races',
+  path: '/road-races',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MultiTerrainRacesRoute = MultiTerrainRacesRouteImport.update({
+  id: '/multi-terrain-races',
+  path: '/multi-terrain-races',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MarathonsRoute = MarathonsRouteImport.update({
@@ -116,6 +149,11 @@ const IndexDothtmlRoute = IndexDothtmlRouteImport.update({
 const HalfMarathonsRoute = HalfMarathonsRouteImport.update({
   id: '/half-marathons',
   path: '/half-marathons',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FellRacesRoute = FellRacesRouteImport.update({
+  id: '/fell-races',
+  path: '/fell-races',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -162,9 +200,19 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/admin/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UltraMarathonsMonthRoute = UltraMarathonsMonthRouteImport.update({
+  id: '/$month',
+  path: '/$month',
+  getParentRoute: () => UltraMarathonsRoute,
+} as any)
 const RunningEventsSlugRoute = RunningEventsSlugRouteImport.update({
   id: '/running-events/$slug',
   path: '/running-events/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RunningEventsInCountyRoute = RunningEventsInCountyRouteImport.update({
+  id: '/running-events-in/$county',
+  path: '/running-events-in/$county',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RunningClubsSlugRoute = RunningClubsSlugRouteImport.update({
@@ -176,6 +224,16 @@ const ParkrunEventsSlugRoute = ParkrunEventsSlugRouteImport.update({
   id: '/parkrun-events/$slug',
   path: '/parkrun-events/$slug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const MarathonsMonthRoute = MarathonsMonthRouteImport.update({
+  id: '/$month',
+  path: '/$month',
+  getParentRoute: () => MarathonsRoute,
+} as any)
+const HalfMarathonsMonthRoute = HalfMarathonsMonthRouteImport.update({
+  id: '/$month',
+  path: '/$month',
+  getParentRoute: () => HalfMarathonsRoute,
 } as any)
 const EventsSlugRoute = EventsSlugRouteImport.update({
   id: '/events/$slug',
@@ -191,6 +249,16 @@ const AdminLoginRoute = AdminLoginRouteImport.update({
   id: '/admin/login',
   path: '/admin/login',
   getParentRoute: () => rootRouteImport,
+} as any)
+const R5kRacesMonthRoute = R5kRacesMonthRouteImport.update({
+  id: '/$month',
+  path: '/$month',
+  getParentRoute: () => R5kRacesRoute,
+} as any)
+const R10kRacesMonthRoute = R10kRacesMonthRouteImport.update({
+  id: '/$month',
+  path: '/$month',
+  getParentRoute: () => R10kRacesRoute,
 } as any)
 const RunningEventsSlugDistanceRoute =
   RunningEventsSlugDistanceRouteImport.update({
@@ -347,26 +415,37 @@ const AdminShellAdminClubsIdRoute = AdminShellAdminClubsIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$slug': typeof SlugRoute
-  '/10k-races': typeof R10kRacesRoute
-  '/5k-races': typeof R5kRacesRoute
+  '/10k-races': typeof R10kRacesRouteWithChildren
+  '/5k-races': typeof R5kRacesRouteWithChildren
   '/about': typeof AboutRoute
-  '/half-marathons': typeof HalfMarathonsRoute
+  '/fell-races': typeof FellRacesRoute
+  '/half-marathons': typeof HalfMarathonsRouteWithChildren
   '/index.html': typeof IndexDothtmlRoute
   '/junior-parkrun-events': typeof JuniorParkrunEventsRoute
   '/list-your-event': typeof ListYourEventRoute
-  '/marathons': typeof MarathonsRoute
+  '/marathons': typeof MarathonsRouteWithChildren
+  '/multi-terrain-races': typeof MultiTerrainRacesRoute
   '/privacy': typeof PrivacyRoute
+  '/road-races': typeof RoadRacesRoute
   '/robots.txt': typeof RobotsDottxtRoute
+  '/running-events-next-weekend': typeof RunningEventsNextWeekendRoute
+  '/running-events-this-weekend': typeof RunningEventsThisWeekendRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/trail-running-events': typeof TrailRunningEventsRoute
-  '/ultra-marathons': typeof UltraMarathonsRoute
+  '/ultra-marathons': typeof UltraMarathonsRouteWithChildren
+  '/10k-races/$month': typeof R10kRacesMonthRoute
+  '/5k-races/$month': typeof R5kRacesMonthRoute
   '/admin/login': typeof AdminLoginRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/events/$slug': typeof EventsSlugRoute
+  '/half-marathons/$month': typeof HalfMarathonsMonthRoute
+  '/marathons/$month': typeof MarathonsMonthRoute
   '/parkrun-events/$slug': typeof ParkrunEventsSlugRoute
   '/running-clubs/$slug': typeof RunningClubsSlugRouteWithChildren
+  '/running-events-in/$county': typeof RunningEventsInCountyRoute
   '/running-events/$slug': typeof RunningEventsSlugRoute
+  '/ultra-marathons/$month': typeof UltraMarathonsMonthRoute
   '/admin/': typeof AdminIndexRoute
   '/parkrun-events/': typeof ParkrunEventsIndexRoute
   '/running-clubs/': typeof RunningClubsIndexRoute
@@ -401,26 +480,37 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$slug': typeof SlugRoute
-  '/10k-races': typeof R10kRacesRoute
-  '/5k-races': typeof R5kRacesRoute
+  '/10k-races': typeof R10kRacesRouteWithChildren
+  '/5k-races': typeof R5kRacesRouteWithChildren
   '/about': typeof AboutRoute
-  '/half-marathons': typeof HalfMarathonsRoute
+  '/fell-races': typeof FellRacesRoute
+  '/half-marathons': typeof HalfMarathonsRouteWithChildren
   '/index.html': typeof IndexDothtmlRoute
   '/junior-parkrun-events': typeof JuniorParkrunEventsRoute
   '/list-your-event': typeof ListYourEventRoute
-  '/marathons': typeof MarathonsRoute
+  '/marathons': typeof MarathonsRouteWithChildren
+  '/multi-terrain-races': typeof MultiTerrainRacesRoute
   '/privacy': typeof PrivacyRoute
+  '/road-races': typeof RoadRacesRoute
   '/robots.txt': typeof RobotsDottxtRoute
+  '/running-events-next-weekend': typeof RunningEventsNextWeekendRoute
+  '/running-events-this-weekend': typeof RunningEventsThisWeekendRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/trail-running-events': typeof TrailRunningEventsRoute
-  '/ultra-marathons': typeof UltraMarathonsRoute
+  '/ultra-marathons': typeof UltraMarathonsRouteWithChildren
+  '/10k-races/$month': typeof R10kRacesMonthRoute
+  '/5k-races/$month': typeof R5kRacesMonthRoute
   '/admin/login': typeof AdminLoginRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/events/$slug': typeof EventsSlugRoute
+  '/half-marathons/$month': typeof HalfMarathonsMonthRoute
+  '/marathons/$month': typeof MarathonsMonthRoute
   '/parkrun-events/$slug': typeof ParkrunEventsSlugRoute
   '/running-clubs/$slug': typeof RunningClubsSlugRouteWithChildren
+  '/running-events-in/$county': typeof RunningEventsInCountyRoute
   '/running-events/$slug': typeof RunningEventsSlugRoute
+  '/ultra-marathons/$month': typeof UltraMarathonsMonthRoute
   '/admin': typeof AdminIndexRoute
   '/parkrun-events': typeof ParkrunEventsIndexRoute
   '/running-clubs': typeof RunningClubsIndexRoute
@@ -456,27 +546,38 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$slug': typeof SlugRoute
-  '/10k-races': typeof R10kRacesRoute
-  '/5k-races': typeof R5kRacesRoute
+  '/10k-races': typeof R10kRacesRouteWithChildren
+  '/5k-races': typeof R5kRacesRouteWithChildren
   '/_adminShell': typeof AdminShellRouteWithChildren
   '/about': typeof AboutRoute
-  '/half-marathons': typeof HalfMarathonsRoute
+  '/fell-races': typeof FellRacesRoute
+  '/half-marathons': typeof HalfMarathonsRouteWithChildren
   '/index.html': typeof IndexDothtmlRoute
   '/junior-parkrun-events': typeof JuniorParkrunEventsRoute
   '/list-your-event': typeof ListYourEventRoute
-  '/marathons': typeof MarathonsRoute
+  '/marathons': typeof MarathonsRouteWithChildren
+  '/multi-terrain-races': typeof MultiTerrainRacesRoute
   '/privacy': typeof PrivacyRoute
+  '/road-races': typeof RoadRacesRoute
   '/robots.txt': typeof RobotsDottxtRoute
+  '/running-events-next-weekend': typeof RunningEventsNextWeekendRoute
+  '/running-events-this-weekend': typeof RunningEventsThisWeekendRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/trail-running-events': typeof TrailRunningEventsRoute
-  '/ultra-marathons': typeof UltraMarathonsRoute
+  '/ultra-marathons': typeof UltraMarathonsRouteWithChildren
+  '/10k-races/$month': typeof R10kRacesMonthRoute
+  '/5k-races/$month': typeof R5kRacesMonthRoute
   '/admin/login': typeof AdminLoginRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/events/$slug': typeof EventsSlugRoute
+  '/half-marathons/$month': typeof HalfMarathonsMonthRoute
+  '/marathons/$month': typeof MarathonsMonthRoute
   '/parkrun-events/$slug': typeof ParkrunEventsSlugRoute
   '/running-clubs/$slug': typeof RunningClubsSlugRouteWithChildren
+  '/running-events-in/$county': typeof RunningEventsInCountyRoute
   '/running-events/$slug': typeof RunningEventsSlugRoute
+  '/ultra-marathons/$month': typeof UltraMarathonsMonthRoute
   '/admin/': typeof AdminIndexRoute
   '/parkrun-events/': typeof ParkrunEventsIndexRoute
   '/running-clubs/': typeof RunningClubsIndexRoute
@@ -516,23 +617,34 @@ export interface FileRouteTypes {
     | '/10k-races'
     | '/5k-races'
     | '/about'
+    | '/fell-races'
     | '/half-marathons'
     | '/index.html'
     | '/junior-parkrun-events'
     | '/list-your-event'
     | '/marathons'
+    | '/multi-terrain-races'
     | '/privacy'
+    | '/road-races'
     | '/robots.txt'
+    | '/running-events-next-weekend'
+    | '/running-events-this-weekend'
     | '/search'
     | '/sitemap.xml'
     | '/trail-running-events'
     | '/ultra-marathons'
+    | '/10k-races/$month'
+    | '/5k-races/$month'
     | '/admin/login'
     | '/email/unsubscribe'
     | '/events/$slug'
+    | '/half-marathons/$month'
+    | '/marathons/$month'
     | '/parkrun-events/$slug'
     | '/running-clubs/$slug'
+    | '/running-events-in/$county'
     | '/running-events/$slug'
+    | '/ultra-marathons/$month'
     | '/admin/'
     | '/parkrun-events/'
     | '/running-clubs/'
@@ -570,23 +682,34 @@ export interface FileRouteTypes {
     | '/10k-races'
     | '/5k-races'
     | '/about'
+    | '/fell-races'
     | '/half-marathons'
     | '/index.html'
     | '/junior-parkrun-events'
     | '/list-your-event'
     | '/marathons'
+    | '/multi-terrain-races'
     | '/privacy'
+    | '/road-races'
     | '/robots.txt'
+    | '/running-events-next-weekend'
+    | '/running-events-this-weekend'
     | '/search'
     | '/sitemap.xml'
     | '/trail-running-events'
     | '/ultra-marathons'
+    | '/10k-races/$month'
+    | '/5k-races/$month'
     | '/admin/login'
     | '/email/unsubscribe'
     | '/events/$slug'
+    | '/half-marathons/$month'
+    | '/marathons/$month'
     | '/parkrun-events/$slug'
     | '/running-clubs/$slug'
+    | '/running-events-in/$county'
     | '/running-events/$slug'
+    | '/ultra-marathons/$month'
     | '/admin'
     | '/parkrun-events'
     | '/running-clubs'
@@ -625,23 +748,34 @@ export interface FileRouteTypes {
     | '/5k-races'
     | '/_adminShell'
     | '/about'
+    | '/fell-races'
     | '/half-marathons'
     | '/index.html'
     | '/junior-parkrun-events'
     | '/list-your-event'
     | '/marathons'
+    | '/multi-terrain-races'
     | '/privacy'
+    | '/road-races'
     | '/robots.txt'
+    | '/running-events-next-weekend'
+    | '/running-events-this-weekend'
     | '/search'
     | '/sitemap.xml'
     | '/trail-running-events'
     | '/ultra-marathons'
+    | '/10k-races/$month'
+    | '/5k-races/$month'
     | '/admin/login'
     | '/email/unsubscribe'
     | '/events/$slug'
+    | '/half-marathons/$month'
+    | '/marathons/$month'
     | '/parkrun-events/$slug'
     | '/running-clubs/$slug'
+    | '/running-events-in/$county'
     | '/running-events/$slug'
+    | '/ultra-marathons/$month'
     | '/admin/'
     | '/parkrun-events/'
     | '/running-clubs/'
@@ -677,26 +811,32 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SlugRoute: typeof SlugRoute
-  R10kRacesRoute: typeof R10kRacesRoute
-  R5kRacesRoute: typeof R5kRacesRoute
+  R10kRacesRoute: typeof R10kRacesRouteWithChildren
+  R5kRacesRoute: typeof R5kRacesRouteWithChildren
   AdminShellRoute: typeof AdminShellRouteWithChildren
   AboutRoute: typeof AboutRoute
-  HalfMarathonsRoute: typeof HalfMarathonsRoute
+  FellRacesRoute: typeof FellRacesRoute
+  HalfMarathonsRoute: typeof HalfMarathonsRouteWithChildren
   IndexDothtmlRoute: typeof IndexDothtmlRoute
   JuniorParkrunEventsRoute: typeof JuniorParkrunEventsRoute
   ListYourEventRoute: typeof ListYourEventRoute
-  MarathonsRoute: typeof MarathonsRoute
+  MarathonsRoute: typeof MarathonsRouteWithChildren
+  MultiTerrainRacesRoute: typeof MultiTerrainRacesRoute
   PrivacyRoute: typeof PrivacyRoute
+  RoadRacesRoute: typeof RoadRacesRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
+  RunningEventsNextWeekendRoute: typeof RunningEventsNextWeekendRoute
+  RunningEventsThisWeekendRoute: typeof RunningEventsThisWeekendRoute
   SearchRoute: typeof SearchRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TrailRunningEventsRoute: typeof TrailRunningEventsRoute
-  UltraMarathonsRoute: typeof UltraMarathonsRoute
+  UltraMarathonsRoute: typeof UltraMarathonsRouteWithChildren
   AdminLoginRoute: typeof AdminLoginRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   EventsSlugRoute: typeof EventsSlugRoute
   ParkrunEventsSlugRoute: typeof ParkrunEventsSlugRoute
   RunningClubsSlugRoute: typeof RunningClubsSlugRouteWithChildren
+  RunningEventsInCountyRoute: typeof RunningEventsInCountyRoute
   RunningEventsSlugRoute: typeof RunningEventsSlugRoute
   AdminIndexRoute: typeof AdminIndexRoute
   ParkrunEventsIndexRoute: typeof ParkrunEventsIndexRoute
@@ -748,6 +888,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SearchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/running-events-this-weekend': {
+      id: '/running-events-this-weekend'
+      path: '/running-events-this-weekend'
+      fullPath: '/running-events-this-weekend'
+      preLoaderRoute: typeof RunningEventsThisWeekendRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/running-events-next-weekend': {
+      id: '/running-events-next-weekend'
+      path: '/running-events-next-weekend'
+      fullPath: '/running-events-next-weekend'
+      preLoaderRoute: typeof RunningEventsNextWeekendRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/robots.txt': {
       id: '/robots.txt'
       path: '/robots.txt'
@@ -755,11 +909,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RobotsDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/road-races': {
+      id: '/road-races'
+      path: '/road-races'
+      fullPath: '/road-races'
+      preLoaderRoute: typeof RoadRacesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/privacy': {
       id: '/privacy'
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/multi-terrain-races': {
+      id: '/multi-terrain-races'
+      path: '/multi-terrain-races'
+      fullPath: '/multi-terrain-races'
+      preLoaderRoute: typeof MultiTerrainRacesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/marathons': {
@@ -795,6 +963,13 @@ declare module '@tanstack/react-router' {
       path: '/half-marathons'
       fullPath: '/half-marathons'
       preLoaderRoute: typeof HalfMarathonsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/fell-races': {
+      id: '/fell-races'
+      path: '/fell-races'
+      fullPath: '/fell-races'
+      preLoaderRoute: typeof FellRacesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about': {
@@ -860,11 +1035,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ultra-marathons/$month': {
+      id: '/ultra-marathons/$month'
+      path: '/$month'
+      fullPath: '/ultra-marathons/$month'
+      preLoaderRoute: typeof UltraMarathonsMonthRouteImport
+      parentRoute: typeof UltraMarathonsRoute
+    }
     '/running-events/$slug': {
       id: '/running-events/$slug'
       path: '/running-events/$slug'
       fullPath: '/running-events/$slug'
       preLoaderRoute: typeof RunningEventsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/running-events-in/$county': {
+      id: '/running-events-in/$county'
+      path: '/running-events-in/$county'
+      fullPath: '/running-events-in/$county'
+      preLoaderRoute: typeof RunningEventsInCountyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/running-clubs/$slug': {
@@ -880,6 +1069,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/parkrun-events/$slug'
       preLoaderRoute: typeof ParkrunEventsSlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/marathons/$month': {
+      id: '/marathons/$month'
+      path: '/$month'
+      fullPath: '/marathons/$month'
+      preLoaderRoute: typeof MarathonsMonthRouteImport
+      parentRoute: typeof MarathonsRoute
+    }
+    '/half-marathons/$month': {
+      id: '/half-marathons/$month'
+      path: '/$month'
+      fullPath: '/half-marathons/$month'
+      preLoaderRoute: typeof HalfMarathonsMonthRouteImport
+      parentRoute: typeof HalfMarathonsRoute
     }
     '/events/$slug': {
       id: '/events/$slug'
@@ -901,6 +1104,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/login'
       preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/5k-races/$month': {
+      id: '/5k-races/$month'
+      path: '/$month'
+      fullPath: '/5k-races/$month'
+      preLoaderRoute: typeof R5kRacesMonthRouteImport
+      parentRoute: typeof R5kRacesRoute
+    }
+    '/10k-races/$month': {
+      id: '/10k-races/$month'
+      path: '/$month'
+      fullPath: '/10k-races/$month'
+      preLoaderRoute: typeof R10kRacesMonthRouteImport
+      parentRoute: typeof R10kRacesRoute
     }
     '/running-events/$slug_/$distance': {
       id: '/running-events/$slug_/$distance'
@@ -1094,6 +1311,30 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface R10kRacesRouteChildren {
+  R10kRacesMonthRoute: typeof R10kRacesMonthRoute
+}
+
+const R10kRacesRouteChildren: R10kRacesRouteChildren = {
+  R10kRacesMonthRoute: R10kRacesMonthRoute,
+}
+
+const R10kRacesRouteWithChildren = R10kRacesRoute._addFileChildren(
+  R10kRacesRouteChildren,
+)
+
+interface R5kRacesRouteChildren {
+  R5kRacesMonthRoute: typeof R5kRacesMonthRoute
+}
+
+const R5kRacesRouteChildren: R5kRacesRouteChildren = {
+  R5kRacesMonthRoute: R5kRacesMonthRoute,
+}
+
+const R5kRacesRouteWithChildren = R5kRacesRoute._addFileChildren(
+  R5kRacesRouteChildren,
+)
+
 interface AdminShellRouteChildren {
   AdminShellAdminClaimsRoute: typeof AdminShellAdminClaimsRoute
   AdminShellAdminClubClaimsRoute: typeof AdminShellAdminClubClaimsRoute
@@ -1126,6 +1367,42 @@ const AdminShellRouteWithChildren = AdminShellRoute._addFileChildren(
   AdminShellRouteChildren,
 )
 
+interface HalfMarathonsRouteChildren {
+  HalfMarathonsMonthRoute: typeof HalfMarathonsMonthRoute
+}
+
+const HalfMarathonsRouteChildren: HalfMarathonsRouteChildren = {
+  HalfMarathonsMonthRoute: HalfMarathonsMonthRoute,
+}
+
+const HalfMarathonsRouteWithChildren = HalfMarathonsRoute._addFileChildren(
+  HalfMarathonsRouteChildren,
+)
+
+interface MarathonsRouteChildren {
+  MarathonsMonthRoute: typeof MarathonsMonthRoute
+}
+
+const MarathonsRouteChildren: MarathonsRouteChildren = {
+  MarathonsMonthRoute: MarathonsMonthRoute,
+}
+
+const MarathonsRouteWithChildren = MarathonsRoute._addFileChildren(
+  MarathonsRouteChildren,
+)
+
+interface UltraMarathonsRouteChildren {
+  UltraMarathonsMonthRoute: typeof UltraMarathonsMonthRoute
+}
+
+const UltraMarathonsRouteChildren: UltraMarathonsRouteChildren = {
+  UltraMarathonsMonthRoute: UltraMarathonsMonthRoute,
+}
+
+const UltraMarathonsRouteWithChildren = UltraMarathonsRoute._addFileChildren(
+  UltraMarathonsRouteChildren,
+)
+
 interface RunningClubsSlugRouteChildren {
   RunningClubsSlugClaimRoute: typeof RunningClubsSlugClaimRoute
 }
@@ -1140,26 +1417,32 @@ const RunningClubsSlugRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SlugRoute: SlugRoute,
-  R10kRacesRoute: R10kRacesRoute,
-  R5kRacesRoute: R5kRacesRoute,
+  R10kRacesRoute: R10kRacesRouteWithChildren,
+  R5kRacesRoute: R5kRacesRouteWithChildren,
   AdminShellRoute: AdminShellRouteWithChildren,
   AboutRoute: AboutRoute,
-  HalfMarathonsRoute: HalfMarathonsRoute,
+  FellRacesRoute: FellRacesRoute,
+  HalfMarathonsRoute: HalfMarathonsRouteWithChildren,
   IndexDothtmlRoute: IndexDothtmlRoute,
   JuniorParkrunEventsRoute: JuniorParkrunEventsRoute,
   ListYourEventRoute: ListYourEventRoute,
-  MarathonsRoute: MarathonsRoute,
+  MarathonsRoute: MarathonsRouteWithChildren,
+  MultiTerrainRacesRoute: MultiTerrainRacesRoute,
   PrivacyRoute: PrivacyRoute,
+  RoadRacesRoute: RoadRacesRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
+  RunningEventsNextWeekendRoute: RunningEventsNextWeekendRoute,
+  RunningEventsThisWeekendRoute: RunningEventsThisWeekendRoute,
   SearchRoute: SearchRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TrailRunningEventsRoute: TrailRunningEventsRoute,
-  UltraMarathonsRoute: UltraMarathonsRoute,
+  UltraMarathonsRoute: UltraMarathonsRouteWithChildren,
   AdminLoginRoute: AdminLoginRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   EventsSlugRoute: EventsSlugRoute,
   ParkrunEventsSlugRoute: ParkrunEventsSlugRoute,
   RunningClubsSlugRoute: RunningClubsSlugRouteWithChildren,
+  RunningEventsInCountyRoute: RunningEventsInCountyRoute,
   RunningEventsSlugRoute: RunningEventsSlugRoute,
   AdminIndexRoute: AdminIndexRoute,
   ParkrunEventsIndexRoute: ParkrunEventsIndexRoute,
