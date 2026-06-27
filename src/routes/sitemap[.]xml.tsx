@@ -188,6 +188,12 @@ export const Route = createFileRoute("/sitemap.xml")({
             priority: "0.5",
             changefreq: "monthly",
           })),
+          ...monthEntries.map((m) => ({
+            loc: m.loc,
+            lastmod: today,
+            priority: m.priority,
+            changefreq: "weekly",
+          })),
         ];
 
         const body = `<?xml version="1.0" encoding="UTF-8"?>
