@@ -45,6 +45,7 @@ import {
   distanceMonthLinkForEvent,
   terrainHubFor,
 } from "@/lib/event-internal-links";
+import { buildEventCtas } from "@/lib/event-ctas";
 
 
 function regionSlugFromName(name: string | null | undefined): string | null {
@@ -359,31 +360,13 @@ function EventDetailPage() {
       .filter((s): s is { key: string; label: string; hub: ReturnType<typeof terrainHubFor> } => s !== null);
 
   // Past events: no entry CTA at all — the race is done. Keep organiser
-  // links accessible inline but stop promising "Enter now" / "View event details".
-  let primaryCta:
-    | { href: string; label: string; linkType: "entry" | "organiser-site" | "organiser-other" }
-    | null = null;
-  if (!isPast) {
-    if (entryLink.kind === "entry") {
-      primaryCta = {
-        href: entryLink.href!,
-        label: proximity ? "View event details" : "Enter now",
-        linkType: "entry",
-      };
-    } else if (entryLink.kind === "organiser-site") {
-      primaryCta = {
-        href: entryLink.href!,
-        label: "Visit organiser website",
-        linkType: "organiser-site",
-      };
-    } else if (isTrustedLink(orgLink)) {
-      primaryCta = {
-        href: orgLink.href!,
-        label: "Visit organiser website",
-        linkType: "organiser-other",
-      };
-    }
-  }
+  // links accessible inline (see pastOrganiserLink below) but stop
+  // promising "Enter now" / "View event details".
+  const proximityForCta =
+    proximity === "today" || proximity === "imminent" ? proximity : null;
+  const ctas = buildEventCtas(e, { isPast, proximity: proximityForCta });
+  const primaryCta = ctas?.primary ?? null;
+  const secondaryCta = ctas?.secondary ?? null;
 
   const proximityNote =
     proximity === "today"
@@ -597,6 +580,31 @@ function EventDetailPage() {
                   <ExternalLink className="h-4 w-4" />
                 </a>
               </Button>
+              {secondaryCta && (
+                <p className="mt-3 text-sm">
+                  <a
+                    href={secondaryCta.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() =>
+                      trackEntryClick({
+                        slug: e.slug,
+                        region: e.region,
+                        link_type: secondaryCta.linkType,
+                        proximity,
+                        event_name: e.name,
+                        distance: e.distances ?? "unknown",
+                        discipline: e.discipline ?? "road",
+                        entry_domain: hostnameOf(secondaryCta.href),
+                      })
+                    }
+                    className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground hover:underline"
+                  >
+                    <span>{secondaryCta.label}: {secondaryCta.host}</span>
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
+                </p>
+              )}
               {proximityNote && (
                 <p className="mt-3 text-sm text-muted-foreground">
                   {proximityNote}
