@@ -330,6 +330,34 @@ function EventDetailPage() {
   const proximity = eventProximity(e);
   const isPast = proximity === "past";
 
+  // Contextual internal links to Sprint B hub pages.
+  const monthLink = monthLinkForEvent(e, { isPast });
+  const distanceMonthLink = distanceMonthLinkForEvent(
+    e,
+    related.distanceKey,
+    { isPast },
+  );
+  // Build linked terrain segments matching the visible terrainLabel order.
+  const terrainSegments: Array<{ key: string; label: string; hub: ReturnType<typeof terrainHubFor> }> =
+    (e.terrain_tags ?? [])
+      .map((tag) => {
+        const hub = terrainHubFor(tag);
+        // Reuse the same visible labels as formatTerrain.
+        const label =
+          tag === "road" ? "Road" :
+          tag === "trail" ? "Trail" :
+          tag === "multi-terrain" ? "Multi-terrain" :
+          tag === "fell" ? "Fell" :
+          tag === "cross-country" ? "Cross-country" :
+          tag === "obstacle" ? "Obstacle" :
+          tag === "track" ? "Track" :
+          tag === "parkrun" ? "parkrun" :
+          tag === "night-trail" ? "Night trail" :
+          "";
+        return label ? { key: tag, label, hub } : null;
+      })
+      .filter((s): s is { key: string; label: string; hub: ReturnType<typeof terrainHubFor> } => s !== null);
+
   // Past events: no entry CTA at all — the race is done. Keep organiser
   // links accessible inline but stop promising "Enter now" / "View event details".
   let primaryCta:
