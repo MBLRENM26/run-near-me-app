@@ -91,6 +91,7 @@ export const Route = createFileRoute("/sitemap.xml")({
           console.error("Sitemap: failed to load month matrix", err);
         }
 
+        let clubEntries: { slug: string; lastmod: string }[] = [];
         try {
           const slugs = await getAllClubSlugs();
           clubEntries = slugs.map((s) => ({
