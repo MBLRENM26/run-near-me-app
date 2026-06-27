@@ -40,6 +40,11 @@ import { REGIONS } from "@/lib/regions";
 import { SITE_URL } from "@/lib/site";
 import { fromSearchValidator } from "@/lib/from-search";
 import { BackToSearchBar } from "@/components/site/BackToSearchBar";
+import {
+  monthLinkForEvent,
+  distanceMonthLinkForEvent,
+  terrainHubFor,
+} from "@/lib/event-internal-links";
 
 
 function regionSlugFromName(name: string | null | undefined): string | null {
