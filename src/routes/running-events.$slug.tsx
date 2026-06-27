@@ -31,6 +31,10 @@ const SLUG_REDIRECTS: Record<string, string> = {
   kent: "south-east",
 };
 
+import { parseMonthSlug } from "@/lib/month-slug";
+import { getEventsForMonth } from "@/lib/month-page.functions";
+import { MonthPage, buildMonthHead } from "@/components/month/MonthPage";
+
 export const Route = createFileRoute("/running-events/$slug")({
   validateSearch: monthSearchValidator,
   beforeLoad: ({ params }) => {
@@ -42,9 +46,19 @@ export const Route = createFileRoute("/running-events/$slug")({
         statusCode: 301,
       });
     }
-    if (!slugToRegion(params.slug)) throw notFound();
+    const isMonth = parseMonthSlug(params.slug) !== null;
+    if (!isMonth && !slugToRegion(params.slug)) throw notFound();
   },
-  head: ({ params }) => {
+  loader: async ({ params }) => {
+    const month = parseMonthSlug(params.slug);
+    if (!month) return null;
+    return await getEventsForMonth({ data: { monthKey: month.key } });
+  },
+  head: ({ params, loaderData }) => {
+    const month = parseMonthSlug(params.slug);
+    if (month && loaderData) {
+      return buildMonthHead(loaderData, `/running-events/${params.slug}`);
+    }
     const region = slugToRegion(params.slug);
     const name = region?.name ?? "UK";
     const year = new Date().getUTCFullYear();
@@ -91,10 +105,21 @@ export const Route = createFileRoute("/running-events/$slug")({
       ],
     };
   },
-  component: RegionPage,
+  component: SlugRouter,
   notFoundComponent: NotFoundForRegion,
   errorComponent: RegionError,
 });
+
+function SlugRouter() {
+  const { slug } = Route.useParams();
+  const month = parseMonthSlug(slug);
+  if (month) {
+    const data = Route.useLoaderData();
+    if (!data) return null;
+    return <MonthPage data={data} />;
+  }
+  return <RegionPage />;
+}
 
 function RegionPage() {
   const { slug } = Route.useParams();
