@@ -134,6 +134,18 @@ export const Route = createFileRoute("/sitemap.xml")({
             priority: "0.8",
             changefreq: "daily",
           },
+          ...["road-races", "fell-races", "multi-terrain-races"].map((slug) => ({
+            loc: `${SITE_URL}/${slug}`,
+            lastmod: today,
+            priority: "0.8",
+            changefreq: "weekly",
+          })),
+          ...COUNTIES.map((c) => ({
+            loc: `${SITE_URL}/running-events-in/${c.slug}`,
+            lastmod: today,
+            priority: "0.7",
+            changefreq: "weekly",
+          })),
           {
             loc: `${SITE_URL}/parkrun-events`,
             lastmod: today,
