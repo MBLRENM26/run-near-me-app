@@ -1,40 +1,40 @@
-## Goal
+## Merge 19 RunABC → TRA duplicates
 
-Stop submitting sitemap URLs we already noindex. Aligning the sitemap with `computeIndexability()` should drop the "Discovered – currently not indexed" bucket significantly and concentrate Google's crawl budget on pages we actually want ranked.
+TRA wins on every axis (licensed, entry fee, trail discipline, organiser URL). The only snag is slugs: RunABC currently holds the clean slug (e.g. `bishop-wilton-beast`) and TRA has the ugly `-tra` suffix. We want the clean slug to survive on the TRA row so existing inbound links / GSC impressions transfer cleanly.
 
-## What's wrong today
+### Steps (single SQL transaction via insert tool)
 
-`src/routes/sitemap[.]xml.tsx` lists every ACTIVE event with a future `sort_date`. The per-page indexability rule (`src/lib/event-indexability.ts`) then noindexes a large slice of those for being:
+For each of the 19 pairs:
 
-- slug-suffix duplicates (`-race-N`, `-{month}`, dated suffixes)
-- orphans (no entry URL, no organiser URL, no organiser)
-- duplicate siblings (series instances that aren't the earliest upcoming)
+1. **Free up the clean slug** — rename the RunABC row's slug to `<slug>-runabc-archived` so the unique index won't block step 3.
+2. **Mark RunABC row as duplicate + hidden** — set `status = 'HIDDEN'`, `duplicate_of = <tra_id>`.
+3. **Promote TRA row to the clean slug** — set TRA's `slug = <original runabc slug>` and `discipline = 'Trail Race'` (no-op if already set).
 
-Result: we ask Google to crawl ~hundreds of URLs that emit `noindex, follow`. That's the primary driver of the GSC report.
+`entry_fee` is already on the TRA rows, so no copy needed.
 
-## Fix
+### Why HIDDEN, not DELETE on RunABC
 
-Make sitemap inclusion match indexability.
+Matches existing pattern (admin duplicates merge marks rows as duplicates rather than hard-deleting). Keeps audit trail and lets us reverse if a merge was wrong.
 
-1. Add a new server fn `getIndexableEventSlugsForSitemap()` in `src/lib/events.functions.ts` that:
-   - Fetches all ACTIVE events with `sort_date >= today OR sort_date IS NULL`, columns: `id, slug, name, sort_date, entry_url, organiser_url, organiser`.
-   - Builds a `Map<normalisedName, SiblingEvent[]>` using `normaliseEventName()`.
-   - For each event, calls `computeIndexability(event, siblings, today)` and keeps only `result.indexable === true`.
-   - Returns `{ slug, sort_date }[]` (same shape callers expect).
+### Verification after run
 
-2. Update `src/routes/sitemap[.]xml.tsx` to call the new fn instead of `getAllActiveSlugs`. Drop the now-redundant past-event filter (the new fn already enforces it via the date predicate + indexability `past` check).
+```sql
+-- Should return 0
+SELECT count(*) FROM events t
+JOIN events e ON LOWER(TRIM(t.name)) = LOWER(TRIM(e.name))
+  AND t.date_from = e.date_from
+  AND t.source = 'tra' AND e.source != 'tra' AND e.status = 'ACTIVE'
+WHERE t.status = 'ACTIVE';
 
-3. Leave per-page noindex logic untouched — pages stay live for direct visitors, we just stop asking Google to crawl them.
+-- Should show 19 rows, all clean slugs, source=tra, discipline='Trail Race'
+SELECT slug, name, source, discipline, entry_fee FROM events
+WHERE id IN (<19 tra ids>);
+```
 
-## Verification
+### Out of scope
 
-- Locally curl `/sitemap.xml` and confirm event count drops materially (expect a 20–40% reduction based on the noindex categories).
-- Spot-check a few that should now be gone: `3k-on-the-green-2026-07-31`, anything with `-race-N` suffix, any event with no organiser + no links.
-- Spot-check a few that should still be present: standalone events, the *earliest upcoming* sibling of a series.
-- After deploy: resubmit sitemap in GSC. Allow 1–4 weeks for the "Discovered – currently not indexed" count to drop as Google re-evaluates.
+- Touching the other ~268 newly-imported TRA rows (no duplicates flagged).
+- Changing the duplicate-detection logic itself — the admin duplicates UI already covers this via name+date+source heuristics; this is just a one-shot cleanup for the batch you just imported.
+- Reslugging TRA rows that don't have a RunABC twin (their `-tra` slug stays).
 
-## Out of scope
-
-- Forcing Google to crawl faster (not possible).
-- Changing the indexability rules themselves — they're working as designed; the sitemap just wasn't honouring them.
-- Anything about discovery-surface link-trust filtering — separate concern, already correctly applied on listing pages.
+Approve and I'll run the UPDATE in one transaction.
