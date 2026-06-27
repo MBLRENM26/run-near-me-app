@@ -16,12 +16,15 @@ import { Route as SearchRouteImport } from './routes/search'
 import { Route as RunningEventsThisWeekendRouteImport } from './routes/running-events-this-weekend'
 import { Route as RunningEventsNextWeekendRouteImport } from './routes/running-events-next-weekend'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
+import { Route as RoadRacesRouteImport } from './routes/road-races'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as MultiTerrainRacesRouteImport } from './routes/multi-terrain-races'
 import { Route as MarathonsRouteImport } from './routes/marathons'
 import { Route as ListYourEventRouteImport } from './routes/list-your-event'
 import { Route as JuniorParkrunEventsRouteImport } from './routes/junior-parkrun-events'
 import { Route as IndexDothtmlRouteImport } from './routes/index[.]html'
 import { Route as HalfMarathonsRouteImport } from './routes/half-marathons'
+import { Route as FellRacesRouteImport } from './routes/fell-races'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AdminShellRouteImport } from './routes/_adminShell'
 import { Route as R5kRacesRouteImport } from './routes/5k-races'
@@ -107,9 +110,19 @@ const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
   path: '/robots.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RoadRacesRoute = RoadRacesRouteImport.update({
+  id: '/road-races',
+  path: '/road-races',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MultiTerrainRacesRoute = MultiTerrainRacesRouteImport.update({
+  id: '/multi-terrain-races',
+  path: '/multi-terrain-races',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MarathonsRoute = MarathonsRouteImport.update({
@@ -135,6 +148,11 @@ const IndexDothtmlRoute = IndexDothtmlRouteImport.update({
 const HalfMarathonsRoute = HalfMarathonsRouteImport.update({
   id: '/half-marathons',
   path: '/half-marathons',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FellRacesRoute = FellRacesRouteImport.update({
+  id: '/fell-races',
+  path: '/fell-races',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -394,12 +412,15 @@ export interface FileRoutesByFullPath {
   '/10k-races': typeof R10kRacesRouteWithChildren
   '/5k-races': typeof R5kRacesRouteWithChildren
   '/about': typeof AboutRoute
+  '/fell-races': typeof FellRacesRoute
   '/half-marathons': typeof HalfMarathonsRouteWithChildren
   '/index.html': typeof IndexDothtmlRoute
   '/junior-parkrun-events': typeof JuniorParkrunEventsRoute
   '/list-your-event': typeof ListYourEventRoute
   '/marathons': typeof MarathonsRouteWithChildren
+  '/multi-terrain-races': typeof MultiTerrainRacesRoute
   '/privacy': typeof PrivacyRoute
+  '/road-races': typeof RoadRacesRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/running-events-next-weekend': typeof RunningEventsNextWeekendRoute
   '/running-events-this-weekend': typeof RunningEventsThisWeekendRoute
@@ -455,12 +476,15 @@ export interface FileRoutesByTo {
   '/10k-races': typeof R10kRacesRouteWithChildren
   '/5k-races': typeof R5kRacesRouteWithChildren
   '/about': typeof AboutRoute
+  '/fell-races': typeof FellRacesRoute
   '/half-marathons': typeof HalfMarathonsRouteWithChildren
   '/index.html': typeof IndexDothtmlRoute
   '/junior-parkrun-events': typeof JuniorParkrunEventsRoute
   '/list-your-event': typeof ListYourEventRoute
   '/marathons': typeof MarathonsRouteWithChildren
+  '/multi-terrain-races': typeof MultiTerrainRacesRoute
   '/privacy': typeof PrivacyRoute
+  '/road-races': typeof RoadRacesRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/running-events-next-weekend': typeof RunningEventsNextWeekendRoute
   '/running-events-this-weekend': typeof RunningEventsThisWeekendRoute
@@ -518,12 +542,15 @@ export interface FileRoutesById {
   '/5k-races': typeof R5kRacesRouteWithChildren
   '/_adminShell': typeof AdminShellRouteWithChildren
   '/about': typeof AboutRoute
+  '/fell-races': typeof FellRacesRoute
   '/half-marathons': typeof HalfMarathonsRouteWithChildren
   '/index.html': typeof IndexDothtmlRoute
   '/junior-parkrun-events': typeof JuniorParkrunEventsRoute
   '/list-your-event': typeof ListYourEventRoute
   '/marathons': typeof MarathonsRouteWithChildren
+  '/multi-terrain-races': typeof MultiTerrainRacesRoute
   '/privacy': typeof PrivacyRoute
+  '/road-races': typeof RoadRacesRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/running-events-next-weekend': typeof RunningEventsNextWeekendRoute
   '/running-events-this-weekend': typeof RunningEventsThisWeekendRoute
@@ -581,12 +608,15 @@ export interface FileRouteTypes {
     | '/10k-races'
     | '/5k-races'
     | '/about'
+    | '/fell-races'
     | '/half-marathons'
     | '/index.html'
     | '/junior-parkrun-events'
     | '/list-your-event'
     | '/marathons'
+    | '/multi-terrain-races'
     | '/privacy'
+    | '/road-races'
     | '/robots.txt'
     | '/running-events-next-weekend'
     | '/running-events-this-weekend'
@@ -642,12 +672,15 @@ export interface FileRouteTypes {
     | '/10k-races'
     | '/5k-races'
     | '/about'
+    | '/fell-races'
     | '/half-marathons'
     | '/index.html'
     | '/junior-parkrun-events'
     | '/list-your-event'
     | '/marathons'
+    | '/multi-terrain-races'
     | '/privacy'
+    | '/road-races'
     | '/robots.txt'
     | '/running-events-next-weekend'
     | '/running-events-this-weekend'
@@ -704,12 +737,15 @@ export interface FileRouteTypes {
     | '/5k-races'
     | '/_adminShell'
     | '/about'
+    | '/fell-races'
     | '/half-marathons'
     | '/index.html'
     | '/junior-parkrun-events'
     | '/list-your-event'
     | '/marathons'
+    | '/multi-terrain-races'
     | '/privacy'
+    | '/road-races'
     | '/robots.txt'
     | '/running-events-next-weekend'
     | '/running-events-this-weekend'
@@ -767,12 +803,15 @@ export interface RootRouteChildren {
   R5kRacesRoute: typeof R5kRacesRouteWithChildren
   AdminShellRoute: typeof AdminShellRouteWithChildren
   AboutRoute: typeof AboutRoute
+  FellRacesRoute: typeof FellRacesRoute
   HalfMarathonsRoute: typeof HalfMarathonsRouteWithChildren
   IndexDothtmlRoute: typeof IndexDothtmlRoute
   JuniorParkrunEventsRoute: typeof JuniorParkrunEventsRoute
   ListYourEventRoute: typeof ListYourEventRoute
   MarathonsRoute: typeof MarathonsRouteWithChildren
+  MultiTerrainRacesRoute: typeof MultiTerrainRacesRoute
   PrivacyRoute: typeof PrivacyRoute
+  RoadRacesRoute: typeof RoadRacesRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   RunningEventsNextWeekendRoute: typeof RunningEventsNextWeekendRoute
   RunningEventsThisWeekendRoute: typeof RunningEventsThisWeekendRoute
@@ -857,11 +896,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RobotsDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/road-races': {
+      id: '/road-races'
+      path: '/road-races'
+      fullPath: '/road-races'
+      preLoaderRoute: typeof RoadRacesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/privacy': {
       id: '/privacy'
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/multi-terrain-races': {
+      id: '/multi-terrain-races'
+      path: '/multi-terrain-races'
+      fullPath: '/multi-terrain-races'
+      preLoaderRoute: typeof MultiTerrainRacesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/marathons': {
@@ -897,6 +950,13 @@ declare module '@tanstack/react-router' {
       path: '/half-marathons'
       fullPath: '/half-marathons'
       preLoaderRoute: typeof HalfMarathonsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/fell-races': {
+      id: '/fell-races'
+      path: '/fell-races'
+      fullPath: '/fell-races'
+      preLoaderRoute: typeof FellRacesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about': {
@@ -1341,12 +1401,15 @@ const rootRouteChildren: RootRouteChildren = {
   R5kRacesRoute: R5kRacesRouteWithChildren,
   AdminShellRoute: AdminShellRouteWithChildren,
   AboutRoute: AboutRoute,
+  FellRacesRoute: FellRacesRoute,
   HalfMarathonsRoute: HalfMarathonsRouteWithChildren,
   IndexDothtmlRoute: IndexDothtmlRoute,
   JuniorParkrunEventsRoute: JuniorParkrunEventsRoute,
   ListYourEventRoute: ListYourEventRoute,
   MarathonsRoute: MarathonsRouteWithChildren,
+  MultiTerrainRacesRoute: MultiTerrainRacesRoute,
   PrivacyRoute: PrivacyRoute,
+  RoadRacesRoute: RoadRacesRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   RunningEventsNextWeekendRoute: RunningEventsNextWeekendRoute,
   RunningEventsThisWeekendRoute: RunningEventsThisWeekendRoute,
