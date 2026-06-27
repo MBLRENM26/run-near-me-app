@@ -45,6 +45,7 @@ import {
   distanceMonthLinkForEvent,
   terrainHubFor,
 } from "@/lib/event-internal-links";
+import { buildEventCtas } from "@/lib/event-ctas";
 
 
 function regionSlugFromName(name: string | null | undefined): string | null {
