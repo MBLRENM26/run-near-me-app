@@ -1,36 +1,58 @@
-## 1. LocationPrompt — postcode-first, geolocation as fallback
+## Scope
 
-I'd push back on removing "Use my location" entirely. Killing it gives up the one-tap path on mobile (where most traffic sits) and you can't tell from current data whether the button is off-putting or just visually losing to a more familiar input. Suggest a middle path we can measure: make the postcode/search box the hero and demote geolocation to a small secondary affordance — keep the capability, remove the "data share" vibe.
+Expand the green action band on `/events/$slug` to surface up to two distinct outbound links — a primary CTA (button) and a secondary text link — derived from the existing `entry_url` and `organiser_url` fields. No schema changes.
 
-**Changes in `src/components/events/LocationPrompt.tsx`:**
+## Link derivation (`src/routes/events.$slug.tsx`)
 
-- Reorder so the postcode/search form is the primary control, full width on all breakpoints.
-- Replace the big primary "Use my location" button with a subtle text-link / ghost-button under the input: e.g. "Or use my current location" with a small `MapPin` icon, `variant="ghost"` `size="sm"`, muted foreground. No "share" language.
-- Loading + denied toasts stay as-is.
-- Keep the existing `trackLocationSet("device" | "postcode")` analytics — gives us a clean before/after read on whether postcode usage actually rises and whether total location-sets hold up.
-- No changes to `geocodePostcode`, navigation flow, or homepage layout above/below this component.
+Replace the current `primaryCta` block with a small `buildEventCtas(e, isPast)` helper (colocated in `src/lib/event-internal-links.ts` or a new `src/lib/event-ctas.ts` — leaning toward the latter to keep `event-internal-links.ts` focused on hub links).
 
-Out of scope: removing geolocation code, redesigning the homepage hero, changing `HeaderSearch`.
+Helper returns `{ primary, secondary } | null`. Logic:
 
-## 2. Event page primary CTA — larger, not swallowed by reminder block
+1. Classify both URLs via `classifyEventLink` and drop anything that isn't `entry` or `organiser-site` (untrusted aggregators stay invisible — existing policy).
+2. Walk both trusted links in priority order: `entryLink` first, then `orgLink`. The first one becomes `primary`; the second becomes `secondary` only if its **host differs** from the primary's host (avoids "Enter now → almostathletes.co.uk" + "Race website → almostathletes.co.uk").
+3. Past events: still return `null` (current behaviour preserved).
+4. Label rules (drive both primary and secondary off `isEntryPlatformHost(link.host)`):
+   - Entry platform host → `"Book your place"`
+   - Non-entry-platform, kind = `entry` → `"Enter now"` (or `"View event details"` when `proximity` is set, matching current imminent/today behaviour)
+   - Non-entry-platform, kind = `organiser-site` → `"Race website"` (renamed from "Visit organiser website" — shorter, more inviting, matches user's spec)
+5. `linkType` for analytics stays the same mapping it has today (`entry` / `organiser-site` / `organiser-other`) so Plausible breakdowns don't break.
 
-**Changes in `src/routes/events.$slug.tsx` (CTA block ~line 572–602 only):**
+## Rendering (same file, CTA block ~line 572-606)
 
-- Wrap the CTA in a contained band: `mt-8 rounded-2xl border border-primary/20 bg-primary/5 p-5 sm:p-6` so it reads as a distinct action zone rather than a loose button above body copy.
-- Make the button visually heavier on desktop: `size="lg"` stays, add `className="h-12 sm:h-14 px-6 sm:px-8 text-base sm:text-lg w-full sm:w-auto font-semibold shadow-card"`. Full-width on mobile, auto on desktop so it doesn't stretch awkwardly on wide screens but is clearly bigger than the reminder form's "Remind me" button.
-- Keep `ExternalLink` icon, keep tracking call unchanged.
-- `proximityNote` moves inside the same band, below the button.
-- No change to the past-event block or the `RaceReminderSignup` component itself — the visual separation alone fixes the "swallowed by email ask" problem because the CTA now sits in its own card with a primary tint while the reminder stays a neutral card.
+Inside the existing tinted band:
 
-Out of scope: restructuring page layout, changing `RaceReminderSignup`, sticky/floating CTAs (can revisit if this isn't enough).
+- **Primary**: unchanged button styles. Label + `linkType` come from `primary`. Tracking call unchanged (still `trackEntryClick`, still fire-and-forget).
+- **Secondary** (only when `secondary` exists): a small inline link below the button, above `proximityNote`:
+  ```
+  Race website: almostathletes.co.uk ↗
+  ```
+  Styled: `mt-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground`, with a small `ExternalLink` icon. The label prefix mirrors the rule set (`"Race website"` / `"Enter now"` / `"Book your place"`) so the user sees what kind of page they're going to. The hostname (`link.host`, already `www.`-stripped) is the visible URL hint.
+- Secondary click fires `trackEntryClick` with its own `linkType` and `entry_domain` — gives us a clean per-link CTR read once it ships.
+- `proximityNote` stays last inside the band.
+
+## Past events
+
+Past-event block (line 608-637) unchanged in scope, but it currently uses the bespoke `pastOrganiserLink` derivation. Quick alignment: have it call the same helper with a `past: true` flag that returns the trusted organiser link as a secondary-style item — keeps phrasing consistent ("Race website") across past + future. If that turns into more than a 10-line change, leave past events alone in this pass and note as follow-up.
+
+## Non-goals (explicit)
+
+- No new DB columns, no admin UI changes, no migrations. JSON column / `event_links` table is a follow-up once Eventrac or admin enrichment produces a third link.
+- No chip row, no "Other ways to enter" header — visually overkill at max 2 links.
+- No change to `RaceReminderSignup`, hero, breadcrumb, or surrounding layout.
+- No change to `hasOrganiserOwnedLink` or discovery-surface filtering — those rules are independent of how the event page renders its CTAs.
+
+## Analytics
+
+Plausible goals untouched. The existing `Entry Click` goal already carries `link_type` + `entry_domain`, so a secondary click is just another row in the same goal — no dashboard work required to start measuring secondary CTR.
 
 ## Verification
 
 - `bun run build` for typecheck.
-- Playwright screenshot of homepage (desktop + mobile viewport) to confirm postcode is primary and "use my location" reads as secondary.
-- Playwright screenshot of one future event page (desktop) to confirm CTA band is visually dominant vs reminder card.
+- Playwright screenshot of three event states on desktop: (a) entry_url = booking platform + organiser_url = different-domain organiser site (both links render), (b) entry_url = organiser-owned entry page only (one button, no secondary), (c) past event (unchanged block). Confirm the secondary link is visually subordinate and the band still reads as one action zone.
 
 ## Technical notes
 
-- `LocationPrompt` currently uses `grid sm:grid-cols-2` putting both controls at equal weight — that's the root of the problem, not the button label alone. Switching to a stacked layout with the geolocation as a tertiary action is a one-file change.
-- Event CTA currently has no container, just `<div className="mt-8"><Button size="lg">` — adjacent to it the `RaceReminderSignup` is wrapped in `rounded-2xl border bg-card p-5 sm:p-6 shadow-card`, which is why the reminder visually outweighs the CTA. Giving the CTA its own tinted card restores the hierarchy without touching surrounding logic.
+- `isEntryPlatformHost` already exists in `src/lib/link-trust.ts` and is exported. No changes to link-trust.
+- `classifyEventLink` returns `host` with `www.` stripped, so the visible hostname needs no extra normalisation.
+- The "different host" dedupe is a string compare on `link.host` — cheap, no URL parsing in the component.
+- Helper lives in `src/lib/` (client-safe), no server function involved — pure data shaping.
