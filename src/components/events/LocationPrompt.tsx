@@ -133,22 +133,7 @@ export function LocationPrompt({ onLocate }: Props) {
   };
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      <Button
-        type="button"
-        size="lg"
-        onClick={useDeviceLocation}
-        disabled={loadingGeo}
-        className="h-14 text-base font-medium shadow-card"
-      >
-        {loadingGeo ? (
-          <Loader2 className="h-5 w-5 animate-spin" />
-        ) : (
-          <MapPin className="h-5 w-5" />
-        )}
-        Use my location
-      </Button>
-
+    <div className="space-y-2">
       <form onSubmit={submitPostcode} className="flex gap-2">
         <label htmlFor="postcode-input" className="sr-only">
           Postcode or event name
@@ -158,23 +143,40 @@ export function LocationPrompt({ onLocate }: Props) {
           value={postcode}
           onChange={(e) => setPostcode(e.target.value)}
           placeholder="Postcode or event name"
-          className="h-14 text-base"
+          className="h-14 flex-1 text-base"
         />
         <Button
           type="submit"
           size="lg"
-          variant="secondary"
           disabled={loadingPostcode || !postcode.trim()}
-          className="h-14 px-4"
-          aria-label="Search"
+          className="h-14 px-5 text-base font-medium shadow-card"
         >
           {loadingPostcode ? (
             <Loader2 className="h-5 w-5 animate-spin" />
           ) : (
             <Search className="h-5 w-5" />
           )}
+          Search
         </Button>
       </form>
+
+      <div className="flex justify-center sm:justify-start">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={useDeviceLocation}
+          disabled={loadingGeo}
+          className="h-8 px-2 text-sm font-normal text-muted-foreground hover:text-foreground"
+        >
+          {loadingGeo ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <MapPin className="h-4 w-4" />
+          )}
+          Or use my current location
+        </Button>
+      </div>
     </div>
   );
 }
