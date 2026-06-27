@@ -1,40 +1,33 @@
-## Merge 19 RunABC → TRA duplicates
+## Terrain tag backfill — 1,703 ACTIVE events
 
-TRA wins on every axis (licensed, entry fee, trail discipline, organiser URL). The only snag is slugs: RunABC currently holds the clean slug (e.g. `bishop-wilton-beast`) and TRA has the ugly `-tra` suffix. We want the clean slug to survive on the TRA row so existing inbound links / GSC impressions transfer cleanly.
+Cheap, well-scoped: one read (dry-run) + one migration (apply). Fits in ~2-2.5 credits.
 
-### Steps (single SQL transaction via insert tool)
+### Step 1 — Dry-run report (read-only, ~0.5 credit)
 
-For each of the 19 pairs:
+Run `parseEventTags` logic in SQL against the 1,703 ACTIVE rows where `terrain_tags` is null/empty, using `name` + `distances` + `discipline`. Report:
 
-1. **Free up the clean slug** — rename the RunABC row's slug to `<slug>-runabc-archived` so the unique index won't block step 3.
-2. **Mark RunABC row as duplicate + hidden** — set `status = 'HIDDEN'`, `duplicate_of = <tra_id>`.
-3. **Promote TRA row to the clean slug** — set TRA's `slug = <original runabc slug>` and `discipline = 'Trail Race'` (no-op if already set).
+- How many rows get ≥1 terrain tag from the parser
+- Breakdown of newly-assigned tags (road / trail / fell / multi-terrain / parkrun / …)
+- How many remain untaggable (truly ambiguous names like "Bob's 10k") — these stay null
 
-`entry_fee` is already on the TRA rows, so no copy needed.
+### Step 2 — Apply migration (~1.5-2 credits)
 
-### Why HIDDEN, not DELETE on RunABC
+Single UPDATE migration that sets `terrain_tags` on the rows the parser can classify. Mirrors the existing `parseEventTags` regex rules in SQL (or calls a one-shot server fn that batches updates):
 
-Matches existing pattern (admin duplicates merge marks rows as duplicates rather than hard-deleting). Keeps audit trail and lets us reverse if a merge was wrong.
+- `discipline` exact match → terrain (road race → road, trail race → trail, hill running → fell, …)
+- name/distances regex fallback (trail, fell, multi-terrain, parkrun, cross-country, obstacle, track, road)
+- Skip rows where `is_curated_tags = true`
+- Leave `distance_tags` alone (separate concern, can be a follow-up)
 
-### Verification after run
+### Out of scope (to keep cost down)
 
-```sql
--- Should return 0
-SELECT count(*) FROM events t
-JOIN events e ON LOWER(TRIM(t.name)) = LOWER(TRIM(e.name))
-  AND t.date_from = e.date_from
-  AND t.source = 'tra' AND e.source != 'tra' AND e.status = 'ACTIVE'
-WHERE t.status = 'ACTIVE';
+- Re-parsing already-tagged rows
+- Distance tag backfill (different pass, more error-prone)
+- Touching the 201 HIDDEN rows
+- Any UI changes
 
--- Should show 19 rows, all clean slugs, source=tra, discipline='Trail Race'
-SELECT slug, name, source, discipline, entry_fee FROM events
-WHERE id IN (<19 tra ids>);
-```
+### Verification
 
-### Out of scope
+Re-run the original tag-coverage query — expect "no terrain tag" count to drop from 1,703 to whatever the dry-run predicted as untaggable.
 
-- Touching the other ~268 newly-imported TRA rows (no duplicates flagged).
-- Changing the duplicate-detection logic itself — the admin duplicates UI already covers this via name+date+source heuristics; this is just a one-shot cleanup for the batch you just imported.
-- Reslugging TRA rows that don't have a RunABC twin (their `-tra` slug stays).
-
-Approve and I'll run the UPDATE in one transaction.
+Approve and I'll run the dry-run first, share the breakdown, then apply.
