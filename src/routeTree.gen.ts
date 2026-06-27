@@ -36,6 +36,7 @@ import { Route as ParkrunEventsIndexRouteImport } from './routes/parkrun-events.
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as UltraMarathonsMonthRouteImport } from './routes/ultra-marathons.$month'
 import { Route as RunningEventsSlugRouteImport } from './routes/running-events.$slug'
+import { Route as RunningEventsInCountyRouteImport } from './routes/running-events-in.$county'
 import { Route as RunningClubsSlugRouteImport } from './routes/running-clubs.$slug'
 import { Route as ParkrunEventsSlugRouteImport } from './routes/parkrun-events.$slug'
 import { Route as MarathonsMonthRouteImport } from './routes/marathons.$month'
@@ -207,6 +208,11 @@ const UltraMarathonsMonthRoute = UltraMarathonsMonthRouteImport.update({
 const RunningEventsSlugRoute = RunningEventsSlugRouteImport.update({
   id: '/running-events/$slug',
   path: '/running-events/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RunningEventsInCountyRoute = RunningEventsInCountyRouteImport.update({
+  id: '/running-events-in/$county',
+  path: '/running-events-in/$county',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RunningClubsSlugRoute = RunningClubsSlugRouteImport.update({
@@ -437,6 +443,7 @@ export interface FileRoutesByFullPath {
   '/marathons/$month': typeof MarathonsMonthRoute
   '/parkrun-events/$slug': typeof ParkrunEventsSlugRoute
   '/running-clubs/$slug': typeof RunningClubsSlugRouteWithChildren
+  '/running-events-in/$county': typeof RunningEventsInCountyRoute
   '/running-events/$slug': typeof RunningEventsSlugRoute
   '/ultra-marathons/$month': typeof UltraMarathonsMonthRoute
   '/admin/': typeof AdminIndexRoute
@@ -501,6 +508,7 @@ export interface FileRoutesByTo {
   '/marathons/$month': typeof MarathonsMonthRoute
   '/parkrun-events/$slug': typeof ParkrunEventsSlugRoute
   '/running-clubs/$slug': typeof RunningClubsSlugRouteWithChildren
+  '/running-events-in/$county': typeof RunningEventsInCountyRoute
   '/running-events/$slug': typeof RunningEventsSlugRoute
   '/ultra-marathons/$month': typeof UltraMarathonsMonthRoute
   '/admin': typeof AdminIndexRoute
@@ -567,6 +575,7 @@ export interface FileRoutesById {
   '/marathons/$month': typeof MarathonsMonthRoute
   '/parkrun-events/$slug': typeof ParkrunEventsSlugRoute
   '/running-clubs/$slug': typeof RunningClubsSlugRouteWithChildren
+  '/running-events-in/$county': typeof RunningEventsInCountyRoute
   '/running-events/$slug': typeof RunningEventsSlugRoute
   '/ultra-marathons/$month': typeof UltraMarathonsMonthRoute
   '/admin/': typeof AdminIndexRoute
@@ -633,6 +642,7 @@ export interface FileRouteTypes {
     | '/marathons/$month'
     | '/parkrun-events/$slug'
     | '/running-clubs/$slug'
+    | '/running-events-in/$county'
     | '/running-events/$slug'
     | '/ultra-marathons/$month'
     | '/admin/'
@@ -697,6 +707,7 @@ export interface FileRouteTypes {
     | '/marathons/$month'
     | '/parkrun-events/$slug'
     | '/running-clubs/$slug'
+    | '/running-events-in/$county'
     | '/running-events/$slug'
     | '/ultra-marathons/$month'
     | '/admin'
@@ -762,6 +773,7 @@ export interface FileRouteTypes {
     | '/marathons/$month'
     | '/parkrun-events/$slug'
     | '/running-clubs/$slug'
+    | '/running-events-in/$county'
     | '/running-events/$slug'
     | '/ultra-marathons/$month'
     | '/admin/'
@@ -824,6 +836,7 @@ export interface RootRouteChildren {
   EventsSlugRoute: typeof EventsSlugRoute
   ParkrunEventsSlugRoute: typeof ParkrunEventsSlugRoute
   RunningClubsSlugRoute: typeof RunningClubsSlugRouteWithChildren
+  RunningEventsInCountyRoute: typeof RunningEventsInCountyRoute
   RunningEventsSlugRoute: typeof RunningEventsSlugRoute
   AdminIndexRoute: typeof AdminIndexRoute
   ParkrunEventsIndexRoute: typeof ParkrunEventsIndexRoute
@@ -1034,6 +1047,13 @@ declare module '@tanstack/react-router' {
       path: '/running-events/$slug'
       fullPath: '/running-events/$slug'
       preLoaderRoute: typeof RunningEventsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/running-events-in/$county': {
+      id: '/running-events-in/$county'
+      path: '/running-events-in/$county'
+      fullPath: '/running-events-in/$county'
+      preLoaderRoute: typeof RunningEventsInCountyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/running-clubs/$slug': {
@@ -1422,6 +1442,7 @@ const rootRouteChildren: RootRouteChildren = {
   EventsSlugRoute: EventsSlugRoute,
   ParkrunEventsSlugRoute: ParkrunEventsSlugRoute,
   RunningClubsSlugRoute: RunningClubsSlugRouteWithChildren,
+  RunningEventsInCountyRoute: RunningEventsInCountyRoute,
   RunningEventsSlugRoute: RunningEventsSlugRoute,
   AdminIndexRoute: AdminIndexRoute,
   ParkrunEventsIndexRoute: ParkrunEventsIndexRoute,
