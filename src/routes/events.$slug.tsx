@@ -40,6 +40,11 @@ import { REGIONS } from "@/lib/regions";
 import { SITE_URL } from "@/lib/site";
 import { fromSearchValidator } from "@/lib/from-search";
 import { BackToSearchBar } from "@/components/site/BackToSearchBar";
+import {
+  monthLinkForEvent,
+  distanceMonthLinkForEvent,
+  terrainHubFor,
+} from "@/lib/event-internal-links";
 
 
 function regionSlugFromName(name: string | null | undefined): string | null {
@@ -325,6 +330,34 @@ function EventDetailPage() {
   const proximity = eventProximity(e);
   const isPast = proximity === "past";
 
+  // Contextual internal links to Sprint B hub pages.
+  const monthLink = monthLinkForEvent(e, { isPast });
+  const distanceMonthLink = distanceMonthLinkForEvent(
+    e,
+    related.distanceKey,
+    { isPast },
+  );
+  // Build linked terrain segments matching the visible terrainLabel order.
+  const terrainSegments: Array<{ key: string; label: string; hub: ReturnType<typeof terrainHubFor> }> =
+    (e.terrain_tags ?? [])
+      .map((tag) => {
+        const hub = terrainHubFor(tag);
+        // Reuse the same visible labels as formatTerrain.
+        const label =
+          tag === "road" ? "Road" :
+          tag === "trail" ? "Trail" :
+          tag === "multi-terrain" ? "Multi-terrain" :
+          tag === "fell" ? "Fell" :
+          tag === "cross-country" ? "Cross-country" :
+          tag === "obstacle" ? "Obstacle" :
+          tag === "track" ? "Track" :
+          tag === "parkrun" ? "parkrun" :
+          tag === "night-trail" ? "Night trail" :
+          "";
+        return label ? { key: tag, label, hub } : null;
+      })
+      .filter((s): s is { key: string; label: string; hub: ReturnType<typeof terrainHubFor> } => s !== null);
+
   // Past events: no entry CTA at all — the race is done. Keep organiser
   // links accessible inline but stop promising "Enter now" / "View event details".
   let primaryCta:
@@ -462,7 +495,31 @@ function EventDetailPage() {
             {dateLabel && (
               <div className="flex flex-wrap items-center gap-2">
                 <Calendar className="h-4 w-4 shrink-0" />
-                <span>{dateLabel}</span>
+                <span>
+                  {monthLink ? (
+                    <Link
+                      to="/running-events/$slug"
+                      params={{ slug: monthLink.slug }}
+                      className="text-foreground underline-offset-2 hover:text-primary hover:underline"
+                    >
+                      {dateLabel}
+                    </Link>
+                  ) : (
+                    dateLabel
+                  )}
+                  {distanceMonthLink && (
+                    <>
+                      {" · "}
+                      <Link
+                        to={distanceMonthLink.to}
+                        params={distanceMonthLink.params}
+                        className="text-foreground underline-offset-2 hover:text-primary hover:underline"
+                      >
+                        {distanceMonthLink.label}
+                      </Link>
+                    </>
+                  )}
+                </span>
                 {isPast && (
                   <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
                     Took place
@@ -482,13 +539,35 @@ function EventDetailPage() {
                 <span>{distance}</span>
               </div>
             )}
-            {terrainLabel && (
+            {terrainSegments.length > 0 ? (
+              <div className="flex items-center gap-2">
+                <Mountain className="h-4 w-4 shrink-0" />
+                <span>
+                  {terrainSegments.map((seg, i) => (
+                    <span key={seg.key}>
+                      {i > 0 && " / "}
+                      {seg.hub ? (
+                        <Link
+                          to={seg.hub.to}
+                          className="text-foreground underline-offset-2 hover:text-primary hover:underline"
+                        >
+                          {seg.label}
+                        </Link>
+                      ) : (
+                        seg.label
+                      )}
+                    </span>
+                  ))}
+                </span>
+              </div>
+            ) : terrainLabel ? (
               <div className="flex items-center gap-2">
                 <Mountain className="h-4 w-4 shrink-0" />
                 <span>{terrainLabel}</span>
               </div>
-            )}
+            ) : null}
           </div>
+
 
           {primaryCta && (
             <div className="mt-8">
