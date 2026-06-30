@@ -883,6 +883,112 @@ export const getEventPageData = createServerFn({ method: "GET" })
       }
     }
 
+    // ----- Organiser Club Match -----
+    let matchingClub: OrganiserClub | null = null;
+    const orgTrim = event.organiser?.trim();
+    if (orgTrim) {
+      const orgLower = orgTrim.toLowerCase();
+      const normSlug = orgLower
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+      const { data: clubRows } = await supabaseAdmin
+        .from("public_clubs")
+        .select("slug, name")
+        .eq("status", "ACTIVE")
+        .limit(100);
+      if (clubRows) {
+        for (const c of clubRows) {
+          const cName = c.name?.trim().toLowerCase();
+          const cSlug = c.slug?.trim().toLowerCase();
+          if (cName === orgLower || cSlug === normSlug) {
+            matchingClub = { slug: c.slug, name: c.name };
+            break;
+          }
+        }
+      }
+    }
+
+    // ----- Same weekend nearby -----
+    // Guard: County IS NOT NULL mandatory — TRA and Scottish events have no county data
+    const sameWeekendNearby: SameWeekendNearbyEvent[] = [];
+    if (event.county && event.sort_date) {
+      const [y, m, d] = event.sort_date.split("-").map(Number);
+      const baseUTC = Date.UTC(y, m - 1, d);
+      const minDate = new Date(baseUTC - 2 * 86400000).toISOString().slice(0, 10);
+      const maxDate = new Date(baseUTC + 2 * 86400000).toISOString().slice(0, 10);
+
+      const { data: wkRows } = await supabaseAdmin
+        .from("events")
+        .select(
+          "id, slug, name, date_raw, sort_date, date_is_estimated, town, county, entry_url, organiser_url",
+        )
+        .eq("status", "ACTIVE")
+        .eq("county", event.county)
+        .neq("id", event.id)
+        .not("slug", "is", null)
+        .gte("sort_date", minDate)
+        .lte("sort_date", maxDate)
+        .order("sort_date", { ascending: true, nullsFirst: false })
+        .limit(30);
+
+      if (wkRows) {
+        for (const r of wkRows) {
+          if (
+            !hasOrganiserOwnedLink(
+              r.entry_url as string | null,
+              r.organiser_url as string | null,
+            )
+          )
+            continue;
+          sameWeekendNearby.push({
+            id: r.id as string,
+            slug: r.slug as string,
+            name: r.name as string,
+            date_raw: r.date_raw as string | null,
+            sort_date: r.sort_date as string | null,
+            date_is_estimated: !!r.date_is_estimated,
+            town: r.town as string | null,
+            county: r.county as string | null,
+          });
+          if (sameWeekendNearby.length >= 6) break;
+        }
+      }
+    }
+
+    // ----- Other races by {organiser} -----
+    const otherRacesByOrganiser: OtherRaceByOrganiserEvent[] = [];
+    if (orgTrim && matchingClub) {
+      const today = new Date().toISOString().slice(0, 10);
+      const { data: orgRows } = await supabaseAdmin
+        .from("events")
+        .select(
+          "id, slug, name, date_raw, sort_date, date_is_estimated, town, county, organiser",
+        )
+        .eq("status", "ACTIVE")
+        .ilike("organiser", orgTrim)
+        .neq("id", event.id)
+        .not("slug", "is", null)
+        .or(`sort_date.gte.${today},sort_date.is.null`)
+        .order("sort_date", { ascending: true, nullsFirst: false })
+        .limit(20);
+
+      if (orgRows) {
+        for (const r of orgRows) {
+          otherRacesByOrganiser.push({
+            id: r.id as string,
+            slug: r.slug as string,
+            name: r.name as string,
+            date_raw: r.date_raw as string | null,
+            sort_date: r.sort_date as string | null,
+            date_is_estimated: !!r.date_is_estimated,
+            town: r.town as string | null,
+            county: r.county as string | null,
+          });
+          if (otherRacesByOrganiser.length >= 6) break;
+        }
+      }
+    }
+
     // ----- Indexability decision -----
     // Find sibling instances by TWO signals, unioned by id:
     //  (a) Normalised name match — catches "Trunce Series Race N",
@@ -937,7 +1043,15 @@ export const getEventPageData = createServerFn({ method: "GET" })
       todayIso,
     );
 
-    return { event, related, sameTown, indexability };
+    return {
+      event,
+      related,
+      sameTown,
+      sameWeekendNearby,
+      matchingClub,
+      otherRacesByOrganiser,
+      indexability,
+    };
   });
 
 
