@@ -308,11 +308,30 @@ export const Route = createFileRoute("/events/$slug")({
   errorComponent: EventError,
 });
 
+const SOURCE_NAME_MAP: Record<string, string> = {
+  "england-athletics": "England Athletics",
+  tra: "Trail Running Association",
+  scottishathletics: "Scottish Athletics",
+  "welsh-athletics": "Welsh Athletics",
+  "athletics-ni": "Athletics NI",
+  runabc: "RunABC",
+  runthrough: "RunThrough",
+  parkrun: "parkrun",
+};
+
+function formatSourceName(source: string | null | undefined): string {
+  if (!source) return "Running Events Near Me";
+  return SOURCE_NAME_MAP[source] ?? (source === "manual" ? "Running Events Near Me" : source);
+}
+
 function EventDetailPage() {
   const {
     event: e,
     related,
     sameTown,
+    sameWeekendNearby,
+    matchingClub,
+    otherRacesByOrganiser,
   }: import("@/lib/events.functions").EventPageData = Route.useLoaderData();
 
   // Site-wide link-trust policy: aggregator URLs are never rendered as
@@ -367,6 +386,7 @@ function EventDetailPage() {
   const ctas = buildEventCtas(e, { isPast, proximity: proximityForCta });
   const primaryCta = ctas?.primary ?? null;
   const secondaryCta = ctas?.secondary ?? null;
+  const usefulLinks = ctas?.usefulLinks ?? [];
 
   const proximityNote =
     proximity === "today"
@@ -580,8 +600,24 @@ function EventDetailPage() {
                   <ExternalLink className="h-4 w-4" />
                 </a>
               </Button>
+              {e.organiser && (
+                <p className="mt-3 text-sm text-foreground">
+                  Organised by:{" "}
+                  {matchingClub ? (
+                    <Link
+                      to="/running-clubs/$slug"
+                      params={{ slug: matchingClub.slug }}
+                      className="font-medium text-primary hover:underline"
+                    >
+                      {matchingClub.name}
+                    </Link>
+                  ) : (
+                    <span className="font-medium">{e.organiser}</span>
+                  )}
+                </p>
+              )}
               {secondaryCta && (
-                <p className="mt-3 text-sm">
+                <p className="mt-2 text-sm">
                   <a
                     href={secondaryCta.href}
                     target="_blank"
@@ -610,6 +646,45 @@ function EventDetailPage() {
                   {proximityNote}
                 </p>
               )}
+            </div>
+          )}
+
+          <div className="mt-2 text-xs text-muted-foreground">
+            {listingAdded ? `Listed ${listingAdded}` : "Listed recently"} · Source: {formatSourceName(e.source)}
+          </div>
+
+          {usefulLinks.length >= 1 && (
+            <div className="mt-4 rounded-xl border border-border bg-card p-4 shadow-sm">
+              <h3 className="text-sm font-semibold text-foreground mb-2.5">
+                Useful links
+              </h3>
+              <ul className="space-y-2">
+                {usefulLinks.map((ul) => (
+                  <li key={ul.href}>
+                    <a
+                      href={ul.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() =>
+                        trackEntryClick({
+                          slug: e.slug,
+                          region: e.region,
+                          link_type: ul.linkType,
+                          proximity,
+                          event_name: e.name,
+                          distance: e.distances ?? "unknown",
+                          discipline: e.discipline ?? "road",
+                          entry_domain: hostnameOf(ul.href),
+                        })
+                      }
+                      className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+                    >
+                      <span>{ul.label} ({ul.host})</span>
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
 
@@ -780,6 +855,66 @@ function EventDetailPage() {
                 {sameTown.map((r) => {
                   const rDate = formatEventDate(r);
                   const rLoc = r.county;
+                  return (
+                    <li key={r.id}>
+                      <Link
+                        to="/events/$slug"
+                        params={{ slug: r.slug }}
+                        className="flex flex-col gap-0.5 px-4 py-3 hover:bg-muted/50 transition-colors"
+                      >
+                        <span className="font-medium text-foreground">
+                          {r.name}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          {[rDate, rLoc].filter(Boolean).join(" · ")}
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+
+          {sameWeekendNearby.length >= 3 && e.county && (
+            <div className="mt-12">
+              <h2 className="text-xl font-semibold text-foreground">
+                Same weekend nearby in {e.county}
+              </h2>
+              <ul className="mt-4 divide-y divide-border rounded-2xl border border-border bg-card">
+                {sameWeekendNearby.map((r) => {
+                  const rDate = formatEventDate(r);
+                  const rLoc = r.town || r.county;
+                  return (
+                    <li key={r.id}>
+                      <Link
+                        to="/events/$slug"
+                        params={{ slug: r.slug }}
+                        className="flex flex-col gap-0.5 px-4 py-3 hover:bg-muted/50 transition-colors"
+                      >
+                        <span className="font-medium text-foreground">
+                          {r.name}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          {[rDate, rLoc].filter(Boolean).join(" · ")}
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+
+          {otherRacesByOrganiser.length >= 2 && matchingClub && e.organiser && (
+            <div className="mt-12">
+              <h2 className="text-xl font-semibold text-foreground">
+                Other races by {matchingClub.name}
+              </h2>
+              <ul className="mt-4 divide-y divide-border rounded-2xl border border-border bg-card">
+                {otherRacesByOrganiser.map((r) => {
+                  const rDate = formatEventDate(r);
+                  const rLoc = r.town || r.county;
                   return (
                     <li key={r.id}>
                       <Link
