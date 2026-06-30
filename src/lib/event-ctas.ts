@@ -85,24 +85,23 @@ function toCta(
   };
 }
 
+export interface EventCtasWithUseful extends EventCtas {
+  usefulLinks: EventCta[];
+}
+
 /**
- * Build primary + optional secondary CTAs for an event.
- *
- * Returns `null` for past events (no entry CTA at all — current policy)
- * and when no trusted link exists. Secondary is included only when its
- * host differs from the primary's, to avoid two CTAs pointing at the
- * same domain.
+ * Build primary + optional secondary CTAs for an event, plus any remaining
+ * useful trusted links.
  */
 export function buildEventCtas(
   e: EventLikeUrls,
   opts: { isPast: boolean; proximity: "today" | "imminent" | null },
-): EventCtas | null {
+): EventCtasWithUseful | null {
   if (opts.isPast) return null;
 
   const entry = toCta(classifyEventLink(e.entry_url), "entry", opts.proximity);
   const org = toCta(classifyEventLink(e.organiser_url), "organiser", opts.proximity);
 
-  // Walk in priority order: entry first, then organiser.
   const ordered: EventCta[] = [];
   if (entry) ordered.push(entry);
   if (org) ordered.push(org);
@@ -110,5 +109,15 @@ export function buildEventCtas(
 
   const [primary, second] = ordered;
   const secondary = second && second.host !== primary.host ? second : null;
-  return { primary, secondary };
+
+  const usefulLinks: EventCta[] = [];
+  const usedHosts = new Set<string>();
+  if (primary) usedHosts.add(primary.host);
+  if (secondary) usedHosts.add(secondary.host);
+
+  if (second && !secondary && second.host !== primary.host && !usedHosts.has(second.host)) {
+    usefulLinks.push(second);
+  }
+
+  return { primary, secondary, usefulLinks };
 }
