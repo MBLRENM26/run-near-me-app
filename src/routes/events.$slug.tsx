@@ -600,8 +600,24 @@ function EventDetailPage() {
                   <ExternalLink className="h-4 w-4" />
                 </a>
               </Button>
+              {e.organiser && (
+                <p className="mt-3 text-sm text-foreground">
+                  Organised by:{" "}
+                  {matchingClub ? (
+                    <Link
+                      to="/running-clubs/$slug"
+                      params={{ slug: matchingClub.slug }}
+                      className="font-medium text-primary hover:underline"
+                    >
+                      {matchingClub.name}
+                    </Link>
+                  ) : (
+                    <span className="font-medium">{e.organiser}</span>
+                  )}
+                </p>
+              )}
               {secondaryCta && (
-                <p className="mt-3 text-sm">
+                <p className="mt-2 text-sm">
                   <a
                     href={secondaryCta.href}
                     target="_blank"
@@ -630,6 +646,45 @@ function EventDetailPage() {
                   {proximityNote}
                 </p>
               )}
+            </div>
+          )}
+
+          <div className="mt-2 text-xs text-muted-foreground">
+            {listingAdded ? `Listed ${listingAdded}` : "Listed recently"} · Source: {formatSourceName(e.source)}
+          </div>
+
+          {usefulLinks.length >= 1 && (
+            <div className="mt-4 rounded-xl border border-border bg-card p-4 shadow-sm">
+              <h3 className="text-sm font-semibold text-foreground mb-2.5">
+                Useful links
+              </h3>
+              <ul className="space-y-2">
+                {usefulLinks.map((ul) => (
+                  <li key={ul.href}>
+                    <a
+                      href={ul.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() =>
+                        trackEntryClick({
+                          slug: e.slug,
+                          region: e.region,
+                          link_type: ul.linkType,
+                          proximity,
+                          event_name: e.name,
+                          distance: e.distances ?? "unknown",
+                          discipline: e.discipline ?? "road",
+                          entry_domain: hostnameOf(ul.href),
+                        })
+                      }
+                      className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+                    >
+                      <span>{ul.label} ({ul.host})</span>
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
 
