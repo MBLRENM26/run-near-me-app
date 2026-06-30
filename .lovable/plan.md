@@ -1,33 +1,56 @@
-## Fixes
+## Indexability diagnostic endpoint
 
-**Fix 1 — Remove duplicate "Listing added" footer**
-`src/routes/events.$slug.tsx` lines 968–972: delete the `{listingAdded && (…)}` block at the end of the page. The trust strip below the CTA card (line 653) already shows `Listed {listingAdded} · Source: {…}`, so the footer line is a duplicate.
+Add a single admin-only JSON endpoint that returns counts by noindex reason across all events, so we can sanity-check the live population against GSC's reported numbers over the next few weeks.
 
-Keep `formatListingAdded` and the `listingAdded` variable — both are still used by the trust strip and by `listingPublishedISO` in the JSON-LD.
+### Endpoint
 
-**Fix 2 — Suppress "Organised by" for null/empty/TBC**
-`src/routes/events.$slug.tsx` line 603: tighten the guard from `{e.organiser && (…)}` to also reject empty strings and the literal `TBC` (case-insensitive). Add a small helper or inline check:
+`GET /api/public/admin/indexability-stats`
 
-```ts
-const organiserName = e.organiser?.trim() ?? "";
-const showOrganiser = organiserName.length > 0 && organiserName.toLowerCase() !== "tbc";
+Auth: `x-admin-secret` header matched against `process.env.IMPORT_SECRET` (same pattern as `fix-event-urls.ts`).
+
+### Implementation
+
+New file: `src/routes/api/public/admin/indexability-stats.ts`
+
+1. Load `supabaseAdmin` inside the handler.
+2. Select `id, slug, name, sort_date, entry_url, organiser_url, organiser` from `events` where `status = 'ACTIVE'`. (No source filter — we want the same universe `getIndexableEventSlugsForSitemap` sees.)
+3. Replicate the sibling-grouping logic from `events.functions.ts` lines ~166–195: group rows by `normaliseEventName(name)`, then run `computeIndexability(row, siblings, today)` per row.
+4. Tally:
+   - `total` (all ACTIVE)
+   - `indexable`
+   - `noindex_total`
+   - `noindex_by_reason`: `{ past, "slug-suffix-duplicate", orphan, "duplicate-sibling" }`
+   - `sitemap_count` — should equal `indexable` (cross-check)
+5. Return `Response.json({ today, total, indexable, noindex_total, noindex_by_reason, sitemap_count })`.
+
+### Expected output shape
+
+```json
+{
+  "today": "2026-06-30",
+  "total": 6200,
+  "indexable": 5830,
+  "noindex_total": 370,
+  "noindex_by_reason": {
+    "past": 46,
+    "slug-suffix-duplicate": 180,
+    "orphan": 95,
+    "duplicate-sibling": 49
+  },
+  "sitemap_count": 5830
+}
 ```
 
-Then render `{showOrganiser && (…)}` and use `organiserName` (not `e.organiser`) inside the block.
+Comparing `noindex_total` against GSC's 323 soft-404 number tells us:
+- If `noindex_total >= 323` → we've covered the GSC set; just wait for recrawl.
+- If `noindex_total < 323` → some flagged URLs slip through the rules; pull GSC's URL list and audit.
 
-No data-layer change. `matchingClub` lookup in `events.functions.ts` already does a non-null check on `e.organiser`, and "TBC" will never match a real `public_clubs` row so the existing match logic is harmless — but for cleanliness I'll add the same `trim()` + `tbc` guard around the club-lookup block in `getEventPageData` so we don't waste a DB roundtrip on TBC-only rows.
+### Out of scope
 
-## Clarification — Fix 3
+- No UI. Curl-only.
+- No per-URL listing (would be huge; if needed later, add `?reason=orphan&limit=50` follow-up).
+- No schema or `event-indexability.ts` changes.
 
-`sameWeekendNearby` **is** implemented exactly as specced. In `src/lib/events.functions.ts` lines 912–957:
+### Verification
 
-- `.eq("county", event.county)` — county-filtered
-- `.gte/.lte("sort_date", …)` against `event.sort_date ± 2 days` — ±2 day window
-- `.neq("id", event.id)` — excludes self
-- `hasOrganiserOwnedLink(…)` gate per row
-- Returns up to 6; UI hides when `< 3` (events.$slug.tsx line 879)
-- Silent omission when `event.county` is null — TRA / Scottish events skip the query entirely (line 915 guard)
-
-The "More {discipline} in {region}" block you're also seeing is a separate, pre-existing section (`showCombo`, lines 446–453 / rendered further down) — it's the region × distance link, not the new same-weekend feature. Both are live; they're complementary, not substitutes.
-
-No code change needed for Fix 3 — it's a confirmation only. Approving this plan will execute Fixes 1 and 2.
+Curl the endpoint after deploy with `x-admin-secret`, check counts are non-zero across all four reasons, confirm `sitemap_count` matches the live `<url>` count in `/sitemap.xml` (currently 5,830).
