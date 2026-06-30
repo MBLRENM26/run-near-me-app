@@ -876,6 +876,66 @@ function EventDetailPage() {
             </div>
           )}
 
+          {sameWeekendNearby.length >= 3 && e.county && (
+            <div className="mt-12">
+              <h2 className="text-xl font-semibold text-foreground">
+                Same weekend nearby in {e.county}
+              </h2>
+              <ul className="mt-4 divide-y divide-border rounded-2xl border border-border bg-card">
+                {sameWeekendNearby.map((r) => {
+                  const rDate = formatEventDate(r);
+                  const rLoc = r.town || r.county;
+                  return (
+                    <li key={r.id}>
+                      <Link
+                        to="/events/$slug"
+                        params={{ slug: r.slug }}
+                        className="flex flex-col gap-0.5 px-4 py-3 hover:bg-muted/50 transition-colors"
+                      >
+                        <span className="font-medium text-foreground">
+                          {r.name}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          {[rDate, rLoc].filter(Boolean).join(" · ")}
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+
+          {otherRacesByOrganiser.length >= 2 && matchingClub && e.organiser && (
+            <div className="mt-12">
+              <h2 className="text-xl font-semibold text-foreground">
+                Other races by {matchingClub.name}
+              </h2>
+              <ul className="mt-4 divide-y divide-border rounded-2xl border border-border bg-card">
+                {otherRacesByOrganiser.map((r) => {
+                  const rDate = formatEventDate(r);
+                  const rLoc = r.town || r.county;
+                  return (
+                    <li key={r.id}>
+                      <Link
+                        to="/events/$slug"
+                        params={{ slug: r.slug }}
+                        className="flex flex-col gap-0.5 px-4 py-3 hover:bg-muted/50 transition-colors"
+                      >
+                        <span className="font-medium text-foreground">
+                          {r.name}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          {[rDate, rLoc].filter(Boolean).join(" · ")}
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+
           <section className="mt-12">
             <h2 className="text-xl font-semibold text-foreground">
               About this listing
