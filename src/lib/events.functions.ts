@@ -580,11 +580,44 @@ export type SameTownEvent = {
   county: string | null;
 };
 
+export type SameWeekendNearbyEvent = {
+  id: string;
+  slug: string;
+  name: string;
+  date_raw: string | null;
+  sort_date: string | null;
+  date_is_estimated: boolean;
+  town: string | null;
+  county: string | null;
+};
+
+export type OrganiserClub = {
+  slug: string;
+  name: string;
+};
+
+export type OtherRaceByOrganiserEvent = {
+  id: string;
+  slug: string;
+  name: string;
+  date_raw: string | null;
+  sort_date: string | null;
+  date_is_estimated: boolean;
+  town: string | null;
+  county: string | null;
+};
+
 export type EventPageData = {
   event: EventDetail;
   related: RelatedEvents;
   /** Other upcoming events in the same town as the current event. */
   sameTown: SameTownEvent[];
+  /** Events in the same county on the same weekend (within ±2 days). */
+  sameWeekendNearby: SameWeekendNearbyEvent[];
+  /** Matched running club for organiser line / onward journeys. */
+  matchingClub: OrganiserClub | null;
+  /** Other upcoming races by the matched organiser club. */
+  otherRacesByOrganiser: OtherRaceByOrganiserEvent[];
   /**
    * Search-index decision for this event page. Computed server-side
    * from past/slug-suffix/orphan/duplicate-sibling rules so the
@@ -600,7 +633,7 @@ export const getEventPageData = createServerFn({ method: "GET" })
     const { data: row, error } = await supabaseAdmin
       .from("events")
       .select(
-        "id, slug, name, date_raw, date_from, date_to, sort_date, town, county, region, distances, discipline, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, organiser, is_featured, date_is_estimated, created_at, norm_created_at, lat, lng",
+        "id, slug, name, date_raw, date_from, date_to, sort_date, town, county, region, distances, discipline, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, organiser, source, is_featured, date_is_estimated, created_at, norm_created_at, lat, lng",
       )
       .eq("slug", data.slug)
       .eq("status", "ACTIVE")
