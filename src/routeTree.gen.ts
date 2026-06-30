@@ -67,6 +67,7 @@ import { Route as ApiPublicHooksSendRaceRemindersRouteImport } from './routes/ap
 import { Route as ApiPublicAdminSyncScottishAthleticsClubsRouteImport } from './routes/api/public/admin/sync-scottish-athletics-clubs'
 import { Route as ApiPublicAdminSyncScottishAthleticsRouteImport } from './routes/api/public/admin/sync-scottish-athletics'
 import { Route as ApiPublicAdminSyncEnglandAthleticsRouteImport } from './routes/api/public/admin/sync-england-athletics'
+import { Route as ApiPublicAdminIndexabilityStatsRouteImport } from './routes/api/public/admin/indexability-stats'
 import { Route as ApiPublicAdminFixEventUrlsRouteImport } from './routes/api/public/admin/fix-event-urls'
 import { Route as AdminShellAdminEventsEnrichDatesRouteImport } from './routes/_adminShell.admin.events.enrich-dates'
 import { Route as AdminShellAdminEventsDuplicatesRouteImport } from './routes/_adminShell.admin.events.duplicates'
@@ -378,6 +379,12 @@ const ApiPublicAdminSyncEnglandAthleticsRoute =
     path: '/api/public/admin/sync-england-athletics',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicAdminIndexabilityStatsRoute =
+  ApiPublicAdminIndexabilityStatsRouteImport.update({
+    id: '/api/public/admin/indexability-stats',
+    path: '/api/public/admin/indexability-stats',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicAdminFixEventUrlsRoute =
   ApiPublicAdminFixEventUrlsRouteImport.update({
     id: '/api/public/admin/fix-event-urls',
@@ -467,6 +474,7 @@ export interface FileRoutesByFullPath {
   '/admin/events/duplicates': typeof AdminShellAdminEventsDuplicatesRoute
   '/admin/events/enrich-dates': typeof AdminShellAdminEventsEnrichDatesRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
+  '/api/public/admin/indexability-stats': typeof ApiPublicAdminIndexabilityStatsRoute
   '/api/public/admin/sync-england-athletics': typeof ApiPublicAdminSyncEnglandAthleticsRoute
   '/api/public/admin/sync-scottish-athletics': typeof ApiPublicAdminSyncScottishAthleticsRoute
   '/api/public/admin/sync-scottish-athletics-clubs': typeof ApiPublicAdminSyncScottishAthleticsClubsRoute
@@ -532,6 +540,7 @@ export interface FileRoutesByTo {
   '/admin/events/duplicates': typeof AdminShellAdminEventsDuplicatesRoute
   '/admin/events/enrich-dates': typeof AdminShellAdminEventsEnrichDatesRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
+  '/api/public/admin/indexability-stats': typeof ApiPublicAdminIndexabilityStatsRoute
   '/api/public/admin/sync-england-athletics': typeof ApiPublicAdminSyncEnglandAthleticsRoute
   '/api/public/admin/sync-scottish-athletics': typeof ApiPublicAdminSyncScottishAthleticsRoute
   '/api/public/admin/sync-scottish-athletics-clubs': typeof ApiPublicAdminSyncScottishAthleticsClubsRoute
@@ -599,6 +608,7 @@ export interface FileRoutesById {
   '/_adminShell/admin/events/duplicates': typeof AdminShellAdminEventsDuplicatesRoute
   '/_adminShell/admin/events/enrich-dates': typeof AdminShellAdminEventsEnrichDatesRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
+  '/api/public/admin/indexability-stats': typeof ApiPublicAdminIndexabilityStatsRoute
   '/api/public/admin/sync-england-athletics': typeof ApiPublicAdminSyncEnglandAthleticsRoute
   '/api/public/admin/sync-scottish-athletics': typeof ApiPublicAdminSyncScottishAthleticsRoute
   '/api/public/admin/sync-scottish-athletics-clubs': typeof ApiPublicAdminSyncScottishAthleticsClubsRoute
@@ -666,6 +676,7 @@ export interface FileRouteTypes {
     | '/admin/events/duplicates'
     | '/admin/events/enrich-dates'
     | '/api/public/admin/fix-event-urls'
+    | '/api/public/admin/indexability-stats'
     | '/api/public/admin/sync-england-athletics'
     | '/api/public/admin/sync-scottish-athletics'
     | '/api/public/admin/sync-scottish-athletics-clubs'
@@ -731,6 +742,7 @@ export interface FileRouteTypes {
     | '/admin/events/duplicates'
     | '/admin/events/enrich-dates'
     | '/api/public/admin/fix-event-urls'
+    | '/api/public/admin/indexability-stats'
     | '/api/public/admin/sync-england-athletics'
     | '/api/public/admin/sync-scottish-athletics'
     | '/api/public/admin/sync-scottish-athletics-clubs'
@@ -797,6 +809,7 @@ export interface FileRouteTypes {
     | '/_adminShell/admin/events/duplicates'
     | '/_adminShell/admin/events/enrich-dates'
     | '/api/public/admin/fix-event-urls'
+    | '/api/public/admin/indexability-stats'
     | '/api/public/admin/sync-england-athletics'
     | '/api/public/admin/sync-scottish-athletics'
     | '/api/public/admin/sync-scottish-athletics-clubs'
@@ -849,6 +862,7 @@ export interface RootRouteChildren {
   ParkrunEventsRegionRegionRoute: typeof ParkrunEventsRegionRegionRoute
   RunningEventsSlugDistanceRoute: typeof RunningEventsSlugDistanceRoute
   ApiPublicAdminFixEventUrlsRoute: typeof ApiPublicAdminFixEventUrlsRoute
+  ApiPublicAdminIndexabilityStatsRoute: typeof ApiPublicAdminIndexabilityStatsRoute
   ApiPublicAdminSyncEnglandAthleticsRoute: typeof ApiPublicAdminSyncEnglandAthleticsRoute
   ApiPublicAdminSyncScottishAthleticsRoute: typeof ApiPublicAdminSyncScottishAthleticsRoute
   ApiPublicAdminSyncScottishAthleticsClubsRoute: typeof ApiPublicAdminSyncScottishAthleticsClubsRoute
@@ -1266,6 +1280,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAdminSyncEnglandAthleticsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/admin/indexability-stats': {
+      id: '/api/public/admin/indexability-stats'
+      path: '/api/public/admin/indexability-stats'
+      fullPath: '/api/public/admin/indexability-stats'
+      preLoaderRoute: typeof ApiPublicAdminIndexabilityStatsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/admin/fix-event-urls': {
       id: '/api/public/admin/fix-event-urls'
       path: '/api/public/admin/fix-event-urls'
@@ -1455,6 +1476,7 @@ const rootRouteChildren: RootRouteChildren = {
   ParkrunEventsRegionRegionRoute: ParkrunEventsRegionRegionRoute,
   RunningEventsSlugDistanceRoute: RunningEventsSlugDistanceRoute,
   ApiPublicAdminFixEventUrlsRoute: ApiPublicAdminFixEventUrlsRoute,
+  ApiPublicAdminIndexabilityStatsRoute: ApiPublicAdminIndexabilityStatsRoute,
   ApiPublicAdminSyncEnglandAthleticsRoute:
     ApiPublicAdminSyncEnglandAthleticsRoute,
   ApiPublicAdminSyncScottishAthleticsRoute:
