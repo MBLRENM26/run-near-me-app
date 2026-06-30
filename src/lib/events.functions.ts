@@ -898,8 +898,9 @@ export const getEventPageData = createServerFn({ method: "GET" })
         .limit(100);
       if (clubRows) {
         for (const c of clubRows) {
-          const cName = c.name?.trim().toLowerCase();
-          const cSlug = c.slug?.trim().toLowerCase();
+          if (!c.slug || !c.name) continue;
+          const cName = c.name.trim().toLowerCase();
+          const cSlug = c.slug.trim().toLowerCase();
           if (cName === orgLower || cSlug === normSlug) {
             matchingClub = { slug: c.slug, name: c.name };
             break;
