@@ -600,22 +600,29 @@ function EventDetailPage() {
                   <ExternalLink className="h-4 w-4" />
                 </a>
               </Button>
-              {e.organiser && (
-                <p className="mt-3 text-sm text-foreground">
-                  Organised by:{" "}
-                  {matchingClub ? (
-                    <Link
-                      to="/running-clubs/$slug"
-                      params={{ slug: matchingClub.slug }}
-                      className="font-medium text-primary hover:underline"
-                    >
-                      {matchingClub.name}
-                    </Link>
-                  ) : (
-                    <span className="font-medium">{e.organiser}</span>
-                  )}
-                </p>
-              )}
+              {(() => {
+                const organiserName = e.organiser?.trim() ?? "";
+                const showOrganiser =
+                  organiserName.length > 0 &&
+                  organiserName.toLowerCase() !== "tbc";
+                if (!showOrganiser) return null;
+                return (
+                  <p className="mt-3 text-sm text-foreground">
+                    Organised by:{" "}
+                    {matchingClub ? (
+                      <Link
+                        to="/running-clubs/$slug"
+                        params={{ slug: matchingClub.slug }}
+                        className="font-medium text-primary hover:underline"
+                      >
+                        {matchingClub.name}
+                      </Link>
+                    ) : (
+                      <span className="font-medium">{organiserName}</span>
+                    )}
+                  </p>
+                );
+              })()}
               {secondaryCta && (
                 <p className="mt-2 text-sm">
                   <a
@@ -965,11 +972,6 @@ function EventDetailPage() {
             </p>
           </section>
 
-          {listingAdded && (
-            <p className="mt-12 text-xs text-muted-foreground">
-              Listing added {listingAdded}
-            </p>
-          )}
 
         </section>
 

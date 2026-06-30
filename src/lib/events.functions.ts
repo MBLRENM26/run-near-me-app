@@ -886,7 +886,7 @@ export const getEventPageData = createServerFn({ method: "GET" })
     // ----- Organiser Club Match -----
     let matchingClub: OrganiserClub | null = null;
     const orgTrim = event.organiser?.trim();
-    if (orgTrim) {
+    if (orgTrim && orgTrim.toLowerCase() !== "tbc") {
       const orgLower = orgTrim.toLowerCase();
       const normSlug = orgLower
         .replace(/[^a-z0-9]+/g, "-")
