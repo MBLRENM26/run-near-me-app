@@ -308,21 +308,8 @@ export const Route = createFileRoute("/events/$slug")({
   errorComponent: EventError,
 });
 
-const SOURCE_NAME_MAP: Record<string, string> = {
-  "england-athletics": "England Athletics",
-  tra: "Trail Running Association",
-  scottishathletics: "Scottish Athletics",
-  "welsh-athletics": "Welsh Athletics",
-  "athletics-ni": "Athletics NI",
-  runabc: "RunABC",
-  runthrough: "RunThrough",
-  parkrun: "parkrun",
-};
 
-function formatSourceName(source: string | null | undefined): string {
-  if (!source) return "Running Events Near Me";
-  return SOURCE_NAME_MAP[source] ?? (source === "manual" ? "Running Events Near Me" : source);
-}
+
 
 function EventDetailPage() {
   const {
@@ -657,7 +644,7 @@ function EventDetailPage() {
           )}
 
           <div className="mt-2 text-xs text-muted-foreground">
-            {listingAdded ? `Listed ${listingAdded}` : "Listed recently"} · Source: {formatSourceName(e.source)}
+            {listingAdded ? `Listed ${listingAdded}` : "Listed recently"}
           </div>
 
           {usefulLinks.length >= 1 && (
