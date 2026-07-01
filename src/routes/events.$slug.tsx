@@ -657,7 +657,7 @@ function EventDetailPage() {
           )}
 
           <div className="mt-2 text-xs text-muted-foreground">
-            {listingAdded ? `Listed ${listingAdded}` : "Listed recently"} · Source: {formatSourceName(e.source)}
+            {listingAdded ? `Listed ${listingAdded}` : "Listed recently"}
           </div>
 
           {usefulLinks.length >= 1 && (

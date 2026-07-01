@@ -94,7 +94,6 @@ export type EventDetail = {
   // aggregator domain in the SSR hydration JSON, where scrapers + Google's
   // cache can pick it up. See mem://constraints/no-source-attribution.
   organiser: string | null;
-  source: string | null;
   is_featured: boolean;
   date_is_estimated: boolean;
   created_at: string | null;
@@ -107,7 +106,7 @@ export const getEventBySlug = createServerFn({ method: "GET" })
     const { data: row, error } = await supabaseAdmin
       .from("events")
       .select(
-        "id, slug, name, date_raw, date_from, date_to, sort_date, town, county, region, distances, discipline, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, organiser, source, is_featured, date_is_estimated",
+        "id, slug, name, date_raw, date_from, date_to, sort_date, town, county, region, distances, discipline, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, organiser, is_featured, date_is_estimated",
       )
       .eq("slug", data.slug)
       .eq("status", "ACTIVE")
@@ -633,7 +632,7 @@ export const getEventPageData = createServerFn({ method: "GET" })
     const { data: row, error } = await supabaseAdmin
       .from("events")
       .select(
-        "id, slug, name, date_raw, date_from, date_to, sort_date, town, county, region, distances, discipline, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, organiser, source, is_featured, date_is_estimated, created_at, norm_created_at, lat, lng",
+        "id, slug, name, date_raw, date_from, date_to, sort_date, town, county, region, distances, discipline, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, organiser, is_featured, date_is_estimated, created_at, norm_created_at, lat, lng",
       )
       .eq("slug", data.slug)
       .eq("status", "ACTIVE")
