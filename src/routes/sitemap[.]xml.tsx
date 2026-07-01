@@ -156,6 +156,12 @@ export const Route = createFileRoute("/sitemap.xml")({
             priority: "0.7",
             changefreq: "weekly",
           })),
+          ...cityEntries.map((c) => ({
+            loc: `${SITE_URL}/running-events-in-city/${c.slug}`,
+            lastmod: today,
+            priority: "0.7",
+            changefreq: "weekly",
+          })),
           {
             loc: `${SITE_URL}/parkrun-events`,
             lastmod: today,
