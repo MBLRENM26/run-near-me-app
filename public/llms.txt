@@ -5,33 +5,42 @@
 ## What this site does
 
 - Lets runners search for events by postcode or "near me" (geolocation), returning results sorted by proximity in miles
-
 - Lists running events across all UK regions: England, Scotland, Wales, and Northern Ireland
-
-- Provides dedicated pages for each UK region (e.g. /running-events/south-east, /running-events/scotland)
-
-- Allows race organisers to submit their events via /list-your-event
+- Provides dedicated pages for each UK region, distance and terrain
+- Allows race organisers to submit their events for free
 
 ## Who it is for
 
 - Recreational and competitive runners looking for their next event in the UK
-
 - Race organisers wanting free directory listings
-
-- Running clubs and coaches sourcing events for members and looking for promotion and traffic for their own events
-
-## Key pages
-
-- / — Homepage with location-based search
-
-- /running-events/[region] — Regional event listings (e.g. /running-events/london, /running-events/yorkshire-humber)
-
-- /list-your-event — Free submission form for race organisers
+- Running clubs and coaches sourcing events for members
 
 ## Data
 
-Events sourced from England Athletics RunEvents, Welsh Athletics, Athletics NI, and parkrun. Coverage: May–December 2026, expanding continuously. Each event record includes name, date, town, county, distance type, entry fee (where known), and a link to the official event page.
+Events sourced from England Athletics RunEvents, Welsh Athletics, Athletics NI, Scottish Athletics, and parkrun. Coverage: 2026 season, expanding continuously. Each event record includes name, date, town, county, distance type, entry fee (where known), and a link to the official event page.
 
-## Contact
+## Pages
 
-For event submissions or corrections: via the /list-your-event page.
+- [Home](/): Homepage with location-based search
+- [About](/about): What the directory is and how it works
+- [List your event](/list-your-event): Free submission form for race organisers
+- [This weekend](/running-events-this-weekend): Races happening in the next few days
+- [Next weekend](/running-events-next-weekend): Races on the following weekend
+- [5K races](/5k-races): All upcoming 5K events across the UK
+- [10K races](/10k-races): All upcoming 10K events across the UK
+- [Half marathons](/half-marathons): All upcoming half marathons
+- [Marathons](/marathons): All upcoming marathons
+- [Ultra marathons](/ultra-marathons): All upcoming ultra distances
+- [Trail running events](/trail-running-events): Trail-terrain races
+- [Road races](/road-races): Road-terrain races
+- [Fell races](/fell-races): Fell running events
+- [Multi-terrain races](/multi-terrain-races): Mixed-surface races
+- [parkrun events](/parkrun-events): UK parkrun locations
+- [Junior parkrun events](/junior-parkrun-events): 2K junior parkrun locations
+- [Running clubs](/running-clubs): UK running club directory
+- [London events](/running-events/london): Region page example
+- [Scotland events](/running-events/scotland): Region page example
+
+## Optional
+
+- [Privacy](/privacy): Privacy policy
