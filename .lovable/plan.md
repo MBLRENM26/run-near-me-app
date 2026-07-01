@@ -1,45 +1,39 @@
-## Homepage discovery updates
+## Goal
 
-Two changes to `src/routes/index.tsx`, no data or backend work.
+Stop headless/bot traffic (mostly CN) from polluting Plausible analytics going forward, so visitor counts reflect real humans.
 
-### 1. New "Browse by terrain" section (pill chips)
+## Why this is happening
 
-Add a new section below the existing "Browse by distance" strip, above the parkrun callout.
+Plausible only counts clients that download and execute its JS. The CN traffic is therefore headless browsers (Puppeteer/Playwright/HeadlessChrome), uptime probes, or SEO scrapers rendering pages — not plain HTTP crawlers. Plausible has no server-side geo/UA filter, so the only reliable fix is to not call `plausible(...)` for those clients.
 
-- Heading: **Browse by terrain**
-- Subhead: "Road, trail, fell and multi-terrain races across the UK."
-- Reuse `ChipLinkRow` with 4 pill chips (same styling as the distance chips):
-  - **Road races** → `/road-races`
-  - **Trail running events** → `/trail-running-events`
-  - **Fell races** → `/fell-races`
-  - **Multi-terrain races** → `/multi-terrain-races`
-- Order: Road, Trail, Fell, Multi-terrain (most common first).
-- No counts (kept static like the city strip — no per-request fetch).
+## Change
 
-### 2. Convert "Browse by city" from pills → region-style cards
+Extend the existing inline bootstrap script in `src/routes/__root.tsx` (the one that already gates on hostname) with a second gate that no-ops `window.plausible` when the client looks automated. If any of these are true, we skip loading the tracker:
 
-The current city strip uses `ChipLinkRow` pill chips. Replace with the same bordered card + chevron pattern the region grid uses.
+1. `navigator.webdriver === true` (set by all mainstream headless drivers)
+2. `!navigator.languages || navigator.languages.length === 0` (typical of default headless configs)
+3. UA matches `/HeadlessChrome|PhantomJS|Puppeteer|Playwright|Selenium|bot|spider|crawl|preview|monitor|lighthouse|pagespeed|gtmetrix/i`
+4. `window.outerWidth === 0 || window.outerHeight === 0` (offscreen/headless)
 
-- Keep the same `CITY_STRIP` list (12 cities) and `<Link to="/running-events-in-city/$city">` target.
-- Grid: `grid-cols-2 sm:grid-cols-3 lg:grid-cols-4` (matches region grid exactly).
-- Card markup: `flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium ...` with a trailing `ChevronRight`.
-- Subhead tweak: current copy says "Races within 25 km" — leave unchanged.
+All checks are wrapped in try/catch and default to "load tracker" on error, so real users are never blocked.
 
-### Final homepage section order
+## Out of scope
 
-1. Hero + location prompt
-2. Results (when located)
-3. Featured near you (when located)
-4. Browse by region (cards)
-5. Browse by city (cards — was pills)
-6. Browse by distance (pills)
-7. **Browse by terrain (pills — new)**
-8. Parkrun / junior parkrun callout
-9. Discover events across the UK
+- No changes to the site UI, routing, or SSR.
+- No changes to any server function or DB.
+- No attempt to retro-clean historical Plausible data (not possible — use Plausible's dashboard "exclude country = China" segment for past periods).
+- No aggressive `zh` language block by default (would risk dropping real diaspora users). Can be added later if bot traffic persists.
 
-### Out of scope
+## Files touched
 
-- No new component files — inline the terrain chips using the existing `ChipLinkRow`.
-- No changes to the terrain hub pages, the city hub pages, or any data queries.
-- `CITY_STRIP` list unchanged.
-- No icons on chips.
+- `src/routes/__root.tsx` — the inline `scripts[0].children` string only. Nothing else.
+
+## Verification
+
+- Load the published site in a normal browser: `window.plausible` should still be a function and a pageview should fire (check network for `plausible.io/api/event`).
+- Load via `curl` with a headless UA or open DevTools and set `navigator.webdriver = true` before reload: no request to `plausible.io` should occur.
+- Watch the Plausible dashboard over the next few days — CN visitor share should drop toward the country's real diaspora baseline.
+
+## Expected impact
+
+Historical numbers stay as-is; new data should see a sharp drop in CN "Direct desktop" visitors and a corresponding improvement in bounce-rate and pages-per-visit realism.
