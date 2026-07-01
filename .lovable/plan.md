@@ -1,46 +1,62 @@
-## SEO & AI search fixes
+## Goal
 
-Three findings from the last scan. Pace calculator suggestion parked.
+One-off manual seed of 29 pre-filtered running events from Events Up North (per your uploaded brief + CSV). No new sync, no cron, no code changes.
 
-### 1. Sitemap — add `/about`
+## Approach
 
-`src/routes/sitemap[.]xml.tsx` lists home, list-your-event, privacy and the discovery hubs but misses `/about`. Add one entry (priority 0.5, monthly).
+Single `INSERT ... ON CONFLICT` migration (via the data-insert tool) that upserts 29 rows into `public.events`. Everything driven from the CSV — no scraping, no new endpoints.
 
-The other flagged routes (`/index.html`, `/search`, `/admin/login`, `/email/unsubscribe`) stay excluded — internal utility / admin / auth surfaces that shouldn't be indexed.
+## Field mapping per row
 
-### 2. `/llms.txt` — add a proper Pages link list
+| Column | Source |
+|---|---|
+| `name` | CSV `name` |
+| `slug` | `slugify(name)`; for series legs, append `-race-N-2026` or year (see slug notes) |
+| `date_from`, `sort_date` | CSV `date` |
+| `date_raw` | Formatted "7 July 2026" style |
+| `discipline` | Road/XC for `Run`, `Trail` for `Trail run` |
+| `distance_tags` | Derived from name (5K, 10K, half-marathon, 10-mile, etc.) |
+| `terrain_tags` | `{road}` or `{trail}` per discipline |
+| `town` | Last comma-part of `location` (fallbacks per brief for Netherhall→Maryport, Carlisle Rememb/Santa→Carlisle) |
+| `location_raw` | CSV `location` verbatim |
+| `county` | Cumbria / Dumfries & Galloway / Tyne and Wear per town lookup |
+| `country` | England or Scotland |
+| `region` | North West / North East / Scotland |
+| `lat`, `lng` | Hardcoded per town (Cockermouth, Whitehaven, Carlisle, Workington, Dumfries, Dalbeattie, Maryport, Blaydon, Keswick, Wigton, Bassenthwaite, Rowlands Gill, Wrekenton, Wetherall, Eaglesfield, Grasmere) — precomputed in the migration, no runtime geocoder |
+| `entry_url`, `organiser_url` | CSV `entry_url` (same value both) |
+| `source` | `'eventsupnorth'` |
+| `source_url` | CSV `entry_url` |
+| `status` | `'ACTIVE'` |
+| `is_upcoming` | `true` (all future dates) |
+| `is_curated_tags` | `true` (tags are hand-derived, not scraper output) |
+| `series_key` | `'am-caravans-castle-5k-2026'` for the 3 Castle legs; `'workington-5k-series-2026'` for the 2 Workington legs |
+| `date_is_estimated` | `false` |
 
-Rewrite `public/llms.txt` to the spec format: keep the H1 + blockquote, then a single `## Pages` section as a markdown link list. Use the real flat slugs from `src/routes/` — no invented nested paths. Include:
+Not written: `entry_fee`, `organiser`, description (per Core rule on scraped data — the CSV doesn't carry these anyway).
 
-- `/` — homepage
-- `/about`
-- `/list-your-event`
-- `/5k-races`, `/10k-races`, `/half-marathons`, `/marathons`, `/ultra-marathons`, `/trail-running-events`
-- `/road-races`, `/fell-races`, `/multi-terrain-races`
-- `/running-events-this-weekend`, `/running-events-next-weekend` (flat routes — confirmed against `src/routes/running-events-this-weekend.tsx` and `running-events-next-weekend.tsx`, not `/running-events/this-weekend`)
-- `/parkrun-events`, `/junior-parkrun-events`
-- `/running-clubs`
-- 1–2 representative region pages (e.g. `/running-events/london`, `/running-events/scotland`) rather than all 12
-- `/privacy`
+## Dedupe / conflict handling
 
-Exclude admin, `/auth`, `/email/*`, `/api/*`, `/lovable/*`, `/search`, per-event and per-club detail pages (thousands of rows — the hubs point crawlers into them).
+`INSERT ... ON CONFLICT (slug) DO UPDATE SET entry_url = COALESCE(events.entry_url, EXCLUDED.entry_url), organiser_url = COALESCE(events.organiser_url, EXCLUDED.organiser_url)` — so existing rows only gain the Events Up North URL if they don't already have one. Matches the brief's rule for the 3 already-in-DB events (Gelston 5, Workington Race 3, M-Sport 5K).
 
-Keep the short "What this site does" / "Who it is for" / "Data" paragraphs above the link list.
+Series slugs use suffixed form (`am-caravans-castle-5k-race-3-2026`, `-race-4-2026`, `-race-5-2026`; `workington-5k-series-race-4-2026`) so they don't collide with existing rows or each other.
 
-### 3. Accessibility contrast — audit muted text
+## What's explicitly NOT changing
 
-The scanner flagged low-contrast text on the last **published** build, so the fix only clears after a republish. Approach:
+- No changes to `ENTRY_PLATFORM_HOSTS` or `link-trust.ts` (per brief §75-79).
+- No cron, no scraper, no admin endpoint.
+- No excluded events imported (Northumberland Coastal Run, Wild Deer Lambton, Wild Deer Prudhoe Miners).
 
-- Grep for `text-muted-foreground/50`, `text-muted-foreground/60`, `text-gray-300`, `text-gray-400`, and any arbitrary `text-*/NN` opacity on light surfaces.
-- Replace weakened muted tokens with plain `text-muted-foreground` (or `text-foreground` for body copy that needs to hit 4.5:1).
-- Spot-check the header search placeholder, footer meta text, event-card metadata rows, and disabled chip pills — those are the usual offenders.
+## Verification after insert
 
-No token/theme changes — component-level pass only.
+Run:
+```sql
+SELECT slug, name, sort_date, town, county, organiser_url
+FROM events WHERE source = 'eventsupnorth' ORDER BY sort_date;
+```
+Expect 29 rows + the 4 pre-existing ones (which may or may not now show `source='eventsupnorth'` depending on their current source — we do NOT overwrite `source`, only the two URL fields).
 
-### Verification
+Report back: rows inserted, rows updated (URL-only), any slug collisions, and the four already-in-DB events with their final URLs.
 
-After edits: view `/sitemap.xml` and `/llms.txt` in the preview to confirm the new entries render and every listed slug 200s. Contrast finding rescans against the published site — user will need to republish before it clears.
+## Follow-up (not in scope now)
 
-### Out of scope
-
-Pace calculator (`/tools/pace-calculator`) — parked at user's request.
+Per brief §79: revisit a proper sync endpoint only if monthly monitoring shows Events Up North adds 3+ new events per check. Parked.
