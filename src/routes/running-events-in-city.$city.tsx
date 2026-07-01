@@ -1,17 +1,19 @@
 import { createFileRoute, notFound, Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
-import { getEventsForCounty } from "@/lib/county.functions";
-import { countyBySlug } from "@/lib/counties";
-import { CITIES } from "@/lib/cities";
+import { getEventsForCity } from "@/lib/city.functions";
+import type { CityPageData } from "@/lib/city.functions";
+import { cityBySlug, nearestCities } from "@/lib/cities";
+import { CITY_RADIUS_KM } from "@/lib/cities";
+import { slugToRegion } from "@/lib/regions";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { BackToSearchBar } from "@/components/site/BackToSearchBar";
 import { EventCard, type EventCardData } from "@/components/events/EventCard";
 import { ChipLinkRow, type Chip } from "@/components/site/ChipLinkRow";
 import { SITE_URL, CURRENT_YEAR } from "@/lib/site";
-import type { CountyPageData } from "@/lib/county.functions";
+import { DISTANCE_PAGE_LIST } from "@/lib/distance-filters";
 
-function toCard(e: CountyPageData["events"][number]): EventCardData {
+function toCard(e: CityPageData["events"][number]): EventCardData {
   return {
     id: e.id,
     slug: e.slug,
@@ -30,18 +32,22 @@ function toCard(e: CountyPageData["events"][number]): EventCardData {
   };
 }
 
-export const Route = createFileRoute("/running-events-in/$county")({
+export const Route = createFileRoute("/running-events-in-city/$city")({
   beforeLoad: ({ params }) => {
-    if (!countyBySlug(params.county)) throw notFound();
+    if (!cityBySlug(params.city)) throw notFound();
   },
-  loader: ({ params }) => getEventsForCounty({ data: { slug: params.county } }),
+  loader: async ({ params }) => {
+    const data = await getEventsForCity({ data: { slug: params.city } });
+    if (!data) throw notFound();
+    return data;
+  },
   head: ({ params, loaderData }) => {
-    const cfg = countyBySlug(params.county);
-    const label = cfg?.label ?? "UK";
+    const cfg = cityBySlug(params.city);
+    const name = cfg?.name ?? "UK";
     const total = loaderData?.total ?? 0;
-    const canonical = `${SITE_URL}/running-events-in/${params.county}`;
-    const title = `Running Events in ${label} ${CURRENT_YEAR} — ${total.toLocaleString()} Races | Running Events Near Me`;
-    const description = `Find ${total.toLocaleString()} upcoming running events in ${label}. 5K, 10K, half marathons and more — dates, distances and direct entry links.`;
+    const canonical = `${SITE_URL}/running-events-in-city/${params.city}`;
+    const title = `Running Events in ${name} ${CURRENT_YEAR} — ${total.toLocaleString()} Races | Running Events Near Me`;
+    const description = `Find ${total.toLocaleString()} upcoming running events within ${CITY_RADIUS_KM} km of ${name}. 5K, 10K, half marathons and more — dates, distances and direct entry links.`;
     const itemList = loaderData
       ? {
           "@context": "https://schema.org",
@@ -56,12 +62,21 @@ export const Route = createFileRoute("/running-events-in/$county")({
           })),
         }
       : null;
+    const region = cfg ? slugToRegion(cfg.region) : null;
     const breadcrumb = {
       "@context": "https://schema.org",
       "@type": "BreadcrumbList",
       itemListElement: [
         { "@type": "ListItem", position: 1, name: "Home", item: `${SITE_URL}/` },
-        { "@type": "ListItem", position: 2, name: label, item: canonical },
+        ...(region
+          ? [{
+              "@type": "ListItem",
+              position: 2,
+              name: region.name,
+              item: `${SITE_URL}/running-events/${region.slug}`,
+            }]
+          : []),
+        { "@type": "ListItem", position: region ? 3 : 2, name, item: canonical },
       ],
     };
     return {
@@ -82,18 +97,28 @@ export const Route = createFileRoute("/running-events-in/$county")({
       ],
     };
   },
-  component: CountyPage,
+  component: CityPage,
   notFoundComponent: NotFound,
+  errorComponent: CityError,
 });
 
-function CountyPage() {
+function CityPage() {
   const data = Route.useLoaderData();
-  const { county: countySlug } = Route.useParams();
-  const { events, total, countyLabel } = data;
-  const dbNames = (countyBySlug(countySlug)?.dbNames ?? []).map((n) => n.toLowerCase());
-  const cityChips: Chip[] = CITIES.filter((c) =>
-    dbNames.includes(c.county.toLowerCase()),
-  ).map((c) => ({
+  const { events, total, city, distanceCounts } = data;
+  const region = slugToRegion(city.region);
+
+  const distanceChips: Chip[] = DISTANCE_PAGE_LIST.filter(
+    (d) => (distanceCounts[d.key] ?? 0) > 0,
+  ).map((d) => ({
+    kind: "disabled",
+    key: d.key,
+    label: d.label,
+    count: distanceCounts[d.key],
+    title: "Filter coming soon",
+  }));
+
+  const nearby = nearestCities(city, 3);
+  const nearbyChips: Chip[] = nearby.map((c) => ({
     kind: "link",
     key: c.slug,
     label: c.name,
@@ -102,6 +127,7 @@ function CountyPage() {
       params: { city: c.slug },
     },
   }));
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
@@ -116,35 +142,48 @@ function CountyPage() {
             Back to all events
           </Link>
           <h1 className="mt-4 text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
-            Running events in {countyLabel}
+            Running events in {city.name} {CURRENT_YEAR}
           </h1>
           <p className="mt-3 text-muted-foreground">
             <span className="font-medium text-foreground">
               {total.toLocaleString()}
             </span>{" "}
-            upcoming races across {countyLabel}.
+            upcoming races within {CITY_RADIUS_KM} km of {city.name}
+            {region && (
+              <>
+                {" "}
+                ·{" "}
+                <Link
+                  to="/running-events/$slug"
+                  params={{ slug: region.slug }}
+                  className="text-primary hover:underline"
+                >
+                  All {region.name} events
+                </Link>
+              </>
+            )}
           </p>
-          {cityChips.length > 0 && (
+          {distanceChips.length > 0 && (
             <div className="mt-5">
-              <ChipLinkRow ariaLabel="Cities in this county" chips={cityChips} />
+              <ChipLinkRow ariaLabel="Distance mix in this city" chips={distanceChips} />
             </div>
           )}
         </section>
-        <section className="mx-auto max-w-6xl px-4 pb-16">
-          {events.length === 0 ? (
-            <div className="text-center py-16 rounded-2xl border border-dashed border-border bg-muted/30">
-              <p className="text-lg font-medium text-foreground">
-                No events listed yet for {countyLabel}
-              </p>
-            </div>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {events.map((e: CountyPageData["events"][number]) => (
-                <EventCard key={e.id} event={toCard(e)} />
-              ))}
-            </div>
-          )}
+        <section className="mx-auto max-w-6xl px-4 pb-10">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {events.map((e: CityPageData["events"][number]) => (
+              <EventCard key={e.id} event={toCard(e)} />
+            ))}
+          </div>
         </section>
+        {nearbyChips.length > 0 && (
+          <section className="mx-auto max-w-6xl px-4 pb-16">
+            <h2 className="text-xl font-semibold text-foreground">Nearby cities</h2>
+            <div className="mt-4">
+              <ChipLinkRow ariaLabel="Nearby cities" chips={nearbyChips} />
+            </div>
+          </section>
+        )}
       </main>
       <Footer />
     </div>
@@ -157,9 +196,11 @@ function NotFound() {
       <Header />
       <main className="flex-1 flex items-center justify-center px-4">
         <div className="max-w-md text-center py-20">
-          <h1 className="text-3xl font-bold text-foreground">County not found</h1>
+          <h1 className="text-3xl font-bold text-foreground">City page not available</h1>
           <p className="mt-3 text-muted-foreground">
-            We don't yet have a landing page for that county.
+            We don't yet have a landing page for that city — either it isn't in
+            our registry or there aren't enough upcoming events within{" "}
+            {CITY_RADIUS_KM} km to publish one.
           </p>
           <Link
             to="/"
@@ -167,6 +208,21 @@ function NotFound() {
           >
             Go home
           </Link>
+        </div>
+      </main>
+      <Footer />
+    </div>
+  );
+}
+
+function CityError({ error }: { error: Error }) {
+  return (
+    <div className="min-h-screen flex flex-col bg-background">
+      <Header />
+      <main className="flex-1 flex items-center justify-center px-4">
+        <div className="max-w-md text-center py-20">
+          <h1 className="text-3xl font-bold text-foreground">Couldn't load this city</h1>
+          <p className="mt-3 text-muted-foreground">{error.message}</p>
         </div>
       </main>
       <Footer />

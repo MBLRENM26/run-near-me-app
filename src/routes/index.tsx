@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { REGIONS } from "@/lib/regions";
+import { CITIES } from "@/lib/cities";
+import { ChipLinkRow, type Chip } from "@/components/site/ChipLinkRow";
 import { ChevronRight } from "lucide-react";
 import {
   LocationPrompt,
@@ -45,6 +47,14 @@ const VALID_TYPES: readonly EventType[] = [
   "marathon",
   "trail",
   "ultra",
+];
+
+// Curated homepage city strip — the biggest UK cities that reliably clear
+// the ≥10-event threshold. Kept static (no per-request count fetch) so the
+// homepage stays cheap to SSR.
+const CITY_STRIP: string[] = [
+  "london", "manchester", "birmingham", "leeds", "liverpool", "sheffield",
+  "bristol", "newcastle", "edinburgh", "glasgow", "cardiff", "nottingham",
 ];
 
 export const Route = createFileRoute("/")({
@@ -402,6 +412,35 @@ function HomePage() {
                 <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
               </Link>
             ))}
+          </div>
+        </section>
+
+        {/* Browse by city */}
+        <section className="mx-auto max-w-6xl px-4 pb-12">
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+            Browse by city
+          </h2>
+          <p className="mt-2 text-muted-foreground">
+            Races within {25} km of the biggest UK cities.
+          </p>
+          <div className="mt-6">
+            <ChipLinkRow
+              ariaLabel="Browse events by city"
+              chips={CITY_STRIP.map(
+                (slug): Chip => {
+                  const c = CITIES.find((x) => x.slug === slug)!;
+                  return {
+                    kind: "link",
+                    key: c.slug,
+                    label: c.name,
+                    linkProps: {
+                      to: "/running-events-in-city/$city",
+                      params: { city: c.slug },
+                    },
+                  };
+                },
+              )}
+            />
           </div>
         </section>
 
