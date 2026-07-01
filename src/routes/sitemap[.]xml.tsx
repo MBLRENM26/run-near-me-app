@@ -11,6 +11,7 @@ import { DISTANCE_PAGE_LIST, type DistanceKey } from "@/lib/distance-filters";
 import { getMonthPageMatrix } from "@/lib/month-page.functions";
 import { monthSlugFromKey, nextNMonthKeys } from "@/lib/month-slug";
 import { COUNTIES, type CountyConfig } from "@/lib/counties";
+import { getCityEventCounts } from "@/lib/city.functions";
 
 export const Route = createFileRoute("/sitemap.xml")({
   server: {
@@ -101,6 +102,14 @@ export const Route = createFileRoute("/sitemap.xml")({
           }));
         } catch (err) {
           console.error("Sitemap: failed to load club slugs", err);
+        }
+
+        let cityEntries: { slug: string }[] = [];
+        try {
+          const counts = await getCityEventCounts();
+          cityEntries = counts.map((c) => ({ slug: c.slug }));
+        } catch (err) {
+          console.error("Sitemap: failed to load city counts", err);
         }
 
         const urls = [
