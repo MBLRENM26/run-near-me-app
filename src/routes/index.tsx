@@ -49,6 +49,14 @@ const VALID_TYPES: readonly EventType[] = [
   "ultra",
 ];
 
+// Curated homepage city strip — the biggest UK cities that reliably clear
+// the ≥10-event threshold. Kept static (no per-request count fetch) so the
+// homepage stays cheap to SSR.
+const CITY_STRIP: string[] = [
+  "london", "manchester", "birmingham", "leeds", "liverpool", "sheffield",
+  "bristol", "newcastle", "edinburgh", "glasgow", "cardiff", "nottingham",
+];
+
 export const Route = createFileRoute("/")({
   validateSearch: (raw: Record<string, unknown>): HomeSearch => {
     const out: HomeSearch = {};
