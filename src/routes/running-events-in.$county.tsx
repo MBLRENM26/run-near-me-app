@@ -88,12 +88,11 @@ export const Route = createFileRoute("/running-events-in/$county")({
 
 function CountyPage() {
   const data = Route.useLoaderData();
+  const { county: countySlug } = Route.useParams();
   const { events, total, countyLabel } = data;
+  const dbNames = (countyBySlug(countySlug)?.dbNames ?? []).map((n) => n.toLowerCase());
   const cityChips: Chip[] = CITIES.filter((c) =>
-    // Match on any of the county's dbNames so London/Greater London etc. work.
-    (countyBySlug(useCountySlug())?.dbNames ?? []).some(
-      (n) => n.toLowerCase() === c.county.toLowerCase(),
-    ),
+    dbNames.includes(c.county.toLowerCase()),
   ).map((c) => ({
     kind: "link",
     key: c.slug,
