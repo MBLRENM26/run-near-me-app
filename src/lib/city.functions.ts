@@ -144,21 +144,44 @@ export const getEventsForCity = createServerFn({ method: "GET" })
   });
 
 /**
- * City counts for sitemap + homepage strip. One round-trip per city — the
- * discovery page is server-cached and this only runs during sitemap
- * generation (hourly) and homepage SSR.
+ * City counts for the sitemap. Runs one bulk scan of geocoded active
+ * events and buckets them into every city in the registry — cheaper than
+ * one round-trip per city. Only used by the sitemap (hourly cache).
  */
 export const getCityEventCounts = createServerFn({ method: "GET" }).handler(
   async (): Promise<Array<{ slug: string; name: string; total: number }>> => {
+    const today = new Date().toISOString().slice(0, 10);
+
+    const all: Row[] = [];
+    const pageSize = 1000;
+    for (let from = 0; ; from += pageSize) {
+      const { data: rows, error } = await supabaseAdmin
+        .from("events")
+        .select(`${DISCOVERY_EVENT_COLUMNS}, lat, lng`)
+        .eq("status", "ACTIVE")
+        .not("lat", "is", null)
+        .not("lng", "is", null)
+        .or(`sort_date.gte.${today},sort_date.is.null`)
+        .range(from, from + pageSize - 1);
+      if (error) throw new Error(error.message);
+      const r = (rows ?? []) as Row[];
+      all.push(...r);
+      if (r.length < pageSize) break;
+    }
+
+    const trusted = all.filter((e) =>
+      hasOrganiserOwnedLink(e.entry_url, e.organiser_url),
+    );
+
     const out: Array<{ slug: string; name: string; total: number }> = [];
     for (const city of CITIES) {
-      try {
-        const { events } = await fetchEventsNearCity(city);
-        if (events.length >= CITY_MIN_EVENTS) {
-          out.push({ slug: city.slug, name: city.name, total: events.length });
-        }
-      } catch (err) {
-        console.error(`getCityEventCounts: ${city.slug} failed`, err);
+      let n = 0;
+      for (const r of trusted) {
+        if (r.lat == null || r.lng == null) continue;
+        if (haversineKm(city.lat, city.lng, r.lat, r.lng) <= CITY_RADIUS_KM) n += 1;
+      }
+      if (n >= CITY_MIN_EVENTS) {
+        out.push({ slug: city.slug, name: city.name, total: n });
       }
     }
     out.sort((a, b) => b.total - a.total);
