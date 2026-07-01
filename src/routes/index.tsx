@@ -22,7 +22,7 @@ import { matchesEventType, type EventType } from "@/lib/distance";
 import { MapPin } from "lucide-react";
 import { DistanceNav } from "@/components/distance/DistanceNav";
 import { hasOrganiserOwnedLink } from "@/lib/link-trust";
-import { DISCOVERY_EVENT_COLUMNS } from "@/lib/events-query";
+import { DISCOVERY_EVENT_COLUMNS, UK_BOUNDS_OR_NULL } from "@/lib/events-query";
 import {
   LiveEventCounter,
   liveStatsQueryOptions,
@@ -188,6 +188,7 @@ function HomePage() {
         .lte("sort_date", to)
         .not("lat", "is", null)
         .not("lng", "is", null)
+        .or(UK_BOUNDS_OR_NULL)
         .not("town", "is", null)
         .not("county", "is", null)
         .not("distances", "is", null)
