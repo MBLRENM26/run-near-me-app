@@ -423,24 +423,21 @@ function HomePage() {
           <p className="mt-2 text-muted-foreground">
             Races within {25} km of the biggest UK cities.
           </p>
-          <div className="mt-6">
-            <ChipLinkRow
-              ariaLabel="Browse events by city"
-              chips={CITY_STRIP.map(
-                (slug): Chip => {
-                  const c = CITIES.find((x) => x.slug === slug)!;
-                  return {
-                    kind: "link",
-                    key: c.slug,
-                    label: c.name,
-                    linkProps: {
-                      to: "/running-events-in-city/$city",
-                      params: { city: c.slug },
-                    },
-                  };
-                },
-              )}
-            />
+          <div className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
+            {CITY_STRIP.map((slug) => {
+              const c = CITIES.find((x) => x.slug === slug)!;
+              return (
+                <Link
+                  key={c.slug}
+                  to="/running-events-in-city/$city"
+                  params={{ city: c.slug }}
+                  className="group flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium text-foreground shadow-card hover:border-primary hover:shadow-card-hover transition-all"
+                >
+                  <span>{c.name}</span>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                </Link>
+              );
+            })}
           </div>
         </section>
 
@@ -454,6 +451,27 @@ function HomePage() {
           </p>
           <div className="mt-6">
             <DistanceNav />
+          </div>
+        </section>
+
+        {/* Browse by terrain */}
+        <section className="mx-auto max-w-6xl px-4 pb-12">
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+            Browse by terrain
+          </h2>
+          <p className="mt-2 text-muted-foreground">
+            Road, trail, fell and multi-terrain races across the UK.
+          </p>
+          <div className="mt-6">
+            <ChipLinkRow
+              ariaLabel="Browse events by terrain"
+              chips={[
+                { kind: "link", key: "road", label: "Road races", linkProps: { to: "/road-races" } },
+                { kind: "link", key: "trail", label: "Trail running events", linkProps: { to: "/trail-running-events" } },
+                { kind: "link", key: "fell", label: "Fell races", linkProps: { to: "/fell-races" } },
+                { kind: "link", key: "multi-terrain", label: "Multi-terrain races", linkProps: { to: "/multi-terrain-races" } },
+              ] satisfies Chip[]}
+            />
           </div>
         </section>
 
