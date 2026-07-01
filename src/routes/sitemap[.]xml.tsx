@@ -121,6 +121,12 @@ export const Route = createFileRoute("/sitemap.xml")({
             changefreq: "monthly",
           },
           {
+            loc: `${SITE_URL}/about`,
+            lastmod: today,
+            priority: "0.5",
+            changefreq: "monthly",
+          },
+          {
             loc: `${SITE_URL}/privacy`,
             lastmod: today,
             priority: "0.3",
