@@ -89,6 +89,20 @@ export const Route = createFileRoute("/running-events-in/$county")({
 function CountyPage() {
   const data = Route.useLoaderData();
   const { events, total, countyLabel } = data;
+  const cityChips: Chip[] = CITIES.filter((c) =>
+    // Match on any of the county's dbNames so London/Greater London etc. work.
+    (countyBySlug(useCountySlug())?.dbNames ?? []).some(
+      (n) => n.toLowerCase() === c.county.toLowerCase(),
+    ),
+  ).map((c) => ({
+    kind: "link",
+    key: c.slug,
+    label: c.name,
+    linkProps: {
+      to: "/running-events-in-city/$city",
+      params: { city: c.slug },
+    },
+  }));
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
@@ -111,6 +125,11 @@ function CountyPage() {
             </span>{" "}
             upcoming races across {countyLabel}.
           </p>
+          {cityChips.length > 0 && (
+            <div className="mt-5">
+              <ChipLinkRow ariaLabel="Cities in this county" chips={cityChips} />
+            </div>
+          )}
         </section>
         <section className="mx-auto max-w-6xl px-4 pb-16">
           {events.length === 0 ? (
