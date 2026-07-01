@@ -108,8 +108,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     scripts: [
       {
         children:
-          "(function(){try{var h=location.hostname;var ok=(h==='runningeventsnearme.com'||h==='www.runningeventsnearme.com');if(!ok){window.plausible=function(){};return;}window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)};plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init();var s=document.createElement('script');s.src='https://plausible.io/js/pa-PgTPkGiODRA9udffr9GAg.js';s.async=true;document.head.appendChild(s);}catch(e){window.plausible=function(){};}})()",
+          "(function(){try{var h=location.hostname;var ok=(h==='runningeventsnearme.com'||h==='www.runningeventsnearme.com');if(!ok){window.plausible=function(){};return;}try{var n=navigator||{};var ua=(n.userAgent||'');var bot=/HeadlessChrome|PhantomJS|Puppeteer|Playwright|Selenium|bot|spider|crawl|preview|monitor|lighthouse|pagespeed|gtmetrix/i.test(ua);var nolang=(!n.languages||n.languages.length===0);var wd=(n.webdriver===true);var offscreen=(window.outerWidth===0||window.outerHeight===0);if(bot||nolang||wd||offscreen){window.plausible=function(){};return;}}catch(_){}window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)};plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init();var s=document.createElement('script');s.src='https://plausible.io/js/pa-PgTPkGiODRA9udffr9GAg.js';s.async=true;document.head.appendChild(s);}catch(e){window.plausible=function(){};}})()",
       },
+
     ],
   }),
   shellComponent: RootShell,
