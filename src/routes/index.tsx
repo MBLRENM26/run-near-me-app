@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { REGIONS } from "@/lib/regions";
+import { CITIES } from "@/lib/cities";
+import { ChipLinkRow, type Chip } from "@/components/site/ChipLinkRow";
 import { ChevronRight } from "lucide-react";
 import {
   LocationPrompt,
