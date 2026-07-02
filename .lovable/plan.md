@@ -1,39 +1,48 @@
-## Goal
+## Plausible Goals Checklist (docs-only PR)
 
-Stop headless/bot traffic (mostly CN) from polluting Plausible analytics going forward, so visitor counts reflect real humans.
+Goal: get conversion data flowing in Plausible by registering every custom event the app already fires. No code changes — this is a reference doc so you can tick goals off in the Plausible dashboard and know exactly which code path fires each one.
 
-## Why this is happening
+### Deliverable
 
-Plausible only counts clients that download and execute its JS. The CN traffic is therefore headless browsers (Puppeteer/Playwright/HeadlessChrome), uptime probes, or SEO scrapers rendering pages — not plain HTTP crawlers. Plausible has no server-side geo/UA filter, so the only reliable fix is to not call `plausible(...)` for those clients.
+One new file: `docs/analytics/plausible-goals.md`
 
-## Change
+### Structure
 
-Extend the existing inline bootstrap script in `src/routes/__root.tsx` (the one that already gates on hostname) with a second gate that no-ops `window.plausible` when the client looks automated. If any of these are true, we skip loading the tracker:
+1. **How to add a goal in Plausible** — 4-step instructions (Site Settings → Goals → + Add Goal → Custom Event → paste name → Save).
+2. **Goal registry table** — one row per event name, columns:
+   - Goal name (exact string, Title Case)
+   - Type (Custom Event / Pageview)
+   - Fires from (file + line)
+   - Trigger (what the user does)
+   - Props sent (name + example value)
+   - Priority (P0 = register now, P1 = nice-to-have)
+3. **Suggested Plausible custom properties to enable** — the props Plausible needs registered separately to appear as filters (e.g. `link_type`, `proximity`, `entry_domain`, `region`, `distance`, `discipline`, `form`, `method`, `filter_type`).
+4. **Funnel suggestions** — 2-3 pre-built funnels worth setting up (Search → Search Result Click → Entry Click; Region View → Entry Click; List-Your-Event pageview → Form: Submission).
+5. **Verification steps** — how to test each goal fires (DevTools → Network → filter `plausible.io/api/event`; or Plausible's realtime view).
 
-1. `navigator.webdriver === true` (set by all mainstream headless drivers)
-2. `!navigator.languages || navigator.languages.length === 0` (typical of default headless configs)
-3. UA matches `/HeadlessChrome|PhantomJS|Puppeteer|Playwright|Selenium|bot|spider|crawl|preview|monitor|lighthouse|pagespeed|gtmetrix/i`
-4. `window.outerWidth === 0 || window.outerHeight === 0` (offscreen/headless)
+### Events to register (from grep of `track(` and `trackX` helpers)
 
-All checks are wrapped in try/catch and default to "load tracker" on error, so real users are never blocked.
+P0 — revenue/conversion proxies:
+- `Entry Click` (src/lib/analytics.ts → trackEntryClick) — outbound to organiser/entry
+- `Form: Submission` (list-your-event, race-reminder, club claim) — one goal, filter by `form` prop
+- `Search Result Click`
+- `Club Website Click` (running-clubs.$slug.tsx:252)
 
-## Out of scope
+P1 — engagement/navigation:
+- `Search Performed`
+- `Club Page View`
+- `Region View`
+- `Location Set`
+- `Filter`
+- `Claim Interest`
+- `Back to search clicked`
 
-- No changes to the site UI, routing, or SSR.
-- No changes to any server function or DB.
-- No attempt to retro-clean historical Plausible data (not possible — use Plausible's dashboard "exclude country = China" segment for past periods).
-- No aggressive `zh` language block by default (would risk dropping real diaspora users). Can be added later if bot traffic persists.
+### Out of scope
 
-## Files touched
+- No new tracked events, no code edits, no dashboard automation.
+- Any missing goals we spot while writing the doc get logged in a "Gaps" section at the bottom for a follow-up PR — not added now.
 
-- `src/routes/__root.tsx` — the inline `scripts[0].children` string only. Nothing else.
+### Follow-ups (not this PR)
 
-## Verification
-
-- Load the published site in a normal browser: `window.plausible` should still be a function and a pageview should fire (check network for `plausible.io/api/event`).
-- Load via `curl` with a headless UA or open DevTools and set `navigator.webdriver = true` before reload: no request to `plausible.io` should occur.
-- Watch the Plausible dashboard over the next few days — CN visitor share should drop toward the country's real diaspora baseline.
-
-## Expected impact
-
-Historical numbers stay as-is; new data should see a sharp drop in CN "Direct desktop" visitors and a corresponding improvement in bounce-rate and pages-per-visit realism.
+- Related-events coverage audit script (option b from the previous message).
+- Adding `Entry Click` funnel to the /events/$slug template if we find it's under-firing.
