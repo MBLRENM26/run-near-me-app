@@ -588,6 +588,8 @@ export type SameWeekendNearbyEvent = {
   date_is_estimated: boolean;
   town: string | null;
   county: string | null;
+  /** 'county' = exact-county match; 'region' = wider region fallback fill. */
+  scope: "county" | "region";
 };
 
 export type OrganiserClub = {
@@ -909,30 +911,38 @@ export const getEventPageData = createServerFn({ method: "GET" })
     }
 
     // ----- Same weekend nearby -----
-    // Guard: County IS NOT NULL mandatory — TRA and Scottish events have no county data
+    // County-first, region fallback fill up to 6. Rows without county AND
+    // region (TRA, some parkrun) still can't render — that's fine.
     const sameWeekendNearby: SameWeekendNearbyEvent[] = [];
-    if (event.county && event.sort_date) {
+    if (event.sort_date && (event.county || event.region)) {
       const [y, m, d] = event.sort_date.split("-").map(Number);
       const baseUTC = Date.UTC(y, m - 1, d);
       const minDate = new Date(baseUTC - 2 * 86400000).toISOString().slice(0, 10);
       const maxDate = new Date(baseUTC + 2 * 86400000).toISOString().slice(0, 10);
 
-      const { data: wkRows } = await supabaseAdmin
-        .from("events")
-        .select(
-          "id, slug, name, date_raw, sort_date, date_is_estimated, town, county, entry_url, organiser_url",
-        )
-        .eq("status", "ACTIVE")
-        .eq("county", event.county)
-        .neq("id", event.id)
-        .not("slug", "is", null)
-        .gte("sort_date", minDate)
-        .lte("sort_date", maxDate)
-        .order("sort_date", { ascending: true, nullsFirst: false })
-        .limit(30);
+      const seen = new Set<string>();
+      const collect = async (scope: "county" | "region") => {
+        const column = scope === "county" ? "county" : "region";
+        const value = scope === "county" ? event.county : event.region;
+        if (!value) return;
+        const { data: wkRows } = await supabaseAdmin
+          .from("events")
+          .select(
+            "id, slug, name, date_raw, sort_date, date_is_estimated, town, county, entry_url, organiser_url",
+          )
+          .eq("status", "ACTIVE")
+          .eq(column, value)
+          .neq("id", event.id)
+          .not("slug", "is", null)
+          .gte("sort_date", minDate)
+          .lte("sort_date", maxDate)
+          .order("sort_date", { ascending: true, nullsFirst: false })
+          .limit(30);
 
-      if (wkRows) {
+        if (!wkRows) return;
         for (const r of wkRows) {
+          const slug = r.slug as string;
+          if (seen.has(slug)) continue;
           if (
             !hasOrganiserOwnedLink(
               r.entry_url as string | null,
@@ -942,16 +952,23 @@ export const getEventPageData = createServerFn({ method: "GET" })
             continue;
           sameWeekendNearby.push({
             id: r.id as string,
-            slug: r.slug as string,
+            slug,
             name: r.name as string,
             date_raw: r.date_raw as string | null,
             sort_date: r.sort_date as string | null,
             date_is_estimated: !!r.date_is_estimated,
             town: r.town as string | null,
             county: r.county as string | null,
+            scope,
           });
+          seen.add(slug);
           if (sameWeekendNearby.length >= 6) break;
         }
+      };
+
+      if (event.county) await collect("county");
+      if (sameWeekendNearby.length < 3 && event.region) {
+        await collect("region");
       }
     }
 
