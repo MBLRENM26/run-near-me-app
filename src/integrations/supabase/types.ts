@@ -365,6 +365,7 @@ export type Database = {
           duplicate_of: string | null
           entry_fee: string | null
           entry_url: string | null
+          governance: Database["public"]["Enums"]["event_governance"] | null
           id: string
           is_curated_tags: boolean
           is_featured: boolean
@@ -378,7 +379,11 @@ export type Database = {
           norm_created_at: string | null
           norm_id: string | null
           organiser: string | null
+          organiser_type:
+            | Database["public"]["Enums"]["event_organiser_type"]
+            | null
           organiser_url: string | null
+          race_profile: Database["public"]["Enums"]["event_race_profile"] | null
           region: string | null
           series_key: string | null
           slug: string | null
@@ -404,6 +409,7 @@ export type Database = {
           duplicate_of?: string | null
           entry_fee?: string | null
           entry_url?: string | null
+          governance?: Database["public"]["Enums"]["event_governance"] | null
           id?: string
           is_curated_tags?: boolean
           is_featured?: boolean
@@ -417,7 +423,13 @@ export type Database = {
           norm_created_at?: string | null
           norm_id?: string | null
           organiser?: string | null
+          organiser_type?:
+            | Database["public"]["Enums"]["event_organiser_type"]
+            | null
           organiser_url?: string | null
+          race_profile?:
+            | Database["public"]["Enums"]["event_race_profile"]
+            | null
           region?: string | null
           series_key?: string | null
           slug?: string | null
@@ -443,6 +455,7 @@ export type Database = {
           duplicate_of?: string | null
           entry_fee?: string | null
           entry_url?: string | null
+          governance?: Database["public"]["Enums"]["event_governance"] | null
           id?: string
           is_curated_tags?: boolean
           is_featured?: boolean
@@ -456,7 +469,13 @@ export type Database = {
           norm_created_at?: string | null
           norm_id?: string | null
           organiser?: string | null
+          organiser_type?:
+            | Database["public"]["Enums"]["event_organiser_type"]
+            | null
           organiser_url?: string | null
+          race_profile?:
+            | Database["public"]["Enums"]["event_race_profile"]
+            | null
           region?: string | null
           series_key?: string | null
           slug?: string | null
@@ -924,7 +943,38 @@ export type Database = {
       slugify: { Args: { input: string }; Returns: string }
     }
     Enums: {
-      [_ in never]: never
+      event_governance:
+        | "england_athletics"
+        | "scottish_athletics"
+        | "welsh_athletics"
+        | "athletics_ni"
+        | "tra"
+        | "arc"
+        | "fra"
+        | "wfra"
+        | "sha"
+        | "parkrun"
+        | "unlicensed"
+        | "unknown"
+      event_organiser_type:
+        | "club"
+        | "commercial"
+        | "charity"
+        | "parkrun"
+        | "community"
+        | "governing_body"
+        | "unknown"
+      event_race_profile:
+        | "road_race"
+        | "trail_race"
+        | "fell_race"
+        | "ultra"
+        | "multi_terrain"
+        | "track"
+        | "cross_country"
+        | "parkrun"
+        | "virtual"
+        | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1051,6 +1101,42 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      event_governance: [
+        "england_athletics",
+        "scottish_athletics",
+        "welsh_athletics",
+        "athletics_ni",
+        "tra",
+        "arc",
+        "fra",
+        "wfra",
+        "sha",
+        "parkrun",
+        "unlicensed",
+        "unknown",
+      ],
+      event_organiser_type: [
+        "club",
+        "commercial",
+        "charity",
+        "parkrun",
+        "community",
+        "governing_body",
+        "unknown",
+      ],
+      event_race_profile: [
+        "road_race",
+        "trail_race",
+        "fell_race",
+        "ultra",
+        "multi_terrain",
+        "track",
+        "cross_country",
+        "parkrun",
+        "virtual",
+        "other",
+      ],
+    },
   },
 } as const
