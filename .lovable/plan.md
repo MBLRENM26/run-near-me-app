@@ -1,126 +1,57 @@
-## Answer first: do the `/for-runners`, `/for-clubs`, `/for-organisers` pages depend on Phase 2 columns?
+## Goal
 
-**No — they don't.** Those pages are marketing/positioning surfaces: the value prop for each audience, how the site works, screenshots of real event cards, links into existing hubs (city/region/distance/terrain), and CTAs (list-your-event, claim-your-club). They read from what we already have. We can build them any time — parking them until you say the word is fine.
+Lift the two Phase-1 blocks that the audit showed are barely rendering: "Same weekend nearby" (2/20 pages) and "Organised by" / "Other races by organiser" (0/20 pages). Both are data problems, not UI bugs.
 
-The only *nice-to-have* overlap: once governance/organiser_type exist, the `/for-clubs` page could show "X England Athletics licensed events this month" as a live number. That's a one-line stat, not a dependency.
+## Part 1 — Widen "Same weekend nearby": county → region fallback
 
----
+**Change:** `src/lib/events.functions.ts` — the block that builds `sameWeekendNearby`.
 
-## Part A — Audit top event pages (read-only, no code)
+Current behaviour: strict county filter, ±2 days, cap 6, only rendered when >= 3 results.
 
-Goal: prove the Phase 1 blocks (Organised by, Trust strip, Useful links, Same weekend nearby, Other races by organiser) actually render with content on the pages people land on, and quantify dead-end pages.
+New behaviour:
+1. Query county first (unchanged).
+2. If county returns < 3, run a second query scoped to `region` instead, excluding the current event and any slugs already in the county result.
+3. Merge: county results first, then region fill, cap 6.
+4. Tag each row with `scope: 'county' | 'region'` so the UI can label region-fills as "Nearby in {region}" vs county rows as "Same weekend in {county}".
+5. Keep the `hasOrganiserOwnedLink` filter and the ±2 day window unchanged.
+6. Keep the `>= 3` render threshold — that's a UI-quality bar, not a data bar.
 
-### A1. Pick the sample
-The top ~20 event pages by Plausible traffic over the last 30 days (I'll pull from analytics). Fall back to featured + soonest-upcoming if Plausible list is thin.
+**UI:** `src/routes/events.$slug.tsx` — split the block into two sub-lists when both scopes are present, or a single list with a subtle "in {region}" suffix on region-scoped rows. Heading stays "Same weekend nearby".
 
-### A2. For each page, record
-- `has_organiser_line` — club match resolved? (needs a `clubs` row whose name/slug matches `events.organiser`)
-- `has_trust_strip` — `source` populated? (always yes post-import, but confirm)
-- `useful_links_count` — distinct official URLs beyond the primary CTA
-- `same_weekend_nearby_count` — rows returned by the county+date window query
-- `other_races_by_organiser_count` — rows for the same organiser/club
+**Skips:** events with no county AND no region (TRA, parkrun without location) still can't render — that's fine, they're a small slice.
 
-### A3. Deliverable
-A single markdown table written to `docs/audits/top-event-pages-YYYY-MM-DD.md` with per-page counts + an "empty blocks" summary (e.g. "6/20 pages have 0 same-weekend-nearby"). No page changes yet — findings drive the next PR.
+## Part 2 — Capture the organiser from the England Athletics feed
 
-### A4. Likely follow-ups (surfaced by audit, not implemented in this PR)
-- If "same weekend nearby" is empty on many pages: widen from county → region as fallback (behind a flag).
-- If "organised by" rarely resolves: the `events.organiser` string doesn't match `clubs.name` cleanly — needs a fuzzy match / slugified lookup.
+**Change:** `src/lib/sync-england-athletics.server.ts`.
 
----
+The audit found `events.organiser` is NULL on 19/20 top pages because the EA sync never sets it. The EA API almost certainly carries a hosting club per event; we need to confirm which field and persist it.
 
-## Part B — Phase 2: classification columns
+Steps:
+1. Inspect one live EA payload (fetch page 1 during implementation, log one event object) to identify the organiser field. Candidates seen in similar feeds: `organiser`, `host_club`, `club`, `organisation`, `promoter`, or a nested object with `name`.
+2. Extend the `EaEvent` type with the discovered field(s).
+3. Map it into the `organiser` column on the upsert row. Trim, title-case only if fully upper-case (same helper pattern as `titleCaseTown`).
+4. If the EA payload exposes a club identifier or website, capture it into `organiser_url` when we don't already have a website_url. Otherwise leave organiser_url as today.
+5. Re-run the EA sync (chunked via the existing `run_england_athletics_chunked` function) after deploy to backfill the ~4,900 EA rows.
 
-Add three nullable columns to `events`. All three are derivable from what we already ingest (source, organiser string, distances, terrain_tags, licensed) — no manual data entry required for the initial backfill.
+**If the field genuinely isn't in the JSON** (possible — the EA finder API is minimal): stop, report back, and we'll look at either (a) scraping the individual event detail page during sync, or (b) a fuzzy-match backfill from the free-text `name` against `clubs.name`. Don't ship a scrape without checking in.
 
-### B1. Schema (one migration)
+## Part 3 — Verification
 
-```sql
-CREATE TYPE public.event_governance AS ENUM (
-  'england_athletics','scottish_athletics','welsh_athletics',
-  'athletics_ni','tra','arc','fra','wfra','sha','parkrun',
-  'unlicensed','unknown'
-);
+- Re-run the audit script against the same 20-slug sample after both changes land + EA re-sync completes.
+- Expected: "Same weekend nearby" render rate rises from 10% (2/20) toward 60-80%; "Organised by" render rate rises from 0% toward whatever share of EA events actually carry a club (unknown until step 2.1).
+- Append updated numbers to `docs/audits/top-event-pages-2026-07-03.md` under a "Post-fix" section.
 
-CREATE TYPE public.event_organiser_type AS ENUM (
-  'club','commercial','charity','parkrun','community','governing_body','unknown'
-);
+## Out of scope
 
-CREATE TYPE public.event_race_profile AS ENUM (
-  'road_race','trail_race','fell_race','ultra','multi_terrain',
-  'track','cross_country','parkrun','virtual','other'
-);
-
-ALTER TABLE public.events
-  ADD COLUMN governance      public.event_governance,
-  ADD COLUMN organiser_type  public.event_organiser_type,
-  ADD COLUMN race_profile    public.event_race_profile;
-
-CREATE INDEX events_governance_idx     ON public.events (governance)     WHERE status = 'ACTIVE';
-CREATE INDEX events_organiser_type_idx ON public.events (organiser_type) WHERE status = 'ACTIVE';
-CREATE INDEX events_race_profile_idx   ON public.events (race_profile)   WHERE status = 'ACTIVE';
-```
-
-All nullable, no defaults, no grants change (existing table grants cover new columns).
-
-### B2. Derivation rules (one server-side backfill script, idempotent)
-
-Priority order per column, first hit wins; leave NULL if no rule matches.
-
-**governance** — from `source` + `licensed`:
-- `source = 'england-athletics'` → `england_athletics`
-- `source = 'scottish-athletics'` → `scottish_athletics`
-- `source = 'welsh-athletics'` → `welsh_athletics`
-- `source = 'athletics-ni'` → `athletics_ni`
-- `source = 'tra'` → `tra`
-- name contains "parkrun" → `parkrun`
-- `licensed = 'false'` → `unlicensed`
-- else → `unknown`
-
-**organiser_type** — from name/organiser/source:
-- `source = 'parkrun'` OR name ~ 'parkrun' → `parkrun`
-- `organiser` matches a `clubs.name` (slugified) → `club`
-- organiser contains "runthrough|nice work|race nation|xempo|goodrun|entrycentral" → `commercial`
-- organiser contains "cancer research|macmillan|british heart|race for life" → `charity`
-- `governance IN (england_athletics, scottish_athletics, welsh_athletics, athletics_ni)` AND no organiser → `governing_body`
-- else → `unknown`
-
-**race_profile** — from `terrain_tags` + `distance_tags` + name:
-- `'parkrun' = ANY(distance_tags)` OR name ~ 'parkrun' → `parkrun`
-- `'ultra' = ANY(distance_tags)` → `ultra`
-- `'fell' = ANY(terrain_tags)` → `fell_race`
-- `'trail' = ANY(terrain_tags)` → `trail_race`
-- `'multi-terrain' = ANY(terrain_tags)` → `multi_terrain`
-- `'road' = ANY(terrain_tags)` → `road_race`
-- name ~ 'virtual' → `virtual`
-- else → `other`
-
-Backfill runs as a server function (admin-only, `has_role` gated). Not surfaced in the UI this PR.
-
-### B3. Verification
-- Query counts per enum value after backfill, written to console + summary comment on the PR.
-- Sanity check: England Athletics feed rows should be ~100% `governance = england_athletics`, ~majority `organiser_type = club`.
-
-### B4. What this PR does NOT touch
-- No new pages or filters use these columns yet.
-- No sitemap changes.
-- No changes to `DISCOVERY_EVENT_COLUMNS` (adding them there would leak into SSR hydration before they're ready — same rule as `source`).
-- No `/for-*` pages.
-
----
+- Fuzzy club matching (`Jarrow & Hebburn AC` vs `and`) — only worth doing if step 2.1 succeeds and matches are still missing.
+- Dropping the >= 3 threshold on nearby.
+- Any surfacing of the Phase 2 classification columns.
+- `/for-runners`, `/for-clubs`, `/for-organisers` pages.
 
 ## Technical notes
 
-- Migration + backfill are separate steps: migration is a schema change (migration tool), backfill is `UPDATE` (insert tool / server function).
-- Enums chosen over free-text columns so future filter UIs get compile-time safety and the DB rejects typos.
-- Partial indexes (`WHERE status='ACTIVE'`) keep them tiny — we only ever filter classification on live events.
-- Backfill script lives at `src/lib/admin-classify-events.functions.ts`, invoked from an admin page (reuses `_adminShell` pattern). One-shot, but re-runnable safely.
-
----
-
-## Order of work
-1. Part A audit (read-only, one doc file).
-2. Review audit findings with you before deciding on any Part A follow-ups.
-3. Part B schema + backfill.
-4. Report enum distribution counts.
-5. Stop — `/for-*` pages and any UI that uses the new columns come in a later PR.
+- Region fallback query reuses `DISCOVERY_EVENT_COLUMNS` + `UK_BOUNDS_OR_NULL`; no schema changes.
+- Region query must exclude the current event id and any slugs already returned by the county query to avoid dupes.
+- Order: county rows by `sort_date ASC`, then region fill by `sort_date ASC`.
+- EA sync change is idempotent (upsert on `norm_id`), so a full re-run is safe and will populate organiser on existing rows without touching slugs.
+- No migrations. No new grants.
