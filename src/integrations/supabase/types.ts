@@ -379,6 +379,7 @@ export type Database = {
           norm_created_at: string | null
           norm_id: string | null
           organiser: string | null
+          organiser_club_id: string | null
           organiser_type:
             | Database["public"]["Enums"]["event_organiser_type"]
             | null
@@ -423,6 +424,7 @@ export type Database = {
           norm_created_at?: string | null
           norm_id?: string | null
           organiser?: string | null
+          organiser_club_id?: string | null
           organiser_type?:
             | Database["public"]["Enums"]["event_organiser_type"]
             | null
@@ -469,6 +471,7 @@ export type Database = {
           norm_created_at?: string | null
           norm_id?: string | null
           organiser?: string | null
+          organiser_club_id?: string | null
           organiser_type?:
             | Database["public"]["Enums"]["event_organiser_type"]
             | null
@@ -500,6 +503,20 @@ export type Database = {
             columns: ["duplicate_of"]
             isOneToOne: false
             referencedRelation: "public_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_organiser_club_id_fkey"
+            columns: ["organiser_club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_organiser_club_id_fkey"
+            columns: ["organiser_club_id"]
+            isOneToOne: false
+            referencedRelation: "public_clubs"
             referencedColumns: ["id"]
           },
         ]

@@ -70,6 +70,7 @@ import { Route as ApiPublicAdminSyncScottishAthleticsRouteImport } from './route
 import { Route as ApiPublicAdminSyncEnglandAthleticsRouteImport } from './routes/api/public/admin/sync-england-athletics'
 import { Route as ApiPublicAdminIndexabilityStatsRouteImport } from './routes/api/public/admin/indexability-stats'
 import { Route as ApiPublicAdminFixEventUrlsRouteImport } from './routes/api/public/admin/fix-event-urls'
+import { Route as ApiPublicAdminBackfillOrganiserMatchRouteImport } from './routes/api/public/admin/backfill-organiser-match'
 import { Route as AdminShellAdminEventsEnrichDatesRouteImport } from './routes/_adminShell.admin.events.enrich-dates'
 import { Route as AdminShellAdminEventsDuplicatesRouteImport } from './routes/_adminShell.admin.events.duplicates'
 import { Route as AdminShellAdminEventsIdRouteImport } from './routes/_adminShell.admin.events.$id'
@@ -397,6 +398,12 @@ const ApiPublicAdminFixEventUrlsRoute =
     path: '/api/public/admin/fix-event-urls',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicAdminBackfillOrganiserMatchRoute =
+  ApiPublicAdminBackfillOrganiserMatchRouteImport.update({
+    id: '/api/public/admin/backfill-organiser-match',
+    path: '/api/public/admin/backfill-organiser-match',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminShellAdminEventsEnrichDatesRoute =
   AdminShellAdminEventsEnrichDatesRouteImport.update({
     id: '/admin/events/enrich-dates',
@@ -480,6 +487,7 @@ export interface FileRoutesByFullPath {
   '/admin/events/$id': typeof AdminShellAdminEventsIdRoute
   '/admin/events/duplicates': typeof AdminShellAdminEventsDuplicatesRoute
   '/admin/events/enrich-dates': typeof AdminShellAdminEventsEnrichDatesRoute
+  '/api/public/admin/backfill-organiser-match': typeof ApiPublicAdminBackfillOrganiserMatchRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
   '/api/public/admin/indexability-stats': typeof ApiPublicAdminIndexabilityStatsRoute
   '/api/public/admin/sync-england-athletics': typeof ApiPublicAdminSyncEnglandAthleticsRoute
@@ -547,6 +555,7 @@ export interface FileRoutesByTo {
   '/admin/events/$id': typeof AdminShellAdminEventsIdRoute
   '/admin/events/duplicates': typeof AdminShellAdminEventsDuplicatesRoute
   '/admin/events/enrich-dates': typeof AdminShellAdminEventsEnrichDatesRoute
+  '/api/public/admin/backfill-organiser-match': typeof ApiPublicAdminBackfillOrganiserMatchRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
   '/api/public/admin/indexability-stats': typeof ApiPublicAdminIndexabilityStatsRoute
   '/api/public/admin/sync-england-athletics': typeof ApiPublicAdminSyncEnglandAthleticsRoute
@@ -616,6 +625,7 @@ export interface FileRoutesById {
   '/_adminShell/admin/events/$id': typeof AdminShellAdminEventsIdRoute
   '/_adminShell/admin/events/duplicates': typeof AdminShellAdminEventsDuplicatesRoute
   '/_adminShell/admin/events/enrich-dates': typeof AdminShellAdminEventsEnrichDatesRoute
+  '/api/public/admin/backfill-organiser-match': typeof ApiPublicAdminBackfillOrganiserMatchRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
   '/api/public/admin/indexability-stats': typeof ApiPublicAdminIndexabilityStatsRoute
   '/api/public/admin/sync-england-athletics': typeof ApiPublicAdminSyncEnglandAthleticsRoute
@@ -685,6 +695,7 @@ export interface FileRouteTypes {
     | '/admin/events/$id'
     | '/admin/events/duplicates'
     | '/admin/events/enrich-dates'
+    | '/api/public/admin/backfill-organiser-match'
     | '/api/public/admin/fix-event-urls'
     | '/api/public/admin/indexability-stats'
     | '/api/public/admin/sync-england-athletics'
@@ -752,6 +763,7 @@ export interface FileRouteTypes {
     | '/admin/events/$id'
     | '/admin/events/duplicates'
     | '/admin/events/enrich-dates'
+    | '/api/public/admin/backfill-organiser-match'
     | '/api/public/admin/fix-event-urls'
     | '/api/public/admin/indexability-stats'
     | '/api/public/admin/sync-england-athletics'
@@ -820,6 +832,7 @@ export interface FileRouteTypes {
     | '/_adminShell/admin/events/$id'
     | '/_adminShell/admin/events/duplicates'
     | '/_adminShell/admin/events/enrich-dates'
+    | '/api/public/admin/backfill-organiser-match'
     | '/api/public/admin/fix-event-urls'
     | '/api/public/admin/indexability-stats'
     | '/api/public/admin/sync-england-athletics'
@@ -874,6 +887,7 @@ export interface RootRouteChildren {
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ParkrunEventsRegionRegionRoute: typeof ParkrunEventsRegionRegionRoute
   RunningEventsSlugDistanceRoute: typeof RunningEventsSlugDistanceRoute
+  ApiPublicAdminBackfillOrganiserMatchRoute: typeof ApiPublicAdminBackfillOrganiserMatchRoute
   ApiPublicAdminFixEventUrlsRoute: typeof ApiPublicAdminFixEventUrlsRoute
   ApiPublicAdminIndexabilityStatsRoute: typeof ApiPublicAdminIndexabilityStatsRoute
   ApiPublicAdminSyncEnglandAthleticsRoute: typeof ApiPublicAdminSyncEnglandAthleticsRoute
@@ -1314,6 +1328,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAdminFixEventUrlsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/admin/backfill-organiser-match': {
+      id: '/api/public/admin/backfill-organiser-match'
+      path: '/api/public/admin/backfill-organiser-match'
+      fullPath: '/api/public/admin/backfill-organiser-match'
+      preLoaderRoute: typeof ApiPublicAdminBackfillOrganiserMatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_adminShell/admin/events/enrich-dates': {
       id: '/_adminShell/admin/events/enrich-dates'
       path: '/admin/events/enrich-dates'
@@ -1496,6 +1517,8 @@ const rootRouteChildren: RootRouteChildren = {
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ParkrunEventsRegionRegionRoute: ParkrunEventsRegionRegionRoute,
   RunningEventsSlugDistanceRoute: RunningEventsSlugDistanceRoute,
+  ApiPublicAdminBackfillOrganiserMatchRoute:
+    ApiPublicAdminBackfillOrganiserMatchRoute,
   ApiPublicAdminFixEventUrlsRoute: ApiPublicAdminFixEventUrlsRoute,
   ApiPublicAdminIndexabilityStatsRoute: ApiPublicAdminIndexabilityStatsRoute,
   ApiPublicAdminSyncEnglandAthleticsRoute:
