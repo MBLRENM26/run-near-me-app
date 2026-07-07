@@ -1,57 +1,58 @@
-## Goal
+## Answer to your question
 
-Lift the two Phase-1 blocks that the audit showed are barely rendering: "Same weekend nearby" (2/20 pages) and "Organised by" / "Other races by organiser" (0/20 pages). Both are data problems, not UI bugs.
+Right now `events.organiser` is just a text column. The event page renders "Organised by {events.organiser}" as plain text and "Other races by organiser" does an `ilike` on that string — no link to the club page even when the name matches one in `clubs`.
 
-## Part 1 — Widen "Same weekend nearby": county → region fallback
+You're right that a link to the club page is worth much more than a bare text string. So the plan does **both**: populate `events.organiser` with the matched club name, AND add a new `events.organiser_club_id` FK so the UI can link "Organised by {name}" → `/running-clubs/{slug}`.
 
-**Change:** `src/lib/events.functions.ts` — the block that builds `sameWeekendNearby`.
+## Part 1 — Schema
 
-Current behaviour: strict county filter, ±2 days, cap 6, only rendered when >= 3 results.
+Migration adds:
+- `events.organiser_club_id uuid references clubs(id) on delete set null`
+- Partial index `on events(organiser_club_id) where organiser_club_id is not null`
+- No new grants needed (existing `events` grants cover it).
 
-New behaviour:
-1. Query county first (unchanged).
-2. If county returns < 3, run a second query scoped to `region` instead, excluding the current event and any slugs already in the county result.
-3. Merge: county results first, then region fill, cap 6.
-4. Tag each row with `scope: 'county' | 'region'` so the UI can label region-fills as "Nearby in {region}" vs county rows as "Same weekend in {county}".
-5. Keep the `hasOrganiserOwnedLink` filter and the ±2 day window unchanged.
-6. Keep the `>= 3` render threshold — that's a UI-quality bar, not a data bar.
+## Part 2 — Fuzzy match backfill (one-off, server function)
 
-**UI:** `src/routes/events.$slug.tsx` — split the block into two sub-lists when both scopes are present, or a single list with a subtle "in {region}" suffix on region-scoped rows. Heading stays "Same weekend nearby".
+New server fn `backfillEventOrganiserFromClubs` in `src/lib/admin-events.functions.ts`, called from the admin sync-runs page or a one-off `/api/public/admin/backfill-event-organiser` route with `x-admin-secret`.
 
-**Skips:** events with no county AND no region (TRA, parkrun without location) still can't render — that's fine, they're a small slice.
+Match logic (deterministic, no LLM):
+1. Load all ACTIVE clubs (~1,417) once: id, name, town, county, region.
+2. Precompute a normalised name key for each club: lowercase, strip punctuation, expand `&`→`and`, drop trailing tokens `ac|rc|rrc|rc/tc|running club|athletic club|harriers|striders|runners|tc|tri`.
+3. For each ACTIVE EA event where `organiser_club_id is null` and source in ('england-athletics','scottish-athletics','welsh-athletics','ni-athletics','runabc'):
+   - Build candidate strings from `name` (split on ` - `, `:`, ` – `) plus any parenthesised suffix like `(Hosted by X)`.
+   - Normalise each candidate the same way.
+   - Look for an exact key match first; if none, token-set match with ≥0.85 Jaccard on the club-name tokens.
+   - **Tie-breaker / safety:** require the matched club's `county` or `region` to equal the event's — otherwise reject (avoids e.g. matching "Harriers" from wrong county).
+4. On match, write both `organiser` (canonical club name) and `organiser_club_id`.
+5. Report counts: scanned, matched, ambiguous-skipped, no-match.
 
-## Part 2 — Capture the organiser from the England Athletics feed
+Expected hit rate: 20–40% of the 4,900 EA events. This is a deliberately conservative match — better to miss than to falsely attribute.
 
-**Change:** `src/lib/sync-england-athletics.server.ts`.
+## Part 3 — UI wire-up
 
-The audit found `events.organiser` is NULL on 19/20 top pages because the EA sync never sets it. The EA API almost certainly carries a hosting club per event; we need to confirm which field and persist it.
+`src/routes/events.$slug.tsx`, "Organised by" line:
+- If `event.organiser_club_id` and the matched club is joined in, render `Organised by <Link to="/running-clubs/$slug">{club.name}</Link>`.
+- Else fall back to plain text `Organised by {event.organiser}` (unchanged).
 
-Steps:
-1. Inspect one live EA payload (fetch page 1 during implementation, log one event object) to identify the organiser field. Candidates seen in similar feeds: `organiser`, `host_club`, `club`, `organisation`, `promoter`, or a nested object with `name`.
-2. Extend the `EaEvent` type with the discovered field(s).
-3. Map it into the `organiser` column on the upsert row. Trim, title-case only if fully upper-case (same helper pattern as `titleCaseTown`).
-4. If the EA payload exposes a club identifier or website, capture it into `organiser_url` when we don't already have a website_url. Otherwise leave organiser_url as today.
-5. Re-run the EA sync (chunked via the existing `run_england_athletics_chunked` function) after deploy to backfill the ~4,900 EA rows.
+`src/lib/events.functions.ts` `getEventPageData`:
+- When `event.organiser_club_id` is set, fetch that club row (id, slug, name, town, county) and attach as `organiserClub` on the page data.
+- "Other races by organiser" query: prefer `where organiser_club_id = event.organiser_club_id` when set; fall back to today's `ilike organiser` when not.
 
-**If the field genuinely isn't in the JSON** (possible — the EA finder API is minimal): stop, report back, and we'll look at either (a) scraping the individual event detail page during sync, or (b) a fuzzy-match backfill from the free-text `name` against `clubs.name`. Don't ship a scrape without checking in.
+## Part 4 — Verification
 
-## Part 3 — Verification
-
-- Re-run the audit script against the same 20-slug sample after both changes land + EA re-sync completes.
-- Expected: "Same weekend nearby" render rate rises from 10% (2/20) toward 60-80%; "Organised by" render rate rises from 0% toward whatever share of EA events actually carry a club (unknown until step 2.1).
-- Append updated numbers to `docs/audits/top-event-pages-2026-07-03.md` under a "Post-fix" section.
+- Run backfill in dev, spot-check 20 matches manually (top matches + a few borderline).
+- Re-run the top-pages audit; expect "Organised by" render rate to jump from 0/20 toward whatever share of the sample got a match (probably 4–8/20).
+- Log matched counts to `sync_runs` under a new source `backfill-organiser-match`.
 
 ## Out of scope
 
-- Fuzzy club matching (`Jarrow & Hebburn AC` vs `and`) — only worth doing if step 2.1 succeeds and matches are still missing.
-- Dropping the >= 3 threshold on nearby.
-- Any surfacing of the Phase 2 classification columns.
-- `/for-runners`, `/for-clubs`, `/for-organisers` pages.
+- LLM/fuzzy over the runabc / TRA rows (revisit once EA numbers are known).
+- Auto-re-matching on every sync — kept as a manual admin action for now; can be added to the EA sync's tail once we trust the match quality.
+- Any change to the "Same weekend nearby" block (already shipped in the previous PR).
 
 ## Technical notes
 
-- Region fallback query reuses `DISCOVERY_EVENT_COLUMNS` + `UK_BOUNDS_OR_NULL`; no schema changes.
-- Region query must exclude the current event id and any slugs already returned by the county query to avoid dupes.
-- Order: county rows by `sort_date ASC`, then region fill by `sort_date ASC`.
-- EA sync change is idempotent (upsert on `norm_id`), so a full re-run is safe and will populate organiser on existing rows without touching slugs.
-- No migrations. No new grants.
+- FK uses `on delete set null` so club deletions don't nuke event rows.
+- Backfill is idempotent: guard on `organiser_club_id is null` so re-runs only fill new gaps.
+- All matching happens in JS server-side; no pg_trgm dependency.
+- No changes to sync files themselves in this PR — match runs against already-imported rows.

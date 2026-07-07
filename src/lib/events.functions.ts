@@ -634,11 +634,12 @@ export const getEventPageData = createServerFn({ method: "GET" })
     const { data: row, error } = await supabaseAdmin
       .from("events")
       .select(
-        "id, slug, name, date_raw, date_from, date_to, sort_date, town, county, region, distances, discipline, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, organiser, is_featured, date_is_estimated, created_at, norm_created_at, lat, lng",
+        "id, slug, name, date_raw, date_from, date_to, sort_date, town, county, region, distances, discipline, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, organiser, organiser_club_id, is_featured, date_is_estimated, created_at, norm_created_at, lat, lng",
       )
       .eq("slug", data.slug)
       .eq("status", "ACTIVE")
       .maybeSingle();
+
 
     if (error) throw new Error(error.message);
     if (!row) {
@@ -672,15 +673,18 @@ export const getEventPageData = createServerFn({ method: "GET" })
       lng: number | null;
       distance_tags: string[] | null;
       terrain_tags: string[] | null;
+      organiser_club_id: string | null;
     };
     const {
       lat: eventLat,
       lng: eventLng,
       distance_tags: eventDistanceTags,
       terrain_tags: eventTerrainTags,
+      organiser_club_id: eventOrganiserClubId,
       ...eventPublic
     } = eventRow;
     const event = eventPublic as EventDetail;
+
 
     // Prefer tag-based primary distance; fall back to legacy substring for
     // rows that haven't been backfilled yet.
@@ -885,9 +889,24 @@ export const getEventPageData = createServerFn({ method: "GET" })
     }
 
     // ----- Organiser Club Match -----
+    // Prefer the FK populated by the deterministic backfill
+    // (src/lib/backfill-organiser-match.server.ts). Fall back to
+    // the legacy name-based lookup for rows the backfill hasn't
+    // reached — cheap safety net until every row is matched.
     let matchingClub: OrganiserClub | null = null;
+    if (eventOrganiserClubId) {
+      const { data: clubRow } = await supabaseAdmin
+        .from("public_clubs")
+        .select("slug, name")
+        .eq("id", eventOrganiserClubId)
+        .eq("status", "ACTIVE")
+        .maybeSingle();
+      if (clubRow?.slug && clubRow?.name) {
+        matchingClub = { slug: clubRow.slug, name: clubRow.name };
+      }
+    }
     const orgTrim = event.organiser?.trim();
-    if (orgTrim && orgTrim.toLowerCase() !== "tbc") {
+    if (!matchingClub && orgTrim && orgTrim.toLowerCase() !== "tbc") {
       const orgLower = orgTrim.toLowerCase();
       const normSlug = orgLower
         .replace(/[^a-z0-9]+/g, "-")
@@ -909,6 +928,7 @@ export const getEventPageData = createServerFn({ method: "GET" })
         }
       }
     }
+
 
     // ----- Same weekend nearby -----
     // County-first, region fallback fill up to 6. Rows without county AND
@@ -973,21 +993,29 @@ export const getEventPageData = createServerFn({ method: "GET" })
     }
 
     // ----- Other races by {organiser} -----
+    // Prefer the FK when we have one — it's canonical and survives
+    // organiser-text drift across the club's events. Fall back to the
+    // legacy case-insensitive name match for pre-backfill rows.
     const otherRacesByOrganiser: OtherRaceByOrganiserEvent[] = [];
-    if (orgTrim && matchingClub) {
+    if (matchingClub) {
       const today = new Date().toISOString().slice(0, 10);
-      const { data: orgRows } = await supabaseAdmin
+      let q = supabaseAdmin
         .from("events")
         .select(
           "id, slug, name, date_raw, sort_date, date_is_estimated, town, county, organiser",
         )
         .eq("status", "ACTIVE")
-        .ilike("organiser", orgTrim)
         .neq("id", event.id)
         .not("slug", "is", null)
         .or(`sort_date.gte.${today},sort_date.is.null`)
         .order("sort_date", { ascending: true, nullsFirst: false })
         .limit(20);
+
+      q = eventOrganiserClubId
+        ? q.eq("organiser_club_id", eventOrganiserClubId)
+        : q.ilike("organiser", orgTrim!);
+
+      const { data: orgRows } = await q;
 
       if (orgRows) {
         for (const r of orgRows) {
@@ -1005,6 +1033,7 @@ export const getEventPageData = createServerFn({ method: "GET" })
         }
       }
     }
+
 
     // ----- Indexability decision -----
     // Find sibling instances by TWO signals, unioned by id:
