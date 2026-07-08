@@ -145,7 +145,29 @@ export const getParkrunBySlug = createServerFn({ method: "GET" })
   .handler(async ({ data }): Promise<ParkrunDetail> => {
     const all = await fetchAll();
     const me = all.find((l) => l.slug === data.slug);
-    if (!me) throw notFound();
+    if (!me) {
+      // Retired duplicate parkrun slug? Permanently redirect to the survivor,
+      // mirroring the /events/$slug loader. Fixes GSC 404s like
+      // /parkrun-events/kinggeorgev-juniors → /parkrun-events/kinggeorge-juniors.
+      const { data: dup } = await supabaseAdmin
+        .from("events")
+        .select("duplicate_of")
+        .eq("slug", data.slug)
+        .eq("status", "DUPLICATE")
+        .not("duplicate_of", "is", null)
+        .maybeSingle();
+      if (dup?.duplicate_of) {
+        const survivor = all.find((l) => l.id === (dup.duplicate_of as string));
+        if (survivor?.slug) {
+          throw redirect({
+            to: "/parkrun-events/$slug",
+            params: { slug: survivor.slug },
+            statusCode: 301,
+          });
+        }
+      }
+      throw notFound();
+    }
 
     // Location fields for SEO title/description and JSON-LD address.
     const { data: locRow } = await supabaseAdmin
