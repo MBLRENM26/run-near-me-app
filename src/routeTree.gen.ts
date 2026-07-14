@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WelshAthleticsPermittedRacesRouteImport } from './routes/welsh-athletics-permitted-races'
 import { Route as UltraMarathonsRouteImport } from './routes/ultra-marathons'
 import { Route as TrailRunningEventsRouteImport } from './routes/trail-running-events'
 import { Route as TraPermittedRacesRouteImport } from './routes/tra-permitted-races'
@@ -28,6 +29,7 @@ import { Route as HalfMarathonsRouteImport } from './routes/half-marathons'
 import { Route as FellRacesRouteImport } from './routes/fell-races'
 import { Route as EnglandAthleticsPermittedRacesRouteImport } from './routes/england-athletics-permitted-races'
 import { Route as ClubOrganisedRacesRouteImport } from './routes/club-organised-races'
+import { Route as AthleticsNiPermittedRacesRouteImport } from './routes/athletics-ni-permitted-races'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AdminShellRouteImport } from './routes/_adminShell'
 import { Route as R5kRacesRouteImport } from './routes/5k-races'
@@ -82,6 +84,12 @@ import { Route as AdminShellAdminEventsIdRouteImport } from './routes/_adminShel
 import { Route as AdminShellAdminClubsNewRouteImport } from './routes/_adminShell.admin.clubs.new'
 import { Route as AdminShellAdminClubsIdRouteImport } from './routes/_adminShell.admin.clubs.$id'
 
+const WelshAthleticsPermittedRacesRoute =
+  WelshAthleticsPermittedRacesRouteImport.update({
+    id: '/welsh-athletics-permitted-races',
+    path: '/welsh-athletics-permitted-races',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const UltraMarathonsRoute = UltraMarathonsRouteImport.update({
   id: '/ultra-marathons',
   path: '/ultra-marathons',
@@ -180,6 +188,12 @@ const ClubOrganisedRacesRoute = ClubOrganisedRacesRouteImport.update({
   path: '/club-organised-races',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AthleticsNiPermittedRacesRoute =
+  AthleticsNiPermittedRacesRouteImport.update({
+    id: '/athletics-ni-permitted-races',
+    path: '/athletics-ni-permitted-races',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
@@ -471,6 +485,7 @@ export interface FileRoutesByFullPath {
   '/10k-races': typeof R10kRacesRouteWithChildren
   '/5k-races': typeof R5kRacesRouteWithChildren
   '/about': typeof AboutRoute
+  '/athletics-ni-permitted-races': typeof AthleticsNiPermittedRacesRoute
   '/club-organised-races': typeof ClubOrganisedRacesRoute
   '/england-athletics-permitted-races': typeof EnglandAthleticsPermittedRacesRoute
   '/fell-races': typeof FellRacesRoute
@@ -490,6 +505,7 @@ export interface FileRoutesByFullPath {
   '/tra-permitted-races': typeof TraPermittedRacesRoute
   '/trail-running-events': typeof TrailRunningEventsRoute
   '/ultra-marathons': typeof UltraMarathonsRouteWithChildren
+  '/welsh-athletics-permitted-races': typeof WelshAthleticsPermittedRacesRoute
   '/10k-races/$month': typeof R10kRacesMonthRoute
   '/5k-races/$month': typeof R5kRacesMonthRoute
   '/admin/login': typeof AdminLoginRoute
@@ -544,6 +560,7 @@ export interface FileRoutesByTo {
   '/10k-races': typeof R10kRacesRouteWithChildren
   '/5k-races': typeof R5kRacesRouteWithChildren
   '/about': typeof AboutRoute
+  '/athletics-ni-permitted-races': typeof AthleticsNiPermittedRacesRoute
   '/club-organised-races': typeof ClubOrganisedRacesRoute
   '/england-athletics-permitted-races': typeof EnglandAthleticsPermittedRacesRoute
   '/fell-races': typeof FellRacesRoute
@@ -563,6 +580,7 @@ export interface FileRoutesByTo {
   '/tra-permitted-races': typeof TraPermittedRacesRoute
   '/trail-running-events': typeof TrailRunningEventsRoute
   '/ultra-marathons': typeof UltraMarathonsRouteWithChildren
+  '/welsh-athletics-permitted-races': typeof WelshAthleticsPermittedRacesRoute
   '/10k-races/$month': typeof R10kRacesMonthRoute
   '/5k-races/$month': typeof R5kRacesMonthRoute
   '/admin/login': typeof AdminLoginRoute
@@ -619,6 +637,7 @@ export interface FileRoutesById {
   '/5k-races': typeof R5kRacesRouteWithChildren
   '/_adminShell': typeof AdminShellRouteWithChildren
   '/about': typeof AboutRoute
+  '/athletics-ni-permitted-races': typeof AthleticsNiPermittedRacesRoute
   '/club-organised-races': typeof ClubOrganisedRacesRoute
   '/england-athletics-permitted-races': typeof EnglandAthleticsPermittedRacesRoute
   '/fell-races': typeof FellRacesRoute
@@ -638,6 +657,7 @@ export interface FileRoutesById {
   '/tra-permitted-races': typeof TraPermittedRacesRoute
   '/trail-running-events': typeof TrailRunningEventsRoute
   '/ultra-marathons': typeof UltraMarathonsRouteWithChildren
+  '/welsh-athletics-permitted-races': typeof WelshAthleticsPermittedRacesRoute
   '/10k-races/$month': typeof R10kRacesMonthRoute
   '/5k-races/$month': typeof R5kRacesMonthRoute
   '/admin/login': typeof AdminLoginRoute
@@ -694,6 +714,7 @@ export interface FileRouteTypes {
     | '/10k-races'
     | '/5k-races'
     | '/about'
+    | '/athletics-ni-permitted-races'
     | '/club-organised-races'
     | '/england-athletics-permitted-races'
     | '/fell-races'
@@ -713,6 +734,7 @@ export interface FileRouteTypes {
     | '/tra-permitted-races'
     | '/trail-running-events'
     | '/ultra-marathons'
+    | '/welsh-athletics-permitted-races'
     | '/10k-races/$month'
     | '/5k-races/$month'
     | '/admin/login'
@@ -767,6 +789,7 @@ export interface FileRouteTypes {
     | '/10k-races'
     | '/5k-races'
     | '/about'
+    | '/athletics-ni-permitted-races'
     | '/club-organised-races'
     | '/england-athletics-permitted-races'
     | '/fell-races'
@@ -786,6 +809,7 @@ export interface FileRouteTypes {
     | '/tra-permitted-races'
     | '/trail-running-events'
     | '/ultra-marathons'
+    | '/welsh-athletics-permitted-races'
     | '/10k-races/$month'
     | '/5k-races/$month'
     | '/admin/login'
@@ -841,6 +865,7 @@ export interface FileRouteTypes {
     | '/5k-races'
     | '/_adminShell'
     | '/about'
+    | '/athletics-ni-permitted-races'
     | '/club-organised-races'
     | '/england-athletics-permitted-races'
     | '/fell-races'
@@ -860,6 +885,7 @@ export interface FileRouteTypes {
     | '/tra-permitted-races'
     | '/trail-running-events'
     | '/ultra-marathons'
+    | '/welsh-athletics-permitted-races'
     | '/10k-races/$month'
     | '/5k-races/$month'
     | '/admin/login'
@@ -916,6 +942,7 @@ export interface RootRouteChildren {
   R5kRacesRoute: typeof R5kRacesRouteWithChildren
   AdminShellRoute: typeof AdminShellRouteWithChildren
   AboutRoute: typeof AboutRoute
+  AthleticsNiPermittedRacesRoute: typeof AthleticsNiPermittedRacesRoute
   ClubOrganisedRacesRoute: typeof ClubOrganisedRacesRoute
   EnglandAthleticsPermittedRacesRoute: typeof EnglandAthleticsPermittedRacesRoute
   FellRacesRoute: typeof FellRacesRoute
@@ -935,6 +962,7 @@ export interface RootRouteChildren {
   TraPermittedRacesRoute: typeof TraPermittedRacesRoute
   TrailRunningEventsRoute: typeof TrailRunningEventsRoute
   UltraMarathonsRoute: typeof UltraMarathonsRouteWithChildren
+  WelshAthleticsPermittedRacesRoute: typeof WelshAthleticsPermittedRacesRoute
   AdminLoginRoute: typeof AdminLoginRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   EventsSlugRoute: typeof EventsSlugRoute
@@ -968,6 +996,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/welsh-athletics-permitted-races': {
+      id: '/welsh-athletics-permitted-races'
+      path: '/welsh-athletics-permitted-races'
+      fullPath: '/welsh-athletics-permitted-races'
+      preLoaderRoute: typeof WelshAthleticsPermittedRacesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/ultra-marathons': {
       id: '/ultra-marathons'
       path: '/ultra-marathons'
@@ -1099,6 +1134,13 @@ declare module '@tanstack/react-router' {
       path: '/club-organised-races'
       fullPath: '/club-organised-races'
       preLoaderRoute: typeof ClubOrganisedRacesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/athletics-ni-permitted-races': {
+      id: '/athletics-ni-permitted-races'
+      path: '/athletics-ni-permitted-races'
+      fullPath: '/athletics-ni-permitted-races'
+      preLoaderRoute: typeof AthleticsNiPermittedRacesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about': {
@@ -1587,6 +1629,7 @@ const rootRouteChildren: RootRouteChildren = {
   R5kRacesRoute: R5kRacesRouteWithChildren,
   AdminShellRoute: AdminShellRouteWithChildren,
   AboutRoute: AboutRoute,
+  AthleticsNiPermittedRacesRoute: AthleticsNiPermittedRacesRoute,
   ClubOrganisedRacesRoute: ClubOrganisedRacesRoute,
   EnglandAthleticsPermittedRacesRoute: EnglandAthleticsPermittedRacesRoute,
   FellRacesRoute: FellRacesRoute,
@@ -1606,6 +1649,7 @@ const rootRouteChildren: RootRouteChildren = {
   TraPermittedRacesRoute: TraPermittedRacesRoute,
   TrailRunningEventsRoute: TrailRunningEventsRoute,
   UltraMarathonsRoute: UltraMarathonsRouteWithChildren,
+  WelshAthleticsPermittedRacesRoute: WelshAthleticsPermittedRacesRoute,
   AdminLoginRoute: AdminLoginRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   EventsSlugRoute: EventsSlugRoute,
