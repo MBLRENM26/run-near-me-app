@@ -587,43 +587,91 @@ export type Database = {
         Row: {
           admin_note: string | null
           claim_slug: string | null
+          county: string | null
+          created_event_id: string | null
+          distances: string[]
           email: string
           event_details: string
           id: string
           is_reviewed: boolean
           kind: string
+          organiser: string | null
+          postcode: string | null
+          race_date: string | null
+          race_name: string | null
           reviewed_at: string | null
           seen_at: string | null
           status: string
           submitted_at: string
+          submitted_entry_fee: string | null
+          terrain: string | null
+          town: string | null
+          website_url: string | null
         }
         Insert: {
           admin_note?: string | null
           claim_slug?: string | null
+          county?: string | null
+          created_event_id?: string | null
+          distances?: string[]
           email: string
           event_details: string
           id?: string
           is_reviewed?: boolean
           kind?: string
+          organiser?: string | null
+          postcode?: string | null
+          race_date?: string | null
+          race_name?: string | null
           reviewed_at?: string | null
           seen_at?: string | null
           status?: string
           submitted_at?: string
+          submitted_entry_fee?: string | null
+          terrain?: string | null
+          town?: string | null
+          website_url?: string | null
         }
         Update: {
           admin_note?: string | null
           claim_slug?: string | null
+          county?: string | null
+          created_event_id?: string | null
+          distances?: string[]
           email?: string
           event_details?: string
           id?: string
           is_reviewed?: boolean
           kind?: string
+          organiser?: string | null
+          postcode?: string | null
+          race_date?: string | null
+          race_name?: string | null
           reviewed_at?: string | null
           seen_at?: string | null
           status?: string
           submitted_at?: string
+          submitted_entry_fee?: string | null
+          terrain?: string | null
+          town?: string | null
+          website_url?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "submissions_created_event_id_fkey"
+            columns: ["created_event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "submissions_created_event_id_fkey"
+            columns: ["created_event_id"]
+            isOneToOne: false
+            referencedRelation: "public_events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       suppressed_emails: {
         Row: {
