@@ -65,6 +65,9 @@ export interface AdminEventFull extends AdminEventListRow {
   duplicate_of: string | null;
   norm_id: string | null;
   norm_created_at: string | null;
+  governance: string | null;
+  organiser_type: string | null;
+  race_profile: string | null;
 }
 
 // ---- Schemas ----
