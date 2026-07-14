@@ -36,6 +36,8 @@ type HomeSearch = {
   label?: string;
   radius?: Radius;
   type?: EventType;
+  gov?: string;
+  profile?: string;
 };
 
 const VALID_RADII: readonly Radius[] = [5, 10, 25, 50];
