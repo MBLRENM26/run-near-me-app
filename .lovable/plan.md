@@ -1,31 +1,40 @@
-## What's next
+## What's outstanding
 
-Two workstreams are queued after the Scottish Athletics ship. Recommending we take them in this order:
+After today's B5 discovery-gate ship, here's what's left, ranked by ROI:
 
-### 1. B5 — Extend the discovery gate for governance-permitted events (small, high-leverage)
+### 1. C — Audience value pages (next up)
 
-**Problem.** `hasOrganiserOwnedLink` (src/lib/link-trust.ts) excludes any event whose only external link sits on an entry platform (sientries, racebest, sport80, justgo, …). That gate is right for random scraped rows, but it's over-strict for events we already know are governed — an England Athletics / Scottish Athletics / Welsh Athletics / Athletics NI / TRA permit is itself a trust signal. Result today: a permitted club race whose only link is `sientries.co.uk/…/event-page` is hidden from the homepage, region pages, distance pages and cross-links, even though its event detail page renders fine.
+Three new routes answering "why use this site" per audience:
+- `/for-runners` — provenance, trust signals, filters, onward routes
+- `/for-clubs` — free listing, claim your page, member race feeds
+- `/for-organisers` — free listing, structured submission, governance visibility
 
-**Change.** Extend the discovery gate to admit an event when EITHER:
-- it has an organiser-owned link (current rule), OR
-- it has a trusted governance tag (`england_athletics`, `scottish_athletics`, `welsh_athletics`, `athletics_ni`, `tra`) AND a trusted event-specific link (entry-platform links count, aggregator links still don't).
+Own copy, own head metadata per route, linked from footer + header. I'll draft all three intros/FAQs in-chat for your review **before** writing files (same workflow as WA / NI / SA landing pages).
 
-No change to the event detail page — CTAs there already use `classifyEventLink` directly, so "Enter now → sientries" keeps working for people who land on the page.
+### 2. Same-weekend-nearby threshold fix (small, high-leverage)
 
-**Where it applies.** Anywhere `hasOrganiserOwnedLink` is currently used as the discovery filter: homepage curated lists, `/running-events/$slug` (regions), distance pages (`/5k-races`, `/10k-races`, `/half-marathons`, `/marathons`, `/ultra-marathons`, `/trail-running-events`, etc.), region×distance matrix, and same-town / related blocks on event pages.
+Per the top-events audit: the "Same weekend nearby" block renders on only ~10% of top event pages because the county-scoped query rarely hits the ≥3 threshold. Fix: fall back to region when county returns <3. Regions have ~10× the density. Pure logic change in `src/lib/events.functions.ts`, small and safe.
 
-**Deliverable.** New helper `hasDiscoverableLink({ entry_url, organiser_url, governance })` in `src/lib/link-trust.ts` (or a thin wrapper next to it). Swap call sites over. Before/after count on the homepage + one region + one distance page so we can see the lift.
+### 3. Analytics — decision layer (not tracking)
 
-**Out of scope.** No schema changes, no copy changes, no new pages. Aggregator hosts (runabc, timeoutdoors, findarace, EA/SA/WA/NI listing pages) stay untrusted everywhere.
+Correction to what I said earlier — that was sloppy wording. The Plausible **goals are firing**: `Entry Click`, `Search Performed`, `Search Result Click`, `Form: Submission`, `Club Page View`, `Region View`, `Filter`, `Location Set`, `Claim Interest`, `Club Website Click`, `Back to search clicked` all track live in production, and the two funnels you registered today (Search Performed, Organiser Acquisition) are consuming them.
 
-### 2. C — Audience value pages (`/for-runners`, `/for-clubs`, `/for-organisers`)
+What's missing is the **decision layer on top** — nothing turns that data into a recurring read. Options, cheapest first:
 
-The nav / footer already imply these exist in spirit; they don't as routes. This is the "why should I use this site" answer for each audience, and it's what the original ask ("more detail on why runners / clubs / organisers should use it") was pointing at. Own copy, own route files, own head metadata, linked from the footer. Draft copy for your review before writing files.
+- **a. Weekly digest doc** — I write `docs/analytics/weekly-read.md`: a fixed template of 6–8 questions to answer every Friday from Plausible (top zero-result queries, filter → Entry Click conversion, worst-performing region page, submission-form drop-off, etc.). You fill in ~10 min/week. Zero code, forces the habit.
+- **b. Admin analytics page** — `/admin/analytics` reads Plausible's Stats API (needs a Plausible API key secret) and renders the same read live. Bigger job; only worth it if (a) becomes a habit.
+- **c. Nothing** — leave Plausible as-is and check it when curious.
 
-Queued after B5 so we ship the discovery win first (visible on every landing page immediately) before spending a turn on marketing copy.
+Recommend **(a)** now, revisit **(b)** later.
+
+### 4. Scottish Athletics organiser URL enrichment (backlog)
+
+Per `mem://backlog/scottish-athletics-organiser-urls`: 96 of 98 SA upcoming events still vanish from discovery even after today's B5 gate, because their only link is `scottishathletics.justgo.com/…` and no host-club website is captured. Needs a sync-side scrape of the host club's own site. Bigger job — flag for later, not this session.
 
 ### Recommendation
 
-Start with **B5** this turn — pure logic change, no copy to approve, and I can give you a concrete before/after count on how many extra permitted events surface across the discovery pages. Then move to **C** once you're happy with the lift.
+1. Ship **C (audience pages)** this turn — direct answer to your original ask; draft copy for review first.
+2. Follow-on: **same-weekend threshold fix** (small).
+3. Then **(3a) weekly analytics digest doc** — zero code, sets up the habit before considering a dashboard.
 
-Shall I proceed with B5?
+Shall I proceed with C and draft the copy for your review?
