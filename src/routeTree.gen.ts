@@ -15,6 +15,7 @@ import { Route as TrailRunningEventsRouteImport } from './routes/trail-running-e
 import { Route as TraPermittedRacesRouteImport } from './routes/tra-permitted-races'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SearchRouteImport } from './routes/search'
+import { Route as ScottishAthleticsPermittedRacesRouteImport } from './routes/scottish-athletics-permitted-races'
 import { Route as RunningEventsThisWeekendRouteImport } from './routes/running-events-this-weekend'
 import { Route as RunningEventsNextWeekendRouteImport } from './routes/running-events-next-weekend'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
@@ -115,6 +116,12 @@ const SearchRoute = SearchRouteImport.update({
   path: '/search',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ScottishAthleticsPermittedRacesRoute =
+  ScottishAthleticsPermittedRacesRouteImport.update({
+    id: '/scottish-athletics-permitted-races',
+    path: '/scottish-athletics-permitted-races',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const RunningEventsThisWeekendRoute =
   RunningEventsThisWeekendRouteImport.update({
     id: '/running-events-this-weekend',
@@ -500,6 +507,7 @@ export interface FileRoutesByFullPath {
   '/robots.txt': typeof RobotsDottxtRoute
   '/running-events-next-weekend': typeof RunningEventsNextWeekendRoute
   '/running-events-this-weekend': typeof RunningEventsThisWeekendRoute
+  '/scottish-athletics-permitted-races': typeof ScottishAthleticsPermittedRacesRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/tra-permitted-races': typeof TraPermittedRacesRoute
@@ -575,6 +583,7 @@ export interface FileRoutesByTo {
   '/robots.txt': typeof RobotsDottxtRoute
   '/running-events-next-weekend': typeof RunningEventsNextWeekendRoute
   '/running-events-this-weekend': typeof RunningEventsThisWeekendRoute
+  '/scottish-athletics-permitted-races': typeof ScottishAthleticsPermittedRacesRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/tra-permitted-races': typeof TraPermittedRacesRoute
@@ -652,6 +661,7 @@ export interface FileRoutesById {
   '/robots.txt': typeof RobotsDottxtRoute
   '/running-events-next-weekend': typeof RunningEventsNextWeekendRoute
   '/running-events-this-weekend': typeof RunningEventsThisWeekendRoute
+  '/scottish-athletics-permitted-races': typeof ScottishAthleticsPermittedRacesRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/tra-permitted-races': typeof TraPermittedRacesRoute
@@ -729,6 +739,7 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/running-events-next-weekend'
     | '/running-events-this-weekend'
+    | '/scottish-athletics-permitted-races'
     | '/search'
     | '/sitemap.xml'
     | '/tra-permitted-races'
@@ -804,6 +815,7 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/running-events-next-weekend'
     | '/running-events-this-weekend'
+    | '/scottish-athletics-permitted-races'
     | '/search'
     | '/sitemap.xml'
     | '/tra-permitted-races'
@@ -880,6 +892,7 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/running-events-next-weekend'
     | '/running-events-this-weekend'
+    | '/scottish-athletics-permitted-races'
     | '/search'
     | '/sitemap.xml'
     | '/tra-permitted-races'
@@ -957,6 +970,7 @@ export interface RootRouteChildren {
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   RunningEventsNextWeekendRoute: typeof RunningEventsNextWeekendRoute
   RunningEventsThisWeekendRoute: typeof RunningEventsThisWeekendRoute
+  ScottishAthleticsPermittedRacesRoute: typeof ScottishAthleticsPermittedRacesRoute
   SearchRoute: typeof SearchRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TraPermittedRacesRoute: typeof TraPermittedRacesRoute
@@ -1036,6 +1050,13 @@ declare module '@tanstack/react-router' {
       path: '/search'
       fullPath: '/search'
       preLoaderRoute: typeof SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/scottish-athletics-permitted-races': {
+      id: '/scottish-athletics-permitted-races'
+      path: '/scottish-athletics-permitted-races'
+      fullPath: '/scottish-athletics-permitted-races'
+      preLoaderRoute: typeof ScottishAthleticsPermittedRacesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/running-events-this-weekend': {
@@ -1644,6 +1665,7 @@ const rootRouteChildren: RootRouteChildren = {
   RobotsDottxtRoute: RobotsDottxtRoute,
   RunningEventsNextWeekendRoute: RunningEventsNextWeekendRoute,
   RunningEventsThisWeekendRoute: RunningEventsThisWeekendRoute,
+  ScottishAthleticsPermittedRacesRoute: ScottishAthleticsPermittedRacesRoute,
   SearchRoute: SearchRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TraPermittedRacesRoute: TraPermittedRacesRoute,
