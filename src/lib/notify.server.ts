@@ -20,7 +20,7 @@ const TEMPLATE_NAME = 'admin-new-submission'
 export interface NewSubmissionPayload {
   id: string
   email: string
-  kind: 'claim' | 'listing'
+  kind: 'claim' | 'listing' | 'edit'
   claim_slug: string | null
   submitted_at: string
 }
