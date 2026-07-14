@@ -8,7 +8,14 @@ import {
   verifyAdminPassword,
 } from "@/lib/admin-session.server";
 import { sendNewSubmissionNotification } from "@/lib/notify.server";
-import { slugify } from "@/lib/utils";
+function slugify(input: string): string {
+  return input
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
 
 const STATUSES = ["new", "in_review", "actioned", "rejected", "spam"] as const;
 const KINDS = ["listing", "claim"] as const;
