@@ -1,0 +1,1 @@
+UPDATE public.events SET governance = 'scottish_athletics' WHERE source = 'scottishathletics' AND (governance IS NULL OR governance = 'unknown');
