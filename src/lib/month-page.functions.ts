@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { hasOrganiserOwnedLink } from "@/lib/link-trust";
+import { hasDiscoverableLink } from "@/lib/link-trust";
 import { DISCOVERY_EVENT_COLUMNS, UK_BOUNDS_OR_NULL } from "@/lib/events-query";
 import { sortEstimatedLastWithinMonth } from "@/lib/month-filter";
 import {
@@ -75,6 +75,7 @@ export const getEventsForMonth = createServerFn({ method: "GET" })
       is_featured: boolean | null;
       date_is_estimated: boolean | null;
       is_recurring: boolean | null;
+      governance: string | null;
     };
 
     const all: Row[] = [];
@@ -96,7 +97,7 @@ export const getEventsForMonth = createServerFn({ method: "GET" })
     }
 
     const trusted = all.filter((e) =>
-      hasOrganiserOwnedLink(e.entry_url, e.organiser_url),
+      hasDiscoverableLink(e.entry_url, e.organiser_url, e.governance),
     );
 
     const filtered = data.distanceKey
@@ -128,6 +129,7 @@ export const getEventsForMonth = createServerFn({ method: "GET" })
       is_featured: !!r.is_featured,
       date_is_estimated: !!r.date_is_estimated,
       is_recurring: !!r.is_recurring,
+      governance: r.governance,
     }));
 
     const sorted = sortEstimatedLastWithinMonth(events);
@@ -163,6 +165,7 @@ export const getMonthPageMatrix = createServerFn({ method: "GET" })
       terrain_tags: string[] | null;
       entry_url: string | null;
       organiser_url: string | null;
+      governance: string | null;
     };
 
     const all: Row[] = [];
@@ -171,7 +174,7 @@ export const getMonthPageMatrix = createServerFn({ method: "GET" })
       const { data, error } = await supabaseAdmin
         .from("events")
         .select(
-          "sort_date, distances, distance_tags, terrain_tags, entry_url, organiser_url",
+          "sort_date, distances, distance_tags, terrain_tags, entry_url, organiser_url, governance",
         )
         .eq("status", "ACTIVE")
         .gte("sort_date", startFrom)
@@ -185,7 +188,7 @@ export const getMonthPageMatrix = createServerFn({ method: "GET" })
     }
 
     const trusted = all.filter((e) =>
-      hasOrganiserOwnedLink(e.entry_url, e.organiser_url),
+      hasDiscoverableLink(e.entry_url, e.organiser_url, e.governance),
     );
 
     const counts = new Map<string, number>();

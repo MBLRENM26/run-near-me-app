@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { hasOrganiserOwnedLink } from "@/lib/link-trust";
+import { hasDiscoverableLink } from "@/lib/link-trust";
 import { DISCOVERY_EVENT_COLUMNS, UK_BOUNDS_OR_NULL } from "@/lib/events-query";
 import { sortEstimatedLastWithinMonth } from "@/lib/month-filter";
 import type { DistanceEvent } from "@/lib/events.functions";
@@ -43,6 +43,7 @@ export const getEventsByTerrain = createServerFn({ method: "GET" })
       is_featured: boolean | null;
       date_is_estimated: boolean | null;
       is_recurring: boolean | null;
+      governance: string | null;
     };
 
     const all: Row[] = [];
@@ -64,7 +65,7 @@ export const getEventsByTerrain = createServerFn({ method: "GET" })
     }
 
     const trusted = all.filter((e) =>
-      hasOrganiserOwnedLink(e.entry_url, e.organiser_url),
+      hasDiscoverableLink(e.entry_url, e.organiser_url, e.governance),
     );
 
     const events: DistanceEvent[] = trusted.map((r) => ({
@@ -83,6 +84,7 @@ export const getEventsByTerrain = createServerFn({ method: "GET" })
       is_featured: !!r.is_featured,
       date_is_estimated: !!r.date_is_estimated,
       is_recurring: !!r.is_recurring,
+      governance: r.governance,
     }));
 
     const counts = new Map<string, number>();
