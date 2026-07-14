@@ -275,6 +275,7 @@ export const getEventsByDistance = createServerFn({ method: "GET" })
       is_featured: boolean | null;
       date_is_estimated: boolean | null;
       is_recurring: boolean | null;
+      governance: string | null;
     };
     const rows = await fetchAllRows<Row>((from, to) =>
       supabaseAdmin
@@ -313,6 +314,7 @@ export const getEventsByDistance = createServerFn({ method: "GET" })
         is_featured: !!r.is_featured,
         date_is_estimated: !!r.date_is_estimated,
         is_recurring: !!r.is_recurring,
+        governance: r.governance,
       });
     }
 
