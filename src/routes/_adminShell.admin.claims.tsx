@@ -251,16 +251,41 @@ function AdminClaimsPage() {
       ) : (
         <div className="space-y-3">
           {rows.map((row) => (
-            <SubmissionRowCard
-              key={row.id}
-              row={row}
-              selected={selectedIds.has(row.id)}
-              onSelectChange={handleSelect}
-              onSave={handleSave}
-            />
+            <div key={row.id} className="space-y-1">
+              <SubmissionRowCard
+                row={row}
+                selected={selectedIds.has(row.id)}
+                onSelectChange={handleSelect}
+                onSave={handleSave}
+              />
+              <div className="flex justify-end px-1">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-xs"
+                  onClick={async () => {
+                    try {
+                      const res = await resendEmail({
+                        data: { submissionId: row.id },
+                      });
+                      if (res.ok) toast.success("Admin email resent");
+                      else if (res.status === "suppressed")
+                        toast.error("Recipient suppressed");
+                      else toast.error(`Resend failed: ${res.reason ?? res.status}`);
+                    } catch (e) {
+                      toast.error("Resend failed");
+                      console.error(e);
+                    }
+                  }}
+                >
+                  Resend admin email
+                </Button>
+              </div>
+            </div>
           ))}
         </div>
       )}
+
 
       <Toaster position="top-center" />
     </div>
