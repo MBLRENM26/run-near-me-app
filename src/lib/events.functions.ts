@@ -324,7 +324,7 @@ export const getEventsByDistance = createServerFn({ method: "GET" })
     // — we just don't recommend them from landing pages. See
     // src/lib/link-trust.ts and mem://constraints/scraped-data-trust.
     const trusted = all.filter((e) =>
-      hasOrganiserOwnedLink(e.entry_url, e.organiser_url),
+      hasDiscoverableLink(e.entry_url, e.organiser_url, e.governance),
     );
 
     // Group by region for the regional breakdown section.
