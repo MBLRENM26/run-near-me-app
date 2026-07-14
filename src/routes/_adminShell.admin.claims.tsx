@@ -22,7 +22,7 @@ import { Toaster } from "@/components/ui/sonner";
 
 
 const STATUSES = ["new", "in_review", "actioned", "rejected", "spam"] as const;
-const KINDS = ["all", "claim", "listing"] as const;
+const KINDS = ["all", "claim", "listing", "edit"] as const;
 type Status = (typeof STATUSES)[number];
 type KindFilter = (typeof KINDS)[number];
 
@@ -169,9 +169,15 @@ function AdminClaimsPage() {
           const count =
             k === "all"
               ? counts?.total ?? 0
+              : counts?.by_kind[k as "claim" | "listing" | "edit"] ?? 0;
+          const label =
+            k === "all"
+              ? "All"
               : k === "claim"
-                ? counts?.by_kind.claim ?? 0
-                : counts?.by_kind.listing ?? 0;
+                ? "Claims"
+                : k === "edit"
+                  ? "Edits"
+                  : "Listings";
           return (
             <button
               key={k}
@@ -182,7 +188,7 @@ function AdminClaimsPage() {
                   : "bg-muted text-muted-foreground hover:bg-muted/70"
               }`}
             >
-              {k === "all" ? "All" : k === "claim" ? "Claims" : "Listings"}
+              {label}
               <span className="ml-1.5 opacity-70">{count}</span>
             </button>
           );
