@@ -399,6 +399,7 @@ export const getEventsByRegionAndDistance = createServerFn({ method: "GET" })
       is_featured: boolean | null;
       date_is_estimated: boolean | null;
       is_recurring: boolean | null;
+      governance: string | null;
     };
     const rows = await fetchAllRows<Row>((from, to) =>
       supabaseAdmin
@@ -427,6 +428,7 @@ export const getEventsByRegionAndDistance = createServerFn({ method: "GET" })
       is_featured: !!r.is_featured,
       date_is_estimated: !!r.date_is_estimated,
       is_recurring: !!r.is_recurring,
+      governance: r.governance,
       _distance_tags: r.distance_tags,
       _terrain_tags: r.terrain_tags,
     }));
@@ -436,7 +438,7 @@ export const getEventsByRegionAndDistance = createServerFn({ method: "GET" })
     // the "other distances in this region" panel match what users will
     // actually see when they click through.
     const trusted = all.filter((e) =>
-      hasOrganiserOwnedLink(e.entry_url, e.organiser_url),
+      hasDiscoverableLink(e.entry_url, e.organiser_url, e.governance),
     );
 
     const rowMatches = (e: RowWithTags, key: DistanceKey) =>
