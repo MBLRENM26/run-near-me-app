@@ -232,15 +232,20 @@ export async function runScottishAthleticsSync(): Promise<ScottishAthleticsSyncR
         continue;
       }
 
-      let slug = slugify(name);
-      const normId = `scottishathletics-${slug}`;
-      const owner = existingSlugs.get(slug);
-      if ((owner && owner !== normId) || seenSlugs.has(slug)) {
-        slug = `${slug}-${dateFrom}`;
+      const baseSlug = slugify(name);
+      const baseNormId = `scottishathletics-${baseSlug}`;
+      let slug = baseSlug;
+      const baseOwner = globalSlugOwners.get(baseSlug);
+      if ((baseOwner && baseOwner !== baseNormId) || seenSlugs.has(baseSlug)) {
+        slug = `${baseSlug}-${dateFrom}`;
       }
-      if (seenSlugs.has(slug)) {
-        skippedDupes++;
-        continue;
+      let suffix = 2;
+      while (true) {
+        const owner = globalSlugOwners.get(slug);
+        const candidateNormId = `scottishathletics-${slug}`;
+        if (!seenSlugs.has(slug) && (!owner || owner === candidateNormId)) break;
+        slug = `${baseSlug}-${dateFrom}-${suffix++}`;
+        if (suffix > 20) break;
       }
       seenSlugs.add(slug);
 
