@@ -240,16 +240,31 @@ function ListYourEventPage() {
                     Website / entry URL{" "}
                     <span className="text-destructive">*</span>
                   </Label>
-                  <Input
-                    id="website_url"
-                    type="url"
-                    required
-                    maxLength={1000}
-                    placeholder="https://…"
-                    value={websiteUrl}
-                    onChange={(e) => setWebsiteUrl(e.target.value)}
-                  />
+                  <div className="relative">
+                    <span
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-muted-foreground"
+                    >
+                      https://
+                    </span>
+                    <Input
+                      id="website_url"
+                      type="url"
+                      required
+                      maxLength={1000}
+                      placeholder="yourrace.com/entry"
+                      className="pl-[4.25rem]"
+                      value={websiteUrl.replace(/^https?:\/\//i, "")}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setWebsiteUrl(
+                          v && !/^https?:\/\//i.test(v) ? `https://${v}` : v,
+                        );
+                      }}
+                    />
+                  </div>
                 </div>
+
 
                 <div className="space-y-2">
                   <Label>Distances</Label>
