@@ -586,19 +586,25 @@ export type Database = {
       submissions: {
         Row: {
           admin_note: string | null
+          change_type: string | null
           claim_slug: string | null
           county: string | null
           created_event_id: string | null
           distances: string[]
           email: string
           event_details: string
+          event_id: string | null
           id: string
           is_reviewed: boolean
           kind: string
           organiser: string | null
           postcode: string | null
+          proof_url: string | null
+          proposed_new_date: string | null
           race_date: string | null
           race_name: string | null
+          reporter_name: string | null
+          reporter_relationship: string | null
           reviewed_at: string | null
           seen_at: string | null
           status: string
@@ -610,19 +616,25 @@ export type Database = {
         }
         Insert: {
           admin_note?: string | null
+          change_type?: string | null
           claim_slug?: string | null
           county?: string | null
           created_event_id?: string | null
           distances?: string[]
           email: string
           event_details: string
+          event_id?: string | null
           id?: string
           is_reviewed?: boolean
           kind?: string
           organiser?: string | null
           postcode?: string | null
+          proof_url?: string | null
+          proposed_new_date?: string | null
           race_date?: string | null
           race_name?: string | null
+          reporter_name?: string | null
+          reporter_relationship?: string | null
           reviewed_at?: string | null
           seen_at?: string | null
           status?: string
@@ -634,19 +646,25 @@ export type Database = {
         }
         Update: {
           admin_note?: string | null
+          change_type?: string | null
           claim_slug?: string | null
           county?: string | null
           created_event_id?: string | null
           distances?: string[]
           email?: string
           event_details?: string
+          event_id?: string | null
           id?: string
           is_reviewed?: boolean
           kind?: string
           organiser?: string | null
           postcode?: string | null
+          proof_url?: string | null
+          proposed_new_date?: string | null
           race_date?: string | null
           race_name?: string | null
+          reporter_name?: string | null
+          reporter_relationship?: string | null
           reviewed_at?: string | null
           seen_at?: string | null
           status?: string
@@ -667,6 +685,20 @@ export type Database = {
           {
             foreignKeyName: "submissions_created_event_id_fkey"
             columns: ["created_event_id"]
+            isOneToOne: false
+            referencedRelation: "public_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "submissions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "submissions_event_id_fkey"
+            columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "public_events"
             referencedColumns: ["id"]

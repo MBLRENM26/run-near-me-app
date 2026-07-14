@@ -13,7 +13,7 @@ import type { TemplateEntry } from './registry'
 
 interface AdminNewSubmissionProps {
   submitterEmail?: string
-  kind?: 'claim' | 'listing'
+  kind?: 'claim' | 'listing' | 'edit'
   claimSlug?: string | null
   submittedAt?: string
 }
@@ -40,7 +40,12 @@ const AdminNewSubmissionEmail = ({
   claimSlug = null,
   submittedAt,
 }: AdminNewSubmissionProps) => {
-  const kindLabel = kind === 'claim' ? 'Listing claim' : 'New listing'
+  const kindLabel =
+    kind === 'claim'
+      ? 'Listing claim'
+      : kind === 'edit'
+        ? 'Edit report'
+        : 'New listing'
   return (
     <Html lang="en" dir="ltr">
       <Head />
