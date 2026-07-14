@@ -18,7 +18,7 @@ function slugify(input: string): string {
 }
 
 const STATUSES = ["new", "in_review", "actioned", "rejected", "spam"] as const;
-const KINDS = ["listing", "claim"] as const;
+const KINDS = ["listing", "claim", "edit"] as const;
 
 const DISTANCE_OPTIONS = [
   "5k",
@@ -43,7 +43,7 @@ export interface SubmissionRow {
   email: string;
   event_details: string;
   submitted_at: string;
-  kind: "listing" | "claim";
+  kind: "listing" | "claim" | "edit";
   claim_slug: string | null;
   status: (typeof STATUSES)[number];
   admin_note: string | null;
@@ -59,16 +59,22 @@ export interface SubmissionRow {
   terrain: string | null;
   submitted_entry_fee: string | null;
   created_event_id: string | null;
+  event_id: string | null;
+  change_type: string | null;
+  proof_url: string | null;
+  reporter_name: string | null;
+  reporter_relationship: string | null;
+  proposed_new_date: string | null;
 }
 
 export interface SubmissionCounts {
   total: number;
   by_status: Record<(typeof STATUSES)[number], number>;
-  by_kind: { listing: number; claim: number };
+  by_kind: { listing: number; claim: number; edit: number };
 }
 
 const SUBMISSION_COLUMNS =
-  "id,email,event_details,submitted_at,kind,claim_slug,status,admin_note,reviewed_at,race_name,race_date,website_url,distances,town,county,postcode,organiser,terrain,submitted_entry_fee,created_event_id";
+  "id,email,event_details,submitted_at,kind,claim_slug,status,admin_note,reviewed_at,race_name,race_date,website_url,distances,town,county,postcode,organiser,terrain,submitted_entry_fee,created_event_id,event_id,change_type,proof_url,reporter_name,reporter_relationship,proposed_new_date";
 
 function requireAdminOrThrow() {
   if (!isAdminAuthenticated()) {
@@ -136,7 +142,7 @@ export const listSubmissions = createServerFn({ method: "POST" })
     const counts: SubmissionCounts = {
       total: countRows?.length ?? 0,
       by_status: { new: 0, in_review: 0, actioned: 0, rejected: 0, spam: 0 },
-      by_kind: { listing: 0, claim: 0 },
+      by_kind: { listing: 0, claim: 0, edit: 0 },
     };
     for (const r of countRows ?? []) {
       const s = r.status as keyof typeof counts.by_status;
