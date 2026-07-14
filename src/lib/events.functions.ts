@@ -529,7 +529,7 @@ export const getRegionDistanceMatrix = createServerFn({ method: "GET" })
     for (const r of rows) {
       // Discovery-surface trust gate — match the landing-page filter so
       // the matrix counts agree with what users actually see.
-      if (!hasOrganiserOwnedLink(r.entry_url, r.organiser_url)) continue;
+      if (!hasDiscoverableLink(r.entry_url, r.organiser_url, r.governance)) continue;
       for (const p of DISTANCE_PAGE_LIST) {
         if (rowMatchesDistanceKey(r, p.key)) {
           const key = `${r.region}::${p.key}`;
