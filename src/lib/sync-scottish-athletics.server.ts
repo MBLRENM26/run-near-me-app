@@ -189,6 +189,24 @@ export async function runScottishAthleticsSync(): Promise<ScottishAthleticsSyncR
       ),
     );
 
+    // Global slug set — a Scotland event's slug can collide with any other
+    // region's event. Without this the DB unique index throws on upsert.
+    const { data: allSlugRows, error: allSlugErr } = await supabaseAdmin
+      .from("events")
+      .select("slug, norm_id");
+    if (allSlugErr) {
+      await run.finish({
+        status: "error",
+        error_message: allSlugErr.message,
+        fetched: all.length,
+        active: running.length,
+      });
+      throw new Error(allSlugErr.message);
+    }
+    const globalSlugOwners = new Map(
+      (allSlugRows ?? []).map((r) => [r.slug, r.norm_id]),
+    );
+
     const todayISO = new Date().toISOString().slice(0, 10);
     const seenSlugs = new Set<string>();
     type EventInsert =
