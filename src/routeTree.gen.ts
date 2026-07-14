@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UltraMarathonsRouteImport } from './routes/ultra-marathons'
 import { Route as TrailRunningEventsRouteImport } from './routes/trail-running-events'
+import { Route as TraPermittedRacesRouteImport } from './routes/tra-permitted-races'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as RunningEventsThisWeekendRouteImport } from './routes/running-events-this-weekend'
@@ -25,6 +26,8 @@ import { Route as JuniorParkrunEventsRouteImport } from './routes/junior-parkrun
 import { Route as IndexDothtmlRouteImport } from './routes/index[.]html'
 import { Route as HalfMarathonsRouteImport } from './routes/half-marathons'
 import { Route as FellRacesRouteImport } from './routes/fell-races'
+import { Route as EnglandAthleticsPermittedRacesRouteImport } from './routes/england-athletics-permitted-races'
+import { Route as ClubOrganisedRacesRouteImport } from './routes/club-organised-races'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AdminShellRouteImport } from './routes/_adminShell'
 import { Route as R5kRacesRouteImport } from './routes/5k-races'
@@ -87,6 +90,11 @@ const UltraMarathonsRoute = UltraMarathonsRouteImport.update({
 const TrailRunningEventsRoute = TrailRunningEventsRouteImport.update({
   id: '/trail-running-events',
   path: '/trail-running-events',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TraPermittedRacesRoute = TraPermittedRacesRouteImport.update({
+  id: '/tra-permitted-races',
+  path: '/tra-permitted-races',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -159,6 +167,17 @@ const HalfMarathonsRoute = HalfMarathonsRouteImport.update({
 const FellRacesRoute = FellRacesRouteImport.update({
   id: '/fell-races',
   path: '/fell-races',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnglandAthleticsPermittedRacesRoute =
+  EnglandAthleticsPermittedRacesRouteImport.update({
+    id: '/england-athletics-permitted-races',
+    path: '/england-athletics-permitted-races',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ClubOrganisedRacesRoute = ClubOrganisedRacesRouteImport.update({
+  id: '/club-organised-races',
+  path: '/club-organised-races',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -452,6 +471,8 @@ export interface FileRoutesByFullPath {
   '/10k-races': typeof R10kRacesRouteWithChildren
   '/5k-races': typeof R5kRacesRouteWithChildren
   '/about': typeof AboutRoute
+  '/club-organised-races': typeof ClubOrganisedRacesRoute
+  '/england-athletics-permitted-races': typeof EnglandAthleticsPermittedRacesRoute
   '/fell-races': typeof FellRacesRoute
   '/half-marathons': typeof HalfMarathonsRouteWithChildren
   '/index.html': typeof IndexDothtmlRoute
@@ -466,6 +487,7 @@ export interface FileRoutesByFullPath {
   '/running-events-this-weekend': typeof RunningEventsThisWeekendRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/tra-permitted-races': typeof TraPermittedRacesRoute
   '/trail-running-events': typeof TrailRunningEventsRoute
   '/ultra-marathons': typeof UltraMarathonsRouteWithChildren
   '/10k-races/$month': typeof R10kRacesMonthRoute
@@ -522,6 +544,8 @@ export interface FileRoutesByTo {
   '/10k-races': typeof R10kRacesRouteWithChildren
   '/5k-races': typeof R5kRacesRouteWithChildren
   '/about': typeof AboutRoute
+  '/club-organised-races': typeof ClubOrganisedRacesRoute
+  '/england-athletics-permitted-races': typeof EnglandAthleticsPermittedRacesRoute
   '/fell-races': typeof FellRacesRoute
   '/half-marathons': typeof HalfMarathonsRouteWithChildren
   '/index.html': typeof IndexDothtmlRoute
@@ -536,6 +560,7 @@ export interface FileRoutesByTo {
   '/running-events-this-weekend': typeof RunningEventsThisWeekendRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/tra-permitted-races': typeof TraPermittedRacesRoute
   '/trail-running-events': typeof TrailRunningEventsRoute
   '/ultra-marathons': typeof UltraMarathonsRouteWithChildren
   '/10k-races/$month': typeof R10kRacesMonthRoute
@@ -594,6 +619,8 @@ export interface FileRoutesById {
   '/5k-races': typeof R5kRacesRouteWithChildren
   '/_adminShell': typeof AdminShellRouteWithChildren
   '/about': typeof AboutRoute
+  '/club-organised-races': typeof ClubOrganisedRacesRoute
+  '/england-athletics-permitted-races': typeof EnglandAthleticsPermittedRacesRoute
   '/fell-races': typeof FellRacesRoute
   '/half-marathons': typeof HalfMarathonsRouteWithChildren
   '/index.html': typeof IndexDothtmlRoute
@@ -608,6 +635,7 @@ export interface FileRoutesById {
   '/running-events-this-weekend': typeof RunningEventsThisWeekendRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/tra-permitted-races': typeof TraPermittedRacesRoute
   '/trail-running-events': typeof TrailRunningEventsRoute
   '/ultra-marathons': typeof UltraMarathonsRouteWithChildren
   '/10k-races/$month': typeof R10kRacesMonthRoute
@@ -666,6 +694,8 @@ export interface FileRouteTypes {
     | '/10k-races'
     | '/5k-races'
     | '/about'
+    | '/club-organised-races'
+    | '/england-athletics-permitted-races'
     | '/fell-races'
     | '/half-marathons'
     | '/index.html'
@@ -680,6 +710,7 @@ export interface FileRouteTypes {
     | '/running-events-this-weekend'
     | '/search'
     | '/sitemap.xml'
+    | '/tra-permitted-races'
     | '/trail-running-events'
     | '/ultra-marathons'
     | '/10k-races/$month'
@@ -736,6 +767,8 @@ export interface FileRouteTypes {
     | '/10k-races'
     | '/5k-races'
     | '/about'
+    | '/club-organised-races'
+    | '/england-athletics-permitted-races'
     | '/fell-races'
     | '/half-marathons'
     | '/index.html'
@@ -750,6 +783,7 @@ export interface FileRouteTypes {
     | '/running-events-this-weekend'
     | '/search'
     | '/sitemap.xml'
+    | '/tra-permitted-races'
     | '/trail-running-events'
     | '/ultra-marathons'
     | '/10k-races/$month'
@@ -807,6 +841,8 @@ export interface FileRouteTypes {
     | '/5k-races'
     | '/_adminShell'
     | '/about'
+    | '/club-organised-races'
+    | '/england-athletics-permitted-races'
     | '/fell-races'
     | '/half-marathons'
     | '/index.html'
@@ -821,6 +857,7 @@ export interface FileRouteTypes {
     | '/running-events-this-weekend'
     | '/search'
     | '/sitemap.xml'
+    | '/tra-permitted-races'
     | '/trail-running-events'
     | '/ultra-marathons'
     | '/10k-races/$month'
@@ -879,6 +916,8 @@ export interface RootRouteChildren {
   R5kRacesRoute: typeof R5kRacesRouteWithChildren
   AdminShellRoute: typeof AdminShellRouteWithChildren
   AboutRoute: typeof AboutRoute
+  ClubOrganisedRacesRoute: typeof ClubOrganisedRacesRoute
+  EnglandAthleticsPermittedRacesRoute: typeof EnglandAthleticsPermittedRacesRoute
   FellRacesRoute: typeof FellRacesRoute
   HalfMarathonsRoute: typeof HalfMarathonsRouteWithChildren
   IndexDothtmlRoute: typeof IndexDothtmlRoute
@@ -893,6 +932,7 @@ export interface RootRouteChildren {
   RunningEventsThisWeekendRoute: typeof RunningEventsThisWeekendRoute
   SearchRoute: typeof SearchRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  TraPermittedRacesRoute: typeof TraPermittedRacesRoute
   TrailRunningEventsRoute: typeof TrailRunningEventsRoute
   UltraMarathonsRoute: typeof UltraMarathonsRouteWithChildren
   AdminLoginRoute: typeof AdminLoginRoute
@@ -940,6 +980,13 @@ declare module '@tanstack/react-router' {
       path: '/trail-running-events'
       fullPath: '/trail-running-events'
       preLoaderRoute: typeof TrailRunningEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tra-permitted-races': {
+      id: '/tra-permitted-races'
+      path: '/tra-permitted-races'
+      fullPath: '/tra-permitted-races'
+      preLoaderRoute: typeof TraPermittedRacesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -1038,6 +1085,20 @@ declare module '@tanstack/react-router' {
       path: '/fell-races'
       fullPath: '/fell-races'
       preLoaderRoute: typeof FellRacesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/england-athletics-permitted-races': {
+      id: '/england-athletics-permitted-races'
+      path: '/england-athletics-permitted-races'
+      fullPath: '/england-athletics-permitted-races'
+      preLoaderRoute: typeof EnglandAthleticsPermittedRacesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/club-organised-races': {
+      id: '/club-organised-races'
+      path: '/club-organised-races'
+      fullPath: '/club-organised-races'
+      preLoaderRoute: typeof ClubOrganisedRacesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about': {
@@ -1526,6 +1587,8 @@ const rootRouteChildren: RootRouteChildren = {
   R5kRacesRoute: R5kRacesRouteWithChildren,
   AdminShellRoute: AdminShellRouteWithChildren,
   AboutRoute: AboutRoute,
+  ClubOrganisedRacesRoute: ClubOrganisedRacesRoute,
+  EnglandAthleticsPermittedRacesRoute: EnglandAthleticsPermittedRacesRoute,
   FellRacesRoute: FellRacesRoute,
   HalfMarathonsRoute: HalfMarathonsRouteWithChildren,
   IndexDothtmlRoute: IndexDothtmlRoute,
@@ -1540,6 +1603,7 @@ const rootRouteChildren: RootRouteChildren = {
   RunningEventsThisWeekendRoute: RunningEventsThisWeekendRoute,
   SearchRoute: SearchRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  TraPermittedRacesRoute: TraPermittedRacesRoute,
   TrailRunningEventsRoute: TrailRunningEventsRoute,
   UltraMarathonsRoute: UltraMarathonsRouteWithChildren,
   AdminLoginRoute: AdminLoginRoute,
