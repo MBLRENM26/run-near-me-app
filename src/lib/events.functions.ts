@@ -711,6 +711,7 @@ export const getEventPageData = createServerFn({ method: "GET" })
         terrain_tags: string[] | null;
         entry_url: string | null;
         organiser_url: string | null;
+        governance: string | null;
       };
       type RawRow = {
         id: string;
@@ -726,12 +727,13 @@ export const getEventPageData = createServerFn({ method: "GET" })
         terrain_tags: string[] | null;
         entry_url: string | null;
         organiser_url: string | null;
+        governance: string | null;
       };
       const rawRows = await fetchAllRows<RawRow>((from, to) =>
         supabaseAdmin
           .from("events")
           .select(
-            "id, slug, name, date_raw, sort_date, date_is_estimated, town, county, distances, distance_tags, terrain_tags, entry_url, organiser_url",
+            "id, slug, name, date_raw, sort_date, date_is_estimated, town, county, distances, distance_tags, terrain_tags, entry_url, organiser_url, governance",
           )
           .eq("status", "ACTIVE")
           .eq("region", event.region!)
@@ -757,6 +759,7 @@ export const getEventPageData = createServerFn({ method: "GET" })
           terrain_tags: r.terrain_tags,
           entry_url: r.entry_url,
           organiser_url: r.organiser_url,
+          governance: r.governance,
         }));
 
       // Discovery-surface trust gate — "other races near you" should
