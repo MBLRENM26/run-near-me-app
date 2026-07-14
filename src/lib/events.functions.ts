@@ -96,6 +96,9 @@ export type EventDetail = {
   organiser: string | null;
   is_featured: boolean;
   date_is_estimated: boolean;
+  governance: string | null;
+  organiser_type: string | null;
+  race_profile: string | null;
   created_at: string | null;
   norm_created_at: string | null;
 };
@@ -106,7 +109,7 @@ export const getEventBySlug = createServerFn({ method: "GET" })
     const { data: row, error } = await supabaseAdmin
       .from("events")
       .select(
-        "id, slug, name, date_raw, date_from, date_to, sort_date, town, county, region, distances, discipline, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, organiser, is_featured, date_is_estimated",
+        "id, slug, name, date_raw, date_from, date_to, sort_date, town, county, region, distances, discipline, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, organiser, is_featured, date_is_estimated, governance, organiser_type, race_profile",
       )
       .eq("slug", data.slug)
       .eq("status", "ACTIVE")
