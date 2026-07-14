@@ -1,14 +1,28 @@
-Small UX tweak to the website URL field on `/list-your-event` so the user doesn't have to type `https://`.
+## Parked until credit reset
 
-## Change
-In `src/routes/list-your-event.tsx`:
-- Keep the input as `type="url"` (validation stays).
-- Show `https://` as a visual prefix so it's clear the scheme is required, and auto-prepend it on submit if the user typed a bare domain.
+Holding remaining 14.4 credits for minor amends today.
 
-## Implementation
-- Wrap the Website URL input in a relative container with a non-interactive `https://` prefix (muted text, `pl-16` on the input).
-- Change the placeholder from `https://…` to `yourrace.com/entry`.
-- In `handleSubmit`, before Zod parses: if `websiteUrl` is non-empty and does NOT start with `http://` or `https://`, prepend `https://`. If it starts with `http://`, leave it alone. Trim whitespace.
-- Pass the normalised value into the Zod schema and the `submit()` call so the stored `website_url` is always a valid absolute URL.
+## Next session — resume order
 
-No schema, server function, or admin changes — purely a form-side UX improvement.
+**B. Phase 2 taxonomy surfacing** (uses existing `governance`, `organiser_type`, `race_profile` columns already backfilled)
+1. Badges on `/events/$slug` for governance / organiser type / race profile
+2. Filters on the browse / search page for the same three axes
+3. New landing pages, e.g.:
+   - `/uka-permitted` (governance)
+   - `/club-organised` (organiser type)
+   - `/trail-races`, `/road-races`, `/multi-terrain` (race profile)
+4. Homepage entry point ("Browse by governance / organiser type")
+5. `head()` metadata + internal links between new pages
+
+**C. Audience value pages** (after B lands)
+- `/for-runners` — why runners should use the site (provenance, filters, onward routes)
+- `/for-clubs` — why clubs (claim your club, member events, discovery)
+- `/for-organisers` — why organisers (structured submission, SEO reach, trust strip)
+- Wire into header/footer nav
+
+## Not in scope for next session (deferred backlog)
+- Scottish Athletics organiser URL capture (~96 events back into discovery)
+- EA chunk roll-up in Sync Runs view + summary email
+- Analytics goals wired in Plausible dashboard
+
+Ping when credits reset and I'll start on B.
