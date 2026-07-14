@@ -1017,10 +1017,13 @@ export type Database = {
           distance_type: string
           entry_fee: string
           entry_url: string
+          governance: string
           id: string
           is_featured: boolean
           name: string
+          organiser_type: string
           organiser_url: string
+          race_profile: string
           slug: string
           town: string
         }[]

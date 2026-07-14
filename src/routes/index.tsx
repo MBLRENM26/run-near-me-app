@@ -14,6 +14,7 @@ import {
   type Coords,
 } from "@/components/events/LocationPrompt";
 import { FilterBar, type Radius } from "@/components/events/FilterBar";
+import { TaxonomyFilters } from "@/components/events/TaxonomyFilters";
 import {
   EventCard,
   isParkrunEvent,
@@ -36,6 +37,8 @@ type HomeSearch = {
   label?: string;
   radius?: Radius;
   type?: EventType;
+  gov?: string;
+  profile?: string;
 };
 
 const VALID_RADII: readonly Radius[] = [5, 10, 25, 50];
@@ -73,6 +76,12 @@ export const Route = createFileRoute("/")({
     if (VALID_RADII.includes(r as Radius)) out.radius = r as Radius;
     if (typeof raw.type === "string" && VALID_TYPES.includes(raw.type as EventType)) {
       out.type = raw.type as EventType;
+    }
+    if (typeof raw.gov === "string" && raw.gov.length > 0 && raw.gov.length < 40) {
+      out.gov = raw.gov;
+    }
+    if (typeof raw.profile === "string" && raw.profile.length > 0 && raw.profile.length < 40) {
+      out.profile = raw.profile;
     }
     return out;
   },
@@ -151,6 +160,8 @@ function HomePage() {
       : null;
   const radius: Radius = search.radius ?? 10;
   const eventType: EventType = search.type ?? "all";
+  const governanceFilter: string | null = search.gov ?? null;
+  const raceProfileFilter: string | null = search.profile ?? null;
 
   const setCoords = (c: Coords) =>
     navigate({
@@ -160,6 +171,10 @@ function HomePage() {
     navigate({ search: (prev: HomeSearch) => ({ ...prev, radius: r }) });
   const setEventType = (t: EventType) =>
     navigate({ search: (prev: HomeSearch) => ({ ...prev, type: t }) });
+  const setGovernance = (v: string | null) =>
+    navigate({ search: (prev: HomeSearch) => ({ ...prev, gov: v ?? undefined }) });
+  const setRaceProfile = (v: string | null) =>
+    navigate({ search: (prev: HomeSearch) => ({ ...prev, profile: v ?? undefined }) });
 
   const { data: nearbyEvents, isLoading, error: nearbyError } = useQuery({
     queryKey: ["events", "nearby", coords?.lat, coords?.lng, radius],
@@ -215,7 +230,10 @@ function HomePage() {
     },
   });
 
-  const eventsWithDistance: EventCardData[] = useMemo(() => {
+  const eventsWithDistance: (EventCardData & {
+    governance: string | null;
+    race_profile: string | null;
+  })[] = useMemo(() => {
     if (!nearbyEvents) return [];
     // Discovery-surface trust gate: applied here, at the source, so every
     // downstream slice (races, parkruns, featuredNearby) inherits it.
@@ -238,14 +256,18 @@ function HomePage() {
         is_featured: e.is_featured,
         date_is_estimated: e.date_is_estimated,
         distanceMiles: e.distance_miles,
+        governance: e.governance,
+        race_profile: e.race_profile,
       }));
   }, [nearbyEvents]);
 
-  const visibleEvents: EventCardData[] = useMemo(() => {
+  const visibleEvents = useMemo(() => {
     return eventsWithDistance
       .filter((e) => matchesEventType(e.distance_type, eventType))
+      .filter((e) => (governanceFilter ? e.governance === governanceFilter : true))
+      .filter((e) => (raceProfileFilter ? e.race_profile === raceProfileFilter : true))
       .sort((a, b) => a.distanceMiles! - b.distanceMiles!);
-  }, [eventsWithDistance, eventType]);
+  }, [eventsWithDistance, eventType, governanceFilter, raceProfileFilter]);
 
   const races: EventCardData[] = useMemo(
     () => visibleEvents.filter((e) => !isParkrunEvent(e)),
@@ -308,6 +330,14 @@ function HomePage() {
                 onRadiusChange={setRadius}
                 eventType={eventType}
                 onEventTypeChange={setEventType}
+              />
+              <TaxonomyFilters
+                page="home"
+                rows={eventsWithDistance}
+                governance={governanceFilter}
+                raceProfile={raceProfileFilter}
+                onGovernanceChange={setGovernance}
+                onRaceProfileChange={setRaceProfile}
               />
             </div>
 

@@ -65,6 +65,9 @@ export interface AdminEventFull extends AdminEventListRow {
   duplicate_of: string | null;
   norm_id: string | null;
   norm_created_at: string | null;
+  governance: string | null;
+  organiser_type: string | null;
+  race_profile: string | null;
 }
 
 // ---- Schemas ----
@@ -137,6 +140,50 @@ const eventPatchSchema = z.object({
   distance_tags: z.array(z.enum(DISTANCE_TAG_VALUES)).optional(),
   terrain_tags: z.array(z.enum(TERRAIN_TAG_VALUES)).optional(),
   is_curated_tags: z.boolean().optional(),
+  governance: z
+    .enum([
+      "england_athletics",
+      "scottish_athletics",
+      "welsh_athletics",
+      "athletics_ni",
+      "tra",
+      "arc",
+      "fra",
+      "wfra",
+      "sha",
+      "parkrun",
+      "unlicensed",
+      "unknown",
+    ])
+    .nullable()
+    .optional(),
+  organiser_type: z
+    .enum([
+      "club",
+      "commercial",
+      "charity",
+      "parkrun",
+      "community",
+      "governing_body",
+      "unknown",
+    ])
+    .nullable()
+    .optional(),
+  race_profile: z
+    .enum([
+      "road_race",
+      "trail_race",
+      "fell_race",
+      "ultra",
+      "multi_terrain",
+      "track",
+      "cross_country",
+      "parkrun",
+      "virtual",
+      "other",
+    ])
+    .nullable()
+    .optional(),
 });
 
 const eventCreateSchema = eventPatchSchema.extend({

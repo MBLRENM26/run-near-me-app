@@ -75,7 +75,13 @@ export const trackLocationSet = (method: "device" | "postcode") =>
 
 export const trackFilter = (props: {
   page: string;
-  filter_type: "radius" | "distance" | "month" | "region";
+  filter_type:
+    | "radius"
+    | "distance"
+    | "month"
+    | "region"
+    | "governance"
+    | "race_profile";
   value: string | number;
 }) => track("Filter", props);
 

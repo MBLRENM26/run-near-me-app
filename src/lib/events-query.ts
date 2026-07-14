@@ -21,7 +21,7 @@
  * See mem://constraints/no-source-attribution.
  */
 export const DISCOVERY_EVENT_COLUMNS =
-  "id, slug, name, date_raw, sort_date, town, county, region, distances, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, is_featured, date_is_estimated, is_recurring";
+  "id, slug, name, date_raw, sort_date, town, county, region, distances, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, is_featured, date_is_estimated, is_recurring, governance, organiser_type, race_profile";
 
 /**
  * PostgREST `.or(...)` fragment that keeps rows either inside the UK

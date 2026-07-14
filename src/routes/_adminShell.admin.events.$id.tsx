@@ -21,6 +21,11 @@ import {
   type DistanceTag,
   type TerrainTag,
 } from "@/lib/event-tags";
+import {
+  GOVERNANCE_OPTIONS,
+  ORGANISER_TYPE_OPTIONS,
+  RACE_PROFILE_OPTIONS,
+} from "@/lib/event-taxonomy";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -329,6 +334,32 @@ function AdminEventEditorPage() {
         </Field>
       </Section>
 
+      {/* Taxonomy — powers the trust strip on event pages and (soon) the
+          "More filters" chips on discovery surfaces. Values are curated
+          per-row here; no bulk backfill from scraped free-text. */}
+      <Section title="Taxonomy">
+        <Field label="Governance" hint="Permit / sanction body">
+          <TaxonomySelect
+            value={form.governance ?? ""}
+            options={GOVERNANCE_OPTIONS}
+            onChange={(v) => set("governance", (v || null) as string | null)}
+          />
+        </Field>
+        <Field label="Organiser type">
+          <TaxonomySelect
+            value={form.organiser_type ?? ""}
+            options={ORGANISER_TYPE_OPTIONS}
+            onChange={(v) => set("organiser_type", (v || null) as string | null)}
+          />
+        </Field>
+        <Field label="Race profile" hint="Discipline / format">
+          <TaxonomySelect
+            value={form.race_profile ?? ""}
+            options={RACE_PROFILE_OPTIONS}
+            onChange={(v) => set("race_profile", (v || null) as string | null)}
+          />
+        </Field>
+      </Section>
 
       {/* Location */}
       <Section title="Location">
@@ -655,6 +686,31 @@ function TagChips({
         );
       })}
     </div>
+  );
+}
+
+function TaxonomySelect({
+  value,
+  options,
+  onChange,
+}: {
+  value: string;
+  options: readonly { value: string; label: string }[];
+  onChange: (v: string) => void;
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+    >
+      <option value="">— not set —</option>
+      {options.map((o) => (
+        <option key={o.value} value={o.value}>
+          {o.label}
+        </option>
+      ))}
+    </select>
   );
 }
 
