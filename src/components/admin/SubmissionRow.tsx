@@ -73,14 +73,25 @@ export function SubmissionRowCard({
   const kindClass =
     row.kind === "claim"
       ? "bg-primary/10 text-primary"
-      : "bg-muted text-muted-foreground";
+      : row.kind === "edit"
+        ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
+        : "bg-muted text-muted-foreground";
 
   const hasStructured = Boolean(row.race_name);
+  const isEdit = row.kind === "edit";
   const canCreateEvent =
     hasStructured && !row.created_event_id && row.kind === "listing";
 
   const raceDate = row.race_date
     ? new Date(row.race_date).toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })
+    : null;
+
+  const proposedDate = row.proposed_new_date
+    ? new Date(row.proposed_new_date).toLocaleDateString("en-GB", {
         day: "numeric",
         month: "short",
         year: "numeric",
