@@ -259,6 +259,20 @@ function AdminClaimsPage() {
                 selected={selectedIds.has(row.id)}
                 onSelectChange={handleSelect}
                 onSave={handleSave}
+                onCreateEvent={async (id) => {
+                  try {
+                    const res = await createEvent({ data: { submissionId: id } });
+                    if (res.existed) toast.info("Event already exists — opening editor");
+                    else toast.success("Draft event created");
+                    refresh();
+                    window.location.href = `/admin/events/${res.eventId}`;
+                  } catch (e) {
+                    toast.error(
+                      e instanceof Error ? e.message : "Failed to create event",
+                    );
+                    console.error(e);
+                  }
+                }}
               />
               <div className="flex justify-end px-1">
                 <Button
