@@ -867,7 +867,7 @@ export const getEventPageData = createServerFn({ method: "GET" })
       const { data: townRows, error: townErr } = await supabaseAdmin
         .from("events")
         .select(
-          "id, slug, name, date_raw, sort_date, date_is_estimated, town, county, entry_url, organiser_url",
+          "id, slug, name, date_raw, sort_date, date_is_estimated, town, county, entry_url, organiser_url, governance",
         )
         .eq("status", "ACTIVE")
         .ilike("town", eventTown)
@@ -879,11 +879,12 @@ export const getEventPageData = createServerFn({ method: "GET" })
       if (!townErr && townRows) {
         for (const r of townRows) {
           // Discovery-surface trust gate — same-town suggestions only
-          // recommend events with an organiser-owned link.
+          // recommend events with a discoverable link.
           if (
-            !hasOrganiserOwnedLink(
+            !hasDiscoverableLink(
               r.entry_url as string | null,
               r.organiser_url as string | null,
+              r.governance as string | null,
             )
           )
             continue;
