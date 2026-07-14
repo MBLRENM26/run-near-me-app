@@ -162,6 +162,7 @@ export async function runScottishAthleticsSync(): Promise<ScottishAthleticsSyncR
       () => new Map<string, string>(),
     );
 
+    // Scotland-scoped rows for name/date dedupe + updated-vs-new accounting.
     const { data: existing, error: exErr } = await supabaseAdmin
       .from("events")
       .select("slug, name, date_from, norm_id")
