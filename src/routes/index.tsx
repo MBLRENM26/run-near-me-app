@@ -24,7 +24,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { matchesEventType, type EventType } from "@/lib/distance";
 import { MapPin } from "lucide-react";
 import { DistanceNav } from "@/components/distance/DistanceNav";
-import { hasOrganiserOwnedLink } from "@/lib/link-trust";
+import { hasDiscoverableLink } from "@/lib/link-trust";
 import { DISCOVERY_EVENT_COLUMNS, UK_BOUNDS_OR_NULL } from "@/lib/events-query";
 import {
   LiveEventCounter,
@@ -224,7 +224,7 @@ function HomePage() {
         .limit(20);
       if (error) throw error;
       const trusted = (data ?? []).filter((e) =>
-        hasOrganiserOwnedLink(e.entry_url, e.organiser_url),
+        hasDiscoverableLink(e.entry_url, e.organiser_url, e.governance),
       );
       return trusted.slice(0, 9);
     },
@@ -241,7 +241,7 @@ function HomePage() {
     // suppressed from recommendations everywhere — see
     // src/lib/link-trust.ts and mem://constraints/scraped-data-trust.
     return nearbyEvents
-      .filter((e) => hasOrganiserOwnedLink(e.entry_url, e.organiser_url))
+      .filter((e) => hasDiscoverableLink(e.entry_url, e.organiser_url, e.governance))
       .map((e) => ({
         id: e.id,
         slug: e.slug,
