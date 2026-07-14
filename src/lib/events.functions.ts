@@ -773,7 +773,7 @@ export const getEventPageData = createServerFn({ method: "GET" })
       const trusted = all.filter(
         (r) =>
           r.id === event.id ||
-          hasOrganiserOwnedLink(r.entry_url, r.organiser_url),
+          hasDiscoverableLink(r.entry_url, r.organiser_url, r.governance),
       );
 
       const matched = related.distanceKey
