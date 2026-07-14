@@ -58,7 +58,7 @@ export const TAXONOMY_PAGES: TaxonomyPageConfig[] = [
       },
       {
         q: "Do I need to be a club member to enter?",
-        a: "No. Most permitted races accept unaffiliated runners, though affiliated (club) members often pay a lower entry fee — usually £2 cheaper — because part of the unaffiliated fee goes back to England Athletics.",
+        a: "No. Most permitted races accept unaffiliated runners, though affiliated (club) members often pay a few pounds less, because part of the unaffiliated fee goes back to England Athletics.",
       },
       {
         q: "Where do results appear?",
@@ -81,7 +81,7 @@ export const TAXONOMY_PAGES: TaxonomyPageConfig[] = [
     faqs: [
       {
         q: "What is the TRA?",
-        a: "The Trail Running Association is the UK governing body for trail running, recognised by UK Athletics. It sets national standards for off-road racing including safety, route marking, kit and organiser requirements.",
+        a: "The Trail Running Association is the UK governing body for trail running. It sets national standards for off-road racing including safety, route marking, kit and organiser requirements.",
       },
       {
         q: "Why enter a TRA-permitted race?",
@@ -125,6 +125,68 @@ export const TAXONOMY_PAGES: TaxonomyPageConfig[] = [
       {
         q: "How do I find a running club near me?",
         a: "Use our running clubs directory to find affiliated clubs by area. Most clubs welcome visitors to training sessions and can point you to their next open race.",
+      },
+    ],
+  },
+  {
+    slug: "welsh-athletics-permitted-races",
+    field: "governance",
+    value: "welsh_athletics",
+    label: "Welsh Athletics permitted",
+    h1: `Welsh Athletics Permitted Races ${CURRENT_YEAR}`,
+    noun: "Welsh Athletics permitted race",
+    nounPlural: "Welsh Athletics permitted races",
+    intro:
+      "Welsh Athletics is the national governing body for athletics in Wales. Races run under a Welsh Athletics permit are officially sanctioned — the organiser has agreed to national rules on measurement, insurance, safety and race conduct. Look for the permit when you want a well-run, competitive race that counts for national rankings and club competitions.",
+    metaTitle: `Welsh Athletics Permitted Races ${CURRENT_YEAR} — Running Events Near Me`,
+    metaDescription: metaDesc("Welsh Athletics permitted races"),
+    faqs: [
+      {
+        q: "What does 'Welsh Athletics permitted' mean?",
+        a: "A Welsh Athletics permit means the race has been formally sanctioned by the national governing body for athletics in Wales. The organiser agrees to national rules on course measurement, safety, insurance and race conduct, and the event is eligible for national rankings.",
+      },
+      {
+        q: "Are Welsh Athletics permits recognised outside Wales?",
+        a: "Yes. Welsh Athletics, England Athletics, Scottish Athletics and Athletics Northern Ireland all operate under UK Athletics, and their permits are treated equivalently. Results from permitted road and track races feed the same Power of 10 rankings regardless of which home nation issued the permit.",
+      },
+      {
+        q: "Do I need to be a club member to enter?",
+        a: "No. Most permitted races accept unaffiliated runners, though affiliated (club) members often pay a few pounds less, because part of the unaffiliated fee goes back to the governing body.",
+      },
+      {
+        q: "Where do results appear?",
+        a: "Results from permitted road and track races are uploaded to Power of 10 (thepowerof10.info), where they contribute to your ranking and personal best history.",
+      },
+    ],
+  },
+  {
+    slug: "athletics-ni-permitted-races",
+    field: "governance",
+    value: "athletics_ni",
+    label: "Athletics NI permitted",
+    h1: `Athletics Northern Ireland Permitted Races ${CURRENT_YEAR}`,
+    noun: "Athletics NI permitted race",
+    nounPlural: "Athletics NI permitted races",
+    intro:
+      "Athletics Northern Ireland (Athletics NI) is the national governing body for athletics in Northern Ireland. Races run under an Athletics NI permit are officially sanctioned — the organiser has agreed to national rules on measurement, insurance, safety and race conduct. Look for the permit when you want a well-run, competitive race that counts for national rankings and club competitions.",
+    metaTitle: `Athletics Northern Ireland Permitted Races ${CURRENT_YEAR} — Running Events Near Me`,
+    metaDescription: metaDesc("Athletics NI permitted races"),
+    faqs: [
+      {
+        q: "What does 'Athletics NI permitted' mean?",
+        a: "An Athletics NI permit means the race has been formally sanctioned by the national governing body for athletics in Northern Ireland. The organiser agrees to national rules on course measurement, safety, insurance and race conduct, and the event is eligible for national rankings.",
+      },
+      {
+        q: "Are Athletics NI permits recognised outside Northern Ireland?",
+        a: "Yes. Athletics NI, England Athletics, Scottish Athletics and Welsh Athletics all operate under UK Athletics, and their permits are treated equivalently. Results from permitted road and track races feed the same Power of 10 rankings regardless of which home nation issued the permit.",
+      },
+      {
+        q: "Do I need to be a club member to enter?",
+        a: "No. Most permitted races accept unaffiliated runners, though affiliated (club) members often pay a few pounds less, because part of the unaffiliated fee goes back to the governing body.",
+      },
+      {
+        q: "Where do results appear?",
+        a: "Results from permitted road and track races are uploaded to Power of 10 (thepowerof10.info), where they contribute to your ranking and personal best history.",
       },
     ],
   },

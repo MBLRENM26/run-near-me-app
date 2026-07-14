@@ -1,53 +1,24 @@
-B1, B2, and B4 are shipped. Remaining roadmap items in order:
+# Current plan
 
-## Next: B3 — Taxonomy landing pages
+## Shipped this pass
+- B3 taxonomy landing pages live: `/england-athletics-permitted-races`, `/tra-permitted-races`, `/club-organised-races`, `/welsh-athletics-permitted-races`, `/athletics-ni-permitted-races`.
+- FAQ copy fixes: "a few pounds less" phrasing on all three home-nation pages; TRA governing-body claim tightened.
 
-One route per high-signal taxonomy value, gated on a minimum event count (~20) so we don't ship thin pages.
+## Next (scheduled, not backlog): Scottish Athletics governance backfill
+Resolves the asymmetry the new WA/NI FAQ copy calls out (naming SA as a sibling governing body while we have zero SA-tagged events).
 
-Candidates to check counts for first:
-- `/uka-permitted-races`
-- `/scottish-athletics-permitted-races`
-- `/club-organised-races`
-- `/championship-races`
+1. Migration: `scottish_athletics` already exists in the `governance` enum — verify, add if missing.
+2. `src/lib/sync-scottish-athletics.server.ts`: set `governance = 'scottish_athletics'` on insert/upsert.
+3. One-shot backfill: `UPDATE events SET governance = 'scottish_athletics' WHERE source = 'scottish_athletics' AND governance IS NULL;`
+4. Once count clears ~20, add `/scottish-athletics-permitted-races` config to `TAXONOMY_PAGES` + route file (mirrors WA/NI).
 
-Each page ships:
-- H1 + one hand-written intro paragraph (no AI prose per the scraped-data-trust rule)
-- Standard event grid reusing `EventCard`
-- `head()` with unique title, description, og:title/description
-- Cross-links to related distance/region pages
-- Sitemap entry
+## Then: B5 — extend discovery gate
+Update `hasOrganiserOwnedLink` (or its call sites) to also admit events with a `TRUSTED_GOVERNANCE` value even when the only link is entry-platform. Before/after SQL count on discovery surfaces.
 
-Shared plumbing:
-- New server fn `getEventsByTaxonomy({ field, value })` in `src/lib/events.functions.ts` using `DISCOVERY_EVENT_COLUMNS` + `hasOrganiserOwnedLink` gate
-- Small shared page component (mirrors `DistancePage` shape) at `src/components/taxonomy/TaxonomyLandingPage.tsx`
-- Config file `src/lib/taxonomy-pages.ts` with slug/label/H1/intro/FAQ per value — same shape as `distance-filters.ts`
-
-Only ship routes whose count clears the threshold; log the others as backlog.
-
-## Then: B5 — Extend discovery gate
-
-Update the `hasOrganiserOwnedLink` filter in `src/lib/link-trust.ts` (or its call sites) to also admit events with a trusted `governance` value (from `TRUSTED_GOVERNANCE` in `event-taxonomy.ts`), even if their only link is entry-platform. Verify with a before/after SQL count on discovery surfaces.
-
-## Then: C — Audience value pages
-
-Three static routes with their own `head()`:
-- `/for-runners`
-- `/for-clubs`
-- `/for-organisers`
-
-Each: hero, 3–5 value bullets, one CTA, one FAQ block reusing `site-faqs.ts`. Linked from footer + desktop header "Why us" menu (mobile nav unchanged).
-
-## Order of operations
-
-1. Query taxonomy value counts (SQL) — decide which B3 routes clear the threshold
-2. Build shared taxonomy landing plumbing + ship the viable routes
-3. B5 gate extension + count verification
-4. C audience pages + footer/header links
+## Then: C — audience value pages
+`/for-runners`, `/for-clubs`, `/for-organisers`. Static routes, own `head()`, footer + desktop "Why us" links. Reuse `site-faqs.ts`.
 
 ## Out of scope
-
-- Bulk backfill of taxonomy from scraped fields (low ROI, already deferred)
-- Homepage nav redesign
-- Scottish Athletics organiser-URL capture (still parked)
-
-Approve and I'll start by pulling the taxonomy counts, then ship B3.
+- Bulk backfill of taxonomy from scraped fields (low ROI).
+- Homepage nav redesign.
+- Scottish Athletics organiser-URL capture (parked, separate workstream).
