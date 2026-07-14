@@ -824,13 +824,14 @@ export const getEventPageData = createServerFn({ method: "GET" })
           organiser_url: string | null;
           date_is_estimated: boolean | null;
           distance_miles: number | null;
+          governance: string | null;
         }>) {
           if (!r.slug || r.id === event.id) continue;
           // The RPC predates tag arrays; keep the legacy substring filter
           // here. Could be upgraded if/when the RPC starts returning tags.
           if (cfg && !matchesDistance(r.distance_type, cfg)) continue;
           // Discovery-surface trust gate (same as the region fallback).
-          if (!hasOrganiserOwnedLink(r.entry_url, r.organiser_url)) continue;
+          if (!hasDiscoverableLink(r.entry_url, r.organiser_url, r.governance)) continue;
           picked.push({
             id: r.id,
             slug: r.slug,
