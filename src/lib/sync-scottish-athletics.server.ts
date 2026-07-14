@@ -235,25 +235,36 @@ export async function runScottishAthleticsSync(): Promise<ScottishAthleticsSyncR
       }
 
       const key = `${name.toLowerCase()}|${dateFrom}`;
-      if (existingNameDate.has(key)) {
+      const collidingSource = existingNameDateSource.get(key);
+      if (collidingSource !== undefined && collidingSource !== "scottishathletics") {
+        // Existing row is owned by another source — never overwrite it.
         skippedDupes++;
         continue;
       }
 
       const baseSlug = slugify(name);
       const baseNormId = `scottishathletics-${baseSlug}`;
-      let slug = baseSlug;
-      const baseOwner = globalSlugOwners.get(baseSlug);
-      if ((baseOwner && baseOwner !== baseNormId) || seenSlugs.has(baseSlug)) {
-        slug = `${baseSlug}-${dateFrom}`;
-      }
-      let suffix = 2;
-      while (true) {
-        const owner = globalSlugOwners.get(slug);
-        const candidateNormId = `scottishathletics-${slug}`;
-        if (!seenSlugs.has(slug) && (!owner || owner === candidateNormId)) break;
-        slug = `${baseSlug}-${dateFrom}-${suffix++}`;
-        if (suffix > 20) break;
+
+      // If a Scottish row with this norm_id already exists, pin the slug to
+      // the existing value so upsert doesn't rewrite the canonical URL.
+      const pinnedSlug = existingSlugByNormId.get(baseNormId);
+      let slug: string;
+      if (pinnedSlug) {
+        slug = pinnedSlug;
+      } else {
+        slug = baseSlug;
+        const baseOwner = globalSlugOwners.get(baseSlug);
+        if ((baseOwner && baseOwner !== baseNormId) || seenSlugs.has(baseSlug)) {
+          slug = `${baseSlug}-${dateFrom}`;
+        }
+        let suffix = 2;
+        while (true) {
+          const owner = globalSlugOwners.get(slug);
+          const candidateNormId = `scottishathletics-${slug}`;
+          if (!seenSlugs.has(slug) && (!owner || owner === candidateNormId)) break;
+          slug = `${baseSlug}-${dateFrom}-${suffix++}`;
+          if (suffix > 20) break;
+        }
       }
       seenSlugs.add(slug);
 
