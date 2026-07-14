@@ -334,6 +334,32 @@ function AdminEventEditorPage() {
         </Field>
       </Section>
 
+      {/* Taxonomy — powers the trust strip on event pages and (soon) the
+          "More filters" chips on discovery surfaces. Values are curated
+          per-row here; no bulk backfill from scraped free-text. */}
+      <Section title="Taxonomy">
+        <Field label="Governance" hint="Permit / sanction body">
+          <TaxonomySelect
+            value={form.governance ?? ""}
+            options={GOVERNANCE_OPTIONS}
+            onChange={(v) => set("governance", (v || null) as string | null)}
+          />
+        </Field>
+        <Field label="Organiser type">
+          <TaxonomySelect
+            value={form.organiser_type ?? ""}
+            options={ORGANISER_TYPE_OPTIONS}
+            onChange={(v) => set("organiser_type", (v || null) as string | null)}
+          />
+        </Field>
+        <Field label="Race profile" hint="Discipline / format">
+          <TaxonomySelect
+            value={form.race_profile ?? ""}
+            options={RACE_PROFILE_OPTIONS}
+            onChange={(v) => set("race_profile", (v || null) as string | null)}
+          />
+        </Field>
+      </Section>
 
       {/* Location */}
       <Section title="Location">
