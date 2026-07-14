@@ -76,6 +76,12 @@ export const Route = createFileRoute("/")({
     if (typeof raw.type === "string" && VALID_TYPES.includes(raw.type as EventType)) {
       out.type = raw.type as EventType;
     }
+    if (typeof raw.gov === "string" && raw.gov.length > 0 && raw.gov.length < 40) {
+      out.gov = raw.gov;
+    }
+    if (typeof raw.profile === "string" && raw.profile.length > 0 && raw.profile.length < 40) {
+      out.profile = raw.profile;
+    }
     return out;
   },
   head: () => ({
