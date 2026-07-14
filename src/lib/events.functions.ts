@@ -22,7 +22,7 @@ import {
   slugStem,
   type IndexabilityResult,
 } from "@/lib/event-indexability";
-import { hasOrganiserOwnedLink } from "@/lib/link-trust";
+import { hasOrganiserOwnedLink, hasDiscoverableLink } from "@/lib/link-trust";
 import { DISCOVERY_EVENT_COLUMNS, UK_BOUNDS_OR_NULL } from "@/lib/events-query";
 
 /**
@@ -236,6 +236,7 @@ export type DistanceEvent = {
   is_featured: boolean;
   date_is_estimated: boolean;
   is_recurring?: boolean;
+  governance?: string | null;
 };
 
 export type DistancePageData = {
@@ -274,6 +275,7 @@ export const getEventsByDistance = createServerFn({ method: "GET" })
       is_featured: boolean | null;
       date_is_estimated: boolean | null;
       is_recurring: boolean | null;
+      governance: string | null;
     };
     const rows = await fetchAllRows<Row>((from, to) =>
       supabaseAdmin
@@ -312,6 +314,7 @@ export const getEventsByDistance = createServerFn({ method: "GET" })
         is_featured: !!r.is_featured,
         date_is_estimated: !!r.date_is_estimated,
         is_recurring: !!r.is_recurring,
+        governance: r.governance,
       });
     }
 
@@ -321,7 +324,7 @@ export const getEventsByDistance = createServerFn({ method: "GET" })
     // — we just don't recommend them from landing pages. See
     // src/lib/link-trust.ts and mem://constraints/scraped-data-trust.
     const trusted = all.filter((e) =>
-      hasOrganiserOwnedLink(e.entry_url, e.organiser_url),
+      hasDiscoverableLink(e.entry_url, e.organiser_url, e.governance),
     );
 
     // Group by region for the regional breakdown section.
@@ -396,6 +399,7 @@ export const getEventsByRegionAndDistance = createServerFn({ method: "GET" })
       is_featured: boolean | null;
       date_is_estimated: boolean | null;
       is_recurring: boolean | null;
+      governance: string | null;
     };
     const rows = await fetchAllRows<Row>((from, to) =>
       supabaseAdmin
@@ -424,6 +428,7 @@ export const getEventsByRegionAndDistance = createServerFn({ method: "GET" })
       is_featured: !!r.is_featured,
       date_is_estimated: !!r.date_is_estimated,
       is_recurring: !!r.is_recurring,
+      governance: r.governance,
       _distance_tags: r.distance_tags,
       _terrain_tags: r.terrain_tags,
     }));
@@ -433,7 +438,7 @@ export const getEventsByRegionAndDistance = createServerFn({ method: "GET" })
     // the "other distances in this region" panel match what users will
     // actually see when they click through.
     const trusted = all.filter((e) =>
-      hasOrganiserOwnedLink(e.entry_url, e.organiser_url),
+      hasDiscoverableLink(e.entry_url, e.organiser_url, e.governance),
     );
 
     const rowMatches = (e: RowWithTags, key: DistanceKey) =>
@@ -502,12 +507,13 @@ export const getRegionDistanceMatrix = createServerFn({ method: "GET" })
       terrain_tags: string[] | null;
       entry_url: string | null;
       organiser_url: string | null;
+      governance: string | null;
     };
     const raw = await fetchAllRows<MatrixRow>((from, to) =>
       supabaseAdmin
         .from("events")
         .select(
-          "region, distances, distance_tags, terrain_tags, entry_url, organiser_url",
+          "region, distances, distance_tags, terrain_tags, entry_url, organiser_url, governance",
         )
         .eq("status", "ACTIVE")
         .not("region", "is", null)
@@ -523,7 +529,7 @@ export const getRegionDistanceMatrix = createServerFn({ method: "GET" })
     for (const r of rows) {
       // Discovery-surface trust gate — match the landing-page filter so
       // the matrix counts agree with what users actually see.
-      if (!hasOrganiserOwnedLink(r.entry_url, r.organiser_url)) continue;
+      if (!hasDiscoverableLink(r.entry_url, r.organiser_url, r.governance)) continue;
       for (const p of DISTANCE_PAGE_LIST) {
         if (rowMatchesDistanceKey(r, p.key)) {
           const key = `${r.region}::${p.key}`;
@@ -709,6 +715,7 @@ export const getEventPageData = createServerFn({ method: "GET" })
         terrain_tags: string[] | null;
         entry_url: string | null;
         organiser_url: string | null;
+        governance: string | null;
       };
       type RawRow = {
         id: string;
@@ -724,12 +731,13 @@ export const getEventPageData = createServerFn({ method: "GET" })
         terrain_tags: string[] | null;
         entry_url: string | null;
         organiser_url: string | null;
+        governance: string | null;
       };
       const rawRows = await fetchAllRows<RawRow>((from, to) =>
         supabaseAdmin
           .from("events")
           .select(
-            "id, slug, name, date_raw, sort_date, date_is_estimated, town, county, distances, distance_tags, terrain_tags, entry_url, organiser_url",
+            "id, slug, name, date_raw, sort_date, date_is_estimated, town, county, distances, distance_tags, terrain_tags, entry_url, organiser_url, governance",
           )
           .eq("status", "ACTIVE")
           .eq("region", event.region!)
@@ -755,6 +763,7 @@ export const getEventPageData = createServerFn({ method: "GET" })
           terrain_tags: r.terrain_tags,
           entry_url: r.entry_url,
           organiser_url: r.organiser_url,
+          governance: r.governance,
         }));
 
       // Discovery-surface trust gate — "other races near you" should
@@ -764,7 +773,7 @@ export const getEventPageData = createServerFn({ method: "GET" })
       const trusted = all.filter(
         (r) =>
           r.id === event.id ||
-          hasOrganiserOwnedLink(r.entry_url, r.organiser_url),
+          hasDiscoverableLink(r.entry_url, r.organiser_url, r.governance),
       );
 
       const matched = related.distanceKey
@@ -777,12 +786,13 @@ export const getEventPageData = createServerFn({ method: "GET" })
       related.events = matched
         .filter((r) => r.id !== event.id)
         .slice(0, 6)
-        .map(({ distances: _d, distance_tags: _dt, terrain_tags: _tt, entry_url: _eu, organiser_url: _ou, ...rest }) => {
+        .map(({ distances: _d, distance_tags: _dt, terrain_tags: _tt, entry_url: _eu, organiser_url: _ou, governance: _g, ...rest }) => {
           void _d;
           void _dt;
           void _tt;
           void _eu;
           void _ou;
+          void _g;
           return rest;
         });
     }
@@ -818,13 +828,14 @@ export const getEventPageData = createServerFn({ method: "GET" })
           organiser_url: string | null;
           date_is_estimated: boolean | null;
           distance_miles: number | null;
+          governance: string | null;
         }>) {
           if (!r.slug || r.id === event.id) continue;
           // The RPC predates tag arrays; keep the legacy substring filter
           // here. Could be upgraded if/when the RPC starts returning tags.
           if (cfg && !matchesDistance(r.distance_type, cfg)) continue;
           // Discovery-surface trust gate (same as the region fallback).
-          if (!hasOrganiserOwnedLink(r.entry_url, r.organiser_url)) continue;
+          if (!hasDiscoverableLink(r.entry_url, r.organiser_url, r.governance)) continue;
           picked.push({
             id: r.id,
             slug: r.slug,
@@ -856,7 +867,7 @@ export const getEventPageData = createServerFn({ method: "GET" })
       const { data: townRows, error: townErr } = await supabaseAdmin
         .from("events")
         .select(
-          "id, slug, name, date_raw, sort_date, date_is_estimated, town, county, entry_url, organiser_url",
+          "id, slug, name, date_raw, sort_date, date_is_estimated, town, county, entry_url, organiser_url, governance",
         )
         .eq("status", "ACTIVE")
         .ilike("town", eventTown)
@@ -868,11 +879,12 @@ export const getEventPageData = createServerFn({ method: "GET" })
       if (!townErr && townRows) {
         for (const r of townRows) {
           // Discovery-surface trust gate — same-town suggestions only
-          // recommend events with an organiser-owned link.
+          // recommend events with a discoverable link.
           if (
-            !hasOrganiserOwnedLink(
+            !hasDiscoverableLink(
               r.entry_url as string | null,
               r.organiser_url as string | null,
+              r.governance as string | null,
             )
           )
             continue;
@@ -951,7 +963,7 @@ export const getEventPageData = createServerFn({ method: "GET" })
         const { data: wkRows } = await supabaseAdmin
           .from("events")
           .select(
-            "id, slug, name, date_raw, sort_date, date_is_estimated, town, county, entry_url, organiser_url",
+            "id, slug, name, date_raw, sort_date, date_is_estimated, town, county, entry_url, organiser_url, governance",
           )
           .eq("status", "ACTIVE")
           .eq(column, value)
@@ -967,9 +979,10 @@ export const getEventPageData = createServerFn({ method: "GET" })
           const slug = r.slug as string;
           if (seen.has(slug)) continue;
           if (
-            !hasOrganiserOwnedLink(
+            !hasDiscoverableLink(
               r.entry_url as string | null,
               r.organiser_url as string | null,
+              r.governance as string | null,
             )
           )
             continue;

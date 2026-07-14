@@ -12,7 +12,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { slugToRegion } from "@/lib/regions";
 import { SITE_URL } from "@/lib/site";
 import { BackToSearchBar } from "@/components/site/BackToSearchBar";
-import { hasOrganiserOwnedLink } from "@/lib/link-trust";
+import { hasDiscoverableLink } from "@/lib/link-trust";
 import { DISCOVERY_EVENT_COLUMNS, UK_BOUNDS_OR_NULL } from "@/lib/events-query";
 
 
@@ -163,7 +163,7 @@ function RegionPage() {
       // Discovery-surface trust gate: only recommend events with an
       // organiser-owned link. See src/lib/link-trust.ts.
       const trusted = all.filter((e) =>
-        hasOrganiserOwnedLink(e.entry_url, e.organiser_url),
+        hasDiscoverableLink(e.entry_url, e.organiser_url, (e as { governance?: string | null }).governance),
       );
       return sortEstimatedLastWithinMonth(trusted);
     },

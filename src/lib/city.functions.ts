@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { hasOrganiserOwnedLink } from "@/lib/link-trust";
+import { hasDiscoverableLink } from "@/lib/link-trust";
 import { DISCOVERY_EVENT_COLUMNS } from "@/lib/events-query";
 import { sortEstimatedLastWithinMonth } from "@/lib/month-filter";
 import { CITIES, CITY_RADIUS_KM, cityBySlug, haversineKm } from "@/lib/cities";
@@ -41,6 +41,7 @@ type Row = {
   is_featured: boolean | null;
   date_is_estimated: boolean | null;
   is_recurring: boolean | null;
+  governance: string | null;
   lat: number | null;
   lng: number | null;
 };
@@ -91,7 +92,7 @@ async function fetchEventsNearCity(city: CityConfig): Promise<{
   });
 
   const trusted = inRadius.filter((e) =>
-    hasOrganiserOwnedLink(e.entry_url, e.organiser_url),
+    hasDiscoverableLink(e.entry_url, e.organiser_url, e.governance),
   );
 
   const events: DistanceEvent[] = trusted.map((r) => ({
@@ -110,6 +111,7 @@ async function fetchEventsNearCity(city: CityConfig): Promise<{
     is_featured: !!r.is_featured,
     date_is_estimated: !!r.date_is_estimated,
     is_recurring: !!r.is_recurring,
+    governance: r.governance,
   }));
 
   return { events: sortEstimatedLastWithinMonth(events), raw: trusted };
@@ -170,7 +172,7 @@ export const getCityEventCounts = createServerFn({ method: "GET" }).handler(
     }
 
     const trusted = all.filter((e) =>
-      hasOrganiserOwnedLink(e.entry_url, e.organiser_url),
+      hasDiscoverableLink(e.entry_url, e.organiser_url, e.governance),
     );
 
     const out: Array<{ slug: string; name: string; total: number }> = [];
