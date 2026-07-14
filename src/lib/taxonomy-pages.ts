@@ -81,7 +81,7 @@ export const TAXONOMY_PAGES: TaxonomyPageConfig[] = [
     faqs: [
       {
         q: "What is the TRA?",
-        a: "The Trail Running Association is the UK governing body for trail running, recognised by UK Athletics. It sets national standards for off-road racing including safety, route marking, kit and organiser requirements.",
+        a: "The Trail Running Association is the UK governing body for trail running. It sets national standards for off-road racing including safety, route marking, kit and organiser requirements.",
       },
       {
         q: "Why enter a TRA-permitted race?",
