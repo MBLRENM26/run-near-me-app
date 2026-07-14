@@ -159,6 +159,8 @@ function HomePage() {
       : null;
   const radius: Radius = search.radius ?? 10;
   const eventType: EventType = search.type ?? "all";
+  const governanceFilter: string | null = search.gov ?? null;
+  const raceProfileFilter: string | null = search.profile ?? null;
 
   const setCoords = (c: Coords) =>
     navigate({
@@ -168,6 +170,10 @@ function HomePage() {
     navigate({ search: (prev: HomeSearch) => ({ ...prev, radius: r }) });
   const setEventType = (t: EventType) =>
     navigate({ search: (prev: HomeSearch) => ({ ...prev, type: t }) });
+  const setGovernance = (v: string | null) =>
+    navigate({ search: (prev: HomeSearch) => ({ ...prev, gov: v ?? undefined }) });
+  const setRaceProfile = (v: string | null) =>
+    navigate({ search: (prev: HomeSearch) => ({ ...prev, profile: v ?? undefined }) });
 
   const { data: nearbyEvents, isLoading, error: nearbyError } = useQuery({
     queryKey: ["events", "nearby", coords?.lat, coords?.lng, radius],
