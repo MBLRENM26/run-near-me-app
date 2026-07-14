@@ -12,6 +12,7 @@ import { getMonthPageMatrix } from "@/lib/month-page.functions";
 import { monthSlugFromKey, nextNMonthKeys } from "@/lib/month-slug";
 import { COUNTIES, type CountyConfig } from "@/lib/counties";
 import { getCityEventCounts } from "@/lib/city.functions";
+import { TAXONOMY_PAGES } from "@/lib/taxonomy-pages";
 
 export const Route = createFileRoute("/sitemap.xml")({
   server: {
@@ -154,6 +155,12 @@ export const Route = createFileRoute("/sitemap.xml")({
             loc: `${SITE_URL}/${slug}`,
             lastmod: today,
             priority: "0.8",
+            changefreq: "weekly",
+          })),
+          ...TAXONOMY_PAGES.map((p) => ({
+            loc: `${SITE_URL}/${p.slug}`,
+            lastmod: today,
+            priority: "0.7",
             changefreq: "weekly",
           })),
           ...COUNTIES.map((c: CountyConfig) => ({
