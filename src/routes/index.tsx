@@ -229,7 +229,10 @@ function HomePage() {
     },
   });
 
-  const eventsWithDistance: EventCardData[] = useMemo(() => {
+  const eventsWithDistance: (EventCardData & {
+    governance: string | null;
+    race_profile: string | null;
+  })[] = useMemo(() => {
     if (!nearbyEvents) return [];
     // Discovery-surface trust gate: applied here, at the source, so every
     // downstream slice (races, parkruns, featuredNearby) inherits it.
@@ -252,14 +255,18 @@ function HomePage() {
         is_featured: e.is_featured,
         date_is_estimated: e.date_is_estimated,
         distanceMiles: e.distance_miles,
+        governance: e.governance,
+        race_profile: e.race_profile,
       }));
   }, [nearbyEvents]);
 
-  const visibleEvents: EventCardData[] = useMemo(() => {
+  const visibleEvents = useMemo(() => {
     return eventsWithDistance
       .filter((e) => matchesEventType(e.distance_type, eventType))
+      .filter((e) => (governanceFilter ? e.governance === governanceFilter : true))
+      .filter((e) => (raceProfileFilter ? e.race_profile === raceProfileFilter : true))
       .sort((a, b) => a.distanceMiles! - b.distanceMiles!);
-  }, [eventsWithDistance, eventType]);
+  }, [eventsWithDistance, eventType, governanceFilter, raceProfileFilter]);
 
   const races: EventCardData[] = useMemo(
     () => visibleEvents.filter((e) => !isParkrunEvent(e)),
