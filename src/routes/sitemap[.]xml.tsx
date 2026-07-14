@@ -133,6 +133,13 @@ export const Route = createFileRoute("/sitemap.xml")({
             priority: "0.3",
             changefreq: "monthly",
           },
+          ...["for-runners", "for-clubs", "for-organisers"].map((slug) => ({
+            loc: `${SITE_URL}/${slug}`,
+            lastmod: today,
+            priority: "0.6",
+            changefreq: "monthly",
+          })),
+
           ...DISTANCE_PAGE_LIST.map((p) => ({
             loc: `${SITE_URL}/${p.slug}`,
             lastmod: today,
