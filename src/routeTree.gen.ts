@@ -65,6 +65,7 @@ import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lova
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicHooksSendRaceRemindersRouteImport } from './routes/api/public/hooks/send-race-reminders'
+import { Route as ApiPublicHooksNotifyMissedSubmissionsRouteImport } from './routes/api/public/hooks/notify-missed-submissions'
 import { Route as ApiPublicAdminSyncScottishAthleticsClubsRouteImport } from './routes/api/public/admin/sync-scottish-athletics-clubs'
 import { Route as ApiPublicAdminSyncScottishAthleticsRouteImport } from './routes/api/public/admin/sync-scottish-athletics'
 import { Route as ApiPublicAdminSyncEnglandAthleticsRouteImport } from './routes/api/public/admin/sync-england-athletics'
@@ -368,6 +369,12 @@ const ApiPublicHooksSendRaceRemindersRoute =
     path: '/api/public/hooks/send-race-reminders',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksNotifyMissedSubmissionsRoute =
+  ApiPublicHooksNotifyMissedSubmissionsRouteImport.update({
+    id: '/api/public/hooks/notify-missed-submissions',
+    path: '/api/public/hooks/notify-missed-submissions',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicAdminSyncScottishAthleticsClubsRoute =
   ApiPublicAdminSyncScottishAthleticsClubsRouteImport.update({
     id: '/api/public/admin/sync-scottish-athletics-clubs',
@@ -493,6 +500,7 @@ export interface FileRoutesByFullPath {
   '/api/public/admin/sync-england-athletics': typeof ApiPublicAdminSyncEnglandAthleticsRoute
   '/api/public/admin/sync-scottish-athletics': typeof ApiPublicAdminSyncScottishAthleticsRoute
   '/api/public/admin/sync-scottish-athletics-clubs': typeof ApiPublicAdminSyncScottishAthleticsClubsRoute
+  '/api/public/hooks/notify-missed-submissions': typeof ApiPublicHooksNotifyMissedSubmissionsRoute
   '/api/public/hooks/send-race-reminders': typeof ApiPublicHooksSendRaceRemindersRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -561,6 +569,7 @@ export interface FileRoutesByTo {
   '/api/public/admin/sync-england-athletics': typeof ApiPublicAdminSyncEnglandAthleticsRoute
   '/api/public/admin/sync-scottish-athletics': typeof ApiPublicAdminSyncScottishAthleticsRoute
   '/api/public/admin/sync-scottish-athletics-clubs': typeof ApiPublicAdminSyncScottishAthleticsClubsRoute
+  '/api/public/hooks/notify-missed-submissions': typeof ApiPublicHooksNotifyMissedSubmissionsRoute
   '/api/public/hooks/send-race-reminders': typeof ApiPublicHooksSendRaceRemindersRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -631,6 +640,7 @@ export interface FileRoutesById {
   '/api/public/admin/sync-england-athletics': typeof ApiPublicAdminSyncEnglandAthleticsRoute
   '/api/public/admin/sync-scottish-athletics': typeof ApiPublicAdminSyncScottishAthleticsRoute
   '/api/public/admin/sync-scottish-athletics-clubs': typeof ApiPublicAdminSyncScottishAthleticsClubsRoute
+  '/api/public/hooks/notify-missed-submissions': typeof ApiPublicHooksNotifyMissedSubmissionsRoute
   '/api/public/hooks/send-race-reminders': typeof ApiPublicHooksSendRaceRemindersRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -701,6 +711,7 @@ export interface FileRouteTypes {
     | '/api/public/admin/sync-england-athletics'
     | '/api/public/admin/sync-scottish-athletics'
     | '/api/public/admin/sync-scottish-athletics-clubs'
+    | '/api/public/hooks/notify-missed-submissions'
     | '/api/public/hooks/send-race-reminders'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
@@ -769,6 +780,7 @@ export interface FileRouteTypes {
     | '/api/public/admin/sync-england-athletics'
     | '/api/public/admin/sync-scottish-athletics'
     | '/api/public/admin/sync-scottish-athletics-clubs'
+    | '/api/public/hooks/notify-missed-submissions'
     | '/api/public/hooks/send-race-reminders'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
@@ -838,6 +850,7 @@ export interface FileRouteTypes {
     | '/api/public/admin/sync-england-athletics'
     | '/api/public/admin/sync-scottish-athletics'
     | '/api/public/admin/sync-scottish-athletics-clubs'
+    | '/api/public/hooks/notify-missed-submissions'
     | '/api/public/hooks/send-race-reminders'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
@@ -893,6 +906,7 @@ export interface RootRouteChildren {
   ApiPublicAdminSyncEnglandAthleticsRoute: typeof ApiPublicAdminSyncEnglandAthleticsRoute
   ApiPublicAdminSyncScottishAthleticsRoute: typeof ApiPublicAdminSyncScottishAthleticsRoute
   ApiPublicAdminSyncScottishAthleticsClubsRoute: typeof ApiPublicAdminSyncScottishAthleticsClubsRoute
+  ApiPublicHooksNotifyMissedSubmissionsRoute: typeof ApiPublicHooksNotifyMissedSubmissionsRoute
   ApiPublicHooksSendRaceRemindersRoute: typeof ApiPublicHooksSendRaceRemindersRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
@@ -1293,6 +1307,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksSendRaceRemindersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/notify-missed-submissions': {
+      id: '/api/public/hooks/notify-missed-submissions'
+      path: '/api/public/hooks/notify-missed-submissions'
+      fullPath: '/api/public/hooks/notify-missed-submissions'
+      preLoaderRoute: typeof ApiPublicHooksNotifyMissedSubmissionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/admin/sync-scottish-athletics-clubs': {
       id: '/api/public/admin/sync-scottish-athletics-clubs'
       path: '/api/public/admin/sync-scottish-athletics-clubs'
@@ -1527,6 +1548,8 @@ const rootRouteChildren: RootRouteChildren = {
     ApiPublicAdminSyncScottishAthleticsRoute,
   ApiPublicAdminSyncScottishAthleticsClubsRoute:
     ApiPublicAdminSyncScottishAthleticsClubsRoute,
+  ApiPublicHooksNotifyMissedSubmissionsRoute:
+    ApiPublicHooksNotifyMissedSubmissionsRoute,
   ApiPublicHooksSendRaceRemindersRoute: ApiPublicHooksSendRaceRemindersRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
