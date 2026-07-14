@@ -963,7 +963,7 @@ export const getEventPageData = createServerFn({ method: "GET" })
         const { data: wkRows } = await supabaseAdmin
           .from("events")
           .select(
-            "id, slug, name, date_raw, sort_date, date_is_estimated, town, county, entry_url, organiser_url",
+            "id, slug, name, date_raw, sort_date, date_is_estimated, town, county, entry_url, organiser_url, governance",
           )
           .eq("status", "ACTIVE")
           .eq(column, value)
@@ -979,9 +979,10 @@ export const getEventPageData = createServerFn({ method: "GET" })
           const slug = r.slug as string;
           if (seen.has(slug)) continue;
           if (
-            !hasOrganiserOwnedLink(
+            !hasDiscoverableLink(
               r.entry_url as string | null,
               r.organiser_url as string | null,
+              r.governance as string | null,
             )
           )
             continue;
