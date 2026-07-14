@@ -50,6 +50,8 @@ function AdminClaimsPage() {
   const updateOne = useServerFn(updateSubmission);
   const bulkUpdate = useServerFn(bulkUpdateSubmissions);
   const checkSession = useServerFn(adminCheckSession);
+  const markSeen = useServerFn(markSubmissionsSeen);
+  const resendEmail = useServerFn(resendAdminNotification);
 
   // Gate the page on a valid session
   const [authChecked, setAuthChecked] = useState(false);
@@ -60,9 +62,19 @@ function AdminClaimsPage() {
           navigate({ to: "/admin/login" });
         } else {
           setAuthChecked(true);
+          // Mark all currently-unseen submissions as seen on entry, then
+          // refresh the header badge counter.
+          markSeen()
+            .then(() =>
+              queryClient.invalidateQueries({
+                queryKey: ["admin-unseen-counts"],
+              }),
+            )
+            .catch(() => undefined);
         }
       })
       .catch(() => navigate({ to: "/admin/login" }));
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
