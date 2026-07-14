@@ -58,7 +58,7 @@ export const TAXONOMY_PAGES: TaxonomyPageConfig[] = [
       },
       {
         q: "Do I need to be a club member to enter?",
-        a: "No. Most permitted races accept unaffiliated runners, though affiliated (club) members often pay a lower entry fee — usually £2 cheaper — because part of the unaffiliated fee goes back to England Athletics.",
+        a: "No. Most permitted races accept unaffiliated runners, though affiliated (club) members often pay a few pounds less, because part of the unaffiliated fee goes back to England Athletics.",
       },
       {
         q: "Where do results appear?",
