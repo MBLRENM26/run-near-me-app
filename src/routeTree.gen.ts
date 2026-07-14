@@ -72,6 +72,7 @@ import { Route as ApiPublicAdminSyncEnglandAthleticsRouteImport } from './routes
 import { Route as ApiPublicAdminIndexabilityStatsRouteImport } from './routes/api/public/admin/indexability-stats'
 import { Route as ApiPublicAdminFixEventUrlsRouteImport } from './routes/api/public/admin/fix-event-urls'
 import { Route as ApiPublicAdminBackfillOrganiserMatchRouteImport } from './routes/api/public/admin/backfill-organiser-match'
+import { Route as AdminShellAdminEventsNewRouteImport } from './routes/_adminShell.admin.events.new'
 import { Route as AdminShellAdminEventsEnrichDatesRouteImport } from './routes/_adminShell.admin.events.enrich-dates'
 import { Route as AdminShellAdminEventsDuplicatesRouteImport } from './routes/_adminShell.admin.events.duplicates'
 import { Route as AdminShellAdminEventsIdRouteImport } from './routes/_adminShell.admin.events.$id'
@@ -411,6 +412,12 @@ const ApiPublicAdminBackfillOrganiserMatchRoute =
     path: '/api/public/admin/backfill-organiser-match',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AdminShellAdminEventsNewRoute =
+  AdminShellAdminEventsNewRouteImport.update({
+    id: '/admin/events/new',
+    path: '/admin/events/new',
+    getParentRoute: () => AdminShellRoute,
+  } as any)
 const AdminShellAdminEventsEnrichDatesRoute =
   AdminShellAdminEventsEnrichDatesRouteImport.update({
     id: '/admin/events/enrich-dates',
@@ -494,6 +501,7 @@ export interface FileRoutesByFullPath {
   '/admin/events/$id': typeof AdminShellAdminEventsIdRoute
   '/admin/events/duplicates': typeof AdminShellAdminEventsDuplicatesRoute
   '/admin/events/enrich-dates': typeof AdminShellAdminEventsEnrichDatesRoute
+  '/admin/events/new': typeof AdminShellAdminEventsNewRoute
   '/api/public/admin/backfill-organiser-match': typeof ApiPublicAdminBackfillOrganiserMatchRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
   '/api/public/admin/indexability-stats': typeof ApiPublicAdminIndexabilityStatsRoute
@@ -563,6 +571,7 @@ export interface FileRoutesByTo {
   '/admin/events/$id': typeof AdminShellAdminEventsIdRoute
   '/admin/events/duplicates': typeof AdminShellAdminEventsDuplicatesRoute
   '/admin/events/enrich-dates': typeof AdminShellAdminEventsEnrichDatesRoute
+  '/admin/events/new': typeof AdminShellAdminEventsNewRoute
   '/api/public/admin/backfill-organiser-match': typeof ApiPublicAdminBackfillOrganiserMatchRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
   '/api/public/admin/indexability-stats': typeof ApiPublicAdminIndexabilityStatsRoute
@@ -634,6 +643,7 @@ export interface FileRoutesById {
   '/_adminShell/admin/events/$id': typeof AdminShellAdminEventsIdRoute
   '/_adminShell/admin/events/duplicates': typeof AdminShellAdminEventsDuplicatesRoute
   '/_adminShell/admin/events/enrich-dates': typeof AdminShellAdminEventsEnrichDatesRoute
+  '/_adminShell/admin/events/new': typeof AdminShellAdminEventsNewRoute
   '/api/public/admin/backfill-organiser-match': typeof ApiPublicAdminBackfillOrganiserMatchRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
   '/api/public/admin/indexability-stats': typeof ApiPublicAdminIndexabilityStatsRoute
@@ -705,6 +715,7 @@ export interface FileRouteTypes {
     | '/admin/events/$id'
     | '/admin/events/duplicates'
     | '/admin/events/enrich-dates'
+    | '/admin/events/new'
     | '/api/public/admin/backfill-organiser-match'
     | '/api/public/admin/fix-event-urls'
     | '/api/public/admin/indexability-stats'
@@ -774,6 +785,7 @@ export interface FileRouteTypes {
     | '/admin/events/$id'
     | '/admin/events/duplicates'
     | '/admin/events/enrich-dates'
+    | '/admin/events/new'
     | '/api/public/admin/backfill-organiser-match'
     | '/api/public/admin/fix-event-urls'
     | '/api/public/admin/indexability-stats'
@@ -844,6 +856,7 @@ export interface FileRouteTypes {
     | '/_adminShell/admin/events/$id'
     | '/_adminShell/admin/events/duplicates'
     | '/_adminShell/admin/events/enrich-dates'
+    | '/_adminShell/admin/events/new'
     | '/api/public/admin/backfill-organiser-match'
     | '/api/public/admin/fix-event-urls'
     | '/api/public/admin/indexability-stats'
@@ -1356,6 +1369,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAdminBackfillOrganiserMatchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_adminShell/admin/events/new': {
+      id: '/_adminShell/admin/events/new'
+      path: '/admin/events/new'
+      fullPath: '/admin/events/new'
+      preLoaderRoute: typeof AdminShellAdminEventsNewRouteImport
+      parentRoute: typeof AdminShellRoute
+    }
     '/_adminShell/admin/events/enrich-dates': {
       id: '/_adminShell/admin/events/enrich-dates'
       path: '/admin/events/enrich-dates'
@@ -1428,6 +1448,7 @@ interface AdminShellRouteChildren {
   AdminShellAdminEventsIdRoute: typeof AdminShellAdminEventsIdRoute
   AdminShellAdminEventsDuplicatesRoute: typeof AdminShellAdminEventsDuplicatesRoute
   AdminShellAdminEventsEnrichDatesRoute: typeof AdminShellAdminEventsEnrichDatesRoute
+  AdminShellAdminEventsNewRoute: typeof AdminShellAdminEventsNewRoute
   AdminShellAdminClubsIndexRoute: typeof AdminShellAdminClubsIndexRoute
   AdminShellAdminEventsIndexRoute: typeof AdminShellAdminEventsIndexRoute
 }
@@ -1442,6 +1463,7 @@ const AdminShellRouteChildren: AdminShellRouteChildren = {
   AdminShellAdminEventsIdRoute: AdminShellAdminEventsIdRoute,
   AdminShellAdminEventsDuplicatesRoute: AdminShellAdminEventsDuplicatesRoute,
   AdminShellAdminEventsEnrichDatesRoute: AdminShellAdminEventsEnrichDatesRoute,
+  AdminShellAdminEventsNewRoute: AdminShellAdminEventsNewRoute,
   AdminShellAdminClubsIndexRoute: AdminShellAdminClubsIndexRoute,
   AdminShellAdminEventsIndexRoute: AdminShellAdminEventsIndexRoute,
 }

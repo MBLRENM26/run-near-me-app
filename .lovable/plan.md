@@ -1,28 +1,46 @@
-## Parked until credit reset
+## Urgent admin tooling fix: create an event manually
 
-Holding remaining 14.4 credits for minor amends today.
+You're not missing anything: `/admin/events` currently has no **New event** button. Event creation exists only through the structured-submission shortcut, so legacy free-text submissions like Ross River fall through a workflow gap.
 
-## Next session — resume order
+## Build plan
 
-**B. Phase 2 taxonomy surfacing** (uses existing `governance`, `organiser_type`, `race_profile` columns already backfilled)
-1. Badges on `/events/$slug` for governance / organiser type / race profile
-2. Filters on the browse / search page for the same three axes
-3. New landing pages, e.g.:
-   - `/uka-permitted` (governance)
-   - `/club-organised` (organiser type)
-   - `/trail-races`, `/road-races`, `/multi-terrain` (race profile)
-4. Homepage entry point ("Browse by governance / organiser type")
-5. `head()` metadata + internal links between new pages
+1. **Add a server function to create admin events**
+   - Add `createAdminEvent` alongside the existing admin event functions.
+   - Require the existing admin session check.
+   - Insert a draft/non-public event first, so nothing publishes accidentally.
+   - Generate a unique slug from the name, with suffix fallback if needed.
 
-**C. Audience value pages** (after B lands)
-- `/for-runners` — why runners should use the site (provenance, filters, onward routes)
-- `/for-clubs` — why clubs (claim your club, member events, discovery)
-- `/for-organisers` — why organisers (structured submission, SEO reach, trust strip)
-- Wire into header/footer nav
+2. **Add `/admin/events/new` route**
+   - Reuse the existing admin shell.
+   - Provide a compact manual event form with the fields needed for Ross River:
+     - name
+     - date display / sort date
+     - town, county, region
+     - distances / distance type
+     - venue/address/postcode
+     - entry URL / organiser URL
+     - organiser
+     - description
+   - Save creates the event, then redirects to `/admin/events/$id` for the full editor.
 
-## Not in scope for next session (deferred backlog)
-- Scottish Athletics organiser URL capture (~96 events back into discovery)
-- EA chunk roll-up in Sync Runs view + summary email
-- Analytics goals wired in Plausible dashboard
+3. **Add a “New event” button to `/admin/events`**
+   - Put it in the header next to existing tools like duplicates/date enrichment.
+   - Link to `/admin/events/new`.
 
-Ping when credits reset and I'll start on B.
+4. **Improve legacy submission guidance**
+   - Update the legacy free-text message in `/admin/claims` to link directly to `/admin/events/new`, not just `/admin/events`.
+   - Keep the broader “link back submission automatically” helper out of scope for now to save credits.
+
+## What this fixes
+
+- You can manually create Ross River from the admin UI today.
+- Future legacy/free-text submissions have a clear path.
+- Structured submissions still keep the existing “Create event from submission” shortcut.
+
+## Out of scope for this small fix
+
+- Auto-linking a manually created event back to a legacy submission.
+- Full Phase 2 taxonomy surfacing.
+- Audience value pages.
+
+Approve this and I’ll implement the small admin creation flow.

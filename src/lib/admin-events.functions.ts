@@ -139,6 +139,12 @@ const eventPatchSchema = z.object({
   is_curated_tags: z.boolean().optional(),
 });
 
+const eventCreateSchema = eventPatchSchema.extend({
+  name: z.string().trim().min(1).max(300),
+});
+
+export type AdminEventCreateInput = z.infer<typeof eventCreateSchema>;
+
 // ---- List ----
 
 export const listAdminEvents = createServerFn({ method: "POST" })
@@ -234,6 +240,88 @@ export const listAdminEvents = createServerFn({ method: "POST" })
   });
 
 // ---- Get ----
+
+export const createAdminEvent = createServerFn({ method: "POST" })
+  .inputValidator((d) => eventCreateSchema.parse(d))
+  .handler(async ({ data }) => {
+    requireAdminOrThrow();
+
+    const hasLat = data.lat !== undefined ? data.lat !== null : null;
+    const hasLng = data.lng !== undefined ? data.lng !== null : null;
+    if (hasLat !== null && hasLng !== null && hasLat !== hasLng) {
+      throw new Error("lat and lng must both be set or both be cleared");
+    }
+
+    const slugify = (input: string) =>
+      input
+        .toLowerCase()
+        .normalize("NFKD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 180);
+
+    const slugExists = async (slug: string) => {
+      const { data: clash, error } = await supabaseAdmin
+        .from("events")
+        .select("id")
+        .eq("slug", slug)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return Boolean(clash);
+    };
+
+    let slug = data.slug;
+    if (slug) {
+      if (await slugExists(slug)) throw new Error(`Slug "${slug}" is already in use`);
+    } else {
+      const stem = slugify(`${data.name} ${data.sort_date ?? data.date_from ?? ""}`) || "event";
+      slug = stem;
+      let suffix = 1;
+      while (await slugExists(slug)) {
+        suffix += 1;
+        slug = `${stem}-${suffix}`;
+        if (suffix > 50) slug = `${stem}-${Date.now()}`;
+      }
+    }
+
+    const provided = Object.fromEntries(
+      Object.entries(data).filter(([, value]) => value !== undefined),
+    );
+
+    const insertPayload = {
+      ...provided,
+      name: data.name,
+      slug,
+      status: data.status ?? "EXPIRED",
+      source: data.source ?? "manual",
+      date_raw: data.date_raw === undefined ? data.sort_date ?? data.date_from ?? null : data.date_raw,
+      date_from: data.date_from === undefined ? data.sort_date ?? null : data.date_from,
+      date_to: data.date_to === undefined ? data.sort_date ?? null : data.date_to,
+      is_upcoming: data.is_upcoming ?? false,
+      is_featured: data.is_featured ?? false,
+      is_recurring: data.is_recurring ?? false,
+      date_is_estimated: data.date_is_estimated ?? false,
+      distance_tags: data.distance_tags ?? [],
+      terrain_tags: data.terrain_tags ?? [],
+      is_curated_tags: data.is_curated_tags ?? true,
+    };
+
+    const { data: created, error } = await supabaseAdmin
+      .from("events")
+      .insert(insertPayload as never)
+      .select("id")
+      .single();
+    if (error || !created) throw new Error(error?.message ?? "Failed to create event");
+
+    await supabaseAdmin.from("event_edits").insert({
+      event_id: created.id,
+      changes: { created: insertPayload } as never,
+      note: "manual event created via admin",
+    });
+
+    return { ok: true as const, id: created.id as string, slug };
+  });
 
 export const getAdminEvent = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
