@@ -8,9 +8,35 @@ import {
   verifyAdminPassword,
 } from "@/lib/admin-session.server";
 import { sendNewSubmissionNotification } from "@/lib/notify.server";
+function slugify(input: string): string {
+  return input
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
 
 const STATUSES = ["new", "in_review", "actioned", "rejected", "spam"] as const;
 const KINDS = ["listing", "claim"] as const;
+
+const DISTANCE_OPTIONS = [
+  "5k",
+  "10k",
+  "half-marathon",
+  "marathon",
+  "ultra",
+  "other",
+] as const;
+
+const TERRAIN_OPTIONS = [
+  "road",
+  "trail",
+  "fell",
+  "multi-terrain",
+  "track",
+  "other",
+] as const;
 
 export interface SubmissionRow {
   id: string;
@@ -22,6 +48,17 @@ export interface SubmissionRow {
   status: (typeof STATUSES)[number];
   admin_note: string | null;
   reviewed_at: string | null;
+  race_name: string | null;
+  race_date: string | null;
+  website_url: string | null;
+  distances: string[] | null;
+  town: string | null;
+  county: string | null;
+  postcode: string | null;
+  organiser: string | null;
+  terrain: string | null;
+  submitted_entry_fee: string | null;
+  created_event_id: string | null;
 }
 
 export interface SubmissionCounts {
@@ -29,6 +66,9 @@ export interface SubmissionCounts {
   by_status: Record<(typeof STATUSES)[number], number>;
   by_kind: { listing: number; claim: number };
 }
+
+const SUBMISSION_COLUMNS =
+  "id,email,event_details,submitted_at,kind,claim_slug,status,admin_note,reviewed_at,race_name,race_date,website_url,distances,town,county,postcode,organiser,terrain,submitted_entry_fee,created_event_id";
 
 function requireAdminOrThrow() {
   if (!isAdminAuthenticated()) {
@@ -42,7 +82,6 @@ export const adminLogin = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ password: z.string().min(1).max(255) }).parse(d))
   .handler(async ({ data }) => {
     if (!verifyAdminPassword(data.password)) {
-      // Constant-time delay to discourage brute force
       await new Promise((r) => setTimeout(r, 400));
       return { ok: false as const };
     }
@@ -79,9 +118,7 @@ export const listSubmissions = createServerFn({ method: "POST" })
 
     let query = supabaseAdmin
       .from("submissions")
-      .select(
-        "id,email,event_details,submitted_at,kind,claim_slug,status,admin_note,reviewed_at",
-      )
+      .select(SUBMISSION_COLUMNS)
       .order("submitted_at", { ascending: false })
       .range(data.offset, data.offset + data.limit - 1);
 
@@ -91,7 +128,6 @@ export const listSubmissions = createServerFn({ method: "POST" })
     const { data: rows, error } = await query;
     if (error) throw new Error(error.message);
 
-    // Counts (small table, simple aggregate)
     const { data: countRows, error: countErr } = await supabaseAdmin
       .from("submissions")
       .select("kind,status");
@@ -109,7 +145,7 @@ export const listSubmissions = createServerFn({ method: "POST" })
       if (k in counts.by_kind) counts.by_kind[k]++;
     }
 
-    return { rows: (rows ?? []) as SubmissionRow[], counts };
+    return { rows: (rows ?? []) as unknown as SubmissionRow[], counts };
   });
 
 export const updateSubmission = createServerFn({ method: "POST" })
@@ -172,30 +208,68 @@ export const bulkUpdateSubmissions = createServerFn({ method: "POST" })
 
 // -------- Public submission entry point (server-side insert + notify) --------
 
+const structuredListingSchema = z.object({
+  race_name: z.string().trim().min(2).max(300),
+  race_date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Please pick a valid date."),
+  website_url: z.string().trim().url().max(1000),
+  email: z.string().trim().email().max(255),
+  distances: z.array(z.enum(DISTANCE_OPTIONS)).max(10).default([]),
+  town: z.string().trim().max(200).optional(),
+  county: z.string().trim().max(200).optional(),
+  postcode: z.string().trim().max(20).optional(),
+  organiser: z.string().trim().max(300).optional(),
+  terrain: z.enum(TERRAIN_OPTIONS).optional(),
+  submitted_entry_fee: z.string().trim().max(200).optional(),
+  notes: z.string().trim().max(2000).optional(),
+  claim_slug: z.string().trim().min(1).max(255).nullable().optional(),
+});
+
+function buildEventDetailsSummary(
+  d: z.infer<typeof structuredListingSchema>,
+): string {
+  const lines: string[] = [];
+  lines.push(`Race: ${d.race_name}`);
+  lines.push(`Date: ${d.race_date}`);
+  lines.push(`Website: ${d.website_url}`);
+  if (d.distances && d.distances.length)
+    lines.push(`Distances: ${d.distances.join(", ")}`);
+  if (d.terrain) lines.push(`Terrain: ${d.terrain}`);
+  const loc = [d.town, d.county, d.postcode].filter(Boolean).join(", ");
+  if (loc) lines.push(`Location: ${loc}`);
+  if (d.organiser) lines.push(`Organiser: ${d.organiser}`);
+  if (d.submitted_entry_fee) lines.push(`Entry fee: ${d.submitted_entry_fee}`);
+  if (d.notes) {
+    lines.push("");
+    lines.push("Notes:");
+    lines.push(d.notes);
+  }
+  return lines.join("\n");
+}
+
 export const submitListing = createServerFn({ method: "POST" })
-  .inputValidator((d) =>
-    z
-      .object({
-        event_details: z.string().trim().min(10).max(2000),
-        email: z
-          .string()
-          .trim()
-          .email()
-          .max(255),
-        claim_slug: z.string().trim().min(1).max(255).nullable().optional(),
-      })
-      .parse(d),
-  )
+  .inputValidator((d) => structuredListingSchema.parse(d))
   .handler(async ({ data }) => {
     const kind: "listing" | "claim" = data.claim_slug ? "claim" : "listing";
 
     const { data: inserted, error } = await supabaseAdmin
       .from("submissions")
       .insert({
-        event_details: data.event_details,
+        event_details: buildEventDetailsSummary(data),
         email: data.email,
         kind,
         claim_slug: data.claim_slug ?? null,
+        race_name: data.race_name,
+        race_date: data.race_date,
+        website_url: data.website_url,
+        distances: data.distances ?? [],
+        town: data.town ?? null,
+        county: data.county ?? null,
+        postcode: data.postcode ?? null,
+        organiser: data.organiser ?? null,
+        terrain: data.terrain ?? null,
+        submitted_entry_fee: data.submitted_entry_fee ?? null,
       })
       .select("id,email,kind,claim_slug,submitted_at")
       .single();
@@ -204,7 +278,6 @@ export const submitListing = createServerFn({ method: "POST" })
       throw new Error(error?.message ?? "Insert failed");
     }
 
-    // Fire-and-forget — never block on email
     sendNewSubmissionNotification({
       id: inserted.id,
       email: inserted.email,
@@ -214,4 +287,123 @@ export const submitListing = createServerFn({ method: "POST" })
     }).catch((err) => console.warn("[submitListing] notify failed", err));
 
     return { ok: true as const, id: inserted.id };
+  });
+
+// -------- Create draft event from a submission --------
+//
+// Maps the runner's structured fields into an events row with status='EXPIRED'
+// so nothing appears publicly until an admin reviews the record and flips it
+// to ACTIVE. Links the submission -> event and marks the submission actioned.
+
+// Loose mapping from submitted distance chip -> distance_tags (all values
+// exist in DISTANCE_TAG_VALUES so the parser doesn't need to re-run).
+const DISTANCE_MAP: Record<(typeof DISTANCE_OPTIONS)[number], string | null> = {
+  "5k": "5k",
+  "10k": "10k",
+  "half-marathon": "half-marathon",
+  marathon: "marathon",
+  ultra: "ultra",
+  other: null,
+};
+
+async function generateUniqueEventSlug(base: string): Promise<string> {
+  const stem = slugify(base).slice(0, 180) || "event";
+  let candidate = stem;
+  let suffix = 1;
+  // Cap retries; slug column has a unique index.
+  while (suffix < 50) {
+    const { data: clash } = await supabaseAdmin
+      .from("events")
+      .select("id")
+      .eq("slug", candidate)
+      .maybeSingle();
+    if (!clash) return candidate;
+    suffix += 1;
+    candidate = `${stem}-${suffix}`;
+  }
+  return `${stem}-${Date.now()}`;
+}
+
+export const createEventFromSubmission = createServerFn({ method: "POST" })
+  .inputValidator((d) =>
+    z.object({ submissionId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    requireAdminOrThrow();
+
+    const { data: sub, error: subErr } = await supabaseAdmin
+      .from("submissions")
+      .select(SUBMISSION_COLUMNS)
+      .eq("id", data.submissionId)
+      .maybeSingle();
+    if (subErr) throw new Error(subErr.message);
+    if (!sub) throw new Error("Submission not found");
+    const s = sub as unknown as SubmissionRow;
+
+    if (s.created_event_id) {
+      return { ok: true as const, eventId: s.created_event_id, existed: true };
+    }
+    if (!s.race_name) {
+      throw new Error(
+        "This submission has no structured data — was submitted before the form was upgraded. Create the event manually via /admin/events.",
+      );
+    }
+
+    const slug = await generateUniqueEventSlug(
+      `${s.race_name} ${s.race_date ?? ""}`.trim(),
+    );
+
+    const distanceTags = (s.distances ?? [])
+      .map((d) => DISTANCE_MAP[d as (typeof DISTANCE_OPTIONS)[number]])
+      .filter((v): v is string => v != null);
+    const terrainTags =
+      s.terrain && s.terrain !== "other" ? [s.terrain] : [];
+
+    const distancesText = (s.distances ?? [])
+      .filter((d) => d !== "other")
+      .join(", ") || null;
+
+    const { data: newEvent, error: insErr } = await supabaseAdmin
+      .from("events")
+      .insert({
+        name: s.race_name,
+        slug,
+        status: "EXPIRED", // draft — won't appear publicly until admin flips to ACTIVE
+        source: "manual",
+        source_url: null,
+        sort_date: s.race_date,
+        date_from: s.race_date,
+        date_to: s.race_date,
+        date_raw: s.race_date,
+        date_is_estimated: false,
+        is_upcoming: false,
+        town: s.town,
+        county: s.county,
+        organiser: s.organiser,
+        entry_fee: s.submitted_entry_fee,
+        entry_url: s.website_url,
+        organiser_url: s.website_url,
+        distances: distancesText,
+        distance_tags: distanceTags,
+        terrain_tags: terrainTags,
+        is_curated_tags: true,
+      })
+      .select("id")
+      .single();
+
+    if (insErr || !newEvent) {
+      throw new Error(insErr?.message ?? "Failed to create event");
+    }
+
+    const { error: linkErr } = await supabaseAdmin
+      .from("submissions")
+      .update({
+        created_event_id: newEvent.id,
+        status: "actioned",
+        reviewed_at: new Date().toISOString(),
+      })
+      .eq("id", s.id);
+    if (linkErr) throw new Error(linkErr.message);
+
+    return { ok: true as const, eventId: newEvent.id, existed: false };
   });

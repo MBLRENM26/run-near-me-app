@@ -8,6 +8,7 @@ import {
   listSubmissions,
   updateSubmission,
   bulkUpdateSubmissions,
+  createEventFromSubmission,
   type SubmissionRow,
 } from "@/lib/admin.functions";
 import {
@@ -52,6 +53,7 @@ function AdminClaimsPage() {
   const checkSession = useServerFn(adminCheckSession);
   const markSeen = useServerFn(markSubmissionsSeen);
   const resendEmail = useServerFn(resendAdminNotification);
+  const createEvent = useServerFn(createEventFromSubmission);
 
   // Gate the page on a valid session
   const [authChecked, setAuthChecked] = useState(false);
@@ -257,6 +259,20 @@ function AdminClaimsPage() {
                 selected={selectedIds.has(row.id)}
                 onSelectChange={handleSelect}
                 onSave={handleSave}
+                onCreateEvent={async (id) => {
+                  try {
+                    const res = await createEvent({ data: { submissionId: id } });
+                    if (res.existed) toast.info("Event already exists — opening editor");
+                    else toast.success("Draft event created");
+                    refresh();
+                    window.location.href = `/admin/events/${res.eventId}`;
+                  } catch (e) {
+                    toast.error(
+                      e instanceof Error ? e.message : "Failed to create event",
+                    );
+                    console.error(e);
+                  }
+                }}
               />
               <div className="flex justify-end px-1">
                 <Button
