@@ -165,7 +165,7 @@ export async function runScottishAthleticsSync(): Promise<ScottishAthleticsSyncR
     // Scotland-scoped rows for name/date dedupe + updated-vs-new accounting.
     const { data: existing, error: exErr } = await supabaseAdmin
       .from("events")
-      .select("slug, name, date_from, norm_id")
+      .select("slug, name, date_from, norm_id, source")
       .eq("status", "ACTIVE")
       .or("region.eq.Scotland,country.eq.Scotland");
     if (exErr) {
@@ -180,10 +180,21 @@ export async function runScottishAthleticsSync(): Promise<ScottishAthleticsSyncR
     const existingNormIds = new Set(
       (existing ?? []).map((e) => e.norm_id).filter(Boolean) as string[],
     );
-    const existingNameDate = new Set(
-      (existing ?? []).map(
-        (e) => `${(e.name ?? "").toLowerCase().trim()}|${e.date_from ?? ""}`,
-      ),
+    // Map name+date → source of the existing row. We only skip as a dupe when
+    // the collision is against a DIFFERENT source (e.g. an EA-owned row);
+    // scottishathletics-owned rows fall through so upsert refreshes them.
+    const existingNameDateSource = new Map<string, string | null>(
+      (existing ?? []).map((e) => [
+        `${(e.name ?? "").toLowerCase().trim()}|${e.date_from ?? ""}`,
+        e.source ?? null,
+      ]),
+    );
+    // norm_id → existing slug. On refresh we pin the slug to the existing
+    // value so the upsert doesn't rewrite the canonical URL.
+    const existingSlugByNormId = new Map<string, string>(
+      (existing ?? [])
+        .filter((e) => e.norm_id && e.slug)
+        .map((e) => [e.norm_id as string, e.slug as string]),
     );
 
     // Global slug set — a Scotland event's slug can collide with any other
