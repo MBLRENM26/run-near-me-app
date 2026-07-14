@@ -236,6 +236,7 @@ export type DistanceEvent = {
   is_featured: boolean;
   date_is_estimated: boolean;
   is_recurring?: boolean;
+  governance?: string | null;
 };
 
 export type DistancePageData = {
