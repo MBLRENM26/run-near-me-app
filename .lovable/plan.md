@@ -1,46 +1,85 @@
-## Urgent admin tooling fix: create an event manually
 
-You're not missing anything: `/admin/events` currently has no **New event** button. Event creation exists only through the structured-submission shortcut, so legacy free-text submissions like Ross River fall through a workflow gap.
+## What we're shipping next
 
-## Build plan
+Two sequential workstreams, in this order:
 
-1. **Add a server function to create admin events**
-   - Add `createAdminEvent` alongside the existing admin event functions.
-   - Require the existing admin session check.
-   - Insert a draft/non-public event first, so nothing publishes accidentally.
-   - Generate a unique slug from the name, with suffix fallback if needed.
+**B — Phase 2 taxonomy surfacing** (governance / organiser_type / race_profile are already in the DB from the earlier migration, but nothing on the public site reads them yet)
 
-2. **Add `/admin/events/new` route**
-   - Reuse the existing admin shell.
-   - Provide a compact manual event form with the fields needed for Ross River:
-     - name
-     - date display / sort date
-     - town, county, region
-     - distances / distance type
-     - venue/address/postcode
-     - entry URL / organiser URL
-     - organiser
-     - description
-   - Save creates the event, then redirects to `/admin/events/$id` for the full editor.
+**C — Audience value pages** (`/for-runners`, `/for-clubs`, `/for-organisers`) — the "why use this site" story you called out at the start of this thread.
 
-3. **Add a “New event” button to `/admin/events`**
-   - Put it in the header next to existing tools like duplicates/date enrichment.
-   - Link to `/admin/events/new`.
+---
 
-4. **Improve legacy submission guidance**
-   - Update the legacy free-text message in `/admin/claims` to link directly to `/admin/events/new`, not just `/admin/events`.
-   - Keep the broader “link back submission automatically” helper out of scope for now to save credits.
+## B — Taxonomy surfacing
 
-## What this fixes
+Goal: make the three Phase 2 columns visible and useful, without inventing prose about individual events (respects the scraped-data-trust rule).
 
-- You can manually create Ross River from the admin UI today.
-- Future legacy/free-text submissions have a clear path.
-- Structured submissions still keep the existing “Create event from submission” shortcut.
+### 1. Event detail page (`/events/$slug`)
 
-## Out of scope for this small fix
+Add a compact **Trust & profile strip** near the top, rendered only when we have real values:
 
-- Auto-linking a manually created event back to a legacy submission.
-- Full Phase 2 taxonomy surfacing.
-- Audience value pages.
+- `governance` → badge, e.g. "UKA permitted", "Scottish Athletics permitted", "Unlicensed"
+- `organiser_type` → badge, e.g. "Club-organised", "Commercial", "Charity", "Community"
+- `race_profile` → badge, e.g. "Championship", "Local community race", "Mass participation"
 
-Approve this and I’ll implement the small admin creation flow.
+Missing values render nothing — no "Unknown" placeholders. All labels come from a small enum → display map; no free-text from scraped data surfaces.
+
+### 2. Filters on discovery surfaces
+
+Add filter chips (governance + race_profile) to:
+
+- Homepage `FilterBar` (behind an expandable "More filters" toggle so mobile stays clean)
+- `/running-events-in.$county` and `/running-events-in-city.$city`
+- Distance pages (`/10k-races`, `/half-marathons`, etc.)
+
+Chips are only shown when the current result set actually contains events with that value (avoids dead filters).
+
+### 3. New landing pages (SEO + navigation)
+
+One route per high-value taxonomy value. Start with the ones with meaningful counts:
+
+- `/uka-permitted-races`
+- `/scottish-athletics-permitted-races`
+- `/club-organised-races`
+- `/championship-races`
+
+Each page: H1, one short evergreen intro paragraph (hand-written template, not AI prose), the standard event grid, and cross-links to related distance/region pages. `head()` metadata per route. Only ship a route if the count clears a minimum threshold (say 20 events) — otherwise it's a thin page.
+
+### 4. Admin
+
+Add governance / organiser_type / race_profile selects to `/admin/events/$id` so we can curate values by hand. No bulk backfill this turn — we already learned from the organiser-club fuzzy match that low-signal backfills aren't worth the credits. Values arrive via: (a) admin edits, (b) source-specific rules in the EA/SA syncs where the source implies governance.
+
+### 5. Discovery gate
+
+Extend the existing `hasOrganiserOwnedLink` filter with an OR: taxonomy-tagged events with a trusted governance value are also eligible for discovery surfaces even if the link is only entry-platform. Reasoning: a UKA-permitted race on sientries is still trustworthy; the gate was designed for random aggregator scrapes.
+
+---
+
+## C — Audience value pages
+
+Three new routes, each a proper standalone route with its own `head()`:
+
+- `/for-runners` — "find the right next race, with clear provenance" — highlights: filter by distance/region/terrain, weekend pages, race reminders, parkrun hub.
+- `/for-clubs` — "get your club and its races found" — highlights: free club listing, claim flow, event association, links back to the club directory.
+- `/for-organisers` — "list your event, reach runners actively searching" — highlights: structured submission form, governance badges, no fee, links back to `/list-your-event`.
+
+Each page: one hero, three-to-five value bullets, one CTA, one FAQ block reusing `site-faqs.ts` entries. Linked from the footer (and the header on desktop, under a "Why us" menu — mobile keeps the current nav to avoid clutter).
+
+No new DB tables; these are static content routes.
+
+---
+
+## Order of operations
+
+1. B1 (event page strip) — smallest, highest visibility
+2. B2 (filters) + B4 (admin selects) — same PR, they touch adjacent code
+3. B3 (landing pages) — check counts first, only ship viable ones
+4. B5 (discovery gate extension) — small, verifiable with a SQL count before/after
+5. C — audience pages once B is stable
+
+## Out of scope for this plan
+
+- Bulk backfill of taxonomy from scraped fields (low ROI, revisit only if a specific rule is high-confidence)
+- Redesigning homepage nav / mega-menu
+- Scottish Athletics organiser-URL capture (still parked; separate memory)
+
+Approve and I'll start with B1.
