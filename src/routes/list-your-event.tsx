@@ -121,10 +121,16 @@ function ListYourEventPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const trimmedUrl = websiteUrl.trim();
+    const normalisedUrl =
+      trimmedUrl && !/^https?:\/\//i.test(trimmedUrl)
+        ? `https://${trimmedUrl}`
+        : trimmedUrl;
+    if (normalisedUrl !== websiteUrl) setWebsiteUrl(normalisedUrl);
     const parsed = schema.safeParse({
       race_name: raceName,
       race_date: raceDate,
-      website_url: websiteUrl,
+      website_url: normalisedUrl,
       email,
     });
     if (!parsed.success) {
