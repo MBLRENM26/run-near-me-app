@@ -53,6 +53,7 @@ function AdminClaimsPage() {
   const checkSession = useServerFn(adminCheckSession);
   const markSeen = useServerFn(markSubmissionsSeen);
   const resendEmail = useServerFn(resendAdminNotification);
+  const createEvent = useServerFn(createEventFromSubmission);
 
   // Gate the page on a valid session
   const [authChecked, setAuthChecked] = useState(false);
