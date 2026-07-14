@@ -769,6 +769,18 @@ function EventDetailPage() {
             />
           </div>
 
+          <p className="mt-6 text-sm text-muted-foreground">
+            Spotted an error with this listing?{" "}
+            <Link
+              to="/events/$slug/report"
+              params={{ slug: e.slug }}
+              className="font-medium text-primary hover:underline"
+            >
+              Let us know
+            </Link>
+            .
+          </p>
+
           {showClaim && (
 
             <div className="mt-10 rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-card">
