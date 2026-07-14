@@ -1,35 +1,47 @@
-## Workstream C — Audience value pages
+# Navigation, tools, and guides proposal
 
-Ship three new routes with approved copy, own head() metadata per route, and add a desktop "Why us" menu linking to them. Footer gets the same three links. Mobile nav unchanged.
+Raised after shipping Workstream C (audience pages) and the report-a-change flow. The core concern: the site has strong SEO landing pages but poor wayfinding — users can't easily discover the taxonomy hubs, audience pages, city/county pages, or governance pages we've already shipped.
 
-### Files to create
+## Option A — Refresh primary navigation first
+Highest UX leverage. Group existing pages into a coherent browse structure.
 
-1. `src/routes/for-runners.tsx`
-2. `src/routes/for-clubs.tsx`
-3. `src/routes/for-organisers.tsx`
+- Distances: 5k, 10k, half marathons, marathons, ultra marathons
+- Terrain: road races, trail running events, fell races, multi-terrain races
+- Governance: England Athletics, Scottish Athletics, Welsh Athletics, Athletics NI, TRA permitted races, club-organised races
+- Regions: existing region landing pages
+- Why us: for runners, for clubs, for organisers
 
-Each is a static route:
-- `createFileRoute("/for-runners")` etc.
-- `head()` returns approved meta title, description, og:title, og:description, og:url, plus `<link rel="canonical">` (leaf-only, per head-meta rules).
-- Component renders H1, intro, value blocks, FAQ. Reuse existing Tailwind prose/section patterns from the taxonomy landing pages so styling is consistent — no new component library.
-- FAQPage JSON-LD via `scripts` array (matches other content routes with FAQs).
+Shapes to choose from:
+1. Mega-menu on desktop + slide-out drawer on mobile (most discoverable, more build)
+2. Simple header dropdowns extending the current "Why us" pattern (fastest, consistent)
+3. Single /browse hub page with a slimmer header (lowest header complexity, one extra click)
 
-### Files to edit
+## Option B — Free race tools hub
+Pure client-side tools under /tools. Big long-tail SEO value, low maintenance once shipped.
 
-4. `src/components/site/Header.tsx` — add a desktop-only "Why us" dropdown (or simple inline links group, hidden on mobile via `hidden md:flex`) with three `<Link>`s to the new routes. Mobile view untouched.
-5. `src/components/site/Footer.tsx` — add the three links to the existing footer nav row (grouped so they don't overwhelm the existing About / Running clubs / Privacy / List your event links).
+Candidates, in priority order:
+1. Pace calculator (distance + time → pace, or pace + distance → time)
+2. Race time predictor (Riegel formula)
+3. Pace charts for 5k / 10k / half marathon / marathon (each its own indexable page)
+4. Splits / negative-split planner
 
-### Header pattern
+## Option C — Blog / guides section
+Evergreen guides under /guides. Higher ongoing content cost but strong topical authority.
 
-Small dropdown/popover keyed off the existing header structure — reuse shadcn primitives already in the project if a dropdown exists, otherwise a simple hover-group with three links. Confirm the approach when I read `Header.tsx` in build mode; if no dropdown primitive is wired up already I'll use a lightweight `<details>` or grouped inline links rather than pull in new UI.
+Seed ideas:
+- How to choose your first 5k
+- UKA vs ARC permits explained
+- Trail vs fell — what's the difference
+- How to read a race listing (link trust, governance badges)
+- What to do if your race is postponed
 
-### Out of scope
+## Recommended sequencing
+1. Navigation refresh (unlock everything already built)
+2. Tools hub (evergreen SEO win, no content debt)
+3. Guides (needs sustained writing and editorial process)
 
-- No sitemap edit — `src/routes/sitemap[.]xml.tsx` should already crawl static routes; I'll verify in build mode and only touch it if these routes need to be added explicitly.
-- No changes to taxonomy pages, event pages, or discovery gates.
-- No og:image generation (per head-meta rules, no placeholder image is better than a generic one).
-
-### Verification
-
-- Read final files after write to confirm route strings match filenames, head() shape is correct, and canonical/og:url self-reference each route.
-- Spot-check the header on desktop viewport; confirm mobile nav visually unchanged.
+## Open decisions for tomorrow
+- Which nav shape?
+- Which tools to ship first?
+- Do we want /guides or /blog URL?
+- Should tools get their own header dropdown or live under /tools only?
