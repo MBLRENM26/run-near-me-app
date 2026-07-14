@@ -27,6 +27,7 @@ export type Database = {
           reviewed_at: string | null
           reviewed_by: string | null
           role_at_club: string
+          seen_at: string | null
           status: string
           submitted_at: string
           updated_at: string
@@ -45,6 +46,7 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           role_at_club: string
+          seen_at?: string | null
           status?: string
           submitted_at?: string
           updated_at?: string
@@ -63,6 +65,7 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           role_at_club?: string
+          seen_at?: string | null
           status?: string
           submitted_at?: string
           updated_at?: string
@@ -590,6 +593,7 @@ export type Database = {
           is_reviewed: boolean
           kind: string
           reviewed_at: string | null
+          seen_at: string | null
           status: string
           submitted_at: string
         }
@@ -602,6 +606,7 @@ export type Database = {
           is_reviewed?: boolean
           kind?: string
           reviewed_at?: string | null
+          seen_at?: string | null
           status?: string
           submitted_at?: string
         }
@@ -614,6 +619,7 @@ export type Database = {
           is_reviewed?: boolean
           kind?: string
           reviewed_at?: string | null
+          seen_at?: string | null
           status?: string
           submitted_at?: string
         }
@@ -642,6 +648,67 @@ export type Database = {
           reason?: string
         }
         Relationships: []
+      }
+      sync_dedupe_candidates: {
+        Row: {
+          created_at: string
+          id: string
+          incoming_date: string | null
+          incoming_name: string
+          incoming_town: string | null
+          matched_event_id: string | null
+          reason: string | null
+          resolved_at: string | null
+          source: string
+          sync_run_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          incoming_date?: string | null
+          incoming_name: string
+          incoming_town?: string | null
+          matched_event_id?: string | null
+          reason?: string | null
+          resolved_at?: string | null
+          source: string
+          sync_run_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          incoming_date?: string | null
+          incoming_name?: string
+          incoming_town?: string | null
+          matched_event_id?: string | null
+          reason?: string | null
+          resolved_at?: string | null
+          source?: string
+          sync_run_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sync_dedupe_candidates_matched_event_id_fkey"
+            columns: ["matched_event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sync_dedupe_candidates_matched_event_id_fkey"
+            columns: ["matched_event_id"]
+            isOneToOne: false
+            referencedRelation: "public_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sync_dedupe_candidates_sync_run_id_fkey"
+            columns: ["sync_run_id"]
+            isOneToOne: false
+            referencedRelation: "sync_runs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sync_runs: {
         Row: {
