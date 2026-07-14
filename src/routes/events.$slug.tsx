@@ -12,6 +12,7 @@ import {
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { RaceReminderSignup } from "@/components/events/RaceReminderSignup";
+import { TrustProfileStrip } from "@/components/events/TrustProfileStrip";
 import { getEventPageData } from "@/lib/events.functions";
 
 import {
@@ -557,6 +558,14 @@ function EventDetailPage() {
               </div>
             ) : null}
           </div>
+
+          <TrustProfileStrip
+            governance={e.governance}
+            organiser_type={e.organiser_type}
+            race_profile={e.race_profile}
+          />
+
+
 
 
           {primaryCta && (
