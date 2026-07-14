@@ -1,0 +1,98 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { isAdminAuthenticated } from "@/lib/admin-session.server";
+
+function requireAdmin() {
+  if (!isAdminAuthenticated()) throw new Error("Unauthorized");
+}
+
+export interface UnseenCounts {
+  submissions: number;
+  clubClaims: number;
+  total: number;
+}
+
+// Cheap poll used by the admin shell to show a badge / banner.
+export const getUnseenCounts = createServerFn({ method: "GET" }).handler(
+  async (): Promise<UnseenCounts> => {
+    requireAdmin();
+    const [{ count: subs }, { count: claims }] = await Promise.all([
+      supabaseAdmin
+        .from("submissions")
+        .select("id", { count: "exact", head: true })
+        .is("seen_at", null),
+      supabaseAdmin
+        .from("club_claims")
+        .select("id", { count: "exact", head: true })
+        .is("seen_at", null),
+    ]);
+    const s = subs ?? 0;
+    const c = claims ?? 0;
+    return { submissions: s, clubClaims: c, total: s + c };
+  },
+);
+
+// Called by the /admin/claims page when the admin lands on it.
+export const markSubmissionsSeen = createServerFn({ method: "POST" }).handler(
+  async (): Promise<{ ok: true; marked: number }> => {
+    requireAdmin();
+    const { data, error } = await supabaseAdmin
+      .from("submissions")
+      .update({ seen_at: new Date().toISOString() })
+      .is("seen_at", null)
+      .select("id");
+    if (error) throw new Error(error.message);
+    return { ok: true, marked: data?.length ?? 0 };
+  },
+);
+
+export const markClubClaimsSeen = createServerFn({ method: "POST" }).handler(
+  async (): Promise<{ ok: true; marked: number }> => {
+    requireAdmin();
+    const { data, error } = await supabaseAdmin
+      .from("club_claims")
+      .update({ seen_at: new Date().toISOString() })
+      .is("seen_at", null)
+      .select("id");
+    if (error) throw new Error(error.message);
+    return { ok: true, marked: data?.length ?? 0 };
+  },
+);
+
+// Manual "Resend admin email" for a single submission — used to recover
+// from any historical miss.
+export const resendAdminNotification = createServerFn({ method: "POST" })
+  .inputValidator((d) =>
+    z.object({ submissionId: z.string().uuid() }).parse(d),
+  )
+  .handler(
+    async ({
+      data,
+    }): Promise<{
+      ok: boolean;
+      status: "sent" | "suppressed" | "failed" | "skipped" | "not-found";
+      reason?: string;
+    }> => {
+      requireAdmin();
+      const { data: row, error } = await supabaseAdmin
+        .from("submissions")
+        .select("id, email, kind, claim_slug, submitted_at")
+        .eq("id", data.submissionId)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      if (!row) return { ok: false, status: "not-found" };
+
+      const { sendNewSubmissionNotification } = await import(
+        "@/lib/notify.server"
+      );
+      const res = await sendNewSubmissionNotification({
+        id: row.id,
+        email: row.email,
+        kind: row.kind as "listing" | "claim",
+        claim_slug: row.claim_slug,
+        submitted_at: row.submitted_at,
+      });
+      return res;
+    },
+  );
