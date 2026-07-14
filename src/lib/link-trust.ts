@@ -147,3 +147,42 @@ export function hasOrganiserOwnedLink(
   }
   return false;
 }
+
+/** Governance tags that carry enough trust on their own to admit an
+ * event whose only external link sits on a third-party entry platform
+ * (sientries, racebest, sport80, justgo, …). A permit from one of these
+ * bodies means the event is real and sanctioned — the link platform
+ * is just plumbing. Aggregator-only links are still rejected. */
+const TRUSTED_GOVERNANCE = new Set([
+  "england_athletics",
+  "scottish_athletics",
+  "welsh_athletics",
+  "athletics_ni",
+  "tra",
+]);
+
+/**
+ * Discovery gate used across homepage / region / distance / cross-link
+ * surfaces. Admits an event when EITHER:
+ *   - it has an organiser-owned link (see hasOrganiserOwnedLink), OR
+ *   - it carries a trusted governance tag AND has at least one trusted
+ *     event-specific link (entry-platform links count here; aggregator
+ *     links never do).
+ *
+ * Event detail-page CTAs keep using classifyEventLink / isTrustedLink
+ * directly, so "Enter now → sientries" still works for people who land
+ * on a specific event page.
+ */
+export function hasDiscoverableLink(
+  entryUrl: string | null | undefined,
+  organiserUrl: string | null | undefined,
+  governance: string | null | undefined,
+): boolean {
+  if (hasOrganiserOwnedLink(entryUrl, organiserUrl)) return true;
+  if (!governance || !TRUSTED_GOVERNANCE.has(governance)) return false;
+  for (const raw of [entryUrl, organiserUrl]) {
+    const link = classifyEventLink(raw);
+    if (link.kind === "entry") return true;
+  }
+  return false;
+}
