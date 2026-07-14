@@ -503,12 +503,13 @@ export const getRegionDistanceMatrix = createServerFn({ method: "GET" })
       terrain_tags: string[] | null;
       entry_url: string | null;
       organiser_url: string | null;
+      governance: string | null;
     };
     const raw = await fetchAllRows<MatrixRow>((from, to) =>
       supabaseAdmin
         .from("events")
         .select(
-          "region, distances, distance_tags, terrain_tags, entry_url, organiser_url",
+          "region, distances, distance_tags, terrain_tags, entry_url, organiser_url, governance",
         )
         .eq("status", "ACTIVE")
         .not("region", "is", null)
