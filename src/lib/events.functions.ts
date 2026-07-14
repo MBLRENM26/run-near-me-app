@@ -782,12 +782,13 @@ export const getEventPageData = createServerFn({ method: "GET" })
       related.events = matched
         .filter((r) => r.id !== event.id)
         .slice(0, 6)
-        .map(({ distances: _d, distance_tags: _dt, terrain_tags: _tt, entry_url: _eu, organiser_url: _ou, ...rest }) => {
+        .map(({ distances: _d, distance_tags: _dt, terrain_tags: _tt, entry_url: _eu, organiser_url: _ou, governance: _g, ...rest }) => {
           void _d;
           void _dt;
           void _tt;
           void _eu;
           void _ou;
+          void _g;
           return rest;
         });
     }
