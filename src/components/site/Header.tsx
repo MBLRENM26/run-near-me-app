@@ -1,6 +1,13 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Footprints } from "lucide-react";
+import { ChevronDown, Footprints } from "lucide-react";
 import { HeaderSearch } from "./HeaderSearch";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
 
 export function Header() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -26,6 +33,25 @@ export function Header() {
         </Link>
         <nav className="flex items-center gap-3">
           {showSearch && <HeaderSearch />}
+          <div className="hidden md:block">
+            <DropdownMenu>
+              <DropdownMenuTrigger className="inline-flex items-center gap-1 text-sm font-medium text-foreground hover:text-primary transition-colors px-3 py-2 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                Why us
+                <ChevronDown className="h-4 w-4" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem asChild>
+                  <Link to="/for-runners">For runners</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/for-clubs">For clubs</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/for-organisers">For organisers</Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
           <Link
             to="/list-your-event"
             className="text-sm font-medium text-foreground hover:text-primary transition-colors px-3 py-2 rounded-md"
@@ -34,6 +60,7 @@ export function Header() {
             List your event
           </Link>
         </nav>
+
       </div>
     </header>
   );
