@@ -10,10 +10,15 @@ import {
   bulkUpdateSubmissions,
   type SubmissionRow,
 } from "@/lib/admin.functions";
+import {
+  markSubmissionsSeen,
+  resendAdminNotification,
+} from "@/lib/admin-notify.functions";
 import { SubmissionRowCard } from "@/components/admin/SubmissionRow";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
+
 
 const STATUSES = ["new", "in_review", "actioned", "rejected", "spam"] as const;
 const KINDS = ["all", "claim", "listing"] as const;
@@ -45,6 +50,8 @@ function AdminClaimsPage() {
   const updateOne = useServerFn(updateSubmission);
   const bulkUpdate = useServerFn(bulkUpdateSubmissions);
   const checkSession = useServerFn(adminCheckSession);
+  const markSeen = useServerFn(markSubmissionsSeen);
+  const resendEmail = useServerFn(resendAdminNotification);
 
   // Gate the page on a valid session
   const [authChecked, setAuthChecked] = useState(false);
@@ -55,9 +62,19 @@ function AdminClaimsPage() {
           navigate({ to: "/admin/login" });
         } else {
           setAuthChecked(true);
+          // Mark all currently-unseen submissions as seen on entry, then
+          // refresh the header badge counter.
+          markSeen()
+            .then(() =>
+              queryClient.invalidateQueries({
+                queryKey: ["admin-unseen-counts"],
+              }),
+            )
+            .catch(() => undefined);
         }
       })
       .catch(() => navigate({ to: "/admin/login" }));
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -234,16 +251,41 @@ function AdminClaimsPage() {
       ) : (
         <div className="space-y-3">
           {rows.map((row) => (
-            <SubmissionRowCard
-              key={row.id}
-              row={row}
-              selected={selectedIds.has(row.id)}
-              onSelectChange={handleSelect}
-              onSave={handleSave}
-            />
+            <div key={row.id} className="space-y-1">
+              <SubmissionRowCard
+                row={row}
+                selected={selectedIds.has(row.id)}
+                onSelectChange={handleSelect}
+                onSave={handleSave}
+              />
+              <div className="flex justify-end px-1">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-xs"
+                  onClick={async () => {
+                    try {
+                      const res = await resendEmail({
+                        data: { submissionId: row.id },
+                      });
+                      if (res.ok) toast.success("Admin email resent");
+                      else if (res.status === "suppressed")
+                        toast.error("Recipient suppressed");
+                      else toast.error(`Resend failed: ${res.reason ?? res.status}`);
+                    } catch (e) {
+                      toast.error("Resend failed");
+                      console.error(e);
+                    }
+                  }}
+                >
+                  Resend admin email
+                </Button>
+              </div>
+            </div>
           ))}
         </div>
       )}
+
 
       <Toaster position="top-center" />
     </div>

@@ -14,11 +14,13 @@ export interface TemplateEntry {
  * Import and register new templates here after creating them in this directory.
  */
 import { template as adminNewSubmission } from './admin-new-submission'
+import { template as adminSyncSummary } from './admin-sync-summary'
 import { template as raceReminderConfirmation } from './race-reminder-confirmation'
 import { template as raceReminder } from './race-reminder'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'admin-new-submission': adminNewSubmission,
+  'admin-sync-summary': adminSyncSummary,
   'race-reminder-confirmation': raceReminderConfirmation,
   'race-reminder': raceReminder,
 }
