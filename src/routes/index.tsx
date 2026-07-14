@@ -330,6 +330,14 @@ function HomePage() {
                 eventType={eventType}
                 onEventTypeChange={setEventType}
               />
+              <TaxonomyFilters
+                page="home"
+                rows={eventsWithDistance}
+                governance={governanceFilter}
+                raceProfile={raceProfileFilter}
+                onGovernanceChange={setGovernance}
+                onRaceProfileChange={setRaceProfile}
+              />
             </div>
 
             {isLoading ? (
