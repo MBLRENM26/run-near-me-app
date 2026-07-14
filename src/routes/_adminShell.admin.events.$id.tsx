@@ -21,6 +21,11 @@ import {
   type DistanceTag,
   type TerrainTag,
 } from "@/lib/event-tags";
+import {
+  GOVERNANCE_OPTIONS,
+  ORGANISER_TYPE_OPTIONS,
+  RACE_PROFILE_OPTIONS,
+} from "@/lib/event-taxonomy";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
