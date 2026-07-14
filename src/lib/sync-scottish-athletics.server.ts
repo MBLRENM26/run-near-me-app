@@ -165,7 +165,7 @@ export async function runScottishAthleticsSync(): Promise<ScottishAthleticsSyncR
     // Scotland-scoped rows for name/date dedupe + updated-vs-new accounting.
     const { data: existing, error: exErr } = await supabaseAdmin
       .from("events")
-      .select("slug, name, date_from, norm_id")
+      .select("slug, name, date_from, norm_id, source")
       .eq("status", "ACTIVE")
       .or("region.eq.Scotland,country.eq.Scotland");
     if (exErr) {
@@ -180,10 +180,21 @@ export async function runScottishAthleticsSync(): Promise<ScottishAthleticsSyncR
     const existingNormIds = new Set(
       (existing ?? []).map((e) => e.norm_id).filter(Boolean) as string[],
     );
-    const existingNameDate = new Set(
-      (existing ?? []).map(
-        (e) => `${(e.name ?? "").toLowerCase().trim()}|${e.date_from ?? ""}`,
-      ),
+    // Map name+date → source of the existing row. We only skip as a dupe when
+    // the collision is against a DIFFERENT source (e.g. an EA-owned row);
+    // scottishathletics-owned rows fall through so upsert refreshes them.
+    const existingNameDateSource = new Map<string, string | null>(
+      (existing ?? []).map((e) => [
+        `${(e.name ?? "").toLowerCase().trim()}|${e.date_from ?? ""}`,
+        e.source ?? null,
+      ]),
+    );
+    // norm_id → existing slug. On refresh we pin the slug to the existing
+    // value so the upsert doesn't rewrite the canonical URL.
+    const existingSlugByNormId = new Map<string, string>(
+      (existing ?? [])
+        .filter((e) => e.norm_id && e.slug)
+        .map((e) => [e.norm_id as string, e.slug as string]),
     );
 
     // Global slug set — a Scotland event's slug can collide with any other
@@ -224,25 +235,36 @@ export async function runScottishAthleticsSync(): Promise<ScottishAthleticsSyncR
       }
 
       const key = `${name.toLowerCase()}|${dateFrom}`;
-      if (existingNameDate.has(key)) {
+      const collidingSource = existingNameDateSource.get(key);
+      if (collidingSource !== undefined && collidingSource !== "scottishathletics") {
+        // Existing row is owned by another source — never overwrite it.
         skippedDupes++;
         continue;
       }
 
       const baseSlug = slugify(name);
       const baseNormId = `scottishathletics-${baseSlug}`;
-      let slug = baseSlug;
-      const baseOwner = globalSlugOwners.get(baseSlug);
-      if ((baseOwner && baseOwner !== baseNormId) || seenSlugs.has(baseSlug)) {
-        slug = `${baseSlug}-${dateFrom}`;
-      }
-      let suffix = 2;
-      while (true) {
-        const owner = globalSlugOwners.get(slug);
-        const candidateNormId = `scottishathletics-${slug}`;
-        if (!seenSlugs.has(slug) && (!owner || owner === candidateNormId)) break;
-        slug = `${baseSlug}-${dateFrom}-${suffix++}`;
-        if (suffix > 20) break;
+
+      // If a Scottish row with this norm_id already exists, pin the slug to
+      // the existing value so upsert doesn't rewrite the canonical URL.
+      const pinnedSlug = existingSlugByNormId.get(baseNormId);
+      let slug: string;
+      if (pinnedSlug) {
+        slug = pinnedSlug;
+      } else {
+        slug = baseSlug;
+        const baseOwner = globalSlugOwners.get(baseSlug);
+        if ((baseOwner && baseOwner !== baseNormId) || seenSlugs.has(baseSlug)) {
+          slug = `${baseSlug}-${dateFrom}`;
+        }
+        let suffix = 2;
+        while (true) {
+          const owner = globalSlugOwners.get(slug);
+          const candidateNormId = `scottishathletics-${slug}`;
+          if (!seenSlugs.has(slug) && (!owner || owner === candidateNormId)) break;
+          slug = `${baseSlug}-${dateFrom}-${suffix++}`;
+          if (suffix > 20) break;
+        }
       }
       seenSlugs.add(slug);
 
