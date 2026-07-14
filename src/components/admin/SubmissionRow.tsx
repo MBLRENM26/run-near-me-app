@@ -132,7 +132,63 @@ export function SubmissionRowCard({
             <span className="ml-auto text-xs text-muted-foreground">{submittedDate}</span>
           </div>
 
-          {hasStructured ? (
+          {isEdit ? (
+            <div className="mt-3 space-y-2 rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-sm">
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <span className="font-semibold text-foreground">
+                  Change reported: {row.change_type ?? "other"}
+                </span>
+                {proposedDate && (
+                  <span className="text-xs text-muted-foreground">
+                    Proposed new date: <span className="text-foreground font-medium">{proposedDate}</span>
+                  </span>
+                )}
+              </div>
+              <dl className="grid gap-x-4 gap-y-1 sm:grid-cols-2 text-xs">
+                {row.reporter_name && (
+                  <div>
+                    <dt className="text-muted-foreground inline">Reporter: </dt>
+                    <dd className="inline text-foreground">{row.reporter_name}</dd>
+                  </div>
+                )}
+                {row.reporter_relationship && (
+                  <div>
+                    <dt className="text-muted-foreground inline">Relationship: </dt>
+                    <dd className="inline text-foreground">{row.reporter_relationship}</dd>
+                  </div>
+                )}
+                {row.proof_url && (
+                  <div className="sm:col-span-2 flex gap-2">
+                    <dt className="text-muted-foreground shrink-0">Proof</dt>
+                    <dd className="min-w-0 truncate">
+                      <a
+                        href={row.proof_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-primary hover:underline"
+                      >
+                        {row.proof_url}
+                      </a>
+                    </dd>
+                  </div>
+                )}
+              </dl>
+              {row.event_details && (
+                <pre className="whitespace-pre-wrap text-xs text-foreground bg-background rounded p-2 border border-border">
+                  {row.event_details}
+                </pre>
+              )}
+              {row.event_id && (
+                <a
+                  href={`/admin/events/${row.event_id}`}
+                  className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+                >
+                  Open event editor
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </a>
+              )}
+            </div>
+          ) : hasStructured ? (
             <div className="mt-3 space-y-2 rounded-md border border-border bg-muted/30 p-3 text-sm">
               <div className="font-semibold text-foreground">
                 {row.race_name}
