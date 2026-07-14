@@ -14,6 +14,7 @@ import {
   type Coords,
 } from "@/components/events/LocationPrompt";
 import { FilterBar, type Radius } from "@/components/events/FilterBar";
+import { TaxonomyFilters } from "@/components/events/TaxonomyFilters";
 import {
   EventCard,
   isParkrunEvent,
