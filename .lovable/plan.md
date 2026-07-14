@@ -1,40 +1,35 @@
-## What's outstanding
+## Workstream C — Audience value pages
 
-After today's B5 discovery-gate ship, here's what's left, ranked by ROI:
+Ship three new routes with approved copy, own head() metadata per route, and add a desktop "Why us" menu linking to them. Footer gets the same three links. Mobile nav unchanged.
 
-### 1. C — Audience value pages (next up)
+### Files to create
 
-Three new routes answering "why use this site" per audience:
-- `/for-runners` — provenance, trust signals, filters, onward routes
-- `/for-clubs` — free listing, claim your page, member race feeds
-- `/for-organisers` — free listing, structured submission, governance visibility
+1. `src/routes/for-runners.tsx`
+2. `src/routes/for-clubs.tsx`
+3. `src/routes/for-organisers.tsx`
 
-Own copy, own head metadata per route, linked from footer + header. I'll draft all three intros/FAQs in-chat for your review **before** writing files (same workflow as WA / NI / SA landing pages).
+Each is a static route:
+- `createFileRoute("/for-runners")` etc.
+- `head()` returns approved meta title, description, og:title, og:description, og:url, plus `<link rel="canonical">` (leaf-only, per head-meta rules).
+- Component renders H1, intro, value blocks, FAQ. Reuse existing Tailwind prose/section patterns from the taxonomy landing pages so styling is consistent — no new component library.
+- FAQPage JSON-LD via `scripts` array (matches other content routes with FAQs).
 
-### 2. Same-weekend-nearby threshold fix (small, high-leverage)
+### Files to edit
 
-Per the top-events audit: the "Same weekend nearby" block renders on only ~10% of top event pages because the county-scoped query rarely hits the ≥3 threshold. Fix: fall back to region when county returns <3. Regions have ~10× the density. Pure logic change in `src/lib/events.functions.ts`, small and safe.
+4. `src/components/site/Header.tsx` — add a desktop-only "Why us" dropdown (or simple inline links group, hidden on mobile via `hidden md:flex`) with three `<Link>`s to the new routes. Mobile view untouched.
+5. `src/components/site/Footer.tsx` — add the three links to the existing footer nav row (grouped so they don't overwhelm the existing About / Running clubs / Privacy / List your event links).
 
-### 3. Analytics — decision layer (not tracking)
+### Header pattern
 
-Correction to what I said earlier — that was sloppy wording. The Plausible **goals are firing**: `Entry Click`, `Search Performed`, `Search Result Click`, `Form: Submission`, `Club Page View`, `Region View`, `Filter`, `Location Set`, `Claim Interest`, `Club Website Click`, `Back to search clicked` all track live in production, and the two funnels you registered today (Search Performed, Organiser Acquisition) are consuming them.
+Small dropdown/popover keyed off the existing header structure — reuse shadcn primitives already in the project if a dropdown exists, otherwise a simple hover-group with three links. Confirm the approach when I read `Header.tsx` in build mode; if no dropdown primitive is wired up already I'll use a lightweight `<details>` or grouped inline links rather than pull in new UI.
 
-What's missing is the **decision layer on top** — nothing turns that data into a recurring read. Options, cheapest first:
+### Out of scope
 
-- **a. Weekly digest doc** — I write `docs/analytics/weekly-read.md`: a fixed template of 6–8 questions to answer every Friday from Plausible (top zero-result queries, filter → Entry Click conversion, worst-performing region page, submission-form drop-off, etc.). You fill in ~10 min/week. Zero code, forces the habit.
-- **b. Admin analytics page** — `/admin/analytics` reads Plausible's Stats API (needs a Plausible API key secret) and renders the same read live. Bigger job; only worth it if (a) becomes a habit.
-- **c. Nothing** — leave Plausible as-is and check it when curious.
+- No sitemap edit — `src/routes/sitemap[.]xml.tsx` should already crawl static routes; I'll verify in build mode and only touch it if these routes need to be added explicitly.
+- No changes to taxonomy pages, event pages, or discovery gates.
+- No og:image generation (per head-meta rules, no placeholder image is better than a generic one).
 
-Recommend **(a)** now, revisit **(b)** later.
+### Verification
 
-### 4. Scottish Athletics organiser URL enrichment (backlog)
-
-Per `mem://backlog/scottish-athletics-organiser-urls`: 96 of 98 SA upcoming events still vanish from discovery even after today's B5 gate, because their only link is `scottishathletics.justgo.com/…` and no host-club website is captured. Needs a sync-side scrape of the host club's own site. Bigger job — flag for later, not this session.
-
-### Recommendation
-
-1. Ship **C (audience pages)** this turn — direct answer to your original ask; draft copy for review first.
-2. Follow-on: **same-weekend threshold fix** (small).
-3. Then **(3a) weekly analytics digest doc** — zero code, sets up the habit before considering a dashboard.
-
-Shall I proceed with C and draft the copy for your review?
+- Read final files after write to confirm route strings match filenames, head() shape is correct, and canonical/og:url self-reference each route.
+- Spot-check the header on desktop viewport; confirm mobile nav visually unchanged.

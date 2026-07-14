@@ -52,7 +52,16 @@ export function Footer() {
             </div>
           )}
 
-          <nav className="flex items-center gap-5">
+          <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+            <Link to="/for-runners" className="hover:text-foreground transition-colors">
+              For runners
+            </Link>
+            <Link to="/for-clubs" className="hover:text-foreground transition-colors">
+              For clubs
+            </Link>
+            <Link to="/for-organisers" className="hover:text-foreground transition-colors">
+              For organisers
+            </Link>
             <Link to="/about" className="hover:text-foreground transition-colors">
               About
             </Link>
@@ -69,6 +78,7 @@ export function Footer() {
               List your event
             </Link>
           </nav>
+
         </div>
       </div>
     </footer>

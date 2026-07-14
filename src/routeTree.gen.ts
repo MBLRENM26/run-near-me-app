@@ -27,6 +27,9 @@ import { Route as ListYourEventRouteImport } from './routes/list-your-event'
 import { Route as JuniorParkrunEventsRouteImport } from './routes/junior-parkrun-events'
 import { Route as IndexDothtmlRouteImport } from './routes/index[.]html'
 import { Route as HalfMarathonsRouteImport } from './routes/half-marathons'
+import { Route as ForRunnersRouteImport } from './routes/for-runners'
+import { Route as ForOrganisersRouteImport } from './routes/for-organisers'
+import { Route as ForClubsRouteImport } from './routes/for-clubs'
 import { Route as FellRacesRouteImport } from './routes/fell-races'
 import { Route as EnglandAthleticsPermittedRacesRouteImport } from './routes/england-athletics-permitted-races'
 import { Route as ClubOrganisedRacesRouteImport } from './routes/club-organised-races'
@@ -177,6 +180,21 @@ const IndexDothtmlRoute = IndexDothtmlRouteImport.update({
 const HalfMarathonsRoute = HalfMarathonsRouteImport.update({
   id: '/half-marathons',
   path: '/half-marathons',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForRunnersRoute = ForRunnersRouteImport.update({
+  id: '/for-runners',
+  path: '/for-runners',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForOrganisersRoute = ForOrganisersRouteImport.update({
+  id: '/for-organisers',
+  path: '/for-organisers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForClubsRoute = ForClubsRouteImport.update({
+  id: '/for-clubs',
+  path: '/for-clubs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FellRacesRoute = FellRacesRouteImport.update({
@@ -496,6 +514,9 @@ export interface FileRoutesByFullPath {
   '/club-organised-races': typeof ClubOrganisedRacesRoute
   '/england-athletics-permitted-races': typeof EnglandAthleticsPermittedRacesRoute
   '/fell-races': typeof FellRacesRoute
+  '/for-clubs': typeof ForClubsRoute
+  '/for-organisers': typeof ForOrganisersRoute
+  '/for-runners': typeof ForRunnersRoute
   '/half-marathons': typeof HalfMarathonsRouteWithChildren
   '/index.html': typeof IndexDothtmlRoute
   '/junior-parkrun-events': typeof JuniorParkrunEventsRoute
@@ -572,6 +593,9 @@ export interface FileRoutesByTo {
   '/club-organised-races': typeof ClubOrganisedRacesRoute
   '/england-athletics-permitted-races': typeof EnglandAthleticsPermittedRacesRoute
   '/fell-races': typeof FellRacesRoute
+  '/for-clubs': typeof ForClubsRoute
+  '/for-organisers': typeof ForOrganisersRoute
+  '/for-runners': typeof ForRunnersRoute
   '/half-marathons': typeof HalfMarathonsRouteWithChildren
   '/index.html': typeof IndexDothtmlRoute
   '/junior-parkrun-events': typeof JuniorParkrunEventsRoute
@@ -650,6 +674,9 @@ export interface FileRoutesById {
   '/club-organised-races': typeof ClubOrganisedRacesRoute
   '/england-athletics-permitted-races': typeof EnglandAthleticsPermittedRacesRoute
   '/fell-races': typeof FellRacesRoute
+  '/for-clubs': typeof ForClubsRoute
+  '/for-organisers': typeof ForOrganisersRoute
+  '/for-runners': typeof ForRunnersRoute
   '/half-marathons': typeof HalfMarathonsRouteWithChildren
   '/index.html': typeof IndexDothtmlRoute
   '/junior-parkrun-events': typeof JuniorParkrunEventsRoute
@@ -728,6 +755,9 @@ export interface FileRouteTypes {
     | '/club-organised-races'
     | '/england-athletics-permitted-races'
     | '/fell-races'
+    | '/for-clubs'
+    | '/for-organisers'
+    | '/for-runners'
     | '/half-marathons'
     | '/index.html'
     | '/junior-parkrun-events'
@@ -804,6 +834,9 @@ export interface FileRouteTypes {
     | '/club-organised-races'
     | '/england-athletics-permitted-races'
     | '/fell-races'
+    | '/for-clubs'
+    | '/for-organisers'
+    | '/for-runners'
     | '/half-marathons'
     | '/index.html'
     | '/junior-parkrun-events'
@@ -881,6 +914,9 @@ export interface FileRouteTypes {
     | '/club-organised-races'
     | '/england-athletics-permitted-races'
     | '/fell-races'
+    | '/for-clubs'
+    | '/for-organisers'
+    | '/for-runners'
     | '/half-marathons'
     | '/index.html'
     | '/junior-parkrun-events'
@@ -959,6 +995,9 @@ export interface RootRouteChildren {
   ClubOrganisedRacesRoute: typeof ClubOrganisedRacesRoute
   EnglandAthleticsPermittedRacesRoute: typeof EnglandAthleticsPermittedRacesRoute
   FellRacesRoute: typeof FellRacesRoute
+  ForClubsRoute: typeof ForClubsRoute
+  ForOrganisersRoute: typeof ForOrganisersRoute
+  ForRunnersRoute: typeof ForRunnersRoute
   HalfMarathonsRoute: typeof HalfMarathonsRouteWithChildren
   IndexDothtmlRoute: typeof IndexDothtmlRoute
   JuniorParkrunEventsRoute: typeof JuniorParkrunEventsRoute
@@ -1134,6 +1173,27 @@ declare module '@tanstack/react-router' {
       path: '/half-marathons'
       fullPath: '/half-marathons'
       preLoaderRoute: typeof HalfMarathonsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/for-runners': {
+      id: '/for-runners'
+      path: '/for-runners'
+      fullPath: '/for-runners'
+      preLoaderRoute: typeof ForRunnersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/for-organisers': {
+      id: '/for-organisers'
+      path: '/for-organisers'
+      fullPath: '/for-organisers'
+      preLoaderRoute: typeof ForOrganisersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/for-clubs': {
+      id: '/for-clubs'
+      path: '/for-clubs'
+      fullPath: '/for-clubs'
+      preLoaderRoute: typeof ForClubsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/fell-races': {
@@ -1654,6 +1714,9 @@ const rootRouteChildren: RootRouteChildren = {
   ClubOrganisedRacesRoute: ClubOrganisedRacesRoute,
   EnglandAthleticsPermittedRacesRoute: EnglandAthleticsPermittedRacesRoute,
   FellRacesRoute: FellRacesRoute,
+  ForClubsRoute: ForClubsRoute,
+  ForOrganisersRoute: ForOrganisersRoute,
+  ForRunnersRoute: ForRunnersRoute,
   HalfMarathonsRoute: HalfMarathonsRouteWithChildren,
   IndexDothtmlRoute: IndexDothtmlRoute,
   JuniorParkrunEventsRoute: JuniorParkrunEventsRoute,
@@ -1710,13 +1773,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
