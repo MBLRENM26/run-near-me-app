@@ -248,8 +248,8 @@ export function SubmissionRowCard({
           ) : !hasStructured && row.kind === "listing" ? (
             <p className="mt-3 text-xs text-muted-foreground">
               Create this event manually via{" "}
-              <a href="/admin/events" className="text-primary hover:underline">
-                /admin/events
+              <a href="/admin/events/new" className="text-primary hover:underline">
+                New event
               </a>
               .
             </p>

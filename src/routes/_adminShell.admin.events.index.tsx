@@ -173,6 +173,12 @@ function AdminEventsPage() {
           </div>
           <div className="flex gap-2">
             <Link
+              to="/admin/events/new"
+              className="inline-flex h-9 items-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            >
+              New event
+            </Link>
+            <Link
               to="/admin/events/duplicates"
               className="inline-flex h-9 items-center rounded-md border border-input bg-background px-3 text-sm hover:bg-accent"
             >
