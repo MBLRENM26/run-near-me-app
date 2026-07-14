@@ -1103,4 +1103,94 @@ export const getEventPageData = createServerFn({ method: "GET" })
     };
   });
 
+// ----- Taxonomy landing pages (governance / organiser_type) -----
+
+const taxonomySchema = z.object({
+  field: z.enum(["governance", "organiser_type"]),
+  value: z.string().trim().min(1).max(64).regex(/^[a-z_]+$/),
+});
+
+export const getEventsByTaxonomy = createServerFn({ method: "GET" })
+  .inputValidator((input: unknown) => taxonomySchema.parse(input))
+  .handler(async ({ data }): Promise<{
+    events: DistanceEvent[];
+    regionCounts: { region: string; count: number }[];
+    total: number;
+  }> => {
+    const today = new Date().toISOString().slice(0, 10);
+
+    type Row = {
+      id: string;
+      slug: string | null;
+      name: string;
+      date_raw: string | null;
+      sort_date: string | null;
+      town: string | null;
+      county: string | null;
+      region: string | null;
+      distances: string | null;
+      entry_fee: string | null;
+      entry_url: string | null;
+      organiser_url: string | null;
+      is_featured: boolean | null;
+      date_is_estimated: boolean | null;
+      is_recurring: boolean | null;
+    };
+    const rows = await fetchAllRows<Row>((from, to) =>
+      supabaseAdmin
+        .from("events")
+        .select(DISCOVERY_EVENT_COLUMNS)
+        .eq("status", "ACTIVE")
+        .eq(data.field, data.value)
+        .or(`sort_date.gte.${today},sort_date.is.null`)
+        .or(UK_BOUNDS_OR_NULL)
+        .order("sort_date", { ascending: true, nullsFirst: false })
+        .range(from, to),
+    );
+
+    const all: DistanceEvent[] = rows.map((r) => ({
+      id: r.id,
+      slug: r.slug,
+      name: r.name,
+      date_raw: r.date_raw,
+      sort_date: r.sort_date,
+      town: r.town,
+      county: r.county,
+      region: r.region,
+      distance_type: r.distances,
+      entry_fee: r.entry_fee,
+      entry_url: r.entry_url,
+      organiser_url: r.organiser_url,
+      is_featured: !!r.is_featured,
+      date_is_estimated: !!r.date_is_estimated,
+      is_recurring: !!r.is_recurring,
+    }));
+
+    // Governance-permitted races are inherently trusted (permit implies a
+    // real, sanctioned event), so we admit entry-platform-only links too.
+    // Non-governance surfaces (e.g. organiser_type=club) still require an
+    // organiser-owned link.
+    const trusted =
+      data.field === "governance"
+        ? all
+        : all.filter((e) => hasOrganiserOwnedLink(e.entry_url, e.organiser_url));
+
+    const counts = new Map<string, number>();
+    for (const e of trusted) {
+      if (e.region) counts.set(e.region, (counts.get(e.region) ?? 0) + 1);
+    }
+    const regionCounts = Array.from(counts.entries())
+      .map(([region, count]) => ({ region, count }))
+      .sort((a, b) => b.count - a.count);
+
+    const sorted = sortEstimatedLastWithinMonth(trusted);
+
+    return {
+      events: sorted.slice(0, DISPLAY_LIMIT),
+      regionCounts,
+      total: trusted.length,
+    };
+  });
+
+
 
