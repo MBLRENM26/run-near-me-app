@@ -177,9 +177,6 @@ export async function runScottishAthleticsSync(): Promise<ScottishAthleticsSyncR
       });
       throw new Error(exErr.message);
     }
-    const existingSlugs = new Map(
-      (existing ?? []).map((e) => [e.slug, e.norm_id]),
-    );
     const existingNormIds = new Set(
       (existing ?? []).map((e) => e.norm_id).filter(Boolean) as string[],
     );
