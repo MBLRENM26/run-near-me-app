@@ -689,3 +689,28 @@ function TagChips({
   );
 }
 
+function TaxonomySelect({
+  value,
+  options,
+  onChange,
+}: {
+  value: string;
+  options: readonly { value: string; label: string }[];
+  onChange: (v: string) => void;
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+    >
+      <option value="">— not set —</option>
+      {options.map((o) => (
+        <option key={o.value} value={o.value}>
+          {o.label}
+        </option>
+      ))}
+    </select>
+  );
+}
+
