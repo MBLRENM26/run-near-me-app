@@ -1,24 +1,26 @@
-# Current plan
+## Next up: Scottish Athletics governance backfill
 
-## Shipped this pass
-- B3 taxonomy landing pages live: `/england-athletics-permitted-races`, `/tra-permitted-races`, `/club-organised-races`, `/welsh-athletics-permitted-races`, `/athletics-ni-permitted-races`.
-- FAQ copy fixes: "a few pounds less" phrasing on all three home-nation pages; TRA governing-body claim tightened.
+Small, scheduled piece of work that resolves the asymmetry the new WA/NI FAQ copy calls out — we name Scottish Athletics as a sibling governing body but currently have zero SA-tagged events, so `/scottish-athletics-permitted-races` doesn't exist yet.
 
-## Next (scheduled, not backlog): Scottish Athletics governance backfill
-Resolves the asymmetry the new WA/NI FAQ copy calls out (naming SA as a sibling governing body while we have zero SA-tagged events).
+### Steps
 
-1. Migration: `scottish_athletics` already exists in the `governance` enum — verify, add if missing.
-2. `src/lib/sync-scottish-athletics.server.ts`: set `governance = 'scottish_athletics'` on insert/upsert.
-3. One-shot backfill: `UPDATE events SET governance = 'scottish_athletics' WHERE source = 'scottish_athletics' AND governance IS NULL;`
-4. Once count clears ~20, add `/scottish-athletics-permitted-races` config to `TAXONOMY_PAGES` + route file (mirrors WA/NI).
+1. **Verify enum.** Check the `governance` Postgres enum already includes `scottish_athletics`. If missing, migration to add it. (Expected: already present — WA/NI were added in the same enum expansion.)
+2. **Tag at source.** Update `src/lib/sync-scottish-athletics.server.ts` so every upserted row sets `governance: 'scottish_athletics'`.
+3. **Backfill existing rows.** One-shot SQL:
+   ```sql
+   UPDATE events
+   SET governance = 'scottish_athletics'
+   WHERE source = 'scottishathletics' AND governance IS NULL;
+   ```
+   Expected: ~106 rows (matches the last SA sync count).
+4. **Count check.** Confirm SA-tagged upcoming/active count clears the ~20-event threshold before shipping the landing page.
+5. **Ship the landing page.** Add a `scottish_athletics` entry to `TAXONOMY_PAGES` in `src/lib/taxonomy-pages.ts` and create `src/routes/scottish-athletics-permitted-races.tsx`, mirroring the WA/NI shape. Add the slug to `src/routes/sitemap[.]xml.tsx`.
+6. **Draft copy for your review before writing files** — intro + FAQs, mirroring WA/NI tone, with the "a few pounds less" phrasing. You approve before I write.
 
-## Then: B5 — extend discovery gate
-Update `hasOrganiserOwnedLink` (or its call sites) to also admit events with a `TRUSTED_GOVERNANCE` value even when the only link is entry-platform. Before/after SQL count on discovery surfaces.
+### Out of scope for this ship
+- B5 discovery-gate extension (admit trusted-governance events with entry-platform-only links). Queued next.
+- C audience value pages (`/for-runners`, `/for-clubs`, `/for-organisers`). Queued after B5.
+- Scottish Athletics organiser-URL capture — parked, separate workstream (see `mem://backlog/scottish-athletics-organiser-urls`).
 
-## Then: C — audience value pages
-`/for-runners`, `/for-clubs`, `/for-organisers`. Static routes, own `head()`, footer + desktop "Why us" links. Reuse `site-faqs.ts`.
-
-## Out of scope
-- Bulk backfill of taxonomy from scraped fields (low ROI).
-- Homepage nav redesign.
-- Scottish Athletics organiser-URL capture (parked, separate workstream).
+### After this ships
+Recommend B5 next — small, pure discovery-gate change with an immediate before/after count on how many governance-permitted events surface on homepage/region/distance pages.
