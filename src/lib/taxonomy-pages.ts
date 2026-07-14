@@ -190,7 +190,39 @@ export const TAXONOMY_PAGES: TaxonomyPageConfig[] = [
       },
     ],
   },
+  {
+    slug: "scottish-athletics-permitted-races",
+    field: "governance",
+    value: "scottish_athletics",
+    label: "Scottish Athletics permitted",
+    h1: `Scottish Athletics Permitted Races ${CURRENT_YEAR}`,
+    noun: "Scottish Athletics permitted race",
+    nounPlural: "Scottish Athletics permitted races",
+    intro:
+      "scottishathletics is the national governing body for athletics in Scotland. Races run under a scottishathletics permit are officially sanctioned — the organiser has agreed to national rules on measurement, insurance, safety and race conduct. Look for the permit when you want a well-run, competitive race that counts for national rankings and club competitions.",
+    metaTitle: `Scottish Athletics Permitted Races ${CURRENT_YEAR} — Running Events Near Me`,
+    metaDescription: metaDesc("Scottish Athletics permitted races"),
+    faqs: [
+      {
+        q: "What does 'Scottish Athletics permitted' mean?",
+        a: "A scottishathletics permit means the race has been formally sanctioned by the national governing body for athletics in Scotland. The organiser agrees to national rules on course measurement, safety, insurance and race conduct, and the event is eligible for national rankings.",
+      },
+      {
+        q: "Are Scottish Athletics permits recognised outside Scotland?",
+        a: "Yes. scottishathletics, England Athletics, Welsh Athletics and Athletics NI all operate under UK Athletics, and their permits are treated equivalently. Results from permitted road and track races feed the same Power of 10 rankings regardless of which home nation issued the permit.",
+      },
+      {
+        q: "Do I need to be a club member to enter?",
+        a: "No. Most permitted races accept unaffiliated runners, though affiliated (club) members often pay a few pounds less, because part of the unaffiliated fee goes back to the governing body.",
+      },
+      {
+        q: "Where do results appear?",
+        a: "Results from permitted road and track races are uploaded to Power of 10 (thepowerof10.info), where they contribute to your ranking and personal best history.",
+      },
+    ],
+  },
 ];
+
 
 export function taxonomyPageBySlug(slug: string): TaxonomyPageConfig | null {
   return TAXONOMY_PAGES.find((p) => p.slug === slug) ?? null;

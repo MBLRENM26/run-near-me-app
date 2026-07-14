@@ -302,6 +302,8 @@ export async function runScottishAthleticsSync(): Promise<ScottishAthleticsSyncR
         entry_fee: e.PriceSettings?.DisplayPrice?.trim() || null,
         source: "scottishathletics",
         source_url: e.Directlink || null,
+        governance: "scottish_athletics",
+
         status: "ACTIVE",
         sort_date: dateFrom,
         is_upcoming: dateFrom >= todayISO,
