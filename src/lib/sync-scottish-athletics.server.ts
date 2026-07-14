@@ -162,6 +162,7 @@ export async function runScottishAthleticsSync(): Promise<ScottishAthleticsSyncR
       () => new Map<string, string>(),
     );
 
+    // Scotland-scoped rows for name/date dedupe + updated-vs-new accounting.
     const { data: existing, error: exErr } = await supabaseAdmin
       .from("events")
       .select("slug, name, date_from, norm_id")
@@ -176,9 +177,6 @@ export async function runScottishAthleticsSync(): Promise<ScottishAthleticsSyncR
       });
       throw new Error(exErr.message);
     }
-    const existingSlugs = new Map(
-      (existing ?? []).map((e) => [e.slug, e.norm_id]),
-    );
     const existingNormIds = new Set(
       (existing ?? []).map((e) => e.norm_id).filter(Boolean) as string[],
     );
@@ -186,6 +184,24 @@ export async function runScottishAthleticsSync(): Promise<ScottishAthleticsSyncR
       (existing ?? []).map(
         (e) => `${(e.name ?? "").toLowerCase().trim()}|${e.date_from ?? ""}`,
       ),
+    );
+
+    // Global slug set — a Scotland event's slug can collide with any other
+    // region's event. Without this the DB unique index throws on upsert.
+    const { data: allSlugRows, error: allSlugErr } = await supabaseAdmin
+      .from("events")
+      .select("slug, norm_id");
+    if (allSlugErr) {
+      await run.finish({
+        status: "error",
+        error_message: allSlugErr.message,
+        fetched: all.length,
+        active: running.length,
+      });
+      throw new Error(allSlugErr.message);
+    }
+    const globalSlugOwners = new Map(
+      (allSlugRows ?? []).map((r) => [r.slug, r.norm_id]),
     );
 
     const todayISO = new Date().toISOString().slice(0, 10);
@@ -213,15 +229,20 @@ export async function runScottishAthleticsSync(): Promise<ScottishAthleticsSyncR
         continue;
       }
 
-      let slug = slugify(name);
-      const normId = `scottishathletics-${slug}`;
-      const owner = existingSlugs.get(slug);
-      if ((owner && owner !== normId) || seenSlugs.has(slug)) {
-        slug = `${slug}-${dateFrom}`;
+      const baseSlug = slugify(name);
+      const baseNormId = `scottishathletics-${baseSlug}`;
+      let slug = baseSlug;
+      const baseOwner = globalSlugOwners.get(baseSlug);
+      if ((baseOwner && baseOwner !== baseNormId) || seenSlugs.has(baseSlug)) {
+        slug = `${baseSlug}-${dateFrom}`;
       }
-      if (seenSlugs.has(slug)) {
-        skippedDupes++;
-        continue;
+      let suffix = 2;
+      while (true) {
+        const owner = globalSlugOwners.get(slug);
+        const candidateNormId = `scottishathletics-${slug}`;
+        if (!seenSlugs.has(slug) && (!owner || owner === candidateNormId)) break;
+        slug = `${baseSlug}-${dateFrom}-${suffix++}`;
+        if (suffix > 20) break;
       }
       seenSlugs.add(slug);
 
