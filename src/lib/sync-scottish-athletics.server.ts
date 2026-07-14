@@ -308,9 +308,15 @@ export async function runScottishAthleticsSync(): Promise<ScottishAthleticsSyncR
       });
     }
 
+    // Dedupe by norm_id within the batch — Postgres rejects an ON CONFLICT
+    // upsert that touches the same conflict target twice in one statement.
+    const dedupedByNormId = Array.from(
+      new Map(rows.map((r) => [r.norm_id as string, r])).values(),
+    );
+
     const { data, error } = await supabaseAdmin
       .from("events")
-      .upsert(rows, { onConflict: "norm_id" })
+      .upsert(dedupedByNormId, { onConflict: "norm_id" })
       .select("id");
     if (error) {
       await run.finish({
