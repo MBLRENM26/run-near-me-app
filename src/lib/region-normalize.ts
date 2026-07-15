@@ -82,6 +82,28 @@ const COUNTY_TO_REGION: Record<string, string> = {
 // parkrun pages map regions at runtime from coordinates.
 const BROAD_REGIONS = new Set(["England", "UK", "Great Britain", "GB"]);
 
+// Non-canonical labels (as they appear in upstream data) mapped to the
+// canonical REGIONS name used across the site. Covers EA "regions" that
+// arrive in the county column and Scottish Athletics sub-regions.
+const REGION_SYNONYMS: Record<string, string> = {
+  "South East": "South East",
+  "South West": "South West",
+  "North East": "North East",
+  "North West": "North West",
+  "East Midlands": "East Midlands",
+  "West Midlands": "West Midlands",
+  London: "London",
+  East: "East of England",
+  "East of England": "East of England",
+  "Yorkshire & Humberside": "Yorkshire",
+  "Yorkshire and Humberside": "Yorkshire",
+  "Yorkshire and the Humber": "Yorkshire",
+  Yorkshire: "Yorkshire",
+  "Scotland (West)": "Scotland",
+  "Scotland (East)": "Scotland",
+  "Scotland (North)": "Scotland",
+};
+
 /**
  * Returns a specific UK region name for an incoming event, preferring
  * (1) an already-specific region label, (2) county mapping, (3) coords.
@@ -95,10 +117,14 @@ export function normaliseRegion(
   lng: number | null | undefined,
 ): string | null {
   const r = region?.trim() || null;
+  if (r && REGION_SYNONYMS[r]) return REGION_SYNONYMS[r];
   if (r && !BROAD_REGIONS.has(r)) return r;
 
   const c = county?.trim();
-  if (c && COUNTY_TO_REGION[c]) return COUNTY_TO_REGION[c];
+  if (c) {
+    if (COUNTY_TO_REGION[c]) return COUNTY_TO_REGION[c];
+    if (REGION_SYNONYMS[c]) return REGION_SYNONYMS[c];
+  }
 
   return regionFromCoordsName(lat, lng) ?? r;
 }
