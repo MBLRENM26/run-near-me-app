@@ -1,47 +1,52 @@
-# Navigation, tools, and guides proposal
+## Problem
 
-Raised after shipping Workstream C (audience pages) and the report-a-change flow. The core concern: the site has strong SEO landing pages but poor wayfinding — users can't easily discover the taxonomy hubs, audience pages, city/county pages, or governance pages we've already shipped.
+`/running-clubs` region pills only show London (109), West Midlands (106), and Scotland (81) — a total of 296 of 1,417 active clubs. The other 1,121 are unreachable via any regional filter.
 
-## Option A — Refresh primary navigation first
-Highest UX leverage. Group existing pages into a coherent browse structure.
+Root cause, from the DB:
 
-- Distances: 5k, 10k, half marathons, marathons, ultra marathons
-- Terrain: road races, trail running events, fell races, multi-terrain races
-- Governance: England Athletics, Scottish Athletics, Welsh Athletics, Athletics NI, TRA permitted races, club-organised races
-- Regions: existing region landing pages
-- Why us: for runners, for clubs, for organisers
+- **1,063 England Athletics clubs** have `region = NULL`. Their EA "region" was imported into the `county` column instead (`South East` 232, `North West` 175, `South West` 160, `East` 139, `Yorkshire & Humberside` 137, `East Midlands` 113, `North East` 65, plus 42 with no county).
+- **58 Scottish Athletics clubs** are stored as `Scotland (West) / (East) / (North)`, which don't equal the canonical `Scotland` pill.
 
-Shapes to choose from:
-1. Mega-menu on desktop + slide-out drawer on mobile (most discoverable, more build)
-2. Simple header dropdowns extending the current "Why us" pattern (fastest, consistent)
-3. Single /browse hub page with a slimmer header (lowest header complexity, one extra click)
+The clubs listing (`src/lib/clubs.functions.ts` → `listClubs`) filters with `region = <REGIONS.name>`, so anything not exactly matching one of the 12 canonical names disappears from every pill.
 
-## Option B — Free race tools hub
-Pure client-side tools under /tools. Big long-tail SEO value, low maintenance once shipped.
+`normaliseRegion` in `src/lib/region-normalize.ts` was meant to catch this on import, but its `COUNTY_TO_REGION` map only knows real counties (Kent, Devon, …) — it doesn't recognise EA region strings sitting in the `county` column, and it doesn't collapse the Scottish sub-region labels.
 
-Candidates, in priority order:
-1. Pace calculator (distance + time → pace, or pace + distance → time)
-2. Race time predictor (Riegel formula)
-3. Pace charts for 5k / 10k / half marathon / marathon (each its own indexable page)
-4. Splits / negative-split planner
+## Fix
 
-## Option C — Blog / guides section
-Evergreen guides under /guides. Higher ongoing content cost but strong topical authority.
+Scope is intentionally narrow: normalise stored region values so the existing pills work. No UI changes.
 
-Seed ideas:
-- How to choose your first 5k
-- UKA vs ARC permits explained
-- Trail vs fell — what's the difference
-- How to read a race listing (link trust, governance badges)
-- What to do if your race is postponed
+### 1. Extend `src/lib/region-normalize.ts`
 
-## Recommended sequencing
-1. Navigation refresh (unlock everything already built)
-2. Tools hub (evergreen SEO win, no content debt)
-3. Guides (needs sustained writing and editorial process)
+Add a small "already-a-region label" pass before the county lookup so EA-style values map to themselves, and Scottish sub-regions collapse to `Scotland`:
 
-## Open decisions for tomorrow
-- Which nav shape?
-- Which tools to ship first?
-- Do we want /guides or /blog URL?
-- Should tools get their own header dropdown or live under /tools only?
+```text
+South East / North West / South West / North East / East Midlands / West Midlands / London → same
+East                       → East of England
+Yorkshire & Humberside     → Yorkshire
+Yorkshire and the Humber   → Yorkshire
+Scotland (West|East|North) → Scotland
+```
+
+Applied to both `region` (early return if already canonical) and `county` (fallback).
+
+### 2. One-off SQL backfill (migration)
+
+Update `public.clubs` where `status = 'ACTIVE'` and `region` is `NULL` or a known non-canonical label, using the same mapping. Covers:
+
+- EA rows: set `region` from `county` when county matches an EA-region string; fall back to lat/lng coarse mapping for the ~42 with no county.
+- SA rows: rewrite `Scotland (…)` → `Scotland`.
+
+No schema changes, no policy changes, `updated_at` bumped via existing trigger. Idempotent — re-running is safe.
+
+### 3. Verification
+
+After the migration:
+
+- `SELECT region, count(*) FROM public.clubs WHERE status='ACTIVE' GROUP BY region` should show all 12 canonical regions with sensible totals and `NULL` limited to genuine unknowns (overseas / missing county+coords).
+- Reload `/running-clubs` and confirm every pill returns results and the total across pills reconciles with 1,417 minus any residual `NULL`.
+
+## Out of scope
+
+- No changes to `RegionFilter` UI, `listClubs`, `REGIONS`, or the clubs page layout.
+- No changes to how events are regionalised (already handled elsewhere).
+- Sync-source data cleanup (fixing EA region-in-county at the upstream sync) is a follow-up if we want to keep future imports tidy — flagged but not required for this fix, since `normaliseRegion` will catch it on subsequent upserts.
