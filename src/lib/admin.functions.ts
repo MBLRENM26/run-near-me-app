@@ -1,4 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getRequestHeader } from "@tanstack/react-start/server";
+import { createHash, randomBytes } from "node:crypto";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import {
@@ -8,6 +10,85 @@ import {
   verifyAdminPassword,
 } from "@/lib/admin-session.server";
 import { sendNewSubmissionNotification } from "@/lib/notify.server";
+
+// -------- Best-effort submission rate limiter --------
+//
+// Per-worker in-memory sliding window: 5 attempts / 10 minutes per IP-derived
+// key. This is friction, NOT bot protection — Cloudflare Workers spin many
+// isolates and requests may land on different workers, so counts are not
+// shared. Escalation path if abuse becomes real: Cloudflare WAF / Turnstile
+// or a shared rate-limit store (Durable Object / Redis).
+//
+// Key = sha256(ip + "|" + utc_date + "|" + daily_salt). The raw IP and the
+// hash are never persisted or logged with the submission row.
+const SUBMIT_LIMIT_MAX = 5;
+const SUBMIT_LIMIT_WINDOW_MS = 10 * 60 * 1000;
+const submitAttempts = new Map<string, { count: number; resetAt: number }>();
+
+let dailySalt = { day: "", value: randomBytes(16).toString("hex") };
+function currentDailySalt(): { day: string; value: string } {
+  const day = new Date().toISOString().slice(0, 10);
+  if (dailySalt.day !== day) {
+    dailySalt = { day, value: randomBytes(16).toString("hex") };
+  }
+  return dailySalt;
+}
+
+function resolveClientIp(): string {
+  // cf-connecting-ip is set by Cloudflare on the trusted edge path this app
+  // runs on. Fallback: first value of x-forwarded-for (dev/preview / non-CF
+  // paths). This is not a security boundary — a determined caller can spoof
+  // XFF; the limiter is deliberately best-effort.
+  const cf = getRequestHeader("cf-connecting-ip");
+  if (cf && cf.trim()) return cf.trim();
+  const xff = getRequestHeader("x-forwarded-for");
+  if (xff) {
+    const first = xff.split(",")[0]?.trim();
+    if (first) return first;
+  }
+  return "unknown";
+}
+
+function submissionRateKey(): string {
+  const ip = resolveClientIp();
+  const salt = currentDailySalt();
+  return createHash("sha256")
+    .update(`${ip}|${salt.day}|${salt.value}`)
+    .digest("hex");
+}
+
+function checkSubmissionRateLimit(keyOverride?: string): boolean {
+  const key = keyOverride ?? submissionRateKey();
+  const now = Date.now();
+  const entry = submitAttempts.get(key);
+  if (!entry || entry.resetAt <= now) {
+    submitAttempts.set(key, { count: 1, resetAt: now + SUBMIT_LIMIT_WINDOW_MS });
+    // Opportunistic GC so the Map doesn't grow unbounded on a warm worker.
+    if (submitAttempts.size > 1000) {
+      for (const [k, v] of submitAttempts) {
+        if (v.resetAt <= now) submitAttempts.delete(k);
+      }
+    }
+    return true;
+  }
+  if (entry.count >= SUBMIT_LIMIT_MAX) return false;
+  entry.count += 1;
+  return true;
+}
+
+// Exported for scoped preview curls only. Guarded so it is a no-op in
+// production and cannot be exercised from the published site.
+export const __submitLimitTestHook = createServerFn({ method: "POST" })
+  .inputValidator((d) =>
+    z.object({ key: z.string().min(1).max(200) }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    if (process.env.NODE_ENV === "production") {
+      return { ok: false as const, reason: "disabled" as const };
+    }
+    const allowed = checkSubmissionRateLimit(`__test:${data.key}`);
+    return { ok: true as const, allowed };
+  });
 function slugify(input: string): string {
   return input
     .toLowerCase()
