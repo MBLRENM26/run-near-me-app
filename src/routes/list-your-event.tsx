@@ -152,7 +152,7 @@ function ListYourEventPage() {
     }
     setSubmitting(true);
     try {
-      await submit({
+      const result = await submit({
         data: {
           race_name: parsed.data.race_name,
           race_date: parsed.data.race_date,
@@ -169,6 +169,12 @@ function ListYourEventPage() {
           claim_slug: claim ?? null,
         },
       });
+      if (result && "ok" in result && result.ok === false && result.reason === "rate_limited") {
+        toast.error(
+          "You've submitted a few times just now — please wait a few minutes before trying again.",
+        );
+        return;
+      }
       track("Form: Submission", { form: "list-your-event" });
       setSubmitted(true);
     } catch (err) {
