@@ -14,6 +14,7 @@ import { Footer } from "@/components/site/Footer";
 import { RaceReminderSignup } from "@/components/events/RaceReminderSignup";
 import { TrustProfileStrip } from "@/components/events/TrustProfileStrip";
 import { getEventPageData } from "@/lib/events.functions";
+import { setEventResponseHeaders } from "@/lib/event-response-headers";
 
 import {
   buildAboutParagraph,
