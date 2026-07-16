@@ -71,10 +71,25 @@ export default {
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response);
+      return applyStatusOverride(await normalizeCatastrophicSsrResponse(response));
     } catch (error) {
       console.error(error);
       return brandedErrorResponse();
     }
   },
 };
+
+// TanStack Router's SSR renderer hard-codes response status to 200/404/500 based
+// on its own router store. Route loaders that need a different status (e.g. 410
+// Gone for past-90d event tombstones) set an `X-Status-Override` header, which
+// this wrapper converts into the real HTTP status and strips before sending.
+function applyStatusOverride(response: Response): Response {
+  const override = response.headers.get("x-status-override");
+  if (!override) return response;
+  const status = Number.parseInt(override, 10);
+  if (!Number.isFinite(status) || status < 200 || status > 599) return response;
+  const headers = new Headers(response.headers);
+  headers.delete("x-status-override");
+  return new Response(response.body, { status, statusText: "", headers });
+}
+
