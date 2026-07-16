@@ -1,0 +1,1 @@
+DELETE FROM public.submissions WHERE id = '04c715bc-4ac0-4ba5-95fe-0bd842e64845';
