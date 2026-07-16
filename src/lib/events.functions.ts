@@ -643,28 +643,26 @@ export const getEventPageData = createServerFn({ method: "GET" })
     const { data: row, error } = await supabaseAdmin
       .from("events")
       .select(
-        "id, slug, name, date_raw, date_from, date_to, sort_date, town, county, region, distances, discipline, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, organiser, organiser_club_id, is_featured, date_is_estimated, governance, organiser_type, race_profile, created_at, norm_created_at, lat, lng",
+        "id, slug, name, date_raw, date_from, date_to, sort_date, town, county, region, distances, discipline, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, organiser, organiser_club_id, is_featured, date_is_estimated, governance, organiser_type, race_profile, created_at, norm_created_at, lat, lng, status, duplicate_of",
       )
       .eq("slug", data.slug)
-      .eq("status", "ACTIVE")
+      .in("status", ["ACTIVE", "DUPLICATE", "HIDDEN"])
       .maybeSingle();
 
 
     if (error) throw new Error(error.message);
     if (!row) {
-      // Retired duplicate listing? Permanently redirect to the survivor.
-      const { data: dup } = await supabaseAdmin
-        .from("events")
-        .select("duplicate_of")
-        .eq("slug", data.slug)
-        .eq("status", "DUPLICATE")
-        .not("duplicate_of", "is", null)
-        .maybeSingle();
-      if (dup?.duplicate_of) {
+      throw notFound();
+    }
+
+    // DUPLICATE with a survivor: permanent redirect. GSC eventually moves
+    // the URL from Soft 404 into the "Page with redirect" bucket.
+    if (row.status === "DUPLICATE") {
+      if (row.duplicate_of) {
         const { data: survivor } = await supabaseAdmin
           .from("events")
           .select("slug")
-          .eq("id", dup.duplicate_of as string)
+          .eq("id", row.duplicate_of as string)
           .eq("status", "ACTIVE")
           .maybeSingle();
         if (survivor?.slug) {
@@ -675,7 +673,32 @@ export const getEventPageData = createServerFn({ method: "GET" })
           });
         }
       }
+      // Orphan DUPLICATE (no target, or target no longer ACTIVE):
+      // real 404 rather than a soft-404 rendered UI. Reversible — if
+      // duplicate_of is set later, the redirect above takes over.
       throw notFound();
+    }
+
+    // HIDDEN: legacy status not currently assigned by any code path but
+    // 233 rows persist in the DB. Treat as "gone right now, may revisit"
+    // — real 404. If a row is ever flipped back to ACTIVE, Google
+    // re-crawls and re-indexes on its own.
+    if (row.status === "HIDDEN") {
+      throw notFound();
+    }
+
+    // ACTIVE past events (>90d): real 404 so Google drops the URL from
+    // the index instead of leaving it in the Soft 404 bucket. Row stays
+    // in the DB for sync coverage. Threshold matches the GSC cohort;
+    // ~209 rows roll into this window over the next month.
+    if (row.sort_date) {
+      const today = new Date().toISOString().slice(0, 10);
+      const ninetyAgo = new Date();
+      ninetyAgo.setUTCDate(ninetyAgo.getUTCDate() - 90);
+      const cutoffIso = ninetyAgo.toISOString().slice(0, 10);
+      if (row.sort_date < cutoffIso && row.sort_date < today) {
+        throw notFound();
+      }
     }
     const eventRow = row as EventDetail & {
       lat: number | null;
@@ -683,6 +706,8 @@ export const getEventPageData = createServerFn({ method: "GET" })
       distance_tags: string[] | null;
       terrain_tags: string[] | null;
       organiser_club_id: string | null;
+      status: string;
+      duplicate_of: string | null;
     };
     const {
       lat: eventLat,
@@ -690,8 +715,12 @@ export const getEventPageData = createServerFn({ method: "GET" })
       distance_tags: eventDistanceTags,
       terrain_tags: eventTerrainTags,
       organiser_club_id: eventOrganiserClubId,
+      status: _status,
+      duplicate_of: _duplicate_of,
       ...eventPublic
     } = eventRow;
+    void _status;
+    void _duplicate_of;
     const event = eventPublic as EventDetail;
 
 

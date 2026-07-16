@@ -61,8 +61,16 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute("/list-your-event")({
   validateSearch: searchSchema,
-  head: () => {
+  // Surface the `?claim=` search param to head() so we can noindex the
+  // claim-prefilled variants. GSC's Crawled-not-indexed bucket flagged
+  // 4 of these as thin (they hit the same form UI but with prefill),
+  // and we don't want each claim URL indexed separately from the
+  // canonical /list-your-event page.
+  loaderDeps: ({ search }) => ({ hasClaim: !!search.claim }),
+  loader: ({ deps }) => ({ hasClaim: deps.hasClaim }),
+  head: ({ loaderData }) => {
     const canonical = `${SITE_URL}/list-your-event`;
+    const hasClaim = loaderData?.hasClaim ?? false;
     return {
       meta: [
         { title: "List Your Running Event — Running Events Near Me" },
@@ -71,6 +79,9 @@ export const Route = createFileRoute("/list-your-event")({
           content:
             "Submit your running event for free. We review every listing and send a preview within 48 hours.",
         },
+        ...(hasClaim
+          ? [{ name: "robots", content: "noindex, follow" }]
+          : []),
         { property: "og:title", content: "List Your Running Event" },
         {
           property: "og:description",
@@ -80,6 +91,8 @@ export const Route = createFileRoute("/list-your-event")({
         { property: "og:type", content: "website" },
         { property: "og:url", content: canonical },
       ],
+      // Canonical always points at the bare URL — the claim variants
+      // collapse into the same indexable page.
       links: [{ rel: "canonical", href: canonical }],
     };
   },
