@@ -1,14 +1,27 @@
-## Goal
-Backfill `region` on 42 Fordy Runs Running Club franchise locations so they appear on the correct regional running-clubs pages.
+## Import 221 NI + Welsh clubs
 
-## Verification
-- All 42 ids exist and all currently have `region IS NULL` — no overwrites.
-- All 12 target region values are canonical (`South East`, `West Midlands`, `East of England`, `South West`, `Yorkshire`, `North West`, `London`, `North East`, `East Midlands`, `Wales`) — match `REGIONS` in `src/lib/regions.ts`.
-- Wrexham → Wales is the first Welsh club in the DB, so `/running-clubs?region=wales` will start rendering after this.
+**Source**: `user-uploads://NIWales_clubs_import_-_221_rows` — 108 Northern Ireland (`athletics-ni`) + 113 Wales (`welsh-athletics`). Columns: name, slug, region, governing_body, website_url, email.
 
-## Change
-One `supabase--insert` call running the 42 `UPDATE public.clubs SET region = ... WHERE id = ...` statements exactly as supplied.
+**Pre-checks (all clean)**:
+- 0 existing rows in DB for `athletics-ni` or `welsh-athletics` → no update conflicts.
+- 0 slug collisions against existing `clubs.slug`.
+- 0 duplicate slugs within the CSV.
+- All regions are canonical (`Northern Ireland` / `Wales`).
+- All `governing_body` values pass the CHECK constraint.
 
-## Not doing
-- Not updating `county`, `town`, or any other column.
-- Not merging/deduping the franchise chain — each location stays its own row.
+**Insert plan** (single `supabase--insert` call):
+- `INSERT INTO clubs (norm_id, slug, name, governing_body, region, country, website_url, contact_email, source, status)`
+- `norm_id`: `ani-<slug>` for NI, `wa-<slug>` for Wales (matches existing `ea-…` / `sa-…` convention, satisfies NOT NULL + UNIQUE).
+- `country`: `Northern Ireland` / `Wales`.
+- `website_url` / `contact_email`: NULL where CSV is empty string.
+- `source`: `manual-import-2026-07`.
+- `status`: `ACTIVE` (default).
+- `disciplines`: default `{}`.
+- `is_claimed`: default false.
+
+**Verification after insert**:
+- Row counts per `governing_body`.
+- Sample 3 rows each region.
+- Confirm `/running-clubs-near-me` now renders Northern Ireland + Wales pills with populated lists.
+
+**Not doing**: no geocoding (lat/lng stay NULL — regional pages don't need them); no town/county (not in CSV); no dedupe vs existing EA clubs (governing bodies are disjoint).
