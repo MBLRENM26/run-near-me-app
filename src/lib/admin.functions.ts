@@ -57,18 +57,32 @@ function submissionRateKey(): string {
     .digest("hex");
 }
 
+// Hard cap so a warm worker under sustained pressure can't grow the Map
+// without bound. On new-key insert past the cap we first prune expired
+// entries; if that isn't enough we evict oldest-resetAt entries until we're
+// back under the cap.
+const SUBMIT_LIMIT_MAX_KEYS = 5000;
+
 function checkSubmissionRateLimit(keyOverride?: string): boolean {
   const key = keyOverride ?? submissionRateKey();
   const now = Date.now();
   const entry = submitAttempts.get(key);
   if (!entry || entry.resetAt <= now) {
-    submitAttempts.set(key, { count: 1, resetAt: now + SUBMIT_LIMIT_WINDOW_MS });
-    // Opportunistic GC so the Map doesn't grow unbounded on a warm worker.
-    if (submitAttempts.size > 1000) {
+    if (submitAttempts.size >= SUBMIT_LIMIT_MAX_KEYS) {
       for (const [k, v] of submitAttempts) {
         if (v.resetAt <= now) submitAttempts.delete(k);
       }
+      if (submitAttempts.size >= SUBMIT_LIMIT_MAX_KEYS) {
+        const sorted = [...submitAttempts.entries()].sort(
+          (a, b) => a[1].resetAt - b[1].resetAt,
+        );
+        const toDrop = submitAttempts.size - SUBMIT_LIMIT_MAX_KEYS + 1;
+        for (let i = 0; i < toDrop && i < sorted.length; i++) {
+          submitAttempts.delete(sorted[i][0]);
+        }
+      }
     }
+    submitAttempts.set(key, { count: 1, resetAt: now + SUBMIT_LIMIT_WINDOW_MS });
     return true;
   }
   if (entry.count >= SUBMIT_LIMIT_MAX) return false;
