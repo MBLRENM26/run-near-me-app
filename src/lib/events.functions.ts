@@ -706,6 +706,8 @@ export const getEventPageData = createServerFn({ method: "GET" })
       distance_tags: string[] | null;
       terrain_tags: string[] | null;
       organiser_club_id: string | null;
+      status: string;
+      duplicate_of: string | null;
     };
     const {
       lat: eventLat,
@@ -713,8 +715,12 @@ export const getEventPageData = createServerFn({ method: "GET" })
       distance_tags: eventDistanceTags,
       terrain_tags: eventTerrainTags,
       organiser_club_id: eventOrganiserClubId,
+      status: _status,
+      duplicate_of: _duplicate_of,
       ...eventPublic
     } = eventRow;
+    void _status;
+    void _duplicate_of;
     const event = eventPublic as EventDetail;
 
 
