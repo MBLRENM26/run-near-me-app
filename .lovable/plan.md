@@ -1,21 +1,19 @@
-## Goal
-Export all events (319 rows) whose `entry_url`, `organiser_url`, or `source_url` contains `eventrac.co.uk` to a downloadable CSV.
+## Problem
 
-## Columns
-- name
-- sort_date (canonical date)
-- date_raw
-- slug + public URL (`https://runningeventsnearme.com/events/{slug}`)
-- town, county, region
-- organiser_url
-- entry_url
-- source_url (for provenance — admin-only field, safe here as it's an export not a public page)
-- status
-- governance, organiser_type
+In `src/components/site/Header.tsx`, the "Why us" dropdown is wrapped in `<div className="hidden md:block">`, so it disappears below 768px. On mobile the header only shows the logo, search icon, and "List your event".
 
-## Approach
-1. Run a single SQL select against `public.events` filtered by `ILIKE '%eventrac.co.uk%'` across the three URL columns, ordered by `sort_date`.
-2. Write result to `/mnt/documents/eventrac-events.csv` via psql `COPY ... TO STDOUT WITH CSV HEADER`.
-3. Emit a `<presentation-artifact>` tag so you can download it directly.
+## Fix
 
-No code or DB changes. Read-only export.
+Remove the `hidden md:block` wrapper so the "Why us" dropdown renders at every breakpoint alongside "List your event".
+
+Mobile header row will be: logo · search · Why us ▾ · List your event.
+
+### Notes
+
+- The nav container is already `flex items-center gap-3`, which handles the extra item fine at 375–485px widths (logo subtitle is already `hidden sm:block`, so it collapses to just the icon + title on narrow screens, leaving room).
+- Dropdown uses Radix `DropdownMenu`, which positions correctly on touch — no extra mobile handling needed.
+- No changes to routing, data, or the audience pages themselves.
+
+## Out of scope
+
+- No redesign into a hamburger/sheet menu. If the row gets too tight on very small devices later, we can revisit with a mobile sheet — but current content fits.
