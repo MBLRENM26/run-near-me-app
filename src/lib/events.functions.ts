@@ -656,7 +656,7 @@ export type EventPageResult = EventPageData | EventGoneData;
 
 export const getEventPageData = createServerFn({ method: "GET" })
   .inputValidator((input: unknown) => slugSchema.parse(input))
-  .handler(async ({ data }): Promise<EventPageData> => {
+  .handler(async ({ data }): Promise<EventPageResult> => {
     const { data: row, error } = await supabaseAdmin
       .from("events")
       .select(
