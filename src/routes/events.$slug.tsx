@@ -110,23 +110,16 @@ export const Route = createFileRoute("/events/$slug")({
   },
   loader: async ({ params }) => {
     const data = await getEventPageData({ data: { slug: params.slug } });
-    // SSR-only: set the HTTP status/header for past-90d (410 Gone) and
-    // upcoming-but-noindexed events. Client navigations are no-ops.
+    // SSR-only header side effects for 410 tombstones and noindex flags.
+    // See src/lib/event-response-headers.ts — createServerOnlyFn keeps the
+    // @tanstack/react-start/server import out of the client bundle.
     if (import.meta.env.SSR) {
-      const { setResponseHeader } = await import(
-        "@tanstack/react-start/server"
-      );
-      if (data.gone) {
-        // TanStack Router's SSR renderer only emits 200/404/500 from its own
-        // store, so setResponseStatus(410) is ignored for a successful render.
-        // Signal via a header that the outer fetch wrapper (src/server.ts)
-        // rewrites into an actual 410 status.
-        setResponseHeader("X-Status-Override", "410");
-        setResponseHeader("X-Robots-Tag", "noindex");
-      } else if (data.indexability && !data.indexability.indexable) {
-        setResponseHeader("X-Robots-Tag", "noindex");
-      }
+      setEventResponseHeaders({
+        gone: !!data.gone,
+        noindex: !data.gone && !!(data.indexability && !data.indexability.indexable),
+      });
     }
+
 
     return data;
   },
