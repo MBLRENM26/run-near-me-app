@@ -1,13 +1,15 @@
 ## Goal
-Populate `organiser_url` for 48 governed-but-ownerless Scottish events with the organising club's website. These currently show the "Are you the organiser?" claim CTA; after this update the event pages will link out to the organiser's own site.
+Replace 31 hollow RunThrough links (all pointing at `runthrough.co.uk/` or `/events-timeline`) with the specific event page on the RunThrough site. Every event page's "Enter now" CTA will resolve to the actual entry page.
 
 ## Verification
-Ran the batch against the DB: all 48 slugs exist, all 48 currently have `organiser_url IS NULL` — no overwrites, pure fill-in.
+- Confirmed the right column is `entry_url` (organiser_url is for the organiser's own site — RunThrough is the entry platform).
+- All 31 slugs exist and every one currently points at the RunThrough homepage or `/events-timeline` — no non-hollow URLs would be overwritten.
+- `classifyEventLink` already treats `runthrough.co.uk/event/...` as an "entry-platform event page" (trusted for CTA), so these events stay in discovery surfaces after the fix.
 
 ## Change
-One `supabase--insert` call running the 48 `UPDATE public.events SET organiser_url = ... WHERE slug = ...` statements exactly as supplied. No schema changes, no other columns touched.
+One `supabase--insert` call running the 31 `UPDATE public.events SET entry_url = ... WHERE slug = ...` statements exactly as supplied.
 
 ## Not doing
-- Not backfilling `organiser_club_id` (the deterministic matcher can pick these up on its next run now that `organiser_url` is populated — separate task if you want it forced today).
-- Not touching `entry_url`, `governance`, or `organiser_type`.
-- Not validating URLs live — trusting the sources you gathered.
+- Not touching `organiser_url` — RunThrough is a commercial series operator, not a member-owned club, so leaving `organiser_url` unset is correct.
+- Not applying the 5 low-confidence matches you excluded.
+- Not re-running the deduper or discovery indexer — nothing about eligibility changes.
