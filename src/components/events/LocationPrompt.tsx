@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { trackLocationSet } from "@/lib/analytics";
-import { isUkPostcode } from "@/lib/postcode";
+import { isUkPostcode, isUkOutwardCode, geocodeOutward } from "@/lib/postcode";
 
 
 export type Coords = { lat: number; lng: number; label?: string };
