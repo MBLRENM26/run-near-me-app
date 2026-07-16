@@ -1,15 +1,14 @@
 ## Goal
-Replace 31 hollow RunThrough links (all pointing at `runthrough.co.uk/` or `/events-timeline`) with the specific event page on the RunThrough site. Every event page's "Enter now" CTA will resolve to the actual entry page.
+Backfill `region` on 42 Fordy Runs Running Club franchise locations so they appear on the correct regional running-clubs pages.
 
 ## Verification
-- Confirmed the right column is `entry_url` (organiser_url is for the organiser's own site — RunThrough is the entry platform).
-- All 31 slugs exist and every one currently points at the RunThrough homepage or `/events-timeline` — no non-hollow URLs would be overwritten.
-- `classifyEventLink` already treats `runthrough.co.uk/event/...` as an "entry-platform event page" (trusted for CTA), so these events stay in discovery surfaces after the fix.
+- All 42 ids exist and all currently have `region IS NULL` — no overwrites.
+- All 12 target region values are canonical (`South East`, `West Midlands`, `East of England`, `South West`, `Yorkshire`, `North West`, `London`, `North East`, `East Midlands`, `Wales`) — match `REGIONS` in `src/lib/regions.ts`.
+- Wrexham → Wales is the first Welsh club in the DB, so `/running-clubs?region=wales` will start rendering after this.
 
 ## Change
-One `supabase--insert` call running the 31 `UPDATE public.events SET entry_url = ... WHERE slug = ...` statements exactly as supplied.
+One `supabase--insert` call running the 42 `UPDATE public.clubs SET region = ... WHERE id = ...` statements exactly as supplied.
 
 ## Not doing
-- Not touching `organiser_url` — RunThrough is a commercial series operator, not a member-owned club, so leaving `organiser_url` unset is correct.
-- Not applying the 5 low-confidence matches you excluded.
-- Not re-running the deduper or discovery indexer — nothing about eligibility changes.
+- Not updating `county`, `town`, or any other column.
+- Not merging/deduping the franchise chain — each location stays its own row.
