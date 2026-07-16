@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { setResponseHeader } from "@tanstack/react-start/server";
 import { notFound, redirect } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
@@ -687,17 +688,21 @@ export const getEventPageData = createServerFn({ method: "GET" })
       throw notFound();
     }
 
-    // ACTIVE past events (>90d): real 404 so Google drops the URL from
-    // the index instead of leaving it in the Soft 404 bucket. Row stays
-    // in the DB for sync coverage. Threshold matches the GSC cohort;
-    // ~209 rows roll into this window over the next month.
+    // ACTIVE past events (>90d): 410 Gone (terminal — the race happened,
+    // it's not coming back on this slug). Row stays in the DB for sync
+    // coverage. Threshold matches the GSC cohort; ~209 rows roll into
+    // this window over the next month. Caught by EventError which renders
+    // the "This event has already taken place" page with noindex.
     if (row.sort_date) {
       const today = new Date().toISOString().slice(0, 10);
       const ninetyAgo = new Date();
       ninetyAgo.setUTCDate(ninetyAgo.getUTCDate() - 90);
       const cutoffIso = ninetyAgo.toISOString().slice(0, 10);
       if (row.sort_date < cutoffIso && row.sort_date < today) {
-        throw notFound();
+        throw new Response("Gone", {
+          status: 410,
+          headers: { "X-Robots-Tag": "noindex" },
+        });
       }
     }
     const eventRow = row as EventDetail & {
@@ -1133,6 +1138,18 @@ export const getEventPageData = createServerFn({ method: "GET" })
       Array.from(sibMap.values()),
       todayIso,
     );
+
+    // P3: emit real HTTP X-Robots-Tag header for non-indexable events
+    // (slug-suffix dupes, orphan series-instances, past-but-within-90d).
+    // Faster / more reliable than <meta robots> alone for Googlebot.
+    if (!indexability.indexable) {
+      try {
+        setResponseHeader("X-Robots-Tag", "noindex, follow");
+      } catch {
+        // setResponseHeader is a no-op outside an SSR request context
+        // (e.g. during prerender of a different route); safe to ignore.
+      }
+    }
 
     return {
       event,
