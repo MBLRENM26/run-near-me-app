@@ -112,7 +112,7 @@ export const Route = createFileRoute("/events/$slug")({
     const data = await getEventPageData({ data: { slug: params.slug } });
     // SSR-only header side effects for 410 tombstones and noindex flags.
     // See src/lib/event-response-headers.ts — createServerOnlyFn keeps the
-    // @tanstack/react-start/server import out of the client bundle.
+    // server-only import out of the client bundle.
     if (import.meta.env.SSR) {
       setEventResponseHeaders({
         gone: !!data.gone,
