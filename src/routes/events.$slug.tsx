@@ -107,11 +107,36 @@ export const Route = createFileRoute("/events/$slug")({
     // so they return a clean 404 instead of falling through to a 5xx.
     if (!/^[a-z0-9-]+$/.test(params.slug)) throw notFound();
   },
-  loader: ({ params }) => getEventPageData({ data: { slug: params.slug } }),
+  loader: async ({ params }) => {
+    const data = await getEventPageData({ data: { slug: params.slug } });
+    // SSR-only: set the HTTP status/header for past-90d (410 Gone) and
+    // upcoming-but-noindexed events. Client navigations are no-ops.
+    if (import.meta.env.SSR) {
+      const { setResponseStatus, setResponseHeader } = await import(
+        "@tanstack/react-start/server"
+      );
+      if (data.gone) {
+        setResponseStatus(410);
+        setResponseHeader("X-Robots-Tag", "noindex");
+      } else if (data.indexability && !data.indexability.indexable) {
+        setResponseHeader("X-Robots-Tag", "noindex");
+      }
+    }
+    return data;
+  },
 
   head: ({ params, loaderData }) => {
-    const e = loaderData?.event;
     const canonical = `${SITE_URL}/events/${params.slug}`;
+    if (loaderData?.gone) {
+      return {
+        meta: [
+          { title: "This event has already taken place — Running Events Near Me" },
+          { name: "robots", content: "noindex, follow" },
+        ],
+        links: [{ rel: "canonical", href: canonical }],
+      };
+    }
+    const e = loaderData?.event;
     if (!e) {
       return {
         meta: [{ title: "Event not found — Running Events Near Me" }],
