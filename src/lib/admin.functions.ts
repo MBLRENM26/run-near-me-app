@@ -338,6 +338,9 @@ function buildEventDetailsSummary(
 export const submitListing = createServerFn({ method: "POST" })
   .inputValidator((d) => structuredListingSchema.parse(d))
   .handler(async ({ data }) => {
+    if (!checkSubmissionRateLimit()) {
+      return { ok: false as const, reason: "rate_limited" as const };
+    }
     const kind: "listing" | "claim" = data.claim_slug ? "claim" : "listing";
 
     const { data: inserted, error } = await supabaseAdmin
