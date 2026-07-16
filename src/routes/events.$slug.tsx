@@ -338,6 +338,13 @@ export const Route = createFileRoute("/events/$slug")({
 
 
 function EventDetailPage() {
+  const loaderData: import("@/lib/events.functions").EventPageResult =
+    Route.useLoaderData();
+
+  if (loaderData.gone) {
+    return <EventGoneTombstone />;
+  }
+
   const {
     event: e,
     related,
@@ -345,7 +352,7 @@ function EventDetailPage() {
     sameWeekendNearby,
     matchingClub,
     otherRacesByOrganiser,
-  }: import("@/lib/events.functions").EventPageData = Route.useLoaderData();
+  } = loaderData;
 
   // Site-wide link-trust policy: aggregator URLs are never rendered as
   // links, homepages are "Visit organiser website", and only event-specific
