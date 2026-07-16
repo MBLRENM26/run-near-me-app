@@ -105,6 +105,25 @@ export function LocationPrompt({ onLocate }: Props) {
     e.preventDefault();
     const trimmed = postcode.trim();
     if (!trimmed) return;
+
+    if (isUkOutwardCode(trimmed) && !isUkPostcode(trimmed)) {
+      setLoadingPostcode(true);
+      try {
+        const hit = await geocodeOutward(trimmed);
+        if (!hit) {
+          toast.error("Couldn't find that postcode. Check and try again.");
+          return;
+        }
+        trackLocationSet("postcode");
+        onLocate({ lat: hit.lat, lng: hit.lng, label: hit.postcode });
+      } catch {
+        toast.error("Network error. Please try again.");
+      } finally {
+        setLoadingPostcode(false);
+      }
+      return;
+    }
+
     if (!isUkPostcode(trimmed)) {
       navigate({ to: "/search", search: { q: trimmed } });
       return;
