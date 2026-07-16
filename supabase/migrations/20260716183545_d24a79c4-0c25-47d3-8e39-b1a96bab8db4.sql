@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Anyone can submit" ON public.submissions;
