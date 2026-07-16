@@ -715,10 +715,11 @@ export const getEventPageData = createServerFn({ method: "GET" })
       ninetyAgo.setUTCDate(ninetyAgo.getUTCDate() - 90);
       const cutoffIso = ninetyAgo.toISOString().slice(0, 10);
       if (row.sort_date < cutoffIso && row.sort_date < today) {
-        throw new Response("Gone", {
-          status: 410,
-          headers: { "X-Robots-Tag": "noindex" },
-        });
+        return {
+          gone: true,
+          slug: row.slug as string,
+          name: row.name as string,
+        };
       }
     }
     const eventRow = row as EventDetail & {
