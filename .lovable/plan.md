@@ -1,40 +1,56 @@
-# Close out the 410 rollout cleanly
+# Submissions policy tidy + rate limit (amended)
 
-Two parts: (1) forensics on the 500 window before we publish again, (2) ship the already-staged sentinel fix and produce raw curl evidence for checks #2–#4.
+## 1. Drop the unreachable RLS policy
 
-## 1. Forensics on the 500 window (read-only, before publish)
+Migration:
+```sql
+DROP POLICY "Anyone can submit" ON public.submissions;
+```
+`"Service role full access"` (ALL, service_role) stays. No grants change. `submitListing` uses `supabaseAdmin` and is unaffected.
 
-Answer both questions with evidence, not inference:
+## 2. Rate-limit `submitListing`
 
-**a) How long was the broken build live?**
-- Check git log / publish history for the commit that introduced `throw new Response(..., { status: 410 })` in `src/lib/events.functions.ts` — that's the start of the window.
-- End of the window = the next publish (the sentinel fix, once it ships).
-- Report both timestamps and the elapsed duration.
+Add a best-effort limiter at the top of the handler in `src/lib/admin.functions.ts`.
 
-**b) Did Googlebot hit any of the 4 URLs during that window?**
-- Query server-function logs (`stack_modern--server-function-logs`, `deployment='published'`) filtered by each of the 4 slugs:
-  - `power-of-5k`
-  - `the-ealing-mile`
-  - `serpentine-last-friday-of-the-month-5k`
-  - `ironbridge-half-marathon-ironbridge-2026`
-- For any hits, report user-agent (Googlebot signature), timestamp, and response status.
-- If logs don't retain UA, say so explicitly rather than infer.
+**Threshold:** 5 attempts / 10 minutes / IP-derived key. No global ceiling.
 
-Deliverable: a short table — build-live-from → build-live-to → duration → Googlebot hits per URL (count + timestamps, or "no signal in retained logs").
+**Client IP resolution (server-side only):**
+- Prefer `cf-connecting-ip` (trusted on the Cloudflare edge path this app runs on).
+- Fallback: first value of `x-forwarded-for`, split on `,` and trimmed. Documented in a comment as a soft fallback for non-CF paths (dev/preview); not a security boundary.
+- If neither header is present, use the literal key `"unknown"` so limiter still applies coarsely rather than opening a bypass.
 
-## 2. Publish the sentinel fix + raw curl evidence
+**Key derivation:** `sha256(ip + "|" + utc_date_yyyy_mm_dd)`. Salt rotates every UTC day. Neither the raw IP nor the hash is persisted or logged with the submission row.
 
-The sentinel-based code is already staged (return `{ gone: true }` from `getEventPageData`, loader calls `setResponseStatus(410)` + `setResponseHeader('X-Robots-Tag', 'noindex')`). No further code changes planned unless forensics surfaces something.
+**Storage:** in-memory `Map<hash, { count, resetAt }>` per worker instance, sliding window. Explicit comment states this is per-worker, non-distributed, best-effort friction — not bot protection. Escalation path (Cloudflare WAF / Turnstile / shared store) noted in the same comment.
 
-Steps:
-1. Publish via `preview_ui--publish`.
-2. Wait for deploy, then run raw `curl -sSI` against production for:
-   - **Check #2** — all 4 past-90d ACTIVE URLs → expect `HTTP/2 410` + `x-robots-tag: noindex`.
-   - **Check #3** — one upcoming noindexed slug pulled from the indexability admin panel (or a `read_query` against events with `indexable=false` + future `sort_date`) → expect `HTTP/2 200` + `x-robots-tag: noindex` in the **response headers**, not just meta.
-   - **Check #4** — `/list-your-event?claim=foo` → expect `HTTP/2 200`, reconfirm unchanged.
-3. Paste the raw status line + full header block for each URL directly into the reply — no summary table substitution.
+**Response on limit:** the handler returns `{ ok: false as const, reason: "rate_limited" as const }` (extends the existing return union). No throw, no 500.
 
-## Not doing
+**Client surfacing:** `src/routes/list-your-event.tsx` inspects the response and shows an inline friendly message ("You've submitted a few times just now — please wait a few minutes before trying again."). No toast spam, no console error.
 
-- No retroactive fix for the 500 window (as user confirmed).
-- No changes to the sentinel code unless step 2 fails, in which case I stop and report before iterating.
+## 3. Verification (no queue pollution)
+
+- **One** real end-to-end preview submission → confirm row lands in `submissions`, admin notification fires, everything unchanged.
+- SQL re-check: `pg_policy` shows only `"Service role full access"`; grants on `public.submissions` still empty for anon/authenticated.
+- Limiter behaviour verified without creating six real submissions:
+  - Add a `__test` handler-local hook that lets the limiter be exercised from a scoped preview curl with a synthetic key, gated by `process.env.NODE_ENV !== "production"` so it cannot fire in prod. Preferred if the harness is easy.
+  - Alternative if that feels invasive: temporarily set the threshold to 2 in preview, submit twice from the actual form to confirm the friendly message renders, then restore to 5 before publishing. Only two real submissions, both flagged as tests in a follow-up cleanup.
+  - Confirm at review time which of these the user prefers before writing tests/hooks.
+
+## 4. Memory correction
+
+Update `mem://audits/state-of-the-build-2026-07-16.md`:
+- Anon INSERT policy present but unreachable (no GRANT); effective posture is service-role only, matching Bible §7.
+- Spam auto-purge cron `purge-spam-submissions-daily` is live at 03:00 UTC, 30-day window — Bible correct, earlier audit line wrong.
+- Note the new rate limiter is per-worker best-effort, not distributed.
+
+## Out of scope
+
+- No global hourly ceiling.
+- No changes to `submissions` grants, service-role policy, spam-purge cron, or admin flows.
+- No Cloudflare WAF / Turnstile work this pass — captured as the documented next escalation if abuse materialises.
+
+## Technical notes
+
+- IP header parsing lives in a small helper in `src/lib/admin.functions.ts` (kept local; the `/api/public/track-search` version is similar but not shared to avoid coupling public-route and serverFn code paths).
+- Limiter map is module-scope inside the serverFn file so it's warm across calls on the same worker; entries expire lazily on read.
+- Rate-limit branch returns before touching Supabase, so no wasted admin-client writes.
