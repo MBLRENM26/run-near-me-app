@@ -619,6 +619,7 @@ export type OtherRaceByOrganiserEvent = {
 };
 
 export type EventPageData = {
+  gone?: false;
   event: EventDetail;
   related: RelatedEvents;
   /** Other upcoming events in the same town as the current event. */
@@ -638,9 +639,24 @@ export type EventPageData = {
   indexability: import("@/lib/event-indexability").IndexabilityResult;
 };
 
+/**
+ * Sentinel returned for past-90d ACTIVE events (410 Gone) so the route
+ * loader can set the HTTP status and `X-Robots-Tag` header before the
+ * component renders the "This event has already taken place" tombstone.
+ * A thrown `Response(410)` gets swallowed by h3 into a 500, hence the
+ * sentinel-and-loader-branch pattern.
+ */
+export type EventGoneData = {
+  gone: true;
+  slug: string;
+  name: string;
+};
+
+export type EventPageResult = EventPageData | EventGoneData;
+
 export const getEventPageData = createServerFn({ method: "GET" })
   .inputValidator((input: unknown) => slugSchema.parse(input))
-  .handler(async ({ data }): Promise<EventPageData> => {
+  .handler(async ({ data }): Promise<EventPageResult> => {
     const { data: row, error } = await supabaseAdmin
       .from("events")
       .select(
@@ -699,10 +715,11 @@ export const getEventPageData = createServerFn({ method: "GET" })
       ninetyAgo.setUTCDate(ninetyAgo.getUTCDate() - 90);
       const cutoffIso = ninetyAgo.toISOString().slice(0, 10);
       if (row.sort_date < cutoffIso && row.sort_date < today) {
-        throw new Response("Gone", {
-          status: 410,
-          headers: { "X-Robots-Tag": "noindex" },
-        });
+        return {
+          gone: true,
+          slug: row.slug as string,
+          name: row.name as string,
+        };
       }
     }
     const eventRow = row as EventDetail & {
