@@ -1053,44 +1053,43 @@ function EventNotFound() {
   );
 }
 
+function EventGoneTombstone() {
+  return (
+    <div className="min-h-screen flex flex-col bg-background">
+      <Header />
+      <main className="flex-1 flex items-center justify-center px-4">
+        <div className="max-w-md text-center py-20">
+          <h1 className="text-3xl sm:text-4xl font-bold text-foreground">
+            This event has already taken place
+          </h1>
+          <p className="mt-3 text-muted-foreground">
+            The race has finished and this listing is no longer active. Browse
+            upcoming events, or find similar races by distance or region.
+          </p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <Link
+              to="/search"
+              className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              Search upcoming events
+            </Link>
+            <Link
+              to="/"
+              className="inline-flex items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+            >
+              Browse by region
+            </Link>
+          </div>
+        </div>
+      </main>
+      <Footer />
+    </div>
+  );
+}
+
 function EventError({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
 
-  // 410 Gone: past-90d ACTIVE events throw new Response(null, {status:410}).
-  // Render a themed tombstone instead of the generic error card.
-  if (error instanceof Response && error.status === 410) {
-    return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <Header />
-        <main className="flex-1 flex items-center justify-center px-4">
-          <div className="max-w-md text-center py-20">
-            <h1 className="text-3xl sm:text-4xl font-bold text-foreground">
-              This event has already taken place
-            </h1>
-            <p className="mt-3 text-muted-foreground">
-              The race has finished and this listing is no longer active. Browse
-              upcoming events, or find similar races by distance or region.
-            </p>
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-              <Link
-                to="/search"
-                className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-              >
-                Search upcoming events
-              </Link>
-              <Link
-                to="/"
-                className="inline-flex items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
-              >
-                Browse by region
-              </Link>
-            </div>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
