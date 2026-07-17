@@ -1,39 +1,25 @@
-## Problem
+Export a CSV of events with `sort_date` between 2027-01-01 and 2027-03-31 inclusive, all statuses, no data mutations.
 
-`isUkPostcode` in `src/lib/postcode.ts` only matches full postcodes (e.g. `DA9 9AA`). Outward-only codes like `DA9` or `ME5` fall through to the text search branch in `LocationPrompt.submitPostcode`, sending users to `/search?q=DA9` instead of geocoding to a lat/lng and showing nearby events.
+## Columns
+- `id`
+- `slug`
+- `name`
+- `sort_date` (event date)
+- `date_to` (only populated when it differs from `sort_date`)
+- `date_raw` (as a fallback human string, for completeness)
+- `date_is_estimated`
+- `status`
+- `town`
+- `county`
+- `region`
+- `venue` (from `events.venue` if present, else blank)
+- `organiser` (from `events.organiser` text field)
+- `organiser_url` (official website)
+- `entry_url`
 
-postcodes.io supports outward codes via `GET /outcodes/{outcode}`, which returns a centroid lat/lng — exactly what the "search near me" flow needs.
+## Method
+Single `psql \COPY` read-only query filtering `sort_date BETWEEN '2027-01-01' AND '2027-03-31'`, ordered by `sort_date, name`. Output written to `/mnt/documents/renm-events-2027-q1.csv` and surfaced as an artifact.
 
-## Fix
+I'll verify column existence against the `events` table first (e.g. `venue`, `organiser`) and fall back to empty strings if a column doesn't exist, so the CSV shape is stable.
 
-Add outward-code support alongside full postcodes, then geocode outward codes via `/outcodes/{outcode}` instead of `/postcodes/{postcode}`.
-
-### `src/lib/postcode.ts`
-
-- Add `OUTWARD_POSTCODE = /^[A-Z]{1,2}\d[A-Z\d]?$/i`.
-- Export `isUkOutwardCode(q)` and a combined `isUkPostcodeOrOutward(q)`.
-- Add `geocodeOutward(q)` that hits `https://api.postcodes.io/outcodes/{outcode}` and returns `{ postcode, lat, lng }` (using the outcode as the label, e.g. "DA9").
-
-### `src/components/events/LocationPrompt.tsx`
-
-In `submitPostcode`:
-1. If `isUkPostcode(trimmed)` → existing full-postcode branch.
-2. Else if `isUkOutwardCode(trimmed)` → call `geocodeOutward`; on hit call `onLocate({ lat, lng, label: outcode.toUpperCase() })` and `trackLocationSet("postcode")`; on miss show the same "Couldn't find that postcode" toast.
-3. Else → existing text-search fallback to `/search?q=…`.
-
-### `src/components/site/HeaderSearch.tsx`
-
-Mirror the same three-way branching so header search behaves identically. Read the file first to confirm current shape before editing.
-
-## Verification
-
-- `DA9` and `ME5` → geocode to centroid, homepage shows nearby events with label "DA9" / "ME5".
-- `DA9 9AA` → unchanged (full-postcode path).
-- `parkrun` → still routes to `/search?q=parkrun`.
-- Bogus outcode `ZZ9` → friendly "Couldn't find that postcode" toast, no navigation.
-
-## Out of scope
-
-- No RPC / DB changes.
-- No change to reverse-geocode-on-device-location.
-- No new taxonomy or landing pages for outcodes.
+No writes, no sync triggers, no status changes.
