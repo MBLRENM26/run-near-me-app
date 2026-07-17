@@ -1,35 +1,73 @@
-# Scottish Athletics planner — pinned-slug fix (amended)
+# Reconcile `events` fingerprint drift (3c3abf25… → 6321a7d5…)
 
-## Fix
+Read-only. No schema, data, RLS, grant, RPC, seed, or public-code changes. Result is an audit record, not a migration.
 
-Edit `src/lib/sync-scottish-athletics-plan.ts` size-1 branch.
+## Objective
 
-1. Replace `existingSlugByNormId: Map<norm_id, slug>` with `existingPinByNormId: Map<norm_id, { slug, norm_id, ref, dateFrom }>`. `ref` is `parseJustGoRef(source_url)` at index-build time.
-2. In the size-1 branch, compute `baseNormId` and look up the pin. Reuse the pinned `slug` / `norm_id` **only when both** the incoming record's parsed ref **and** `dateFrom` equal the pinned row's `ref` and `dateFrom`. If the incoming ref is missing, or the ref or date differ, treat as unpinned and fall through to the normal deterministic slug-resolution path (`baseSlug` → date suffix → numeric suffix, consulting `globalSlugOwners` and `seenSlugsInBatch`).
-3. The pre-upsert slug / norm_id assertions remain unchanged so any residual collision still fails loud.
+Explain why the two captured `public.events` fingerprints differ despite identical row counts (7,318), and only then agree a canonical query + hash as the durable baseline for future ORL work.
 
-No other logic changes. Collision-group branch, shared-ref guard, cross-source dedupe, feed-level ref dedupe, and fail-loud on unparseable ref in collision groups are all preserved.
+## Step 1 — Recover the exact SQL used for each capture
 
-## Tests (`src/lib/sync-scottish-athletics-plan.test.ts`)
+Return, side by side:
 
-Add three regression tests alongside the existing 10:
+- **3c3abf25…** (recorded in `mem://audits/orl-closeout-2026-07-17.md`): the exact query text, timestamp, DB role and schema search_path used.
+- **6321a7d5…** (this turn): confirmed as
+  ```sql
+  SELECT md5(string_agg(t::text, '' ORDER BY id)) FROM public.events t;
+  ```
+  run against `public` as `postgres` via managed psql on 2026-07-17.
 
-1. **Same slugified name, different dates, one matching pin** — feed has record A (ref R1, date D1) and record B (ref R2, date D2). Existing row: `{ slug: base, norm_id: sa-base, ref: R1, date_from: D1 }`. Expect A keeps `slug=base` / `norm_id=sa-base`; B gets a distinct resolved slug (`${base}-${D2}` or a numeric suffix), no assertion.
-2. **Same name and same date, different incoming ref** — feed has record with ref R2. Existing row: `{ slug: base, norm_id: sa-base, ref: R1, date_from: D1 }`. Expect the incoming record does **not** inherit `base` / `sa-base`; it gets a distinct resolved slug, no assertion.
-3. Retain the existing "malformed ref inside collision group fails loud" test unchanged.
+If the prior SQL text cannot be recovered verbatim from the audit note, record that as a limitation and treat Step 2's canonical rerun as the sole source of truth.
 
-## Verification steps
+## Step 2 — Run the agreed canonical query twice, back-to-back
 
-1. `bunx tsgo --noEmit` — clean.
-2. `bunx vitest run src/lib/sync-scottish-athletics-plan.test.ts` — 12 passing (10 original + 2 new; the third is the pre-existing malformed-ref test retained).
-3. Trigger one production run of `/api/public/admin/sync-scottish-athletics`. Return: new `sync_runs` row (id, timestamps, fetched, active, written, new_events, updated_existing, skipped_dupes, skipped_no_date, error_message).
-4. Verify DB post-run:
-   - Peterhead: two rows for `7F23…` ref intact with slugs `peterhead-3k-junior-mile-series-2026` and `peterhead-3k-junior-mile-series-2026-2026-09-26`, plus any new second-date Peterhead row with a distinct slug.
-   - Whitetops Hill Race: both existing rows (`whitetops-hill-race` ACTIVE, `whitetops-hill-race-2026-06-26` DUPLICATE) unchanged.
-   - Barrathon Junior Fun Runs: both existing rows (`barrathon-junior-fun-runs` ACTIVE, `barrathon-junior-fun-runs-2026-06-27` DUPLICATE) unchanged.
-   - All five shared-ref legacy pairs (3k on the Green, Nairn Half Marathon 2026, Kinloss Running Festival, Peterhead 3k Junior Mile Series 2026, BLAST 5k Series the Meadows 2026) still have exactly the same two rows / slugs / norm_ids per ref.
-5. If run 1 is clean, immediately trigger a second production run and confirm: `success`, no `events_slug_unique_idx` error, no `ON CONFLICT DO UPDATE command cannot affect row a second time` error, and the same collision + legacy-pair state after run 2.
+Adopt the user-proposed canonical form (row-level md5 then aggregate; robust to `t::text` whitespace quirks):
 
-## Out of scope
+```sql
+SELECT md5(
+  string_agg(
+    md5(to_jsonb(e)::text),
+    ',' ORDER BY e.id
+  )
+) AS events_full_row_hash
+FROM public.events e;
+```
 
-Organiser-URL gap, legacy DUPLICATE cleanup, changes to the ACTIVE-only existing-rows query.
+Run it twice within ~30s. Both runs must return the identical hash to prove stability at rest. Record hash, row count, timestamp, and DB role for each run.
+
+## Step 3 — Explain the drift
+
+Two, and only two, admissible explanations:
+
+1. **Different serialisation.** The old capture used a different expression (`t::text` vs `to_jsonb(e)::text`, different ORDER BY, no ORDER BY, different delimiter, or a subset of columns). If Step 1 shows the SQL differed, that alone explains the drift and no data-change investigation is required.
+
+2. **Intervening writes.** If Step 1 shows identical SQL, drift means one or more existing rows changed between captures. Enumerate write paths that ran in the window between 2026-07-16 close-out and now, using read-only queries only:
+
+   - Recent `events.updated_at` distribution (max, top 20 by `updated_at DESC`, count where `updated_at >` prior-capture timestamp).
+   - Recent `sync_runs` rows in that window (source, started_at, upserted/updated counters). The SA reliability patch's two production sync runs this turn are the primary candidates — 5 inserts + 93 updates on run 1 already documented.
+   - Any `event_edits` rows in the window.
+   - `status`, `duplicate_of`, `sort_date` distributions unchanged vs the audit note's focused counts (row count 7,318 already matches).
+
+Attribute the drift to the specific write path(s) identified. Do **not** assert ORL caused any of it — the ORL migration wrote zero rows to `events` and the corrective migration this turn was constraint-only.
+
+## Step 4 — Record the canonical baseline
+
+Append to `mem://audits/orl-closeout-2026-07-17.md` (or a new dated note if the closeout is considered frozen):
+
+- Canonical query text (verbatim, from Step 2).
+- Canonical hash from the second identical run.
+- Row count, timestamp, DB role, schema.
+- Reconciliation outcome from Step 3 (SQL differed / rows changed / limitation recorded).
+- Statement that all future ORL migrations and seed applies must capture pre + post using **this** canonical query.
+
+Retire the two ad-hoc hashes (`3c3abf25…`, `6321a7d5…`) from future comparisons; they are historical artefacts, not baselines.
+
+## Explicitly out of scope
+
+- No CSV drafting, seed parser, or Phase 1 validation.
+- No changes to constraints, grants, RLS, RPCs, defaults, routes, or event data.
+- No attempt to "reverse" or explain individual field-level diffs beyond identifying the responsible write path.
+
+## Deliverable
+
+A single evidence block containing: recovered prior SQL (or limitation), two identical canonical-hash runs, drift explanation (SQL vs writes vs limitation), and the memory-note update text. After that lands, seed-interface scoping resumes.
