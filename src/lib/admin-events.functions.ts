@@ -190,7 +190,7 @@ const eventCreateSchema = eventPatchSchema.extend({
   name: z.string().trim().min(1).max(300),
 });
 
-export type AdminEventCreateInput = z.infer<typeof eventCreateSchema>;
+export type AdminEventCreateInput = z.input<typeof eventCreateSchema>;
 
 // ---- List ----
 
