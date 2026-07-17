@@ -178,12 +178,24 @@ export function planScottishAthleticsBatch(input: {
       e.source ?? null,
     ]),
   );
-  // norm_id → existing slug (used only in the non-collision size-1 path
-  // to preserve canonical URLs on refresh).
-  const existingSlugByNormId = new Map<string, string>(
+  // norm_id → { slug, ref, dateFrom } for the existing row. Used to
+  // preserve canonical URLs on refresh in the size-1 branch — but ONLY
+  // when the incoming record is provably the same DB row (matching ref
+  // AND matching date). Two feed events whose names slugify to the same
+  // base but sit on different dates (or carry different refs) must not
+  // both inherit this pin.
+  type PinnedRow = { slug: string; ref: string | null; dateFrom: string | null };
+  const existingPinByNormId = new Map<string, PinnedRow>(
     existingRows
       .filter((e) => e.norm_id && e.slug)
-      .map((e) => [e.norm_id as string, e.slug as string]),
+      .map((e) => [
+        e.norm_id as string,
+        {
+          slug: e.slug as string,
+          ref: parseJustGoRef(e.source_url),
+          dateFrom: e.date_from,
+        },
+      ]),
   );
   // ref → list of existing rows carrying that ref. Multi-valued because
   // known legacy duplicates have the same JustGo ref on two DB rows.
