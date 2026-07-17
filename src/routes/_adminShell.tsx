@@ -93,6 +93,12 @@ function AdminLayout() {
             >
               Sync runs
             </Link>
+            <Link
+              to="/admin/organiser-identities"
+              className="text-sm font-medium text-foreground hover:text-primary"
+            >
+              Organisers
+            </Link>
           </div>
           <Button variant="ghost" size="sm" onClick={handleLogout}>
             Log out
