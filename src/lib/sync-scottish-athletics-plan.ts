@@ -365,9 +365,13 @@ export function planScottishAthleticsBatch(input: {
     if (canReusePin) {
       slug = pin!.slug;
     } else {
+      // If a pin exists but ref/date didn't match, the pinned slug and its
+      // norm_id are owned by a different DB row — force alternate resolution.
+      const pinBlocksBase = !!pin;
       slug = baseSlug;
       const baseOwner = globalSlugOwners.get(baseSlug);
       if (
+        pinBlocksBase ||
         (baseOwner && baseOwner !== baseNormId) ||
         seenSlugsInBatch.has(baseSlug)
       ) {
@@ -379,7 +383,10 @@ export function planScottishAthleticsBatch(input: {
         const candidateNormId = `scottishathletics-${slug}`;
         if (
           !seenSlugsInBatch.has(slug) &&
-          (!owner || owner === candidateNormId)
+          (!owner || owner === candidateNormId) &&
+          // If the base pin exists, avoid landing back on the pinned slug/normId.
+          (!pinBlocksBase ||
+            (slug !== pin!.slug && candidateNormId !== baseNormId))
         ) {
           break;
         }
