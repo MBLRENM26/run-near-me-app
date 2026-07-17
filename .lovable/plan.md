@@ -1,73 +1,45 @@
-# Reconcile `events` fingerprint drift (3c3abf25… → 6321a7d5…)
+## ORL seed CSV interface — draft plan
 
-Read-only. No schema, data, RLS, grant, RPC, seed, or public-code changes. Result is an audit record, not a migration.
+Scope: produce two draft CSV files under `organiser-identity-audit/` matching the exact interface the user specified. No parser, no validation, no seed run, no DB write, no schema change, no public-code change.
 
-## Objective
+### Files created
 
-Explain why the two captured `public.events` fingerprints differ despite identical row counts (7,318), and only then agree a canonical query + hash as the durable baseline for future ORL work.
+1. `organiser-identity-audit/organiser-identity-review-queue.csv`
+2. `organiser-identity-audit/organiser-identity-review-unresolved.csv`
 
-## Step 1 — Recover the exact SQL used for each capture
+Both files use the exact headers, record types, and taxonomy values listed in the user message. No additional columns, no renamed columns, no extra enum values.
 
-Return, side by side:
+### Content boundaries
 
-- **3c3abf25…** (recorded in `mem://audits/orl-closeout-2026-07-17.md`): the exact query text, timestamp, DB role and schema search_path used.
-- **6321a7d5…** (this turn): confirmed as
-  ```sql
-  SELECT md5(string_agg(t::text, '' ORDER BY id)) FROM public.events t;
-  ```
-  run against `public` as `postgres` via managed psql on 2026-07-17.
+- Only the manually researched seed set named in the original ORL brief: Go Beyond Events (two named events) plus the five verified tenant relationships and two `plausible_needs_review` relationships.
+- No generic Eventrac population.
+- No title-casing of tenant slugs into organisation names.
+- No automatic grouping of `gobeyondultra*` subdomains.
+- Tenant subdomains recorded on `platform_account` rows only — never as an organisation or auto-generated event link.
+- Every `event_link` row cites one exact existing `events.slug`, verified against the live DB before it is written into the queue file.
+- Any event named in the brief that does not resolve to exactly one live `events.slug` (missing, ambiguous, multiple candidates) is written to the unresolved file with a `reason` from the allowed list and `candidate_event_slugs` populated where applicable — never guessed into the main queue.
+- `evidence_keys` on `platform_account` / `event_link` rows is pipe-separated and only references `evidence_key` values present in the same file.
+- Go Beyond tenant-divergence note is carried on the relevant `event_link` row's `proposed_review_note` and as a dedicated `evidence` row of type `manual_observation`.
 
-If the prior SQL text cannot be recovered verbatim from the audit note, record that as a limitation and treat Step 2's canonical rerun as the sole source of truth.
+### Draft-generation steps (read-only)
 
-## Step 2 — Run the agreed canonical query twice, back-to-back
+1. Re-read the ORL brief seed set from earlier in the thread to enumerate: canonical organisation(s), aliases, platform accounts (Eventrac tenants + any organiser-owned pages), evidence URLs, and the two named Go Beyond events plus the seven tenant relationships (5 verified, 2 plausible_needs_review).
+2. For each named event, query `public.events` (read-only) to resolve exactly one `slug`. Match on name + known date/location signals from the brief; do not fuzzy-match. Record the resolution outcome per event.
+3. Bucket each intended `event_link`:
+   - Exact single slug found → row in the main queue with `event_link_confidence` taken from the brief (`verified` or `plausible_needs_review`).
+   - Zero / multiple / uncertain matches → row in the unresolved file with the appropriate `reason`.
+4. Assemble rows in the fixed order: `organisation` → `alias` → `evidence` → `platform_account` → `event_link`, so evidence keys are defined before they are referenced.
+5. Leave every non-applicable column blank for each `record_type` per the interface table.
 
-Adopt the user-proposed canonical form (row-level md5 then aggregate; robust to `t::text` whitespace quirks):
+### Deliverable for review
 
-```sql
-SELECT md5(
-  string_agg(
-    md5(to_jsonb(e)::text),
-    ',' ORDER BY e.id
-  )
-) AS events_full_row_hash
-FROM public.events e;
-```
+- The two CSV files.
+- A short accompanying note listing: how many rows of each `record_type`, how many events resolved cleanly vs went to unresolved, and the exact SQL used for slug resolution — so you can spot-check before authorising Phase 1 validation.
 
-Run it twice within ~30s. Both runs must return the identical hash to prove stability at rest. Record hash, row count, timestamp, and DB role for each run.
+### Explicitly out of scope
 
-## Step 3 — Explain the drift
-
-Two, and only two, admissible explanations:
-
-1. **Different serialisation.** The old capture used a different expression (`t::text` vs `to_jsonb(e)::text`, different ORDER BY, no ORDER BY, different delimiter, or a subset of columns). If Step 1 shows the SQL differed, that alone explains the drift and no data-change investigation is required.
-
-2. **Intervening writes.** If Step 1 shows identical SQL, drift means one or more existing rows changed between captures. Enumerate write paths that ran in the window between 2026-07-16 close-out and now, using read-only queries only:
-
-   - Recent `events.updated_at` distribution (max, top 20 by `updated_at DESC`, count where `updated_at >` prior-capture timestamp).
-   - Recent `sync_runs` rows in that window (source, started_at, upserted/updated counters). The SA reliability patch's two production sync runs this turn are the primary candidates — 5 inserts + 93 updates on run 1 already documented.
-   - Any `event_edits` rows in the window.
-   - `status`, `duplicate_of`, `sort_date` distributions unchanged vs the audit note's focused counts (row count 7,318 already matches).
-
-Attribute the drift to the specific write path(s) identified. Do **not** assert ORL caused any of it — the ORL migration wrote zero rows to `events` and the corrective migration this turn was constraint-only.
-
-## Step 4 — Record the canonical baseline
-
-Append to `mem://audits/orl-closeout-2026-07-17.md` (or a new dated note if the closeout is considered frozen):
-
-- Canonical query text (verbatim, from Step 2).
-- Canonical hash from the second identical run.
-- Row count, timestamp, DB role, schema.
-- Reconciliation outcome from Step 3 (SQL differed / rows changed / limitation recorded).
-- Statement that all future ORL migrations and seed applies must capture pre + post using **this** canonical query.
-
-Retire the two ad-hoc hashes (`3c3abf25…`, `6321a7d5…`) from future comparisons; they are historical artefacts, not baselines.
-
-## Explicitly out of scope
-
-- No CSV drafting, seed parser, or Phase 1 validation.
-- No changes to constraints, grants, RLS, RPCs, defaults, routes, or event data.
-- No attempt to "reverse" or explain individual field-level diffs beyond identifying the responsible write path.
-
-## Deliverable
-
-A single evidence block containing: recovered prior SQL (or limitation), two identical canonical-hash runs, drift explanation (SQL vs writes vs limitation), and the memory-note update text. After that lands, seed-interface scoping resumes.
+- Writing a seed parser or Phase 1 validator.
+- Running validation or any seed function.
+- Any DB write, migration, RLS/grant/RPC change.
+- Any change to public routes, event data, or link-trust code.
+- Any Eventrac-wide expansion beyond the brief's named seed set.
