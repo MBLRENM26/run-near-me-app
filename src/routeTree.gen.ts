@@ -67,6 +67,7 @@ import { Route as ApiPublicImportEventsRouteImport } from './routes/api/public/i
 import { Route as ApiPublicImportClubsRouteImport } from './routes/api/public/import-clubs'
 import { Route as AdminShellAdminSyncRunsRouteImport } from './routes/_adminShell.admin.sync-runs'
 import { Route as AdminShellAdminSearchRouteImport } from './routes/_adminShell.admin.search'
+import { Route as AdminShellAdminOrganiserIdentitiesRouteImport } from './routes/_adminShell.admin.organiser-identities'
 import { Route as AdminShellAdminClubClaimsRouteImport } from './routes/_adminShell.admin.club-claims'
 import { Route as AdminShellAdminClaimsRouteImport } from './routes/_adminShell.admin.claims'
 import { Route as AdminShellAdminEventsIndexRouteImport } from './routes/_adminShell.admin.events.index'
@@ -82,6 +83,7 @@ import { Route as ApiPublicAdminSyncEnglandAthleticsRouteImport } from './routes
 import { Route as ApiPublicAdminIndexabilityStatsRouteImport } from './routes/api/public/admin/indexability-stats'
 import { Route as ApiPublicAdminFixEventUrlsRouteImport } from './routes/api/public/admin/fix-event-urls'
 import { Route as ApiPublicAdminBackfillOrganiserMatchRouteImport } from './routes/api/public/admin/backfill-organiser-match'
+import { Route as AdminShellAdminOrganiserIdentitiesUnresolvedRouteImport } from './routes/_adminShell.admin.organiser-identities.unresolved'
 import { Route as AdminShellAdminEventsNewRouteImport } from './routes/_adminShell.admin.events.new'
 import { Route as AdminShellAdminEventsEnrichDatesRouteImport } from './routes/_adminShell.admin.events.enrich-dates'
 import { Route as AdminShellAdminEventsDuplicatesRouteImport } from './routes/_adminShell.admin.events.duplicates'
@@ -387,6 +389,12 @@ const AdminShellAdminSearchRoute = AdminShellAdminSearchRouteImport.update({
   path: '/admin/search',
   getParentRoute: () => AdminShellRoute,
 } as any)
+const AdminShellAdminOrganiserIdentitiesRoute =
+  AdminShellAdminOrganiserIdentitiesRouteImport.update({
+    id: '/admin/organiser-identities',
+    path: '/admin/organiser-identities',
+    getParentRoute: () => AdminShellRoute,
+  } as any)
 const AdminShellAdminClubClaimsRoute =
   AdminShellAdminClubClaimsRouteImport.update({
     id: '/admin/club-claims',
@@ -476,6 +484,12 @@ const ApiPublicAdminBackfillOrganiserMatchRoute =
     path: '/api/public/admin/backfill-organiser-match',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AdminShellAdminOrganiserIdentitiesUnresolvedRoute =
+  AdminShellAdminOrganiserIdentitiesUnresolvedRouteImport.update({
+    id: '/unresolved',
+    path: '/unresolved',
+    getParentRoute: () => AdminShellAdminOrganiserIdentitiesRoute,
+  } as any)
 const AdminShellAdminEventsNewRoute =
   AdminShellAdminEventsNewRouteImport.update({
     id: '/admin/events/new',
@@ -559,6 +573,7 @@ export interface FileRoutesByFullPath {
   '/running-clubs/': typeof RunningClubsIndexRoute
   '/admin/claims': typeof AdminShellAdminClaimsRoute
   '/admin/club-claims': typeof AdminShellAdminClubClaimsRoute
+  '/admin/organiser-identities': typeof AdminShellAdminOrganiserIdentitiesRouteWithChildren
   '/admin/search': typeof AdminShellAdminSearchRoute
   '/admin/sync-runs': typeof AdminShellAdminSyncRunsRoute
   '/api/public/import-clubs': typeof ApiPublicImportClubsRoute
@@ -576,6 +591,7 @@ export interface FileRoutesByFullPath {
   '/admin/events/duplicates': typeof AdminShellAdminEventsDuplicatesRoute
   '/admin/events/enrich-dates': typeof AdminShellAdminEventsEnrichDatesRoute
   '/admin/events/new': typeof AdminShellAdminEventsNewRoute
+  '/admin/organiser-identities/unresolved': typeof AdminShellAdminOrganiserIdentitiesUnresolvedRoute
   '/api/public/admin/backfill-organiser-match': typeof ApiPublicAdminBackfillOrganiserMatchRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
   '/api/public/admin/indexability-stats': typeof ApiPublicAdminIndexabilityStatsRoute
@@ -639,6 +655,7 @@ export interface FileRoutesByTo {
   '/running-clubs': typeof RunningClubsIndexRoute
   '/admin/claims': typeof AdminShellAdminClaimsRoute
   '/admin/club-claims': typeof AdminShellAdminClubClaimsRoute
+  '/admin/organiser-identities': typeof AdminShellAdminOrganiserIdentitiesRouteWithChildren
   '/admin/search': typeof AdminShellAdminSearchRoute
   '/admin/sync-runs': typeof AdminShellAdminSyncRunsRoute
   '/api/public/import-clubs': typeof ApiPublicImportClubsRoute
@@ -656,6 +673,7 @@ export interface FileRoutesByTo {
   '/admin/events/duplicates': typeof AdminShellAdminEventsDuplicatesRoute
   '/admin/events/enrich-dates': typeof AdminShellAdminEventsEnrichDatesRoute
   '/admin/events/new': typeof AdminShellAdminEventsNewRoute
+  '/admin/organiser-identities/unresolved': typeof AdminShellAdminOrganiserIdentitiesUnresolvedRoute
   '/api/public/admin/backfill-organiser-match': typeof ApiPublicAdminBackfillOrganiserMatchRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
   '/api/public/admin/indexability-stats': typeof ApiPublicAdminIndexabilityStatsRoute
@@ -721,6 +739,7 @@ export interface FileRoutesById {
   '/running-clubs/': typeof RunningClubsIndexRoute
   '/_adminShell/admin/claims': typeof AdminShellAdminClaimsRoute
   '/_adminShell/admin/club-claims': typeof AdminShellAdminClubClaimsRoute
+  '/_adminShell/admin/organiser-identities': typeof AdminShellAdminOrganiserIdentitiesRouteWithChildren
   '/_adminShell/admin/search': typeof AdminShellAdminSearchRoute
   '/_adminShell/admin/sync-runs': typeof AdminShellAdminSyncRunsRoute
   '/api/public/import-clubs': typeof ApiPublicImportClubsRoute
@@ -738,6 +757,7 @@ export interface FileRoutesById {
   '/_adminShell/admin/events/duplicates': typeof AdminShellAdminEventsDuplicatesRoute
   '/_adminShell/admin/events/enrich-dates': typeof AdminShellAdminEventsEnrichDatesRoute
   '/_adminShell/admin/events/new': typeof AdminShellAdminEventsNewRoute
+  '/_adminShell/admin/organiser-identities/unresolved': typeof AdminShellAdminOrganiserIdentitiesUnresolvedRoute
   '/api/public/admin/backfill-organiser-match': typeof ApiPublicAdminBackfillOrganiserMatchRoute
   '/api/public/admin/fix-event-urls': typeof ApiPublicAdminFixEventUrlsRoute
   '/api/public/admin/indexability-stats': typeof ApiPublicAdminIndexabilityStatsRoute
@@ -803,6 +823,7 @@ export interface FileRouteTypes {
     | '/running-clubs/'
     | '/admin/claims'
     | '/admin/club-claims'
+    | '/admin/organiser-identities'
     | '/admin/search'
     | '/admin/sync-runs'
     | '/api/public/import-clubs'
@@ -820,6 +841,7 @@ export interface FileRouteTypes {
     | '/admin/events/duplicates'
     | '/admin/events/enrich-dates'
     | '/admin/events/new'
+    | '/admin/organiser-identities/unresolved'
     | '/api/public/admin/backfill-organiser-match'
     | '/api/public/admin/fix-event-urls'
     | '/api/public/admin/indexability-stats'
@@ -883,6 +905,7 @@ export interface FileRouteTypes {
     | '/running-clubs'
     | '/admin/claims'
     | '/admin/club-claims'
+    | '/admin/organiser-identities'
     | '/admin/search'
     | '/admin/sync-runs'
     | '/api/public/import-clubs'
@@ -900,6 +923,7 @@ export interface FileRouteTypes {
     | '/admin/events/duplicates'
     | '/admin/events/enrich-dates'
     | '/admin/events/new'
+    | '/admin/organiser-identities/unresolved'
     | '/api/public/admin/backfill-organiser-match'
     | '/api/public/admin/fix-event-urls'
     | '/api/public/admin/indexability-stats'
@@ -964,6 +988,7 @@ export interface FileRouteTypes {
     | '/running-clubs/'
     | '/_adminShell/admin/claims'
     | '/_adminShell/admin/club-claims'
+    | '/_adminShell/admin/organiser-identities'
     | '/_adminShell/admin/search'
     | '/_adminShell/admin/sync-runs'
     | '/api/public/import-clubs'
@@ -981,6 +1006,7 @@ export interface FileRouteTypes {
     | '/_adminShell/admin/events/duplicates'
     | '/_adminShell/admin/events/enrich-dates'
     | '/_adminShell/admin/events/new'
+    | '/_adminShell/admin/organiser-identities/unresolved'
     | '/api/public/admin/backfill-organiser-match'
     | '/api/public/admin/fix-event-urls'
     | '/api/public/admin/indexability-stats'
@@ -1467,6 +1493,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminShellAdminSearchRouteImport
       parentRoute: typeof AdminShellRoute
     }
+    '/_adminShell/admin/organiser-identities': {
+      id: '/_adminShell/admin/organiser-identities'
+      path: '/admin/organiser-identities'
+      fullPath: '/admin/organiser-identities'
+      preLoaderRoute: typeof AdminShellAdminOrganiserIdentitiesRouteImport
+      parentRoute: typeof AdminShellRoute
+    }
     '/_adminShell/admin/club-claims': {
       id: '/_adminShell/admin/club-claims'
       path: '/admin/club-claims'
@@ -1572,6 +1605,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAdminBackfillOrganiserMatchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_adminShell/admin/organiser-identities/unresolved': {
+      id: '/_adminShell/admin/organiser-identities/unresolved'
+      path: '/unresolved'
+      fullPath: '/admin/organiser-identities/unresolved'
+      preLoaderRoute: typeof AdminShellAdminOrganiserIdentitiesUnresolvedRouteImport
+      parentRoute: typeof AdminShellAdminOrganiserIdentitiesRoute
+    }
     '/_adminShell/admin/events/new': {
       id: '/_adminShell/admin/events/new'
       path: '/admin/events/new'
@@ -1641,9 +1681,25 @@ const R5kRacesRouteWithChildren = R5kRacesRoute._addFileChildren(
   R5kRacesRouteChildren,
 )
 
+interface AdminShellAdminOrganiserIdentitiesRouteChildren {
+  AdminShellAdminOrganiserIdentitiesUnresolvedRoute: typeof AdminShellAdminOrganiserIdentitiesUnresolvedRoute
+}
+
+const AdminShellAdminOrganiserIdentitiesRouteChildren: AdminShellAdminOrganiserIdentitiesRouteChildren =
+  {
+    AdminShellAdminOrganiserIdentitiesUnresolvedRoute:
+      AdminShellAdminOrganiserIdentitiesUnresolvedRoute,
+  }
+
+const AdminShellAdminOrganiserIdentitiesRouteWithChildren =
+  AdminShellAdminOrganiserIdentitiesRoute._addFileChildren(
+    AdminShellAdminOrganiserIdentitiesRouteChildren,
+  )
+
 interface AdminShellRouteChildren {
   AdminShellAdminClaimsRoute: typeof AdminShellAdminClaimsRoute
   AdminShellAdminClubClaimsRoute: typeof AdminShellAdminClubClaimsRoute
+  AdminShellAdminOrganiserIdentitiesRoute: typeof AdminShellAdminOrganiserIdentitiesRouteWithChildren
   AdminShellAdminSearchRoute: typeof AdminShellAdminSearchRoute
   AdminShellAdminSyncRunsRoute: typeof AdminShellAdminSyncRunsRoute
   AdminShellAdminClubsIdRoute: typeof AdminShellAdminClubsIdRoute
@@ -1659,6 +1715,8 @@ interface AdminShellRouteChildren {
 const AdminShellRouteChildren: AdminShellRouteChildren = {
   AdminShellAdminClaimsRoute: AdminShellAdminClaimsRoute,
   AdminShellAdminClubClaimsRoute: AdminShellAdminClubClaimsRoute,
+  AdminShellAdminOrganiserIdentitiesRoute:
+    AdminShellAdminOrganiserIdentitiesRouteWithChildren,
   AdminShellAdminSearchRoute: AdminShellAdminSearchRoute,
   AdminShellAdminSyncRunsRoute: AdminShellAdminSyncRunsRoute,
   AdminShellAdminClubsIdRoute: AdminShellAdminClubsIdRoute,

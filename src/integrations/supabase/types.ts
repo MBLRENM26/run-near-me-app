@@ -524,6 +524,341 @@ export type Database = {
           },
         ]
       }
+      identity_evidence: {
+        Row: {
+          captured_at: string
+          created_at: string
+          created_by: string | null
+          evidence_type: string
+          fingerprint: string | null
+          id: string
+          source_url: string
+          supporting_fact: string | null
+          updated_at: string
+        }
+        Insert: {
+          captured_at?: string
+          created_at?: string
+          created_by?: string | null
+          evidence_type: string
+          fingerprint?: string | null
+          id?: string
+          source_url: string
+          supporting_fact?: string | null
+          updated_at?: string
+        }
+        Update: {
+          captured_at?: string
+          created_at?: string
+          created_by?: string | null
+          evidence_type?: string
+          fingerprint?: string | null
+          id?: string
+          source_url?: string
+          supporting_fact?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      organisation_aliases: {
+        Row: {
+          alias_name: string
+          alias_type: string
+          created_at: string
+          evidence_id: string | null
+          id: string
+          organisation_id: string
+          updated_at: string
+        }
+        Insert: {
+          alias_name: string
+          alias_type: string
+          created_at?: string
+          evidence_id?: string | null
+          id?: string
+          organisation_id: string
+          updated_at?: string
+        }
+        Update: {
+          alias_name?: string
+          alias_type?: string
+          created_at?: string
+          evidence_id?: string | null
+          id?: string
+          organisation_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organisation_aliases_evidence_id_fkey"
+            columns: ["evidence_id"]
+            isOneToOne: false
+            referencedRelation: "identity_evidence"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organisation_aliases_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organisation_event_link_evidence: {
+        Row: {
+          created_at: string
+          evidence_id: string
+          link_id: string
+        }
+        Insert: {
+          created_at?: string
+          evidence_id: string
+          link_id: string
+        }
+        Update: {
+          created_at?: string
+          evidence_id?: string
+          link_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organisation_event_link_evidence_evidence_id_fkey"
+            columns: ["evidence_id"]
+            isOneToOne: false
+            referencedRelation: "identity_evidence"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organisation_event_link_evidence_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "organisation_event_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organisation_event_link_reviews: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          link_id: string
+          note: string | null
+          reviewed_by: string | null
+          reviewer_identity: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          link_id: string
+          note?: string | null
+          reviewed_by?: string | null
+          reviewer_identity: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          link_id?: string
+          note?: string | null
+          reviewed_by?: string | null
+          reviewer_identity?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organisation_event_link_reviews_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "organisation_event_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organisation_event_links: {
+        Row: {
+          confidence: string
+          created_at: string
+          event_id: string
+          id: string
+          organisation_id: string
+          relationship: string
+          review_status: string
+        }
+        Insert: {
+          confidence?: string
+          created_at?: string
+          event_id: string
+          id?: string
+          organisation_id: string
+          relationship: string
+          review_status?: string
+        }
+        Update: {
+          confidence?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+          organisation_id?: string
+          relationship?: string
+          review_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organisation_event_links_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organisation_event_links_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "public_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organisation_event_links_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organisation_platform_accounts: {
+        Row: {
+          account_url: string | null
+          confidence: string
+          created_at: string
+          evidence_id: string | null
+          id: string
+          organisation_id: string
+          platform: string
+          platform_identifier: string | null
+          tenant_slug: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_url?: string | null
+          confidence?: string
+          created_at?: string
+          evidence_id?: string | null
+          id?: string
+          organisation_id: string
+          platform: string
+          platform_identifier?: string | null
+          tenant_slug?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_url?: string | null
+          confidence?: string
+          created_at?: string
+          evidence_id?: string | null
+          id?: string
+          organisation_id?: string
+          platform?: string
+          platform_identifier?: string | null
+          tenant_slug?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organisation_platform_accounts_evidence_id_fkey"
+            columns: ["evidence_id"]
+            isOneToOne: false
+            referencedRelation: "identity_evidence"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organisation_platform_accounts_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organisation_seed_unresolved: {
+        Row: {
+          attempted_at: string
+          candidate_event_ids: string[]
+          created_at: string
+          csv_row_number: number
+          csv_sha256: string
+          id: string
+          raw_row: Json
+          reason: string
+          seed_run_id: string
+        }
+        Insert: {
+          attempted_at?: string
+          candidate_event_ids?: string[]
+          created_at?: string
+          csv_row_number: number
+          csv_sha256: string
+          id?: string
+          raw_row: Json
+          reason: string
+          seed_run_id: string
+        }
+        Update: {
+          attempted_at?: string
+          candidate_event_ids?: string[]
+          created_at?: string
+          csv_row_number?: number
+          csv_sha256?: string
+          id?: string
+          raw_row?: Json
+          reason?: string
+          seed_run_id?: string
+        }
+        Relationships: []
+      }
+      organisations: {
+        Row: {
+          canonical_name: string
+          created_at: string
+          id: string
+          merged_into_id: string | null
+          seed_source_key: string | null
+          status: string
+          updated_at: string
+          website_domain: string | null
+        }
+        Insert: {
+          canonical_name: string
+          created_at?: string
+          id?: string
+          merged_into_id?: string | null
+          seed_source_key?: string | null
+          status?: string
+          updated_at?: string
+          website_domain?: string | null
+        }
+        Update: {
+          canonical_name?: string
+          created_at?: string
+          id?: string
+          merged_into_id?: string | null
+          seed_source_key?: string | null
+          status?: string
+          updated_at?: string
+          website_domain?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organisations_merged_into_id_fkey"
+            columns: ["merged_into_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       search_clicks: {
         Row: {
           clicked_slug: string
@@ -1076,6 +1411,16 @@ export type Database = {
           msg_id: number
           read_ct: number
         }[]
+      }
+      review_organisation_event_link_txn: {
+        Args: {
+          _action: string
+          _link_id: string
+          _note: string
+          _reviewed_by: string
+          _reviewer_identity: string
+        }
+        Returns: string
       }
       run_england_athletics_chunked: { Args: never; Returns: Json }
       search_clubs_v1: {
