@@ -179,8 +179,8 @@ export const reviewOrganiserLink = createServerFn({ method: "POST" })
       {
         _link_id: data.link_id,
         _action: data.action,
-        _note: data.note ?? null,
-        _reviewed_by: null,
+        _note: data.note ?? "",
+        _reviewed_by: "00000000-0000-0000-0000-000000000000",
         _reviewer_identity: "admin:cookie-session",
       },
     );
