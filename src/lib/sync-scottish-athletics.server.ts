@@ -137,8 +137,11 @@ export async function runScottishAthleticsSync(): Promise<ScottishAthleticsSyncR
       throw new Error(allSlugErr.message);
     }
     const globalSlugOwners = new Map<string, string | null>(
-      (allSlugRows ?? []).map((r) => [r.slug, r.norm_id]),
+      (allSlugRows ?? [])
+        .filter((r): r is { slug: string; norm_id: string | null } => !!r.slug)
+        .map((r) => [r.slug, r.norm_id]),
     );
+
 
     const todayISO = new Date().toISOString().slice(0, 10);
 
