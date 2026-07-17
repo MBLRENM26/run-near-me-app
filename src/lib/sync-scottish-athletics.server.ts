@@ -1,10 +1,15 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { startSyncRun } from "@/lib/sync-run-log.server";
 import { loadScottishClubWebsiteMap } from "@/lib/sync-scottish-athletics-clubs.server";
+import {
+  planScottishAthleticsBatch,
+  type JustGoEvent,
+} from "@/lib/sync-scottish-athletics-plan";
 
 // Syncs running events from the Scottish Athletics public event browser
-// (JustGo widget API) into the events table. Idempotent: upserts on norm_id
-// and skips events that already exist from another source.
+// (JustGo widget API) into the events table. Idempotent: upserts on norm_id.
+// Batch identity + slug resolution lives in sync-scottish-athletics-plan
+// so it can be unit tested without touching Supabase.
 
 const JUSTGO_URL =
   "https://scottishathletics.justgo.com/WidgetService.mvc/ExecuteWidgetCommandAlt";
@@ -19,24 +24,6 @@ const INCLUDED_CATEGORIES = new Set([
   "Cross Country",
 ]);
 
-type JustGoEvent = {
-  DocId: number;
-  EventName: string;
-  EventCategory: string;
-  Directlink: string;
-  Address: {
-    Town: string | null;
-    County: string | null;
-    Postcode: string | null;
-    Country: string | null;
-  };
-  Latlng: { Lat: string; Lng: string };
-  EntityInfo: { Name: string | null };
-  Starts: { Date: string | null };
-  Ends: { Date: string | null };
-  PriceSettings: { DisplayPrice: string | null };
-};
-
 export type ScottishAthleticsSyncResult = {
   ok: true;
   fetched: number;
@@ -47,51 +34,6 @@ export type ScottishAthleticsSyncResult = {
   skippedDupes: number;
   skippedNoDate: number;
 };
-
-function slugify(input: string): string {
-  return input
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
-}
-
-function parseJustGoDate(raw: string | null | undefined): string | null {
-  if (!raw) return null;
-  const m = raw.match(/Date\((\d{4}),(\d{1,2}),(\d{1,2})\)/);
-  if (!m) return null;
-  const year = Number(m[1]);
-  const month = Number(m[2]) + 1;
-  const day = Number(m[3]);
-  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
-  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-}
-
-const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
-
-function formatDateRaw(iso: string): string {
-  const [y, m, d] = iso.split("-").map(Number);
-  return `${d} ${MONTHS[m - 1]} ${y}`;
-}
-
-function cleanName(name: string): string {
-  return name.replace(/\s*:\s*ES\d+\s*$/i, "").trim();
-}
-
-function distancesFromName(name: string): string | null {
-  const n = name.toLowerCase();
-  if (/\bultra\b/.test(n)) return "Ultra";
-  if (/half[\s-]?marathon|\bhalf\b/.test(n)) return "Half Marathon";
-  if (/\bmarathon\b/.test(n)) return "Marathon";
-  const km = n.match(/\b(\d{1,3}(?:\.\d)?)\s?k(m)?\b/);
-  if (km) return `${km[1]}K`;
-  const miles = n.match(/\b(\d{1,3}(?:\.\d)?)\s?miles?\b/);
-  if (miles) return `${miles[1]} miles`;
-  return null;
-}
 
 async function fetchPage(pageNumber: number): Promise<JustGoEvent[]> {
   const body = {
@@ -141,6 +83,7 @@ async function fetchPage(pageNumber: number): Promise<JustGoEvent[]> {
   }>;
   return json[0]?.Result?.Result?.Data ?? [];
 }
+
 
 export async function runScottishAthleticsSync(): Promise<ScottishAthleticsSyncResult> {
   const run = await startSyncRun("scottish-athletics");
