@@ -1,10 +1,15 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { startSyncRun } from "@/lib/sync-run-log.server";
 import { loadScottishClubWebsiteMap } from "@/lib/sync-scottish-athletics-clubs.server";
+import {
+  planScottishAthleticsBatch,
+  type JustGoEvent,
+} from "@/lib/sync-scottish-athletics-plan";
 
 // Syncs running events from the Scottish Athletics public event browser
-// (JustGo widget API) into the events table. Idempotent: upserts on norm_id
-// and skips events that already exist from another source.
+// (JustGo widget API) into the events table. Idempotent: upserts on norm_id.
+// Batch identity + slug resolution lives in sync-scottish-athletics-plan
+// so it can be unit tested without touching Supabase.
 
 const JUSTGO_URL =
   "https://scottishathletics.justgo.com/WidgetService.mvc/ExecuteWidgetCommandAlt";
@@ -19,24 +24,6 @@ const INCLUDED_CATEGORIES = new Set([
   "Cross Country",
 ]);
 
-type JustGoEvent = {
-  DocId: number;
-  EventName: string;
-  EventCategory: string;
-  Directlink: string;
-  Address: {
-    Town: string | null;
-    County: string | null;
-    Postcode: string | null;
-    Country: string | null;
-  };
-  Latlng: { Lat: string; Lng: string };
-  EntityInfo: { Name: string | null };
-  Starts: { Date: string | null };
-  Ends: { Date: string | null };
-  PriceSettings: { DisplayPrice: string | null };
-};
-
 export type ScottishAthleticsSyncResult = {
   ok: true;
   fetched: number;
@@ -47,51 +34,6 @@ export type ScottishAthleticsSyncResult = {
   skippedDupes: number;
   skippedNoDate: number;
 };
-
-function slugify(input: string): string {
-  return input
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
-}
-
-function parseJustGoDate(raw: string | null | undefined): string | null {
-  if (!raw) return null;
-  const m = raw.match(/Date\((\d{4}),(\d{1,2}),(\d{1,2})\)/);
-  if (!m) return null;
-  const year = Number(m[1]);
-  const month = Number(m[2]) + 1;
-  const day = Number(m[3]);
-  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
-  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-}
-
-const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
-
-function formatDateRaw(iso: string): string {
-  const [y, m, d] = iso.split("-").map(Number);
-  return `${d} ${MONTHS[m - 1]} ${y}`;
-}
-
-function cleanName(name: string): string {
-  return name.replace(/\s*:\s*ES\d+\s*$/i, "").trim();
-}
-
-function distancesFromName(name: string): string | null {
-  const n = name.toLowerCase();
-  if (/\bultra\b/.test(n)) return "Ultra";
-  if (/half[\s-]?marathon|\bhalf\b/.test(n)) return "Half Marathon";
-  if (/\bmarathon\b/.test(n)) return "Marathon";
-  const km = n.match(/\b(\d{1,3}(?:\.\d)?)\s?k(m)?\b/);
-  if (km) return `${km[1]}K`;
-  const miles = n.match(/\b(\d{1,3}(?:\.\d)?)\s?miles?\b/);
-  if (miles) return `${miles[1]} miles`;
-  return null;
-}
 
 async function fetchPage(pageNumber: number): Promise<JustGoEvent[]> {
   const body = {
@@ -142,6 +84,7 @@ async function fetchPage(pageNumber: number): Promise<JustGoEvent[]> {
   return json[0]?.Result?.Result?.Data ?? [];
 }
 
+
 export async function runScottishAthleticsSync(): Promise<ScottishAthleticsSyncResult> {
   const run = await startSyncRun("scottish-athletics");
 
@@ -163,9 +106,10 @@ export async function runScottishAthleticsSync(): Promise<ScottishAthleticsSyncR
     );
 
     // Scotland-scoped rows for name/date dedupe + updated-vs-new accounting.
+    // NOTE: source_url is included so the planner can index by JustGo ref.
     const { data: existing, error: exErr } = await supabaseAdmin
       .from("events")
-      .select("slug, name, date_from, norm_id, source")
+      .select("slug, name, date_from, norm_id, source, source_url")
       .eq("status", "ACTIVE")
       .or("region.eq.Scotland,country.eq.Scotland");
     if (exErr) {
@@ -177,25 +121,6 @@ export async function runScottishAthleticsSync(): Promise<ScottishAthleticsSyncR
       });
       throw new Error(exErr.message);
     }
-    const existingNormIds = new Set(
-      (existing ?? []).map((e) => e.norm_id).filter(Boolean) as string[],
-    );
-    // Map name+date → source of the existing row. We only skip as a dupe when
-    // the collision is against a DIFFERENT source (e.g. an EA-owned row);
-    // scottishathletics-owned rows fall through so upsert refreshes them.
-    const existingNameDateSource = new Map<string, string | null>(
-      (existing ?? []).map((e) => [
-        `${(e.name ?? "").toLowerCase().trim()}|${e.date_from ?? ""}`,
-        e.source ?? null,
-      ]),
-    );
-    // norm_id → existing slug. On refresh we pin the slug to the existing
-    // value so the upsert doesn't rewrite the canonical URL.
-    const existingSlugByNormId = new Map<string, string>(
-      (existing ?? [])
-        .filter((e) => e.norm_id && e.slug)
-        .map((e) => [e.norm_id as string, e.slug as string]),
-    );
 
     // Global slug set — a Scotland event's slug can collide with any other
     // region's event. Without this the DB unique index throws on upsert.
@@ -211,114 +136,34 @@ export async function runScottishAthleticsSync(): Promise<ScottishAthleticsSyncR
       });
       throw new Error(allSlugErr.message);
     }
-    const globalSlugOwners = new Map(
-      (allSlugRows ?? []).map((r) => [r.slug, r.norm_id]),
+    const globalSlugOwners = new Map<string, string | null>(
+      (allSlugRows ?? [])
+        .filter((r): r is { slug: string; norm_id: string | null } => !!r.slug)
+        .map((r) => [r.slug, r.norm_id]),
     );
+
 
     const todayISO = new Date().toISOString().slice(0, 10);
-    const seenSlugs = new Set<string>();
-    type EventInsert =
-      import("@/integrations/supabase/types").Database["public"]["Tables"]["events"]["Insert"];
-    const rows: EventInsert[] = [];
-    let skippedDupes = 0;
-    let skippedNoDate = 0;
-    let newEvents = 0;
-    let updatedExisting = 0;
 
-    for (const e of running) {
-      const name = cleanName(e.EventName);
-      const dateFrom = parseJustGoDate(e.Starts?.Date);
-      const dateTo = parseJustGoDate(e.Ends?.Date);
-      if (!name || !dateFrom) {
-        skippedNoDate++;
-        continue;
+    // Plan the batch: dedupe by ref, group by name+date, resolve slugs,
+    // assert uniqueness. Throws loudly on any unsafe collision.
+    const plan = planScottishAthleticsBatch({
+      records: running,
+      existingRows: existing ?? [],
+      globalSlugOwners,
+      clubWebsiteMap,
+      todayISO,
+    });
+
+    if (plan.warnings.length > 0) {
+      for (const w of plan.warnings) {
+        console.warn(`[scottish-athletics-sync] ${w}`);
       }
-
-      const key = `${name.toLowerCase()}|${dateFrom}`;
-      const collidingSource = existingNameDateSource.get(key);
-      if (collidingSource !== undefined && collidingSource !== "scottishathletics") {
-        // Existing row is owned by another source — never overwrite it.
-        skippedDupes++;
-        continue;
-      }
-
-      const baseSlug = slugify(name);
-      const baseNormId = `scottishathletics-${baseSlug}`;
-
-      // If a Scottish row with this norm_id already exists, pin the slug to
-      // the existing value so upsert doesn't rewrite the canonical URL.
-      const pinnedSlug = existingSlugByNormId.get(baseNormId);
-      let slug: string;
-      if (pinnedSlug) {
-        slug = pinnedSlug;
-      } else {
-        slug = baseSlug;
-        const baseOwner = globalSlugOwners.get(baseSlug);
-        if ((baseOwner && baseOwner !== baseNormId) || seenSlugs.has(baseSlug)) {
-          slug = `${baseSlug}-${dateFrom}`;
-        }
-        let suffix = 2;
-        while (true) {
-          const owner = globalSlugOwners.get(slug);
-          const candidateNormId = `scottishathletics-${slug}`;
-          if (!seenSlugs.has(slug) && (!owner || owner === candidateNormId)) break;
-          slug = `${baseSlug}-${dateFrom}-${suffix++}`;
-          if (suffix > 20) break;
-        }
-      }
-      seenSlugs.add(slug);
-
-      const lat = e.Latlng?.Lat ? Number(e.Latlng.Lat) : null;
-      const lng = e.Latlng?.Lng ? Number(e.Latlng.Lng) : null;
-
-      const finalNormId = `scottishathletics-${slug}`;
-      if (existingNormIds.has(finalNormId)) updatedExisting++;
-      else newEvents++;
-      const organiser = e.EntityInfo?.Name?.trim() || null;
-      // Match organiser → real club website. Never use JustGo's Directlink
-      // here — that's the booking platform, not the organiser's site.
-      const organiserUrl = organiser
-        ? clubWebsiteMap.get(slugify(organiser)) ?? null
-        : null;
-      rows.push({
-        norm_id: finalNormId,
-        name,
-        slug,
-        date_from: dateFrom,
-        date_to: dateTo && dateTo !== dateFrom ? dateTo : null,
-        date_raw: formatDateRaw(dateFrom),
-        date_is_estimated: false,
-        town: e.Address?.Town?.trim() || null,
-        county: e.Address?.County?.trim() || null,
-        country: "Scotland",
-        region: "Scotland",
-        lat: lat !== null && Number.isFinite(lat) ? lat : null,
-        lng: lng !== null && Number.isFinite(lng) ? lng : null,
-        distances: distancesFromName(name),
-        discipline: e.EventCategory,
-        entry_url: e.Directlink || null,
-        organiser,
-        organiser_url: organiserUrl,
-        entry_fee: e.PriceSettings?.DisplayPrice?.trim() || null,
-        source: "scottishathletics",
-        source_url: e.Directlink || null,
-        governance: "scottish_athletics",
-
-        status: "ACTIVE",
-        sort_date: dateFrom,
-        is_upcoming: dateFrom >= todayISO,
-      });
     }
-
-    // Dedupe by norm_id within the batch — Postgres rejects an ON CONFLICT
-    // upsert that touches the same conflict target twice in one statement.
-    const dedupedByNormId = Array.from(
-      new Map(rows.map((r) => [r.norm_id as string, r])).values(),
-    );
 
     const { data, error } = await supabaseAdmin
       .from("events")
-      .upsert(dedupedByNormId, { onConflict: "norm_id" })
+      .upsert(plan.rows, { onConflict: "norm_id" })
       .select("id");
     if (error) {
       await run.finish({
@@ -336,10 +181,10 @@ export async function runScottishAthleticsSync(): Promise<ScottishAthleticsSyncR
       fetched: all.length,
       active: running.length,
       written,
-      new_events: newEvents,
-      updated_existing: updatedExisting,
-      skipped_dupes: skippedDupes,
-      skipped_no_date: skippedNoDate,
+      new_events: plan.stats.newEvents,
+      updated_existing: plan.stats.updatedExisting,
+      skipped_dupes: plan.stats.skippedDupes + plan.stats.sharedRefSkipped,
+      skipped_no_date: plan.stats.skippedNoDate,
     });
 
     return {
@@ -347,10 +192,10 @@ export async function runScottishAthleticsSync(): Promise<ScottishAthleticsSyncR
       fetched: all.length,
       running: running.length,
       written,
-      newEvents,
-      updatedExisting,
-      skippedDupes,
-      skippedNoDate,
+      newEvents: plan.stats.newEvents,
+      updatedExisting: plan.stats.updatedExisting,
+      skippedDupes: plan.stats.skippedDupes + plan.stats.sharedRefSkipped,
+      skippedNoDate: plan.stats.skippedNoDate,
     };
   } catch (err) {
     await run
@@ -362,3 +207,4 @@ export async function runScottishAthleticsSync(): Promise<ScottishAthleticsSyncR
     throw err;
   }
 }
+
