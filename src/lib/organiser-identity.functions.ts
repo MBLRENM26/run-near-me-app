@@ -11,9 +11,9 @@ export type ReviewStatus = (typeof REVIEW_STATUSES)[number];
 export type OrganiserLinkRow = {
   id: string;
   event_id: string;
-  event_slug: string | null;
-  event_name: string | null;
-  event_date_raw: string | null;
+  event_slug: string;
+  event_name: string;
+  event_date_raw: string;
   organisation_id: string;
   organisation_name: string;
   organisation_status: string;
@@ -140,9 +140,9 @@ export const listOrganiserLinks = createServerFn({ method: "POST" })
       return {
         id: r.id,
         event_id: r.event_id,
-        event_slug: ev?.slug ?? null,
-        event_name: ev?.name ?? null,
-        event_date_raw: ev?.date_raw ?? null,
+        event_slug: ev?.slug ?? "",
+        event_name: ev?.name ?? "",
+        event_date_raw: ev?.date_raw ?? "",
         organisation_id: r.organisation_id,
         organisation_name: org?.canonical_name ?? "(unknown)",
         organisation_status: org?.status ?? "candidate",
@@ -203,7 +203,7 @@ export type UnresolvedRow = {
   seed_run_id: string;
   csv_sha256: string;
   csv_row_number: number;
-  raw_row: Record<string, unknown>;
+  raw_row: string;
   reason: string;
   candidate_event_ids: string[];
   attempted_at: string;
@@ -236,7 +236,7 @@ export const listSeedUnresolved = createServerFn({ method: "POST" })
         seed_run_id: r.seed_run_id,
         csv_sha256: r.csv_sha256,
         csv_row_number: r.csv_row_number,
-        raw_row: (r.raw_row ?? {}) as Record<string, unknown>,
+        raw_row: JSON.stringify(r.raw_row ?? {}),
         reason: r.reason,
         candidate_event_ids: (r.candidate_event_ids ?? []) as string[],
         attempted_at: r.attempted_at,

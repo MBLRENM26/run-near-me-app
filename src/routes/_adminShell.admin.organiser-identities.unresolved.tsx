@@ -79,7 +79,13 @@ function UnresolvedPage() {
                   <td className="px-3 py-2">{r.reason}</td>
                   <td className="px-3 py-2">
                     <pre className="max-w-xs whitespace-pre-wrap break-all text-xs">
-                      {JSON.stringify(r.raw_row, null, 2)}
+                      {(() => {
+                        try {
+                          return JSON.stringify(JSON.parse(r.raw_row), null, 2);
+                        } catch {
+                          return r.raw_row;
+                        }
+                      })()}
                     </pre>
                   </td>
                   <td className="px-3 py-2 font-mono text-xs">
