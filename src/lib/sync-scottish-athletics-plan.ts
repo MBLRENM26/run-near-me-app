@@ -178,12 +178,24 @@ export function planScottishAthleticsBatch(input: {
       e.source ?? null,
     ]),
   );
-  // norm_id → existing slug (used only in the non-collision size-1 path
-  // to preserve canonical URLs on refresh).
-  const existingSlugByNormId = new Map<string, string>(
+  // norm_id → { slug, ref, dateFrom } for the existing row. Used to
+  // preserve canonical URLs on refresh in the size-1 branch — but ONLY
+  // when the incoming record is provably the same DB row (matching ref
+  // AND matching date). Two feed events whose names slugify to the same
+  // base but sit on different dates (or carry different refs) must not
+  // both inherit this pin.
+  type PinnedRow = { slug: string; ref: string | null; dateFrom: string | null };
+  const existingPinByNormId = new Map<string, PinnedRow>(
     existingRows
       .filter((e) => e.norm_id && e.slug)
-      .map((e) => [e.norm_id as string, e.slug as string]),
+      .map((e) => [
+        e.norm_id as string,
+        {
+          slug: e.slug as string,
+          ref: parseJustGoRef(e.source_url),
+          dateFrom: e.date_from,
+        },
+      ]),
   );
   // ref → list of existing rows carrying that ref. Multi-valued because
   // known legacy duplicates have the same JustGo ref on two DB rows.
@@ -338,16 +350,28 @@ export function planScottishAthleticsBatch(input: {
     const baseSlug = slugify(g.name);
     const baseNormId = `scottishathletics-${baseSlug}`;
 
-    // If a Scottish row with this norm_id already exists, pin the slug to
-    // the existing value so upsert doesn't rewrite the canonical URL.
-    const pinnedSlug = existingSlugByNormId.get(baseNormId);
+    // Reuse the pinned slug/norm_id ONLY when the incoming record is
+    // provably the same DB row: matching JustGo ref AND matching date.
+    // Missing ref, different ref, or different date → fall through to the
+    // deterministic slug-resolution path.
+    const pin = existingPinByNormId.get(baseNormId);
+    const canReusePin =
+      !!pin &&
+      !!ref &&
+      pin.ref === ref &&
+      pin.dateFrom === g.dateFrom;
+
     let slug: string;
-    if (pinnedSlug) {
-      slug = pinnedSlug;
+    if (canReusePin) {
+      slug = pin!.slug;
     } else {
+      // If a pin exists but ref/date didn't match, the pinned slug and its
+      // norm_id are owned by a different DB row — force alternate resolution.
+      const pinBlocksBase = !!pin;
       slug = baseSlug;
       const baseOwner = globalSlugOwners.get(baseSlug);
       if (
+        pinBlocksBase ||
         (baseOwner && baseOwner !== baseNormId) ||
         seenSlugsInBatch.has(baseSlug)
       ) {
@@ -359,7 +383,10 @@ export function planScottishAthleticsBatch(input: {
         const candidateNormId = `scottishathletics-${slug}`;
         if (
           !seenSlugsInBatch.has(slug) &&
-          (!owner || owner === candidateNormId)
+          (!owner || owner === candidateNormId) &&
+          // If the base pin exists, avoid landing back on the pinned slug/normId.
+          (!pinBlocksBase ||
+            (slug !== pin!.slug && candidateNormId !== baseNormId))
         ) {
           break;
         }

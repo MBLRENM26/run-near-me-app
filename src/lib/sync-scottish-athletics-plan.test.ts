@@ -223,4 +223,71 @@ describe("planScottishAthleticsBatch", () => {
     expect(p.rows).toHaveLength(0);
     expect(p.stats.skippedNoDate).toBe(1);
   });
+
+  it("does not reuse pinned slug/norm_id for same-name-different-date size-1 groups", () => {
+    // Existing DB row for Peterhead 2026-09-26 with REF_A. Feed brings two
+    // records that both slugify to 'peterhead-3k-junior-mile-series-2026'
+    // but sit on different dates. Only the ref+date match reuses the pin.
+    const existing: ExistingSaRow[] = [
+      {
+        slug: "peterhead-3k-junior-mile-series-2026",
+        name: "Peterhead 3k Junior Mile Series 2026",
+        date_from: "2026-09-26",
+        norm_id: "scottishathletics-peterhead-3k-junior-mile-series-2026",
+        source: "scottishathletics",
+        source_url: `https://x?ref=${REF_A}`,
+      },
+    ];
+    const p = planScottishAthleticsBatch({
+      records: [
+        mkEvent({ name: "Peterhead 3k Junior Mile Series 2026", date: "2026-09-26", ref: REF_A }),
+        mkEvent({ name: "Peterhead 3k Junior Mile Series 2026", date: "2026-10-24", ref: REF_NEW_1 }),
+      ],
+      existingRows: existing,
+      globalSlugOwners: new Map([
+        ["peterhead-3k-junior-mile-series-2026", "scottishathletics-peterhead-3k-junior-mile-series-2026"],
+      ]),
+      todayISO: TODAY,
+    });
+    const slugs = p.rows.map((r) => r.slug).sort();
+    expect(slugs).toContain("peterhead-3k-junior-mile-series-2026");
+    // Second record must not inherit the pin; expect date-suffixed slug.
+    expect(slugs).toContain("peterhead-3k-junior-mile-series-2026-2026-10-24");
+    // Distinct norm_ids.
+    const normIds = new Set(p.rows.map((r) => r.norm_id));
+    expect(normIds.size).toBe(2);
+  });
+
+  it("does not reuse pinned slug/norm_id when incoming ref differs from the pinned row", () => {
+    // Same name+date as an existing row, but incoming record's ref does
+    // NOT match. The record must not inherit the existing slug/norm_id.
+    const existing: ExistingSaRow[] = [
+      {
+        slug: "foo-race",
+        name: "Foo Race",
+        date_from: "2026-05-01",
+        norm_id: "scottishathletics-foo-race",
+        source: "scottishathletics",
+        source_url: `https://x?ref=${REF_A}`,
+      },
+    ];
+    const p = planScottishAthleticsBatch({
+      records: [
+        mkEvent({ name: "Foo Race", date: "2026-05-01", ref: REF_NEW_1 }),
+      ],
+      existingRows: existing,
+      globalSlugOwners: new Map([
+        ["foo-race", "scottishathletics-foo-race"],
+      ]),
+      todayISO: TODAY,
+    });
+    // Cross-source dedupe key is (name+date, source). Same source here, so
+    // the incoming record proceeds through the size-1 branch. The pin
+    // (foo-race, REF_A) does NOT match REF_NEW_1 → must not be reused.
+    expect(p.rows).toHaveLength(1);
+    expect(p.rows[0].slug).not.toBe("foo-race");
+    expect(p.rows[0].norm_id).not.toBe("scottishathletics-foo-race");
+    expect(p.rows[0].slug).toBe("foo-race-2026-05-01");
+    expect(p.rows[0].norm_id).toBe("scottishathletics-foo-race-2026-05-01");
+  });
 });
