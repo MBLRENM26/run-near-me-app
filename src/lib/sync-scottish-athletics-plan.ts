@@ -350,12 +350,20 @@ export function planScottishAthleticsBatch(input: {
     const baseSlug = slugify(g.name);
     const baseNormId = `scottishathletics-${baseSlug}`;
 
-    // If a Scottish row with this norm_id already exists, pin the slug to
-    // the existing value so upsert doesn't rewrite the canonical URL.
-    const pinnedSlug = existingSlugByNormId.get(baseNormId);
+    // Reuse the pinned slug/norm_id ONLY when the incoming record is
+    // provably the same DB row: matching JustGo ref AND matching date.
+    // Missing ref, different ref, or different date → fall through to the
+    // deterministic slug-resolution path.
+    const pin = existingPinByNormId.get(baseNormId);
+    const canReusePin =
+      !!pin &&
+      !!ref &&
+      pin.ref === ref &&
+      pin.dateFrom === g.dateFrom;
+
     let slug: string;
-    if (pinnedSlug) {
-      slug = pinnedSlug;
+    if (canReusePin) {
+      slug = pin!.slug;
     } else {
       slug = baseSlug;
       const baseOwner = globalSlugOwners.get(baseSlug);
