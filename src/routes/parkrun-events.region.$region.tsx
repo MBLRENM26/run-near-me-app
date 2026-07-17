@@ -22,6 +22,51 @@ export const Route = createFileRoute("/parkrun-events/region/$region")({
     const total = loaderData?.total ?? 0;
     const title = `parkrun in ${name} — ${total} Free Weekly 5K Locations`;
     const description = `Find every parkrun in ${name}. ${total} free, weekly, timed 5K and junior 2K runs every weekend.`;
+
+    const breadcrumbLd = {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: `${SITE_URL}/` },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: "parkrun events",
+          item: `${SITE_URL}/parkrun-events`,
+        },
+        {
+          "@type": "ListItem",
+          position: 3,
+          name: `parkrun in ${name}`,
+          item: canonical,
+        },
+      ],
+    };
+
+    const scripts: { type: string; children: string }[] = [
+      { type: "application/ld+json", children: JSON.stringify(breadcrumbLd) },
+    ];
+
+    const items = (loaderData?.locations ?? []).slice(0, 50);
+    if (items.length > 0) {
+      const itemListLd = {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        name: `parkrun locations in ${name}`,
+        numberOfItems: items.length,
+        itemListElement: items.map((l, i) => ({
+          "@type": "ListItem",
+          position: i + 1,
+          name: l.name,
+          url: `${SITE_URL}/parkrun-events/${l.slug}`,
+        })),
+      };
+      scripts.push({
+        type: "application/ld+json",
+        children: JSON.stringify(itemListLd),
+      });
+    }
+
     return {
       meta: [
         { title },
@@ -32,6 +77,7 @@ export const Route = createFileRoute("/parkrun-events/region/$region")({
         { property: "og:url", content: canonical },
       ],
       links: [{ rel: "canonical", href: canonical }],
+      scripts,
     };
   },
   component: ParkrunRegionPage,
