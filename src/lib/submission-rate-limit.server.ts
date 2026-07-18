@@ -36,10 +36,33 @@ function resolveTrustedIp(getRequestHeader: (name: string) => string | undefined
   return null;
 }
 
-function deriveKeyHash(
-  ip: string,
-  createHmac: typeof import("crypto").createHmac,
-): Buffer {
+function bytesToHex(bytes: Uint8Array): string {
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join(
+    "",
+  );
+}
+
+async function hmacSha256Bytes(
+  key: string | Uint8Array,
+  message: string,
+): Promise<Uint8Array> {
+  const keyBytes = typeof key === "string" ? new TextEncoder().encode(key) : key;
+  const cryptoKey = await globalThis.crypto.subtle.importKey(
+    "raw",
+    keyBytes,
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const signature = await globalThis.crypto.subtle.sign(
+    "HMAC",
+    cryptoKey,
+    new TextEncoder().encode(message),
+  );
+  return new Uint8Array(signature);
+}
+
+async function deriveKeyHash(ip: string): Promise<Uint8Array> {
   const secret = process.env.ADMIN_SESSION_SECRET;
   if (!secret || secret.trim().length === 0) {
     // Explicit non-empty check. No TS non-null assertion — if the secret is
@@ -47,10 +70,11 @@ function deriveKeyHash(
     throw new Error("ADMIN_SESSION_SECRET_MISSING");
   }
   const utcDate = new Date().toISOString().slice(0, 10); // YYYY-MM-DD, UTC
-  const salt = createHmac("sha256", secret)
-    .update(`submission-rate-salt|v1|${utcDate}`)
-    .digest();
-  return createHmac("sha256", salt).update(ip).digest();
+  const salt = await hmacSha256Bytes(
+    secret,
+    `submission-rate-salt|v1|${utcDate}`,
+  );
+  return hmacSha256Bytes(salt, ip);
 }
 
 /**
@@ -60,8 +84,7 @@ function deriveKeyHash(
  * outcome shape.
  */
 export const consumeDurableSubmissionRate = createServerOnlyFn(async (): Promise<RateOutcome> => {
-  const [crypto, response, adminClient] = await Promise.all([
-    import("crypto"),
+  const [response, adminClient] = await Promise.all([
     import("@tanstack/react-start/server"),
     import("@/integrations/supabase/client.server"),
   ]);
@@ -76,7 +99,7 @@ export const consumeDurableSubmissionRate = createServerOnlyFn(async (): Promise
 
   let keyHex: string;
   try {
-    keyHex = "\\x" + deriveKeyHash(ip, crypto.createHmac).toString("hex");
+    keyHex = "\\x" + bytesToHex(await deriveKeyHash(ip));
   } catch (err) {
     // ADMIN_SESSION_SECRET missing / blank at derivation time.
     console.warn(
