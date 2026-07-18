@@ -54,7 +54,28 @@ export const submitEventChangeReport = createServerFn({ method: 'POST' })
   .handler(
     async ({
       data,
-    }): Promise<{ ok: true; alreadyReported: boolean; id: string | null }> => {
+    }): Promise<
+      | { ok: true; alreadyReported: boolean; id: string | null }
+      | { ok: false; reason: 'rate_limited' | 'server_error' }
+    > => {
+      // Layer 1: in-memory burst limiter (shared with submitListing).
+      const { checkSubmissionRateLimit } = await import('@/lib/admin.functions')
+      if (!checkSubmissionRateLimit()) {
+        return { ok: false, reason: 'rate_limited' }
+      }
+      // Layer 2: durable per-UTC-bucket limiter (fail-closed on missing
+      // cf-connecting-ip / missing ADMIN_SESSION_SECRET).
+      const { consumeDurableSubmissionRate } = await import(
+        '@/lib/submission-rate-limit.server'
+      )
+      const gate = await consumeDurableSubmissionRate()
+      if (!gate.ok) {
+        return {
+          ok: false,
+          reason: gate.reason === 'rate_limited' ? 'rate_limited' : 'server_error',
+        }
+      }
+
       const { supabaseAdmin } = await import(
         '@/integrations/supabase/client.server'
       )

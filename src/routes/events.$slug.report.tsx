@@ -99,6 +99,16 @@ function ReportChangePage() {
           email,
         },
       });
+      if (!res.ok) {
+        if (res.reason === "rate_limited") {
+          toast.error(
+            "Too many submissions from this network — please try again shortly.",
+          );
+        } else {
+          toast.error("Sorry, something went wrong. Please try again shortly.");
+        }
+        return;
+      }
       setDone(res.alreadyReported ? "duplicate" : "sent");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not submit report");
