@@ -63,7 +63,7 @@ function submissionRateKey(): string {
 // back under the cap.
 const SUBMIT_LIMIT_MAX_KEYS = 5000;
 
-function checkSubmissionRateLimit(keyOverride?: string): boolean {
+export function checkSubmissionRateLimit(keyOverride?: string): boolean {
   const key = keyOverride ?? submissionRateKey();
   const now = Date.now();
   const entry = submitAttempts.get(key);
