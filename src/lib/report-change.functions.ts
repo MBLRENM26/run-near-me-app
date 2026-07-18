@@ -59,10 +59,13 @@ export const submitEventChangeReport = createServerFn({ method: 'POST' })
       | { ok: false; reason: 'rate_limited' | 'server_error' }
     > => {
       // Layer 1: in-memory burst limiter (shared with submitListing).
-      const { checkSubmissionRateLimit } = await import('@/lib/admin.functions')
+      const { checkSubmissionRateLimit } = await import(
+        '@/lib/submission-burst-limit.server'
+      )
       if (!checkSubmissionRateLimit()) {
         return { ok: false, reason: 'rate_limited' }
       }
+
       // Layer 2: durable per-UTC-bucket limiter (fail-closed on missing
       // cf-connecting-ip / missing ADMIN_SESSION_SECRET).
       const { consumeDurableSubmissionRate } = await import(
