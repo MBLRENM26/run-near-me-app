@@ -36,17 +36,25 @@ function resolveTrustedIp(getRequestHeader: (name: string) => string | undefined
   return null;
 }
 
-function bytesToHex(bytes: Uint8Array): string {
+function bytesToHex(bytes: Uint8Array<ArrayBuffer>): string {
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join(
     "",
   );
 }
 
+function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
+  return copy.buffer;
+}
+
 async function hmacSha256Bytes(
-  key: string | Uint8Array,
+  key: string | Uint8Array<ArrayBuffer>,
   message: string,
-): Promise<Uint8Array> {
-  const keyBytes = typeof key === "string" ? new TextEncoder().encode(key) : key;
+): Promise<Uint8Array<ArrayBuffer>> {
+  const encodedKey = typeof key === "string" ? new TextEncoder().encode(key) : key;
+  const keyBytes = toArrayBuffer(encodedKey);
+  const messageBytes = toArrayBuffer(new TextEncoder().encode(message));
   const cryptoKey = await globalThis.crypto.subtle.importKey(
     "raw",
     keyBytes,
@@ -57,12 +65,12 @@ async function hmacSha256Bytes(
   const signature = await globalThis.crypto.subtle.sign(
     "HMAC",
     cryptoKey,
-    new TextEncoder().encode(message),
+    messageBytes,
   );
   return new Uint8Array(signature);
 }
 
-async function deriveKeyHash(ip: string): Promise<Uint8Array> {
+async function deriveKeyHash(ip: string): Promise<Uint8Array<ArrayBuffer>> {
   const secret = process.env.ADMIN_SESSION_SECRET;
   if (!secret || secret.trim().length === 0) {
     // Explicit non-empty check. No TS non-null assertion — if the secret is
