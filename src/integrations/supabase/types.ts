@@ -918,6 +918,33 @@ export type Database = {
         }
         Relationships: []
       }
+      submission_rate_hits: {
+        Row: {
+          bucket_kind: string
+          bucket_start: string
+          created_at: string
+          hits: number
+          key_hash: string
+          updated_at: string
+        }
+        Insert: {
+          bucket_kind: string
+          bucket_start: string
+          created_at?: string
+          hits?: number
+          key_hash: string
+          updated_at?: string
+        }
+        Update: {
+          bucket_kind?: string
+          bucket_start?: string
+          created_at?: string
+          hits?: number
+          key_hash?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       submissions: {
         Row: {
           admin_note: string | null
@@ -1360,6 +1387,15 @@ export type Database = {
       }
     }
     Functions: {
+      consume_submission_rate: {
+        Args: { _key_hash: string }
+        Returns: {
+          allowed: boolean
+          day_hits: number
+          hour_hits: number
+          retry_after_s: number
+        }[]
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
