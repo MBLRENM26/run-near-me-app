@@ -70,13 +70,10 @@ async function hmacSha256Bytes(
   return new Uint8Array(signature);
 }
 
-async function deriveKeyHash(ip: string): Promise<Uint8Array<ArrayBuffer>> {
-  const secret = process.env.ADMIN_SESSION_SECRET;
-  if (!secret || secret.trim().length === 0) {
-    // Explicit non-empty check. No TS non-null assertion — if the secret is
-    // ever missing, we fail closed rather than silently deriving a weak key.
-    throw new Error("ADMIN_SESSION_SECRET_MISSING");
-  }
+async function deriveKeyHash(
+  ip: string,
+  secret: string,
+): Promise<Uint8Array<ArrayBuffer>> {
   const utcDate = new Date().toISOString().slice(0, 10); // YYYY-MM-DD, UTC
   const salt = await hmacSha256Bytes(
     secret,
@@ -107,7 +104,13 @@ export const consumeDurableSubmissionRate = createServerOnlyFn(async (): Promise
 
   let keyHex: string;
   try {
-    keyHex = "\\x" + bytesToHex(await deriveKeyHash(ip));
+    const secret = process.env.ADMIN_SESSION_SECRET;
+    if (!secret || secret.trim().length === 0) {
+      // Explicit non-empty check. No TS non-null assertion — if the secret is
+      // ever missing, we fail closed rather than silently deriving a weak key.
+      throw new Error("ADMIN_SESSION_SECRET_MISSING");
+    }
+    keyHex = "\\x" + bytesToHex(await deriveKeyHash(ip, secret));
   } catch (err) {
     // ADMIN_SESSION_SECRET missing / blank at derivation time.
     console.warn(
