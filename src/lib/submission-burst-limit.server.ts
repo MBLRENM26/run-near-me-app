@@ -20,24 +20,39 @@ function currentDailySalt(randomHex: () => string): { day: string; value: string
   return dailySalt;
 }
 
+function bytesToHex(bytes: Uint8Array): string {
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join(
+    "",
+  );
+}
+
+function randomHex(byteLength: number): string {
+  const bytes = new Uint8Array(byteLength);
+  globalThis.crypto.getRandomValues(bytes);
+  return bytesToHex(bytes);
+}
+
+async function sha256Hex(input: string): Promise<string> {
+  const digest = await globalThis.crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(input),
+  );
+  return bytesToHex(new Uint8Array(digest));
+}
+
 export const checkSubmissionRateLimit = createServerOnlyFn(async (
   keyOverride?: string,
 ): Promise<boolean> => {
-  const [{ createHash, randomBytes }, { getRequestHeader }] = await Promise.all([
-    import("crypto"),
-    import("@tanstack/react-start/server"),
-  ]);
-  const submissionRateKey = (): string => {
+  const { getRequestHeader } = await import("@tanstack/react-start/server");
+  const submissionRateKey = async (): Promise<string> => {
     const cf = getRequestHeader("cf-connecting-ip");
     const xff = getRequestHeader("x-forwarded-for");
     const ip =
       cf?.trim() || xff?.split(",")[0]?.trim() || "unknown";
-    const salt = currentDailySalt(() => randomBytes(16).toString("hex"));
-    return createHash("sha256")
-      .update(`${ip}|${salt.day}|${salt.value}`)
-      .digest("hex");
+    const salt = currentDailySalt(() => randomHex(16));
+    return sha256Hex(`${ip}|${salt.day}|${salt.value}`);
   };
-  const key = keyOverride ?? submissionRateKey();
+  const key = keyOverride ?? (await submissionRateKey());
   const now = Date.now();
   const entry = submitAttempts.get(key);
   if (!entry || entry.resetAt <= now) {
