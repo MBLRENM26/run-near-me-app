@@ -7,6 +7,7 @@ function requireAdmin() {
   if (!isAdminAuthenticated()) throw new Error("Unauthorized");
 }
 
+
 export interface UnseenCounts {
   submissions: number;
   clubClaims: number;
@@ -16,7 +17,12 @@ export interface UnseenCounts {
 // Cheap poll used by the admin shell to show a badge / banner.
 export const getUnseenCounts = createServerFn({ method: "GET" }).handler(
   async (): Promise<UnseenCounts> => {
-    requireAdmin();
+    // Called from the admin shell on every page — return zeros instead of
+    // throwing when the session is missing/expired so the shell doesn't
+    // blank-screen before the child route redirects to /admin/login.
+    if (!isAdminAuthenticated()) {
+      return { submissions: 0, clubClaims: 0, total: 0 };
+    }
     const [{ count: subs }, { count: claims }] = await Promise.all([
       supabaseAdmin
         .from("submissions")
@@ -32,6 +38,7 @@ export const getUnseenCounts = createServerFn({ method: "GET" }).handler(
     return { submissions: s, clubClaims: c, total: s + c };
   },
 );
+
 
 // Called by the /admin/claims page when the admin lands on it.
 export const markSubmissionsSeen = createServerFn({ method: "POST" }).handler(
