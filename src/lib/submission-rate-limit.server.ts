@@ -84,9 +84,9 @@ export async function consumeDurableSubmissionRate(): Promise<RateOutcome> {
     return { ok: false, reason: "server_error" };
   }
 
-  const { data, error } = await supabaseAdmin.rpc(
-    "consume_submission_rate" as never,
-    { _key_hash: keyHex } as never,
+  const { data, error } = await (supabaseAdmin.rpc as any)(
+    "consume_submission_rate",
+    { _key_hash: keyHex },
   );
 
   if (error || !data || !Array.isArray(data) || data.length === 0) {
