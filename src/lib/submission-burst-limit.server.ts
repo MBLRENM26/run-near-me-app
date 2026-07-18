@@ -20,10 +20,16 @@ function currentDailySalt(randomHex: () => string): { day: string; value: string
   return dailySalt;
 }
 
-function bytesToHex(bytes: Uint8Array): string {
+function bytesToHex(bytes: Uint8Array<ArrayBuffer>): string {
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join(
     "",
   );
+}
+
+function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
+  return copy.buffer;
 }
 
 function randomHex(byteLength: number): string {
@@ -35,7 +41,7 @@ function randomHex(byteLength: number): string {
 async function sha256Hex(input: string): Promise<string> {
   const digest = await globalThis.crypto.subtle.digest(
     "SHA-256",
-    new TextEncoder().encode(input),
+    toArrayBuffer(new TextEncoder().encode(input)),
   );
   return bytesToHex(new Uint8Array(digest));
 }
