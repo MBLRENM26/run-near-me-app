@@ -35,7 +35,7 @@ export const __submitLimitTestHook = createServerFn({ method: "POST" })
     const { checkSubmissionRateLimit } = await import(
       "@/lib/submission-burst-limit.server"
     );
-    const allowed = checkSubmissionRateLimit(`__test:${data.key}`);
+    const allowed = await checkSubmissionRateLimit(`__test:${data.key}`);
     return { ok: true as const, allowed };
   });
 

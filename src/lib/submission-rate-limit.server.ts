@@ -14,13 +14,7 @@
 //
 // This module is server-only: filename ends in .server.ts.
 
-import { createHmac } from "node:crypto";
-import {
-  getRequestHeader,
-  setResponseHeader,
-  setResponseStatus,
-} from "@tanstack/react-start/server";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { createServerOnlyFn } from "@tanstack/react-start";
 
 export type RateOutcome =
   | { ok: true }
@@ -33,7 +27,7 @@ export type RateOutcome =
  * an explicit dev opt-in is set — NODE_ENV alone is insufficient because
  * preview builds can be compiled with production-like values.
  */
-function resolveTrustedIp(): string | null {
+function resolveTrustedIp(getRequestHeader: (name: string) => string | undefined): string | null {
   const cf = getRequestHeader("cf-connecting-ip");
   if (cf && cf.trim()) return cf.trim();
   if (process.env.SUBMISSION_RATE_LIMIT_ALLOW_DEV_MARKER === "1") {
@@ -42,18 +36,50 @@ function resolveTrustedIp(): string | null {
   return null;
 }
 
-function deriveKeyHash(ip: string): Buffer {
-  const secret = process.env.ADMIN_SESSION_SECRET;
-  if (!secret || secret.trim().length === 0) {
-    // Explicit non-empty check. No TS non-null assertion — if the secret is
-    // ever missing, we fail closed rather than silently deriving a weak key.
-    throw new Error("ADMIN_SESSION_SECRET_MISSING");
-  }
+function bytesToHex(bytes: Uint8Array<ArrayBuffer>): string {
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join(
+    "",
+  );
+}
+
+function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
+  return copy.buffer;
+}
+
+async function hmacSha256Bytes(
+  key: string | Uint8Array<ArrayBuffer>,
+  message: string,
+): Promise<Uint8Array<ArrayBuffer>> {
+  const encodedKey = typeof key === "string" ? new TextEncoder().encode(key) : key;
+  const keyBytes = toArrayBuffer(encodedKey);
+  const messageBytes = toArrayBuffer(new TextEncoder().encode(message));
+  const cryptoKey = await globalThis.crypto.subtle.importKey(
+    "raw",
+    keyBytes,
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const signature = await globalThis.crypto.subtle.sign(
+    "HMAC",
+    cryptoKey,
+    messageBytes,
+  );
+  return new Uint8Array(signature);
+}
+
+async function deriveKeyHash(
+  ip: string,
+  secret: string,
+): Promise<Uint8Array<ArrayBuffer>> {
   const utcDate = new Date().toISOString().slice(0, 10); // YYYY-MM-DD, UTC
-  const salt = createHmac("sha256", secret)
-    .update(`submission-rate-salt|v1|${utcDate}`)
-    .digest();
-  return createHmac("sha256", salt).update(ip).digest();
+  const salt = await hmacSha256Bytes(
+    secret,
+    `submission-rate-salt|v1|${utcDate}`,
+  );
+  return hmacSha256Bytes(salt, ip);
 }
 
 /**
@@ -62,29 +88,40 @@ function deriveKeyHash(ip: string): Buffer {
  * appropriate response status/header itself so callers can just return the
  * outcome shape.
  */
-export async function consumeDurableSubmissionRate(): Promise<RateOutcome> {
-  const ip = resolveTrustedIp();
+export const consumeDurableSubmissionRate = createServerOnlyFn(async (): Promise<RateOutcome> => {
+  const [response, adminClient] = await Promise.all([
+    import("@tanstack/react-start/server"),
+    import("@/integrations/supabase/client.server"),
+  ]);
+
+  const ip = resolveTrustedIp(response.getRequestHeader);
   if (!ip) {
     // Header-absence-only log line: no header dump, no IP payload.
     console.warn("[submission-rate] cf-connecting-ip absent on deployed request");
-    setResponseStatus(503);
+    response.setResponseStatus(503);
     return { ok: false, reason: "server_error" };
   }
 
   let keyHex: string;
   try {
-    keyHex = "\\x" + deriveKeyHash(ip).toString("hex");
+    const secret = process.env.ADMIN_SESSION_SECRET;
+    if (!secret || secret.trim().length === 0) {
+      // Explicit non-empty check. No TS non-null assertion — if the secret is
+      // ever missing, we fail closed rather than silently deriving a weak key.
+      throw new Error("ADMIN_SESSION_SECRET_MISSING");
+    }
+    keyHex = "\\x" + bytesToHex(await deriveKeyHash(ip, secret));
   } catch (err) {
     // ADMIN_SESSION_SECRET missing / blank at derivation time.
     console.warn(
       "[submission-rate] key derivation failed:",
       (err as Error).message,
     );
-    setResponseStatus(503);
+    response.setResponseStatus(503);
     return { ok: false, reason: "server_error" };
   }
 
-  const { data, error } = await (supabaseAdmin.rpc as any)(
+  const { data, error } = await (adminClient.supabaseAdmin.rpc as any)(
     "consume_submission_rate",
     { _key_hash: keyHex },
   );
@@ -94,7 +131,7 @@ export async function consumeDurableSubmissionRate(): Promise<RateOutcome> {
       "[submission-rate] rpc failed:",
       error?.message ?? "empty result",
     );
-    setResponseStatus(503);
+    response.setResponseStatus(503);
     return { ok: false, reason: "server_error" };
   }
 
@@ -106,9 +143,9 @@ export async function consumeDurableSubmissionRate(): Promise<RateOutcome> {
   };
   if (!row.allowed) {
     const retry = Math.max(1, Math.floor(row.retry_after_s));
-    setResponseHeader("Retry-After", String(retry));
-    setResponseStatus(429);
+    response.setResponseHeader("Retry-After", String(retry));
+    response.setResponseStatus(429);
     return { ok: false, reason: "rate_limited", retryAfterS: retry };
   }
   return { ok: true };
-}
+});
