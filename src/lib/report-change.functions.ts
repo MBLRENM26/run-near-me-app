@@ -62,7 +62,7 @@ export const submitEventChangeReport = createServerFn({ method: 'POST' })
       const { checkSubmissionRateLimit } = await import(
         '@/lib/submission-burst-limit.server'
       )
-      if (!checkSubmissionRateLimit()) {
+      if (!(await checkSubmissionRateLimit())) {
         return { ok: false, reason: 'rate_limited' }
       }
 
