@@ -352,8 +352,22 @@ function buildEventDetailsSummary(
 export const submitListing = createServerFn({ method: "POST" })
   .inputValidator((d) => structuredListingSchema.parse(d))
   .handler(async ({ data }) => {
+    // Layer 1: in-memory sliding-window burst limiter (5 / 10 min per isolate).
     if (!checkSubmissionRateLimit()) {
       return { ok: false as const, reason: "rate_limited" as const };
+    }
+    // Layer 2: durable per-UTC-bucket limiter (10/hour, 30/day per pseudonymous
+    // key, shared across every worker isolate). Also enforces fail-closed on
+    // missing cf-connecting-ip and non-empty ADMIN_SESSION_SECRET.
+    const { consumeDurableSubmissionRate } = await import(
+      "@/lib/submission-rate-limit.server"
+    );
+    const gate = await consumeDurableSubmissionRate();
+    if (!gate.ok) {
+      if (gate.reason === "rate_limited") {
+        return { ok: false as const, reason: "rate_limited" as const };
+      }
+      return { ok: false as const, reason: "server_error" as const };
     }
     const kind: "listing" | "claim" = data.claim_slug ? "claim" : "listing";
 
