@@ -169,10 +169,14 @@ function ListYourEventPage() {
           claim_slug: claim ?? null,
         },
       });
-      if (result && "ok" in result && result.ok === false && result.reason === "rate_limited") {
-        toast.error(
-          "You've submitted a few times just now — please wait a few minutes before trying again.",
-        );
+      if (result && "ok" in result && result.ok === false) {
+        if (result.reason === "rate_limited") {
+          toast.error(
+            "You've submitted a few times just now — please wait a few minutes before trying again.",
+          );
+        } else {
+          toast.error("Sorry, something went wrong. Please try again shortly.");
+        }
         return;
       }
       track("Form: Submission", { form: "list-your-event" });
