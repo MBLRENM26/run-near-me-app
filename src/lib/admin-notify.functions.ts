@@ -7,6 +7,7 @@ function requireAdmin() {
   if (!isAdminAuthenticated()) throw new Error("Unauthorized");
 }
 
+
 export interface UnseenCounts {
   submissions: number;
   clubClaims: number;
