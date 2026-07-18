@@ -35,18 +35,7 @@ function currentDailySalt(): { day: string; value: string } {
 }
 
 function resolveClientIp(): string {
-  // cf-connecting-ip is set by Cloudflare on the trusted edge path this app
-  // runs on. Fallback: first value of x-forwarded-for (dev/preview / non-CF
-  // paths). This is not a security boundary — a determined caller can spoof
-  // XFF; the limiter is deliberately best-effort.
-  const cf = getRequestHeader("cf-connecting-ip");
-  if (cf && cf.trim()) return cf.trim();
-  const xff = getRequestHeader("x-forwarded-for");
-  if (xff) {
-    const first = xff.split(",")[0]?.trim();
-    if (first) return first;
-  }
-  return "unknown";
+  return resolveClientIpServer();
 }
 
 function submissionRateKey(): string {
