@@ -1,6 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { resolveClientIpServer } from "@/lib/client-ip.server";
-import { createHash, randomBytes } from "node:crypto";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import {
@@ -11,72 +9,17 @@ import {
 } from "@/lib/admin-session.server";
 import { sendNewSubmissionNotification } from "@/lib/notify.server";
 
-// -------- Best-effort submission rate limiter --------
-//
-// Per-worker in-memory sliding window: 5 attempts / 10 minutes per IP-derived
-// key. This is friction, NOT bot protection — Cloudflare Workers spin many
-// isolates and requests may land on different workers, so counts are not
-// shared. Escalation path if abuse becomes real: Cloudflare WAF / Turnstile
-// or a shared rate-limit store (Durable Object / Redis).
-//
-// Key = sha256(ip + "|" + utc_date + "|" + daily_salt). The raw IP and the
-// hash are never persisted or logged with the submission row.
-const SUBMIT_LIMIT_MAX = 5;
-const SUBMIT_LIMIT_WINDOW_MS = 10 * 60 * 1000;
-const submitAttempts = new Map<string, { count: number; resetAt: number }>();
-
-let dailySalt = { day: "", value: randomBytes(16).toString("hex") };
-function currentDailySalt(): { day: string; value: string } {
-  const day = new Date().toISOString().slice(0, 10);
-  if (dailySalt.day !== day) {
-    dailySalt = { day, value: randomBytes(16).toString("hex") };
-  }
-  return dailySalt;
-}
-
-function resolveClientIp(): string {
-  return resolveClientIpServer();
-}
-
-function submissionRateKey(): string {
-  const ip = resolveClientIp();
-  const salt = currentDailySalt();
-  return createHash("sha256")
-    .update(`${ip}|${salt.day}|${salt.value}`)
-    .digest("hex");
-}
-
-// Hard cap so a warm worker under sustained pressure can't grow the Map
-// without bound. On new-key insert past the cap we first prune expired
-// entries; if that isn't enough we evict oldest-resetAt entries until we're
-// back under the cap.
-const SUBMIT_LIMIT_MAX_KEYS = 5000;
-
-export function checkSubmissionRateLimit(keyOverride?: string): boolean {
-  const key = keyOverride ?? submissionRateKey();
-  const now = Date.now();
-  const entry = submitAttempts.get(key);
-  if (!entry || entry.resetAt <= now) {
-    if (submitAttempts.size >= SUBMIT_LIMIT_MAX_KEYS) {
-      for (const [k, v] of submitAttempts) {
-        if (v.resetAt <= now) submitAttempts.delete(k);
-      }
-      if (submitAttempts.size >= SUBMIT_LIMIT_MAX_KEYS) {
-        const sorted = [...submitAttempts.entries()].sort(
-          (a, b) => a[1].resetAt - b[1].resetAt,
-        );
-        const toDrop = submitAttempts.size - SUBMIT_LIMIT_MAX_KEYS + 1;
-        for (let i = 0; i < toDrop && i < sorted.length; i++) {
-          submitAttempts.delete(sorted[i][0]);
-        }
-      }
-    }
-    submitAttempts.set(key, { count: 1, resetAt: now + SUBMIT_LIMIT_WINDOW_MS });
-    return true;
-  }
-  if (entry.count >= SUBMIT_LIMIT_MAX) return false;
-  entry.count += 1;
-  return true;
+// The in-memory burst limiter lives in a .server.ts module so its node:crypto
+// import and daily-salt state never leak into the client bundle. Handlers
+// dynamically import it below. Re-exported for callers that were reaching in
+// via `@/lib/admin.functions` (kept as a lazy re-export helper for tests).
+export async function checkSubmissionRateLimit(
+  keyOverride?: string,
+): Promise<boolean> {
+  const { checkSubmissionRateLimit: impl } = await import(
+    "@/lib/submission-burst-limit.server"
+  );
+  return impl(keyOverride);
 }
 
 // Exported for scoped preview curls only. Guarded so it is a no-op in
@@ -89,9 +32,13 @@ export const __submitLimitTestHook = createServerFn({ method: "POST" })
     if (process.env.NODE_ENV === "production") {
       return { ok: false as const, reason: "disabled" as const };
     }
+    const { checkSubmissionRateLimit } = await import(
+      "@/lib/submission-burst-limit.server"
+    );
     const allowed = checkSubmissionRateLimit(`__test:${data.key}`);
     return { ok: true as const, allowed };
   });
+
 function slugify(input: string): string {
   return input
     .toLowerCase()
