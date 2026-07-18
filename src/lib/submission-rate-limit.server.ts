@@ -14,13 +14,7 @@
 //
 // This module is server-only: filename ends in .server.ts.
 
-import { createHmac } from "node:crypto";
-import {
-  getRequestHeader,
-  setResponseHeader,
-  setResponseStatus,
-} from "@tanstack/react-start/server";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { createServerOnlyFn } from "@tanstack/react-start";
 
 export type RateOutcome =
   | { ok: true }
@@ -33,7 +27,7 @@ export type RateOutcome =
  * an explicit dev opt-in is set — NODE_ENV alone is insufficient because
  * preview builds can be compiled with production-like values.
  */
-function resolveTrustedIp(): string | null {
+function resolveTrustedIp(getRequestHeader: (name: string) => string | undefined): string | null {
   const cf = getRequestHeader("cf-connecting-ip");
   if (cf && cf.trim()) return cf.trim();
   if (process.env.SUBMISSION_RATE_LIMIT_ALLOW_DEV_MARKER === "1") {
@@ -42,7 +36,10 @@ function resolveTrustedIp(): string | null {
   return null;
 }
 
-function deriveKeyHash(ip: string): Buffer {
+function deriveKeyHash(
+  ip: string,
+  createHmac: typeof import("crypto").createHmac,
+): Buffer {
   const secret = process.env.ADMIN_SESSION_SECRET;
   if (!secret || secret.trim().length === 0) {
     // Explicit non-empty check. No TS non-null assertion — if the secret is
@@ -62,29 +59,35 @@ function deriveKeyHash(ip: string): Buffer {
  * appropriate response status/header itself so callers can just return the
  * outcome shape.
  */
-export async function consumeDurableSubmissionRate(): Promise<RateOutcome> {
-  const ip = resolveTrustedIp();
+export const consumeDurableSubmissionRate = createServerOnlyFn(async (): Promise<RateOutcome> => {
+  const [crypto, response, adminClient] = await Promise.all([
+    import("crypto"),
+    import("@tanstack/react-start/server"),
+    import("@/integrations/supabase/client.server"),
+  ]);
+
+  const ip = resolveTrustedIp(response.getRequestHeader);
   if (!ip) {
     // Header-absence-only log line: no header dump, no IP payload.
     console.warn("[submission-rate] cf-connecting-ip absent on deployed request");
-    setResponseStatus(503);
+    response.setResponseStatus(503);
     return { ok: false, reason: "server_error" };
   }
 
   let keyHex: string;
   try {
-    keyHex = "\\x" + deriveKeyHash(ip).toString("hex");
+    keyHex = "\\x" + deriveKeyHash(ip, crypto.createHmac).toString("hex");
   } catch (err) {
     // ADMIN_SESSION_SECRET missing / blank at derivation time.
     console.warn(
       "[submission-rate] key derivation failed:",
       (err as Error).message,
     );
-    setResponseStatus(503);
+    response.setResponseStatus(503);
     return { ok: false, reason: "server_error" };
   }
 
-  const { data, error } = await (supabaseAdmin.rpc as any)(
+  const { data, error } = await (adminClient.supabaseAdmin.rpc as any)(
     "consume_submission_rate",
     { _key_hash: keyHex },
   );
@@ -94,7 +97,7 @@ export async function consumeDurableSubmissionRate(): Promise<RateOutcome> {
       "[submission-rate] rpc failed:",
       error?.message ?? "empty result",
     );
-    setResponseStatus(503);
+    response.setResponseStatus(503);
     return { ok: false, reason: "server_error" };
   }
 
@@ -106,9 +109,9 @@ export async function consumeDurableSubmissionRate(): Promise<RateOutcome> {
   };
   if (!row.allowed) {
     const retry = Math.max(1, Math.floor(row.retry_after_s));
-    setResponseHeader("Retry-After", String(retry));
-    setResponseStatus(429);
+    response.setResponseHeader("Retry-After", String(retry));
+    response.setResponseStatus(429);
     return { ok: false, reason: "rate_limited", retryAfterS: retry };
   }
   return { ok: true };
-}
+});
