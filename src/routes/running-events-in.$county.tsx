@@ -40,7 +40,7 @@ export const Route = createFileRoute("/running-events-in/$county")({
     const label = cfg?.label ?? "UK";
     const total = loaderData?.total ?? 0;
     const canonical = `${SITE_URL}/running-events-in/${params.county}`;
-    const title = `Running Events in ${label} ${CURRENT_YEAR} — ${total.toLocaleString()} Races | Running Events Near Me`;
+    const title = `${label} Running Events ${CURRENT_YEAR} — ${total.toLocaleString()} Races`;
     const description = `Find ${total.toLocaleString()} upcoming running events in ${label}. 5K, 10K, half marathons and more — dates, distances and direct entry links.`;
     const itemList = loaderData
       ? {
