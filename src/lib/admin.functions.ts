@@ -9,10 +9,10 @@ import {
 } from "@/lib/admin-session.server";
 import { sendNewSubmissionNotification } from "@/lib/notify.server";
 
-// The in-memory burst limiter lives in a .server.ts module so its node:crypto
-// import and daily-salt state never leak into the client bundle. Handlers
-// dynamically import it below. Re-exported for callers that were reaching in
-// via `@/lib/admin.functions` (kept as a lazy re-export helper for tests).
+// The in-memory burst limiter lives in a .server.ts module so its daily-salt
+// state never leaks into the client bundle. Handlers dynamically import it
+// below. Re-exported for callers that were reaching in via `@/lib/admin.functions`
+// (kept as a lazy re-export helper for tests).
 export async function checkSubmissionRateLimit(
   keyOverride?: string,
 ): Promise<boolean> {
