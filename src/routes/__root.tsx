@@ -73,20 +73,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Running Events Near Me | UK Race Finder" },
-      { name: "description", content: "Find running races and events near you across the UK. Search by location, distance type and date. Free to use." },
+      // Sitewide defaults only — page-specific title, description, og:title,
+      // og:description, og:url, twitter:title, twitter:description live in each
+      // route's head() to avoid duplicated tags.
       { property: "og:site_name", content: SITE_NAME },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: SITE_URL },
-      { property: "og:title", content: "Running Events Near Me | UK Race Finder" },
-      { property: "og:description", content: "Find running races and events near you across the UK. Search by location, distance type and date. Free to use." },
       { property: "og:image", content: `${SITE_URL}/og-image.png` },
       { property: "og:image:width", content: "1200" },
       { property: "og:image:height", content: "630" },
       { property: "og:image:alt", content: `${SITE_NAME} — Find your next race` },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "Running Events Near Me | UK Race Finder" },
-      { name: "twitter:description", content: "Find running races and events near you across the UK. Search by location, distance type and date. Free to use." },
       { name: "twitter:image", content: `${SITE_URL}/og-image.png` },
     ],
     links: [

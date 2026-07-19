@@ -157,10 +157,15 @@ export const Route = createFileRoute("/events/$slug")({
     const mid = [distForTitle || null, place || null, shortDate || null]
       .filter(Boolean)
       .join(", ");
-    const titleSpec =
-      `${[e.name, year].filter(Boolean).join(" ")}` +
-      (mid ? ` — ${mid}` : "") +
-      ` | Entry & Info`;
+    // Keep under ~60 chars for SERP display: drop mid-segments first, then year.
+    const nameYear = [e.name, year].filter(Boolean).join(" ");
+    let titleSpec = mid ? `${nameYear} — ${mid}` : nameYear;
+    if (titleSpec.length > 60) {
+      const shorter = shortDate
+        ? `${nameYear}${shortDate ? ` — ${shortDate}` : ""}`
+        : nameYear;
+      titleSpec = shorter.length <= 60 ? shorter : (e.name ?? nameYear).slice(0, 60);
+    }
 
     const dateLabel = formatEventDate(e);
     const distance = distLabel || "running";
