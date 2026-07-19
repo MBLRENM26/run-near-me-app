@@ -69,7 +69,7 @@ const RELATIONSHIPS = [
 
 function ReportChangePage() {
   const { event } = Route.useLoaderData();
-  const { slug } = useParams({ from: "/events/$slug/report" });
+  const { slug } = useParams({ from: "/events_/$slug/report" });
   const router = useRouter();
   const submit = useServerFn(submitEventChangeReport);
 
