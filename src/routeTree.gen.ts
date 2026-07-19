@@ -60,7 +60,7 @@ import { Route as RunningEventsSlugDistanceRouteImport } from './routes/running-
 import { Route as RunningClubsSlugClaimRouteImport } from './routes/running-clubs.$slug.claim'
 import { Route as ParkrunEventsRegionRegionRouteImport } from './routes/parkrun-events.region.$region'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
-import { Route as EventsSlugReportRouteImport } from './routes/events.$slug.report'
+import { Route as EventsSlugReportRouteImport } from './routes/events_.$slug.report'
 import { Route as ApiPublicTrackSearchClickRouteImport } from './routes/api/public/track-search-click'
 import { Route as ApiPublicTrackSearchRouteImport } from './routes/api/public/track-search'
 import { Route as ApiPublicImportEventsRouteImport } from './routes/api/public/import-events'
@@ -354,9 +354,9 @@ const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const EventsSlugReportRoute = EventsSlugReportRouteImport.update({
-  id: '/report',
-  path: '/report',
-  getParentRoute: () => EventsSlugRoute,
+  id: '/events_/$slug/report',
+  path: '/events/$slug/report',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicTrackSearchClickRoute =
   ApiPublicTrackSearchClickRouteImport.update({
@@ -559,7 +559,7 @@ export interface FileRoutesByFullPath {
   '/5k-races/$month': typeof R5kRacesMonthRoute
   '/admin/login': typeof AdminLoginRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
-  '/events/$slug': typeof EventsSlugRouteWithChildren
+  '/events/$slug': typeof EventsSlugRoute
   '/half-marathons/$month': typeof HalfMarathonsMonthRoute
   '/marathons/$month': typeof MarathonsMonthRoute
   '/parkrun-events/$slug': typeof ParkrunEventsSlugRoute
@@ -641,7 +641,7 @@ export interface FileRoutesByTo {
   '/5k-races/$month': typeof R5kRacesMonthRoute
   '/admin/login': typeof AdminLoginRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
-  '/events/$slug': typeof EventsSlugRouteWithChildren
+  '/events/$slug': typeof EventsSlugRoute
   '/half-marathons/$month': typeof HalfMarathonsMonthRoute
   '/marathons/$month': typeof MarathonsMonthRoute
   '/parkrun-events/$slug': typeof ParkrunEventsSlugRoute
@@ -725,7 +725,7 @@ export interface FileRoutesById {
   '/5k-races/$month': typeof R5kRacesMonthRoute
   '/admin/login': typeof AdminLoginRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
-  '/events/$slug': typeof EventsSlugRouteWithChildren
+  '/events/$slug': typeof EventsSlugRoute
   '/half-marathons/$month': typeof HalfMarathonsMonthRoute
   '/marathons/$month': typeof MarathonsMonthRoute
   '/parkrun-events/$slug': typeof ParkrunEventsSlugRoute
@@ -746,7 +746,7 @@ export interface FileRoutesById {
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
   '/api/public/track-search': typeof ApiPublicTrackSearchRoute
   '/api/public/track-search-click': typeof ApiPublicTrackSearchClickRoute
-  '/events/$slug/report': typeof EventsSlugReportRoute
+  '/events_/$slug/report': typeof EventsSlugReportRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/parkrun-events/region/$region': typeof ParkrunEventsRegionRegionRoute
   '/running-clubs/$slug/claim': typeof RunningClubsSlugClaimRoute
@@ -995,7 +995,7 @@ export interface FileRouteTypes {
     | '/api/public/import-events'
     | '/api/public/track-search'
     | '/api/public/track-search-click'
-    | '/events/$slug/report'
+    | '/events_/$slug/report'
     | '/lovable/email/suppression'
     | '/parkrun-events/region/$region'
     | '/running-clubs/$slug/claim'
@@ -1056,7 +1056,7 @@ export interface RootRouteChildren {
   WelshAthleticsPermittedRacesRoute: typeof WelshAthleticsPermittedRacesRoute
   AdminLoginRoute: typeof AdminLoginRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
-  EventsSlugRoute: typeof EventsSlugRouteWithChildren
+  EventsSlugRoute: typeof EventsSlugRoute
   ParkrunEventsSlugRoute: typeof ParkrunEventsSlugRoute
   RunningClubsSlugRoute: typeof RunningClubsSlugRouteWithChildren
   RunningEventsInCityCityRoute: typeof RunningEventsInCityCityRoute
@@ -1069,6 +1069,7 @@ export interface RootRouteChildren {
   ApiPublicImportEventsRoute: typeof ApiPublicImportEventsRoute
   ApiPublicTrackSearchRoute: typeof ApiPublicTrackSearchRoute
   ApiPublicTrackSearchClickRoute: typeof ApiPublicTrackSearchClickRoute
+  EventsSlugReportRoute: typeof EventsSlugReportRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ParkrunEventsRegionRegionRoute: typeof ParkrunEventsRegionRegionRoute
   RunningEventsSlugDistanceRoute: typeof RunningEventsSlugDistanceRoute
@@ -1444,12 +1445,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailSuppressionRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/events/$slug/report': {
-      id: '/events/$slug/report'
-      path: '/report'
+    '/events_/$slug/report': {
+      id: '/events_/$slug/report'
+      path: '/events/$slug/report'
       fullPath: '/events/$slug/report'
       preLoaderRoute: typeof EventsSlugReportRouteImport
-      parentRoute: typeof EventsSlugRoute
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/track-search-click': {
       id: '/api/public/track-search-click'
@@ -1769,18 +1770,6 @@ const UltraMarathonsRouteWithChildren = UltraMarathonsRoute._addFileChildren(
   UltraMarathonsRouteChildren,
 )
 
-interface EventsSlugRouteChildren {
-  EventsSlugReportRoute: typeof EventsSlugReportRoute
-}
-
-const EventsSlugRouteChildren: EventsSlugRouteChildren = {
-  EventsSlugReportRoute: EventsSlugReportRoute,
-}
-
-const EventsSlugRouteWithChildren = EventsSlugRoute._addFileChildren(
-  EventsSlugRouteChildren,
-)
-
 interface RunningClubsSlugRouteChildren {
   RunningClubsSlugClaimRoute: typeof RunningClubsSlugClaimRoute
 }
@@ -1826,7 +1815,7 @@ const rootRouteChildren: RootRouteChildren = {
   WelshAthleticsPermittedRacesRoute: WelshAthleticsPermittedRacesRoute,
   AdminLoginRoute: AdminLoginRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
-  EventsSlugRoute: EventsSlugRouteWithChildren,
+  EventsSlugRoute: EventsSlugRoute,
   ParkrunEventsSlugRoute: ParkrunEventsSlugRoute,
   RunningClubsSlugRoute: RunningClubsSlugRouteWithChildren,
   RunningEventsInCityCityRoute: RunningEventsInCityCityRoute,
@@ -1839,6 +1828,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicImportEventsRoute: ApiPublicImportEventsRoute,
   ApiPublicTrackSearchRoute: ApiPublicTrackSearchRoute,
   ApiPublicTrackSearchClickRoute: ApiPublicTrackSearchClickRoute,
+  EventsSlugReportRoute: EventsSlugReportRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ParkrunEventsRegionRegionRoute: ParkrunEventsRegionRegionRoute,
   RunningEventsSlugDistanceRoute: RunningEventsSlugDistanceRoute,
