@@ -30,6 +30,12 @@ export type RateOutcome =
 function resolveTrustedIp(getRequestHeader: (name: string) => string | undefined): string | null {
   const cf = getRequestHeader("cf-connecting-ip");
   if (cf && cf.trim()) return cf.trim();
+  // Fallback: Cloudflare / Lovable edge also set x-forwarded-for. On some
+  // internal server-fn routings cf-connecting-ip isn't propagated through to
+  // the handler, so accept the leftmost XFF hop before failing closed.
+  const xff = getRequestHeader("x-forwarded-for");
+  const first = xff?.split(",")[0]?.trim();
+  if (first) return first;
   if (process.env.SUBMISSION_RATE_LIMIT_ALLOW_DEV_MARKER === "1") {
     return "no-cf-edge";
   }
