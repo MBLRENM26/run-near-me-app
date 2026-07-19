@@ -17,7 +17,7 @@ import {
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 
-export const Route = createFileRoute("/events/$slug/report")({
+export const Route = createFileRoute("/events_/$slug/report")({
   loader: async ({ params }) => {
     const event = await getEventBySlug({ data: { slug: params.slug } });
     if (!event) throw new Error("Event not found");
@@ -69,7 +69,7 @@ const RELATIONSHIPS = [
 
 function ReportChangePage() {
   const { event } = Route.useLoaderData();
-  const { slug } = useParams({ from: "/events/$slug/report" });
+  const { slug } = useParams({ from: "/events_/$slug/report" });
   const router = useRouter();
   const submit = useServerFn(submitEventChangeReport);
 
