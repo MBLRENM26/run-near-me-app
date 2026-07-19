@@ -272,7 +272,7 @@ function ListYourEventPage() {
                     </span>
                     <Input
                       id="website_url"
-                      type="url"
+                      type="text"
                       required
                       maxLength={1000}
                       placeholder="yourrace.com/entry"
