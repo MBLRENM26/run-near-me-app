@@ -1,29 +1,21 @@
-Pre-publish verification plan
+## Diagnosis
 
-Goal: confirm the site is safe to publish after the recent rate-limiting / Node crypto refactor.
+Clicking "Let us know" on an event page navigates to `/events/<slug>/report` but the page content doesn't change — it just scrolls to the top. The report form and its server function both exist and work; the problem is route nesting.
 
-1. Build verification
-   - Run the production build (`bun run build`).
-   - Confirm it completes with no errors.
-   - Search the client bundle / source for any lingering `node:crypto`, `crypto.randomBytes`, or references to the deleted `client-ip.server.ts`.
+`src/routes/events.$slug.tsx` (the event detail page) and `src/routes/events.$slug.report.tsx` (the report form) share the `events.$slug` prefix, so TanStack Router treats `events.$slug.tsx` as the **layout parent** of the report route. `routeTree.gen.ts` confirms this: `EventsSlugReportRoute` is registered with `getParentRoute: () => EventsSlugRoute` and the parent is wrapped as `EventsSlugRouteWithChildren`.
 
-2. Security scan
-   - Run `security--run_security_scan`.
-   - Confirm no new findings are introduced.
+For that nesting to render the child, the parent must return `<Outlet />`. The event detail page does not — it renders the full event UI. Result: navigating to `/events/<slug>/report` re-matches the same event page (the child never mounts), and the only visible effect is the router scrolling to top.
 
-3. Submission smoke test
-   - Use Playwright to open `/list-your-event`.
-   - Submit one test event with valid structured data.
-   - Verify the form submits successfully (not 429, not 500).
-   - Confirm the admin notification / submission appears in the backend.
+## Fix
 
-4. Data integrity check
-   - Run the canonical events fingerprint query:
-     `SELECT md5(string_agg(md5(to_jsonb(e)::text), ',' ORDER BY e.id)) FROM public.events e;`
-   - Confirm the result is `35328eec4f5c0a1086ef84fdd6e03f69`.
+Rename `src/routes/events.$slug.report.tsx` → `src/routes/events_.$slug.report.tsx`.
 
-5. Report
-   - Summarise pass/fail for each step.
-   - Give a clear publish/no-publish recommendation.
+TanStack Router's trailing-underscore convention on a path segment (`events_`) opts the route **out of nesting under `events.$slug`** while keeping the URL exactly `/events/$slug/report`. The event detail page stays a leaf; the report route becomes a sibling top-level route. No component changes, no Outlet plumbing, no impact on the event page.
 
-No database migrations or schema changes are required. No new dependencies will be installed.
+Inside the renamed file, update the two `createFileRoute` / `useParams` references from `/events/$slug/report` to `/events_/$slug/report` so the generated types match the new file id. The outbound `<Link to="/events/$slug/report">` on the event page keeps working — the URL path is unchanged.
+
+## Verify
+
+1. Load an event page, click "Let us know" — the report form should render.
+2. Submit a test report and confirm it lands in `/admin/submissions` as `kind='edit'` linked to the event.
+3. Check `routeTree.gen.ts` regenerates with `EventsSlugReportRoute` as a top-level route (no `EventsSlugRouteWithChildren`).
