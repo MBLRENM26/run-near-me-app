@@ -2,9 +2,15 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { isAdminAuthenticated } from "@/lib/admin-session.server";
+import { requireSameOriginOrThrow } from "@/lib/admin-csrf.server";
 
 function requireAdmin() {
   if (!isAdminAuthenticated()) throw new Error("Unauthorized");
+}
+
+function requireAdminMutation() {
+  requireAdmin();
+  requireSameOriginOrThrow();
 }
 
 
@@ -43,7 +49,7 @@ export const getUnseenCounts = createServerFn({ method: "GET" }).handler(
 // Called by the /admin/claims page when the admin lands on it.
 export const markSubmissionsSeen = createServerFn({ method: "POST" }).handler(
   async (): Promise<{ ok: true; marked: number }> => {
-    requireAdmin();
+    requireAdminMutation();
     const { data, error } = await supabaseAdmin
       .from("submissions")
       .update({ seen_at: new Date().toISOString() })
@@ -56,7 +62,7 @@ export const markSubmissionsSeen = createServerFn({ method: "POST" }).handler(
 
 export const markClubClaimsSeen = createServerFn({ method: "POST" }).handler(
   async (): Promise<{ ok: true; marked: number }> => {
-    requireAdmin();
+    requireAdminMutation();
     const { data, error } = await supabaseAdmin
       .from("club_claims")
       .update({ seen_at: new Date().toISOString() })
@@ -81,7 +87,7 @@ export const resendAdminNotification = createServerFn({ method: "POST" })
       status: "sent" | "suppressed" | "failed" | "skipped" | "not-found";
       reason?: string;
     }> => {
-      requireAdmin();
+      requireAdminMutation();
       const { data: row, error } = await supabaseAdmin
         .from("submissions")
         .select("id, email, kind, claim_slug, submitted_at")

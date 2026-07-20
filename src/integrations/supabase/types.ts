@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_login_rate_hits: {
+        Row: {
+          bucket_hits: number
+          bucket_start: string
+          day_hits: number
+          day_start: string
+          key_hash: string
+          last_hit_at: string
+        }
+        Insert: {
+          bucket_hits?: number
+          bucket_start?: string
+          day_hits?: number
+          day_start?: string
+          key_hash: string
+          last_hit_at?: string
+        }
+        Update: {
+          bucket_hits?: number
+          bucket_start?: string
+          day_hits?: number
+          day_start?: string
+          key_hash?: string
+          last_hit_at?: string
+        }
+        Relationships: []
+      }
       club_claims: {
         Row: {
           admin_note: string | null
@@ -1387,6 +1414,15 @@ export type Database = {
       }
     }
     Functions: {
+      consume_login_rate: {
+        Args: { _key_hash: string }
+        Returns: {
+          allowed: boolean
+          bucket_hits: number
+          day_hits: number
+          retry_after_s: number
+        }[]
+      }
       consume_submission_rate: {
         Args: { _key_hash: string }
         Returns: {

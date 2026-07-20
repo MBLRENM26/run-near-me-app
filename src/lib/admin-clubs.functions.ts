@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { isAdminAuthenticated } from "@/lib/admin-session.server";
+import { requireSameOriginOrThrow } from "@/lib/admin-csrf.server";
 
 const CLAIM_STATUSES = ["pending", "approved", "rejected", "needs-info"] as const;
 
@@ -24,6 +25,11 @@ export type ClubClaimRow = {
 
 function requireAdminOrThrow() {
   if (!isAdminAuthenticated()) throw new Error("Unauthorized");
+}
+
+function requireAdminMutation() {
+  requireAdminOrThrow();
+  requireSameOriginOrThrow();
 }
 
 export const listClubClaims = createServerFn({ method: "POST" })
@@ -98,7 +104,7 @@ export const updateClubClaim = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }) => {
-    requireAdminOrThrow();
+    requireAdminMutation();
 
     const { data: claim, error: lookupErr } = await supabaseAdmin
       .from("club_claims")
@@ -307,7 +313,7 @@ async function ensureUniqueSlug(base: string, excludeId?: string): Promise<strin
 export const createAdminClub = createServerFn({ method: "POST" })
   .inputValidator((d) => ClubPayloadSchema.parse(d))
   .handler(async ({ data }) => {
-    requireAdminOrThrow();
+    requireAdminMutation();
     const base = (data.slug && data.slug.length > 0 ? data.slug : slugify(data.name)) || "club";
     const slug = await ensureUniqueSlug(base);
     const norm_id = `manual:${crypto.randomUUID()}`;
@@ -348,7 +354,7 @@ export const updateAdminClub = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }) => {
-    requireAdminOrThrow();
+    requireAdminMutation();
     const { data: existing, error: lookupErr } = await supabaseAdmin
       .from("clubs")
       .select("id, slug, is_claimed, claimed_at")
@@ -403,7 +409,7 @@ export const updateAdminClub = createServerFn({ method: "POST" })
 export const deleteAdminClub = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
-    requireAdminOrThrow();
+    requireAdminMutation();
     // Soft delete — keeps norm_id stable so re-imports don't resurrect it.
     const { error } = await supabaseAdmin
       .from("clubs")

@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { normaliseRegion } from "@/lib/region-normalize";
+import { sanitizeApiError } from "@/lib/api-error.server";
 
 const EventRowSchema = z.object({
   norm_id: z.string().min(1).max(255),
@@ -98,11 +99,7 @@ export const Route = createFileRoute("/api/public/import-events")({
           .select("id, norm_id");
 
         if (error) {
-          console.error("[import-events] upsert error", error);
-          return new Response(
-            JSON.stringify({ error: error.message }),
-            { status: 500, headers: { "Content-Type": "application/json" } },
-          );
+          return sanitizeApiError(error, "import-events");
         }
 
         return new Response(
