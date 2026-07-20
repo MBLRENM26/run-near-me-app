@@ -22,7 +22,7 @@ export default defineTool({
     const { data, error } = await supabase
       .from("events")
       .select(
-        "id, slug, name, date_raw, sort_date, town, county, region, distances, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, governance, organiser_type, race_profile, description, lat, lng, status",
+        "id, slug, name, date_raw, sort_date, town, county, region, distances, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, governance, organiser_type, race_profile, lat, lng, status",
       )
       .eq("slug", slug)
       .maybeSingle();

@@ -11,7 +11,7 @@ export default defineTool({
   inputSchema: {
     query: z.string().trim().optional().describe("Free-text match on club name or town."),
     region: z.string().trim().optional(),
-    governance: z.string().trim().optional().describe("Governance body slug."),
+    governing_body: z.string().trim().optional().describe("Governing body slug: england-athletics, scottish-athletics, welsh-athletics, athletics-ni."),
     limit: z.number().int().min(1).max(100).optional().default(30),
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
@@ -24,13 +24,14 @@ export default defineTool({
 
     let q = supabase
       .from("clubs")
-      .select("id, slug, name, town, county, region, governance, website_url")
+      .select("id, slug, name, town, county, region, governing_body, website_url")
+      .eq("status", "ACTIVE")
       .order("name", { ascending: true })
       .limit(input.limit ?? 30);
 
     if (input.query) q = q.or(`name.ilike.%${input.query}%,town.ilike.%${input.query}%`);
     if (input.region) q = q.ilike("region", input.region);
-    if (input.governance) q = q.eq("governance", input.governance);
+    if (input.governing_body) q = q.eq("governing_body", input.governing_body);
 
     const { data, error } = await q;
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };

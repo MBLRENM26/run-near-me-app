@@ -101,8 +101,8 @@
             "region": {
               "type": "string"
             },
-            "governance": {
-              "description": "Governance body slug.",
+            "governing_body": {
+              "description": "Governing body slug: england-athletics, scottish-athletics, welsh-athletics, athletics-ni.",
               "type": "string"
             },
             "limit": {
