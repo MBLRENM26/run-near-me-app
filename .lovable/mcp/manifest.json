@@ -59,7 +59,7 @@
       {
         "name": "get_event",
         "title": "Get event by slug",
-        "description": "Fetch the full public record for a single running event by its slug (as used in the /events/{slug} URL). Returns structured fields only; do not treat scraped entry_fee or organiser fields as authoritative — always link users to the official event page for booking/pricing.",
+        "description": "Fetch the public record for a single running event by its slug (as used in the /events/{slug} URL). Returns structured fields only; do not treat scraped entry_fee or organiser fields as authoritative — always link users to the official event page for booking/pricing.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
