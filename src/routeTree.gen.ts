@@ -22,6 +22,7 @@ import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as RoadRacesRouteImport } from './routes/road-races'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as MultiTerrainRacesRouteImport } from './routes/multi-terrain-races'
+import { Route as McpRouteImport } from './routes/mcp'
 import { Route as MarathonsRouteImport } from './routes/marathons'
 import { Route as ListYourEventRouteImport } from './routes/list-your-event'
 import { Route as JuniorParkrunEventsRouteImport } from './routes/junior-parkrun-events'
@@ -56,6 +57,8 @@ import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as R5kRacesMonthRouteImport } from './routes/5k-races.$month'
 import { Route as R10kRacesMonthRouteImport } from './routes/10k-races.$month'
+import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
+import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as RunningEventsSlugDistanceRouteImport } from './routes/running-events.$slug_.$distance'
 import { Route as RunningClubsSlugClaimRouteImport } from './routes/running-clubs.$slug.claim'
 import { Route as ParkrunEventsRegionRegionRouteImport } from './routes/parkrun-events.region.$region'
@@ -70,6 +73,7 @@ import { Route as AdminShellAdminSearchRouteImport } from './routes/_adminShell.
 import { Route as AdminShellAdminOrganiserIdentitiesRouteImport } from './routes/_adminShell.admin.organiser-identities'
 import { Route as AdminShellAdminClubClaimsRouteImport } from './routes/_adminShell.admin.club-claims'
 import { Route as AdminShellAdminClaimsRouteImport } from './routes/_adminShell.admin.claims'
+import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as AdminShellAdminEventsIndexRouteImport } from './routes/_adminShell.admin.events.index'
 import { Route as AdminShellAdminClubsIndexRouteImport } from './routes/_adminShell.admin.clubs.index'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
@@ -158,6 +162,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const MultiTerrainRacesRoute = MultiTerrainRacesRouteImport.update({
   id: '/multi-terrain-races',
   path: '/multi-terrain-races',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MarathonsRoute = MarathonsRouteImport.update({
@@ -331,6 +340,18 @@ const R10kRacesMonthRoute = R10kRacesMonthRouteImport.update({
   path: '/$month',
   getParentRoute: () => R10kRacesRoute,
 } as any)
+const Char91DotwellKnownChar93OauthProtectedResourceRoute =
+  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
+    id: '/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const Char91DotmcpChar93ListToolsRoute =
+  Char91DotmcpChar93ListToolsRouteImport.update({
+    id: '/.mcp/list-tools',
+    path: '/.mcp/list-tools',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const RunningEventsSlugDistanceRoute =
   RunningEventsSlugDistanceRouteImport.update({
     id: '/running-events/$slug_/$distance',
@@ -406,6 +427,12 @@ const AdminShellAdminClaimsRoute = AdminShellAdminClaimsRouteImport.update({
   path: '/admin/claims',
   getParentRoute: () => AdminShellRoute,
 } as any)
+const Char91DotmcpChar93InvokeToolToolRoute =
+  Char91DotmcpChar93InvokeToolToolRouteImport.update({
+    id: '/.mcp/invoke-tool/$tool',
+    path: '/.mcp/invoke-tool/$tool',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminShellAdminEventsIndexRoute =
   AdminShellAdminEventsIndexRouteImport.update({
     id: '/admin/events/',
@@ -542,6 +569,7 @@ export interface FileRoutesByFullPath {
   '/junior-parkrun-events': typeof JuniorParkrunEventsRoute
   '/list-your-event': typeof ListYourEventRoute
   '/marathons': typeof MarathonsRouteWithChildren
+  '/mcp': typeof McpRoute
   '/multi-terrain-races': typeof MultiTerrainRacesRoute
   '/privacy': typeof PrivacyRoute
   '/road-races': typeof RoadRacesRoute
@@ -555,6 +583,8 @@ export interface FileRoutesByFullPath {
   '/trail-running-events': typeof TrailRunningEventsRoute
   '/ultra-marathons': typeof UltraMarathonsRouteWithChildren
   '/welsh-athletics-permitted-races': typeof WelshAthleticsPermittedRacesRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/10k-races/$month': typeof R10kRacesMonthRoute
   '/5k-races/$month': typeof R5kRacesMonthRoute
   '/admin/login': typeof AdminLoginRoute
@@ -571,6 +601,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/parkrun-events/': typeof ParkrunEventsIndexRoute
   '/running-clubs/': typeof RunningClubsIndexRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/admin/claims': typeof AdminShellAdminClaimsRoute
   '/admin/club-claims': typeof AdminShellAdminClubClaimsRoute
   '/admin/organiser-identities': typeof AdminShellAdminOrganiserIdentitiesRouteWithChildren
@@ -624,6 +655,7 @@ export interface FileRoutesByTo {
   '/junior-parkrun-events': typeof JuniorParkrunEventsRoute
   '/list-your-event': typeof ListYourEventRoute
   '/marathons': typeof MarathonsRouteWithChildren
+  '/mcp': typeof McpRoute
   '/multi-terrain-races': typeof MultiTerrainRacesRoute
   '/privacy': typeof PrivacyRoute
   '/road-races': typeof RoadRacesRoute
@@ -637,6 +669,8 @@ export interface FileRoutesByTo {
   '/trail-running-events': typeof TrailRunningEventsRoute
   '/ultra-marathons': typeof UltraMarathonsRouteWithChildren
   '/welsh-athletics-permitted-races': typeof WelshAthleticsPermittedRacesRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/10k-races/$month': typeof R10kRacesMonthRoute
   '/5k-races/$month': typeof R5kRacesMonthRoute
   '/admin/login': typeof AdminLoginRoute
@@ -653,6 +687,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/parkrun-events': typeof ParkrunEventsIndexRoute
   '/running-clubs': typeof RunningClubsIndexRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/admin/claims': typeof AdminShellAdminClaimsRoute
   '/admin/club-claims': typeof AdminShellAdminClubClaimsRoute
   '/admin/organiser-identities': typeof AdminShellAdminOrganiserIdentitiesRouteWithChildren
@@ -708,6 +743,7 @@ export interface FileRoutesById {
   '/junior-parkrun-events': typeof JuniorParkrunEventsRoute
   '/list-your-event': typeof ListYourEventRoute
   '/marathons': typeof MarathonsRouteWithChildren
+  '/mcp': typeof McpRoute
   '/multi-terrain-races': typeof MultiTerrainRacesRoute
   '/privacy': typeof PrivacyRoute
   '/road-races': typeof RoadRacesRoute
@@ -721,6 +757,8 @@ export interface FileRoutesById {
   '/trail-running-events': typeof TrailRunningEventsRoute
   '/ultra-marathons': typeof UltraMarathonsRouteWithChildren
   '/welsh-athletics-permitted-races': typeof WelshAthleticsPermittedRacesRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/10k-races/$month': typeof R10kRacesMonthRoute
   '/5k-races/$month': typeof R5kRacesMonthRoute
   '/admin/login': typeof AdminLoginRoute
@@ -737,6 +775,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/parkrun-events/': typeof ParkrunEventsIndexRoute
   '/running-clubs/': typeof RunningClubsIndexRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/_adminShell/admin/claims': typeof AdminShellAdminClaimsRoute
   '/_adminShell/admin/club-claims': typeof AdminShellAdminClubClaimsRoute
   '/_adminShell/admin/organiser-identities': typeof AdminShellAdminOrganiserIdentitiesRouteWithChildren
@@ -792,6 +831,7 @@ export interface FileRouteTypes {
     | '/junior-parkrun-events'
     | '/list-your-event'
     | '/marathons'
+    | '/mcp'
     | '/multi-terrain-races'
     | '/privacy'
     | '/road-races'
@@ -805,6 +845,8 @@ export interface FileRouteTypes {
     | '/trail-running-events'
     | '/ultra-marathons'
     | '/welsh-athletics-permitted-races'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/10k-races/$month'
     | '/5k-races/$month'
     | '/admin/login'
@@ -821,6 +863,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/parkrun-events/'
     | '/running-clubs/'
+    | '/.mcp/invoke-tool/$tool'
     | '/admin/claims'
     | '/admin/club-claims'
     | '/admin/organiser-identities'
@@ -874,6 +917,7 @@ export interface FileRouteTypes {
     | '/junior-parkrun-events'
     | '/list-your-event'
     | '/marathons'
+    | '/mcp'
     | '/multi-terrain-races'
     | '/privacy'
     | '/road-races'
@@ -887,6 +931,8 @@ export interface FileRouteTypes {
     | '/trail-running-events'
     | '/ultra-marathons'
     | '/welsh-athletics-permitted-races'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/10k-races/$month'
     | '/5k-races/$month'
     | '/admin/login'
@@ -903,6 +949,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/parkrun-events'
     | '/running-clubs'
+    | '/.mcp/invoke-tool/$tool'
     | '/admin/claims'
     | '/admin/club-claims'
     | '/admin/organiser-identities'
@@ -957,6 +1004,7 @@ export interface FileRouteTypes {
     | '/junior-parkrun-events'
     | '/list-your-event'
     | '/marathons'
+    | '/mcp'
     | '/multi-terrain-races'
     | '/privacy'
     | '/road-races'
@@ -970,6 +1018,8 @@ export interface FileRouteTypes {
     | '/trail-running-events'
     | '/ultra-marathons'
     | '/welsh-athletics-permitted-races'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/10k-races/$month'
     | '/5k-races/$month'
     | '/admin/login'
@@ -986,6 +1036,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/parkrun-events/'
     | '/running-clubs/'
+    | '/.mcp/invoke-tool/$tool'
     | '/_adminShell/admin/claims'
     | '/_adminShell/admin/club-claims'
     | '/_adminShell/admin/organiser-identities'
@@ -1041,6 +1092,7 @@ export interface RootRouteChildren {
   JuniorParkrunEventsRoute: typeof JuniorParkrunEventsRoute
   ListYourEventRoute: typeof ListYourEventRoute
   MarathonsRoute: typeof MarathonsRouteWithChildren
+  McpRoute: typeof McpRoute
   MultiTerrainRacesRoute: typeof MultiTerrainRacesRoute
   PrivacyRoute: typeof PrivacyRoute
   RoadRacesRoute: typeof RoadRacesRoute
@@ -1054,6 +1106,8 @@ export interface RootRouteChildren {
   TrailRunningEventsRoute: typeof TrailRunningEventsRoute
   UltraMarathonsRoute: typeof UltraMarathonsRouteWithChildren
   WelshAthleticsPermittedRacesRoute: typeof WelshAthleticsPermittedRacesRoute
+  Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
+  Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   AdminLoginRoute: typeof AdminLoginRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   EventsSlugRoute: typeof EventsSlugRoute
@@ -1065,6 +1119,7 @@ export interface RootRouteChildren {
   AdminIndexRoute: typeof AdminIndexRoute
   ParkrunEventsIndexRoute: typeof ParkrunEventsIndexRoute
   RunningClubsIndexRoute: typeof RunningClubsIndexRoute
+  Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicImportClubsRoute: typeof ApiPublicImportClubsRoute
   ApiPublicImportEventsRoute: typeof ApiPublicImportEventsRoute
   ApiPublicTrackSearchRoute: typeof ApiPublicTrackSearchRoute
@@ -1177,6 +1232,13 @@ declare module '@tanstack/react-router' {
       path: '/multi-terrain-races'
       fullPath: '/multi-terrain-races'
       preLoaderRoute: typeof MultiTerrainRacesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/marathons': {
@@ -1417,6 +1479,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof R10kRacesMonthRouteImport
       parentRoute: typeof R10kRacesRoute
     }
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.mcp/list-tools': {
+      id: '/.mcp/list-tools'
+      path: '/.mcp/list-tools'
+      fullPath: '/.mcp/list-tools'
+      preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/running-events/$slug_/$distance': {
       id: '/running-events/$slug_/$distance'
       path: '/running-events/$slug/$distance'
@@ -1514,6 +1590,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/claims'
       preLoaderRoute: typeof AdminShellAdminClaimsRouteImport
       parentRoute: typeof AdminShellRoute
+    }
+    '/.mcp/invoke-tool/$tool': {
+      id: '/.mcp/invoke-tool/$tool'
+      path: '/.mcp/invoke-tool/$tool'
+      fullPath: '/.mcp/invoke-tool/$tool'
+      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_adminShell/admin/events/': {
       id: '/_adminShell/admin/events/'
@@ -1800,6 +1883,7 @@ const rootRouteChildren: RootRouteChildren = {
   JuniorParkrunEventsRoute: JuniorParkrunEventsRoute,
   ListYourEventRoute: ListYourEventRoute,
   MarathonsRoute: MarathonsRouteWithChildren,
+  McpRoute: McpRoute,
   MultiTerrainRacesRoute: MultiTerrainRacesRoute,
   PrivacyRoute: PrivacyRoute,
   RoadRacesRoute: RoadRacesRoute,
@@ -1813,6 +1897,9 @@ const rootRouteChildren: RootRouteChildren = {
   TrailRunningEventsRoute: TrailRunningEventsRoute,
   UltraMarathonsRoute: UltraMarathonsRouteWithChildren,
   WelshAthleticsPermittedRacesRoute: WelshAthleticsPermittedRacesRoute,
+  Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
+  Char91DotwellKnownChar93OauthProtectedResourceRoute:
+    Char91DotwellKnownChar93OauthProtectedResourceRoute,
   AdminLoginRoute: AdminLoginRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   EventsSlugRoute: EventsSlugRoute,
@@ -1824,6 +1911,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminIndexRoute: AdminIndexRoute,
   ParkrunEventsIndexRoute: ParkrunEventsIndexRoute,
   RunningClubsIndexRoute: RunningClubsIndexRoute,
+  Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicImportClubsRoute: ApiPublicImportClubsRoute,
   ApiPublicImportEventsRoute: ApiPublicImportEventsRoute,
   ApiPublicTrackSearchRoute: ApiPublicTrackSearchRoute,
