@@ -1,3 +1,7 @@
+## Backlog note
+
+- Admin "incomplete events" backlog: split the single `incomplete_any` filter into per-gap chips and rescope the "Backfill missing tags" button so it only claims to re-derive distance/terrain tags from the event name. The current 5,029 count conflates six unrelated gaps (town, date, distances, lat, region, terrain_tags) and makes the backfill button look ineffective. Realistic backfill impact is a subset of the 3,064 empty-terrain rows, only those whose names contain a terrain keyword.
+
 ## Diagnosis
 
 Clicking "Let us know" on an event page navigates to `/events/<slug>/report` but the page content doesn't change — it just scrolls to the top. The report form and its server function both exist and work; the problem is route nesting.
