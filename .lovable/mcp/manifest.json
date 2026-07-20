@@ -1,0 +1,120 @@
+{
+  "version": 1,
+  "sdk_version": "0.24.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "none"
+  },
+  "mcp": {
+    "server": {
+      "name": "running-events-near-me",
+      "version": "0.1.0",
+      "title": "Running Events Near Me"
+    },
+    "tools": [
+      {
+        "name": "search_events",
+        "title": "Search UK running events",
+        "description": "Search upcoming UK running events by keyword, region, distance tag (5k, 10k, half-marathon, marathon, ultra), terrain tag (road, trail, fell, multi-terrain), or month (YYYY-MM). Returns active events only, filtered to those with an organiser-owned link (never aggregator-only listings).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "query": {
+              "description": "Free-text match against event name or town.",
+              "type": "string"
+            },
+            "region": {
+              "description": "UK region, e.g. 'South East', 'Scotland', 'Wales'.",
+              "type": "string"
+            },
+            "distance_tag": {
+              "description": "Distance tag: 5k, 10k, half-marathon, marathon, ultra.",
+              "type": "string"
+            },
+            "terrain_tag": {
+              "description": "Terrain tag: road, trail, fell, multi-terrain, parkrun.",
+              "type": "string"
+            },
+            "month": {
+              "description": "Month filter as YYYY-MM.",
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}$"
+            },
+            "limit": {
+              "default": 20,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_event",
+        "title": "Get event by slug",
+        "description": "Fetch the full public record for a single running event by its slug (as used in the /events/{slug} URL). Returns structured fields only; do not treat scraped entry_fee or organiser fields as authoritative — always link users to the official event page for booking/pricing.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "slug": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Event slug, e.g. 'london-marathon-2026'."
+            }
+          },
+          "required": [
+            "slug"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_clubs",
+        "title": "List UK running clubs",
+        "description": "List UK affiliated running clubs, optionally filtered by governance body (england-athletics, scottish-athletics, welsh-athletics, athletics-ni), region, or free-text on name/town.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "query": {
+              "description": "Free-text match on club name or town.",
+              "type": "string"
+            },
+            "region": {
+              "type": "string"
+            },
+            "governing_body": {
+              "description": "Governing body slug: england-athletics, scottish-athletics, welsh-athletics, athletics-ni.",
+              "type": "string"
+            },
+            "limit": {
+              "default": 30,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
