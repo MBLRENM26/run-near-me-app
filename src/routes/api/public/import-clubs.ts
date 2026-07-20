@@ -3,6 +3,7 @@ import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { normaliseRegion } from "@/lib/region-normalize";
 import { classifyEventLink } from "@/lib/link-trust";
+import { sanitizeApiError } from "@/lib/api-error.server";
 
 function slugify(input: string): string {
   return input
@@ -121,8 +122,7 @@ export const Route = createFileRoute("/api/public/import-clubs")({
           .or(orFilter);
 
         if (existingErr) {
-          console.error("[import-clubs] slug lookup error", existingErr);
-          return json({ error: existingErr.message }, 500);
+          return sanitizeApiError(existingErr, "import-clubs");
         }
 
         const taken = new Set<string>();
@@ -152,8 +152,7 @@ export const Route = createFileRoute("/api/public/import-clubs")({
           .select("id, norm_id");
 
         if (error) {
-          console.error("[import-clubs] upsert error", error);
-          return json({ error: error.message }, 500);
+          return sanitizeApiError(error, "import-clubs");
         }
 
         return json(

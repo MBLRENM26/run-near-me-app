@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { isAdminAuthenticated } from "@/lib/admin-session.server";
+import { requireSameOriginOrThrow } from "@/lib/admin-csrf.server";
 
 const REVIEW_STATUSES = ["proposed", "accepted", "rejected", "reopened"] as const;
 const REVIEW_ACTIONS = ["accepted", "rejected", "reopened"] as const;
@@ -39,6 +40,11 @@ export type OrganiserLinkRow = {
 
 function requireAdminOrThrow() {
   if (!isAdminAuthenticated()) throw new Error("Unauthorized");
+}
+
+function requireAdminMutation() {
+  requireAdminOrThrow();
+  requireSameOriginOrThrow();
 }
 
 // ---------------------------------------------------------------------------
@@ -172,7 +178,7 @@ export const reviewOrganiserLink = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }): Promise<{ ok: true; review_id: string } | { ok: false; error: string }> => {
-    requireAdminOrThrow();
+    requireAdminMutation();
 
     const { data: reviewId, error } = await supabaseAdmin.rpc(
       "review_organisation_event_link_txn",

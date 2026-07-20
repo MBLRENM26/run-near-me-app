@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { isAdminAuthenticated } from "@/lib/admin-session.server";
+import { requireSameOriginOrThrow } from "@/lib/admin-csrf.server";
 import { REGIONS } from "@/lib/regions";
 import {
   DISTANCE_TAG_VALUES,
@@ -22,6 +23,11 @@ function requireAdminOrThrow() {
   if (!isAdminAuthenticated()) {
     throw new Error("Unauthorized");
   }
+}
+
+function requireAdminMutation() {
+  requireAdminOrThrow();
+  requireSameOriginOrThrow();
 }
 
 // ---- Types ----
@@ -292,6 +298,7 @@ export const createAdminEvent = createServerFn({ method: "POST" })
   .inputValidator((d) => eventCreateSchema.parse(d))
   .handler(async ({ data }) => {
     requireAdminOrThrow();
+    requireSameOriginOrThrow();
 
     const hasLat = data.lat !== undefined ? data.lat !== null : null;
     const hasLng = data.lng !== undefined ? data.lng !== null : null;
@@ -411,6 +418,7 @@ export const updateAdminEvent = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     requireAdminOrThrow();
+    requireSameOriginOrThrow();
 
     // Slug uniqueness check
     if (data.patch.slug) {
@@ -482,6 +490,7 @@ export const setAdminEventStatus = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     requireAdminOrThrow();
+    requireSameOriginOrThrow();
     const { error } = await supabaseAdmin
       .from("events")
       .update({ status: data.status })
@@ -499,6 +508,7 @@ export const deleteAdminEvent = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     requireAdminOrThrow();
+    requireSameOriginOrThrow();
     const { data: row, error } = await supabaseAdmin
       .from("events")
       .select("source")
@@ -553,8 +563,7 @@ export const backfillEventTags = createServerFn({ method: "POST" })
         // once and `same` rows are always skipped at update time anyway.
         force: z.boolean().optional().default(false),
         limit: z.number().int().min(1).max(2000).default(1000),
-        // Cursor: process rows with id > cursor, ordered by id. The client
-        // loops, passing back next_cursor, until it's null. Previous
+        // Cursor: process rows with id > cursor, ordered by id. Previous
         // implementation filtered `terrain_tags = '{}'` and re-scanned the
         // same un-taggable rows on every iteration, never terminating
         // cleanly and leaving most rows unvisited.
@@ -564,6 +573,7 @@ export const backfillEventTags = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     requireAdminOrThrow();
+    requireSameOriginOrThrow();
 
     let query = supabaseAdmin
       .from("events")
@@ -932,6 +942,7 @@ export const mergeDuplicateEvents = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     requireAdminOrThrow();
+    requireSameOriginOrThrow();
 
     const { data: rows, error } = await supabaseAdmin
       .from("events")
@@ -1067,6 +1078,7 @@ export const mergeDuplicateCluster = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     requireAdminOrThrow();
+    requireSameOriginOrThrow();
     const merged: string[] = [];
     const failed: { id: string; error: string }[] = [];
     for (const dupId of data.duplicateIds) {
@@ -1088,6 +1100,7 @@ export const mergeAllHighConfidenceClusters = createServerFn({
   method: "POST",
 }).handler(async () => {
   requireAdminOrThrow();
+  requireSameOriginOrThrow();
   // Re-fetch clusters server-side so the admin's stale view can't drive a
   // batch merge with outdated survivor picks.
   const { clusters } = await findPotentialDuplicates();
@@ -1117,6 +1130,7 @@ export const unmergeDuplicateEvent = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     requireAdminOrThrow();
+    requireSameOriginOrThrow();
     const { data: row, error } = await supabaseAdmin
       .from("events")
       .select("id, slug, status, duplicate_of")
@@ -1169,6 +1183,7 @@ export const markClusterAsSeries = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     requireAdminOrThrow();
+    requireSameOriginOrThrow();
 
     const { data: rows, error } = await supabaseAdmin
       .from("events")

@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { isAdminAuthenticated } from "@/lib/admin-session.server";
+import { requireSameOriginOrThrow } from "@/lib/admin-csrf.server";
 
 // Admin date-enrichment importer.
 //
@@ -14,6 +15,11 @@ function requireAdminOrThrow() {
   if (!isAdminAuthenticated()) {
     throw new Error("Unauthorized");
   }
+}
+
+function requireAdminMutation() {
+  requireAdminOrThrow();
+  requireSameOriginOrThrow();
 }
 
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -219,7 +225,7 @@ export const applyDateEnrichments = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }): Promise<EnrichApplyResult> => {
-    requireAdminOrThrow();
+    requireAdminMutation();
 
     const force = new Set(data.force_ids);
     const submittedIds = data.rows.map((r) => r.id);

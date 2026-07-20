@@ -7,6 +7,7 @@ import {
   clearAdminSession,
   verifyAdminPassword,
 } from "@/lib/admin-session.server";
+import { requireSameOriginOrThrow } from "@/lib/admin-csrf.server";
 import { sendNewSubmissionNotification } from "@/lib/notify.server";
 
 // The in-memory burst limiter lives in a .server.ts module so its daily-salt
@@ -113,20 +114,43 @@ function requireAdminOrThrow() {
   }
 }
 
+function requireAdminMutation() {
+  requireAdminOrThrow();
+  requireSameOriginOrThrow();
+}
+
 // -------- Auth --------
 
 export const adminLogin = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ password: z.string().min(1).max(255) }).parse(d))
   .handler(async ({ data }) => {
+    requireSameOriginOrThrow();
+
+    const { consumeAdminLoginRate } = await import(
+      "@/lib/admin-login-rate-limit.server"
+    );
+    const rate = await consumeAdminLoginRate();
+    if (!rate.ok) {
+      if (rate.reason === "rate_limited") {
+        return {
+          ok: false as const,
+          reason: "rate_limited" as const,
+          retryAfterS: rate.retryAfterS,
+        };
+      }
+      return { ok: false as const, reason: "server_error" as const };
+    }
+
     if (!verifyAdminPassword(data.password)) {
       await new Promise((r) => setTimeout(r, 400));
-      return { ok: false as const };
+      return { ok: false as const, reason: "incorrect_password" as const };
     }
     issueAdminSession();
     return { ok: true as const };
   });
 
 export const adminLogout = createServerFn({ method: "POST" }).handler(async () => {
+  requireSameOriginOrThrow();
   clearAdminSession();
   return { ok: true };
 });
@@ -196,7 +220,7 @@ export const updateSubmission = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }) => {
-    requireAdminOrThrow();
+    requireAdminMutation();
 
     const patch: {
       status?: (typeof STATUSES)[number];
@@ -229,7 +253,7 @@ export const bulkUpdateSubmissions = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }) => {
-    requireAdminOrThrow();
+    requireAdminMutation();
 
     const { error } = await supabaseAdmin
       .from("submissions")
@@ -384,7 +408,7 @@ export const createEventFromSubmission = createServerFn({ method: "POST" })
     z.object({ submissionId: z.string().uuid() }).parse(d),
   )
   .handler(async ({ data }) => {
-    requireAdminOrThrow();
+    requireAdminMutation();
 
     const { data: sub, error: subErr } = await supabaseAdmin
       .from("submissions")
