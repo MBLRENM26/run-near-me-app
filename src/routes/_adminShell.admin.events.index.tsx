@@ -451,7 +451,7 @@ function AdminEventsPage() {
             size="sm"
             variant="outline"
             disabled={page === 0}
-            onClick={() => navigate({ search: { ...search, page: page - 1 } })}
+            onClick={() => navigate({ to: ".", search: { ...search, page: page - 1 } })}
           >
             ← Prev
           </Button>
@@ -462,7 +462,7 @@ function AdminEventsPage() {
             size="sm"
             variant="outline"
             disabled={page + 1 >= totalPages}
-            onClick={() => navigate({ search: { ...search, page: page + 1 } })}
+            onClick={() => navigate({ to: ".", search: { ...search, page: page + 1 } })}
           >
             Next →
           </Button>
