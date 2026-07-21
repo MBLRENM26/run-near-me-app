@@ -187,7 +187,7 @@ function AdminClubsPage() {
             variant="outline"
             onClick={() => {
               setQInput("");
-              navigate({ search: {} });
+              navigate({ to: ".", search: {} });
             }}
           >
             Reset
