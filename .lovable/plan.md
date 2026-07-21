@@ -1,36 +1,60 @@
-## Diagnosis
+## Runtime smoke test — admin auth + rate-limit hardening
 
-This does look like a broader class of bug rather than a single bad line.
+Close-out verification for the dual-gate rate limiter and CSRF/session changes on the **published** environment (`https://run-near-me-app.lovable.app`). Read-only where possible; the only writes are one login + one logout.
 
-The latest dev-server log available here only shows `createServerFn().inputValidator()` deprecation warnings, not the current production-build failure. However, the codebase still contains several routes using the same fragile typed-navigation pattern that caused the previous errors: `navigate({ search: ... })` without an explicit same-route target, and route-local navigation not consistently scoped through the generated route object.
+### 1. Preflight (local, no state change)
+- `bun run build` — production build must exit 0.
+- `bun run lint` — ESLint clean (or only pre-existing warnings; diff against baseline).
+- `bun run test` — vitest suite green.
+- Typecheck already green; re-run `bunx tsgo --noEmit` for parity.
 
-This is probably why it feels like the bug is being moved around: TypeScript reports the next route where TanStack Router cannot infer the search shape, we patch that instance, then another similar instance surfaces.
+Abort the runtime phase if any of the above fail; capture output under `/tmp/browser/smoke/`.
 
-## Plan
+### 2. Runtime smoke via Playwright (published URL)
+Single script under `/tmp/browser/admin-smoke/`, headless Chromium, viewport 1280×1800, screenshots at each step. Uses `ADMIN_PASSWORD` from env — never logged, never screenshotted into a visible field (password input masked).
 
-1. **Capture the real current failing signal first**
-   - Run the project’s typecheck/build command once and capture the full error list.
-   - Do not assume the remaining failure is the same unless the output confirms it.
+Steps and assertions:
 
-2. **Fix the navigation pattern across the affected class**
-   - In route components that call search-only navigation, prefer the generated route hook:
-     - `const navigate = Route.useNavigate()`
-   - For same-route search updates, make the target explicit:
-     - `navigate({ to: ".", search: ... })`
-   - Apply this consistently to the routes already identified as using this pattern, including:
-     - `/admin/claims`
-     - `/admin/club-claims`
-     - `/admin/organiser-identities`
-     - `/running-clubs/`
-     - any route surfaced by the fresh typecheck/build output
+1. **Login UI flow**
+   - GET `/admin/login`, submit the password form.
+   - Assert redirect to `/admin/claims` and 200 response.
 
-3. **Keep admin/auth hardening separate**
-   - Do not unwind yesterday’s security hardening unless the build output directly points to it.
-   - The current pattern I can verify is route/navigation type inference, not CSRF/session logic.
+2. **Cookie attributes**
+   - Read `admin_session` via `context.cookies()`.
+   - Assert: `httpOnly=true`, `secure=true`, `sameSite="Lax"`, `path="/"`, `expires` ≈ now + 14 days (±1 day tolerance).
+   - Assert value matches `^\d+\.[0-9a-f]{64}$` (payload.sig shape) — do not log the value.
 
-4. **Verify the fix at the correct level**
-   - Re-run typecheck/build after the navigation cleanup.
-   - If new errors remain, group them by category before patching so we do not continue one-error-at-a-time.
+3. **Authenticated session check + protected read**
+   - Call `adminCheckSession` server fn via the page (`useServerFn` route already exists) → expect `{ authenticated: true }`.
+   - Trigger a protected read-only submissions call (navigate to `/admin/claims` list, or invoke `adminNotify`/submissions list fn) → expect 200 with data shape, no 401/403.
 
-5. **Optional follow-up after the build is green**
-   - Add a small route-navigation hygiene pass: avoid unscoped `navigate({ search: ... })` in route files with `validateSearch` so this does not recur when new filters/pagination are added.
+4. **CSRF: hostile origin replay**
+   - Using the authenticated cookie, `fetch` the same server-fn endpoint from a new page context with `Origin: https://evil.example`.
+   - Expect rejection (403 from `createCsrfMiddleware`). Record status + body.
+
+5. **CSRF: missing origin metadata replay**
+   - Repeat the fetch with `Origin` and `Referer` stripped.
+   - Expect rejection (403). Record status + body.
+
+6. **Logout**
+   - Invoke `adminLogout` server fn.
+   - Assert `admin_session` is gone from `context.cookies()` (or has past expiry).
+
+7. **Post-logout session check + protected call**
+   - `adminCheckSession` → `{ authenticated: false }`.
+   - Protected mutation (e.g. admin submissions action) → expect `Unauthorized` / 401-equivalent handled response (no crash).
+
+### 3. Missing-IP warning payload check
+- Grep worker logs from the smoke run via `stack_modern--server-function-logs` (search: `admin_login_trusted_ip_missing`).
+- If present, assert the log line is exactly `[admin-login-rate] admin_login_trusted_ip_missing {}` — no IP, headers, cookie, password, or payload fields. If absent (Cloudflare edge did populate `cf-connecting-ip` in prod), record that and note the per-IP gate was exercised instead.
+- Also confirm no other log entry in the run contains the password, `Authorization`, `Cookie`, or the raw session value.
+
+### 4. Deliverable
+A single report back in chat with:
+- Build/lint/test exit codes.
+- Cookie attribute table.
+- Status codes + brief body for each of the 4 auth/CSRF checks (pre- and post-logout).
+- Screenshot filenames under `/tmp/browser/admin-smoke/screenshots/`.
+- Log-line evidence for the missing-IP warning (or note that per-IP gate ran).
+
+No source edits unless a check fails; failures return with a diagnosis and a follow-up plan, not an in-place fix.
