@@ -1,4 +1,3 @@
-import { createHmac, timingSafeEqual } from "crypto";
 import {
   getCookie,
   setCookie,
@@ -8,6 +7,13 @@ import {
 const COOKIE_NAME = "admin_session";
 const MAX_AGE_SECONDS = 60 * 60 * 24 * 14; // 14 days
 
+// NOTE: node:crypto is loaded via dynamic import inside each function so this
+// module is safe to appear (even transiently) in the client dependency graph
+// via the *.functions.ts files that import it. A top-level
+// `import { createHmac } from "crypto"` breaks the client build because Vite
+// resolves "crypto" to the browser-external stub during the client
+// environment pass.
+
 function getSecret(): string {
   const secret = process.env.ADMIN_SESSION_SECRET;
   if (!secret || secret.length < 16) {
@@ -16,14 +22,15 @@ function getSecret(): string {
   return secret;
 }
 
-function sign(payload: string): string {
+async function sign(payload: string): Promise<string> {
+  const { createHmac } = await import("crypto");
   return createHmac("sha256", getSecret()).update(payload).digest("hex");
 }
 
-export function issueAdminSession(): void {
+export async function issueAdminSession(): Promise<void> {
   const expMs = Date.now() + MAX_AGE_SECONDS * 1000;
   const payload = String(expMs);
-  const sig = sign(payload);
+  const sig = await sign(payload);
   setCookie(COOKIE_NAME, `${payload}.${sig}`, {
     httpOnly: true,
     secure: true,
@@ -41,7 +48,7 @@ export function clearAdminSession(): void {
   });
 }
 
-export function isAdminAuthenticated(): boolean {
+export async function isAdminAuthenticated(): Promise<boolean> {
   const raw = getCookie(COOKIE_NAME);
   if (!raw) return false;
   const [payload, sig] = raw.split(".");
@@ -49,11 +56,13 @@ export function isAdminAuthenticated(): boolean {
 
   let expected: string;
   try {
-    expected = sign(payload);
+    expected = await sign(payload);
   } catch {
     return false;
   }
 
+  const { timingSafeEqual } = await import("crypto");
+  const { Buffer } = await import("buffer");
   const a = Buffer.from(sig, "hex");
   const b = Buffer.from(expected, "hex");
   if (a.length !== b.length || a.length === 0) return false;
@@ -64,9 +73,10 @@ export function isAdminAuthenticated(): boolean {
   return true;
 }
 
-export function verifyAdminPassword(input: string): boolean {
+export async function verifyAdminPassword(input: string): Promise<boolean> {
   const expected = process.env.ADMIN_PASSWORD;
   if (!expected) return false;
+  const { createHmac, timingSafeEqual } = await import("crypto");
   // HMAC both sides to a fixed length so comparison time doesn't leak
   // the configured password's byte length via an early length check.
   const key = getSecret();
