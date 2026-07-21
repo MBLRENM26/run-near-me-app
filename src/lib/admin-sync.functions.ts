@@ -1,11 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { isAdminAuthenticated } from "@/lib/admin-session.server";
-import { requireSameOriginOrThrow } from "@/lib/admin-csrf.server";
 
 async function requireAdminMutation() {
   if (!(await isAdminAuthenticated())) throw new Error("Unauthorized");
-  requireSameOriginOrThrow();
 }
 
 export const SYNC_SOURCES = [

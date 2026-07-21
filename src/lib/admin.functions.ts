@@ -7,7 +7,6 @@ import {
   clearAdminSession,
   verifyAdminPassword,
 } from "@/lib/admin-session.server";
-import { requireSameOriginOrThrow } from "@/lib/admin-csrf.server";
 import { sendNewSubmissionNotification } from "@/lib/notify.server";
 
 // The in-memory burst limiter lives in a .server.ts module so its daily-salt
@@ -116,7 +115,6 @@ async function requireAdminOrThrow() {
 
 async function requireAdminMutation() {
   await requireAdminOrThrow();
-  requireSameOriginOrThrow();
 }
 
 // -------- Auth --------
@@ -124,7 +122,6 @@ async function requireAdminMutation() {
 export const adminLogin = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ password: z.string().min(1).max(255) }).parse(d))
   .handler(async ({ data }) => {
-    requireSameOriginOrThrow();
 
     const { consumeAdminLoginRate } = await import(
       "@/lib/admin-login-rate-limit.server"
@@ -150,8 +147,7 @@ export const adminLogin = createServerFn({ method: "POST" })
   });
 
 export const adminLogout = createServerFn({ method: "POST" }).handler(async () => {
-  requireSameOriginOrThrow();
-  clearAdminSession();
+  await clearAdminSession();
   return { ok: true };
 });
 

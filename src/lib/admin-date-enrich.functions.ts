@@ -2,7 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { isAdminAuthenticated } from "@/lib/admin-session.server";
-import { requireSameOriginOrThrow } from "@/lib/admin-csrf.server";
 
 // Admin date-enrichment importer.
 //
@@ -19,7 +18,6 @@ async function requireAdminOrThrow() {
 
 async function requireAdminMutation() {
   await requireAdminOrThrow();
-  requireSameOriginOrThrow();
 }
 
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;

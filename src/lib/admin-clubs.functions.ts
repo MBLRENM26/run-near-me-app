@@ -2,7 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { isAdminAuthenticated } from "@/lib/admin-session.server";
-import { requireSameOriginOrThrow } from "@/lib/admin-csrf.server";
 
 const CLAIM_STATUSES = ["pending", "approved", "rejected", "needs-info"] as const;
 
@@ -29,7 +28,6 @@ async function requireAdminOrThrow() {
 
 async function requireAdminMutation() {
   await requireAdminOrThrow();
-  requireSameOriginOrThrow();
 }
 
 export const listClubClaims = createServerFn({ method: "POST" })
