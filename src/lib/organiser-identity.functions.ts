@@ -62,7 +62,7 @@ export const listOrganiserLinks = createServerFn({ method: "POST" })
       .parse(d ?? {}),
   )
   .handler(async ({ data }): Promise<{ rows: OrganiserLinkRow[]; total: number }> => {
-    requireAdminOrThrow();
+    await requireAdminOrThrow();
 
     let q = supabaseAdmin
       .from("organisation_event_links")
@@ -178,7 +178,7 @@ export const reviewOrganiserLink = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }): Promise<{ ok: true; review_id: string } | { ok: false; error: string }> => {
-    requireAdminMutation();
+    await requireAdminMutation();
 
     const { data: reviewId, error } = await supabaseAdmin.rpc(
       "review_organisation_event_link_txn",
@@ -225,7 +225,7 @@ export const listSeedUnresolved = createServerFn({ method: "POST" })
       .parse(d ?? {}),
   )
   .handler(async ({ data }): Promise<{ rows: UnresolvedRow[] }> => {
-    requireAdminOrThrow();
+    await requireAdminOrThrow();
 
     let q = supabaseAdmin
       .from("organisation_seed_unresolved")

@@ -175,7 +175,7 @@ export const listSubmissions = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }) => {
-    requireAdminOrThrow();
+    await requireAdminOrThrow();
 
     let query = supabaseAdmin
       .from("submissions")
@@ -220,7 +220,7 @@ export const updateSubmission = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }) => {
-    requireAdminMutation();
+    await requireAdminMutation();
 
     const patch: {
       status?: (typeof STATUSES)[number];
@@ -253,7 +253,7 @@ export const bulkUpdateSubmissions = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }) => {
-    requireAdminMutation();
+    await requireAdminMutation();
 
     const { error } = await supabaseAdmin
       .from("submissions")
@@ -408,7 +408,7 @@ export const createEventFromSubmission = createServerFn({ method: "POST" })
     z.object({ submissionId: z.string().uuid() }).parse(d),
   )
   .handler(async ({ data }) => {
-    requireAdminMutation();
+    await requireAdminMutation();
 
     const { data: sub, error: subErr } = await supabaseAdmin
       .from("submissions")

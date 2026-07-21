@@ -224,7 +224,7 @@ export const listAdminEvents = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }) => {
-    requireAdminOrThrow();
+    await requireAdminOrThrow();
 
     let query = supabaseAdmin
       .from("events")
@@ -297,7 +297,7 @@ export const listAdminEvents = createServerFn({ method: "POST" })
 export const createAdminEvent = createServerFn({ method: "POST" })
   .inputValidator((d) => eventCreateSchema.parse(d))
   .handler(async ({ data }) => {
-    requireAdminOrThrow();
+    await requireAdminOrThrow();
     requireSameOriginOrThrow();
 
     const hasLat = data.lat !== undefined ? data.lat !== null : null;
@@ -380,7 +380,7 @@ export const createAdminEvent = createServerFn({ method: "POST" })
 export const getAdminEvent = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
-    requireAdminOrThrow();
+    await requireAdminOrThrow();
 
     const { data: row, error } = await supabaseAdmin
       .from("events")
@@ -417,7 +417,7 @@ export const updateAdminEvent = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }) => {
-    requireAdminOrThrow();
+    await requireAdminOrThrow();
     requireSameOriginOrThrow();
 
     // Slug uniqueness check
@@ -489,7 +489,7 @@ export const setAdminEventStatus = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }) => {
-    requireAdminOrThrow();
+    await requireAdminOrThrow();
     requireSameOriginOrThrow();
     const { error } = await supabaseAdmin
       .from("events")
@@ -507,7 +507,7 @@ export const setAdminEventStatus = createServerFn({ method: "POST" })
 export const deleteAdminEvent = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
-    requireAdminOrThrow();
+    await requireAdminOrThrow();
     requireSameOriginOrThrow();
     const { data: row, error } = await supabaseAdmin
       .from("events")
@@ -533,7 +533,7 @@ export const deleteAdminEvent = createServerFn({ method: "POST" })
 
 export const listAdminEventSources = createServerFn({ method: "GET" }).handler(
   async () => {
-    requireAdminOrThrow();
+    await requireAdminOrThrow();
     const { data, error } = await supabaseAdmin
       .from("events")
       .select("source")
@@ -572,7 +572,7 @@ export const backfillEventTags = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }) => {
-    requireAdminOrThrow();
+    await requireAdminOrThrow();
     requireSameOriginOrThrow();
 
     let query = supabaseAdmin
@@ -830,7 +830,7 @@ function seriesReason(rows: DuplicateRow[]): string {
 
 export const findPotentialDuplicates = createServerFn({ method: "GET" })
   .handler(async (): Promise<{ clusters: DuplicateCluster[]; total: number }> => {
-    requireAdminOrThrow();
+    await requireAdminOrThrow();
 
     const pageSize = 1000;
     const all: (DuplicateRow & { _norm: string })[] = [];
@@ -941,7 +941,7 @@ export const mergeDuplicateEvents = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }) => {
-    requireAdminOrThrow();
+    await requireAdminOrThrow();
     requireSameOriginOrThrow();
 
     const { data: rows, error } = await supabaseAdmin
@@ -1077,7 +1077,7 @@ export const mergeDuplicateCluster = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }) => {
-    requireAdminOrThrow();
+    await requireAdminOrThrow();
     requireSameOriginOrThrow();
     const merged: string[] = [];
     const failed: { id: string; error: string }[] = [];
@@ -1099,7 +1099,7 @@ export const mergeDuplicateCluster = createServerFn({ method: "POST" })
 export const mergeAllHighConfidenceClusters = createServerFn({
   method: "POST",
 }).handler(async () => {
-  requireAdminOrThrow();
+  await requireAdminOrThrow();
   requireSameOriginOrThrow();
   // Re-fetch clusters server-side so the admin's stale view can't drive a
   // batch merge with outdated survivor picks.
@@ -1129,7 +1129,7 @@ export const mergeAllHighConfidenceClusters = createServerFn({
 export const unmergeDuplicateEvent = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
-    requireAdminOrThrow();
+    await requireAdminOrThrow();
     requireSameOriginOrThrow();
     const { data: row, error } = await supabaseAdmin
       .from("events")
@@ -1182,7 +1182,7 @@ export const markClusterAsSeries = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }) => {
-    requireAdminOrThrow();
+    await requireAdminOrThrow();
     requireSameOriginOrThrow();
 
     const { data: rows, error } = await supabaseAdmin
@@ -1247,7 +1247,7 @@ function slugifyName(s: string): string {
 
 export const backfillScottishOrganiserUrls = createServerFn({ method: "POST" })
   .handler(async (): Promise<ScottishOrganiserBackfillResult> => {
-    requireAdminOrThrow();
+    await requireAdminOrThrow();
 
     const { data: events, error: evErr } = await supabaseAdmin
       .from("events")

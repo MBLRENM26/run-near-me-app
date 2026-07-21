@@ -70,7 +70,7 @@ export const triggerSyncRun = createServerFn({ method: "POST" })
     return input;
   })
   .handler(async ({ data }): Promise<TriggerSyncResult> => {
-    requireAdminMutation();
+    await requireAdminMutation();
 
     const work: Promise<{
       newEvents: number;
@@ -169,7 +169,7 @@ export const triggerEnglandAthleticsChunk = createServerFn({ method: "POST" })
     return { fromPage, toPage };
   })
   .handler(async ({ data }): Promise<EnglandAthleticsChunkResult> => {
-    requireAdminMutation();
+    await requireAdminMutation();
     const { runEnglandAthleticsSync } = await import(
       "@/lib/sync-england-athletics.server"
     );
@@ -196,7 +196,7 @@ export const triggerEnglandAthleticsChunk = createServerFn({ method: "POST" })
 // it as the x-admin-secret header. Safe to re-run; updates in place.
 export const seedImportSecretInVault = createServerFn({ method: "POST" })
   .handler(async (): Promise<{ ok: true }> => {
-    requireAdminMutation();
+    await requireAdminMutation();
     const value = process.env.IMPORT_SECRET;
     if (!value) throw new Error("IMPORT_SECRET env var not set on server");
     const { error } = await supabaseAdmin.rpc("set_import_secret", {
