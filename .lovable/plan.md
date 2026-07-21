@@ -1,30 +1,25 @@
-## What’s going on
+## Diagnosis
 
-The current evidence points to a leftover TypeScript build blocker, not a new app/runtime failure:
+The build breaks on two files only:
 
-1. `src/routes/events.$slug.tsx` has a `<Link to="/search">` with no `search` prop.
-   - This route’s `/search` search params are typed, so TanStack Router requires an explicit `search` value even when it is empty/defaulted.
-   - The same component pattern in `BackToSearchBar` already passes `search={{ q }}`.
+- `src/routes/_adminShell.admin.clubs.index.tsx`
+- `src/routes/_adminShell.admin.events.index.tsx`
 
-2. The previous `crypto` issue appears mostly addressed in `admin-session.server.ts`.
-   - The file now uses lazy dynamic imports inside functions, so the client bundle should no longer statically resolve `crypto` from that file.
-   - I did still find top-level `crypto` imports in public API route files; those are server-route handlers and may be fine, but if the build still reports `__vite-browser-external` after the link fix, those are the next suspects to convert to Web Crypto / dynamic imports.
+Both are index routes whose generated IDs end in a trailing slash (`/admin/clubs/`, `/admin/events/`), but their `useNavigate({ from: "/admin/clubs" })` / `useNavigate({ from: "/admin/events" })` calls omit it. TanStack's typed router then can't resolve `from`, which cascades into the `search: (prev) => ({ ...prev, page: ... })` updaters — with no route scope, `page` is reported as an unknown search key.
 
-## Plan
+This is unrelated to the CSRF / admin-session hardening from yesterday. Those touched `src/lib/admin-*` and `src/start.ts`; the failing lines are pure route-scope typing.
 
-1. Fix the typed search link in `src/routes/events.$slug.tsx`.
-   - Add the required `search` prop to the tombstone CTA linking to `/search`.
-   - Use the route’s default/empty search shape rather than changing search behavior.
+## Fix (narrow, presentation only)
 
-2. Re-check for remaining build blockers.
-   - If the build output still mentions `__vite-browser-external` or `crypto`, inspect the exact file named by the error.
-   - Convert only that offending top-level server import to a runtime-safe pattern.
+In both files:
 
-3. Keep the fix narrow.
-   - No route restructuring.
-   - No database changes.
-   - No changes to public submission/admin logic unless a fresh build error names those files.
+1. Change `useNavigate({ from: "/admin/clubs" })` → `useNavigate({ from: "/admin/clubs/" })` (and same for `/admin/events/`).
+2. On every `navigate({ search: (prev) => ... })` call in those files, add `to: "."` so the updater is scoped to the current route and `page` types resolve.
+3. Same treatment for the one `<Link search={...}>` in `_adminShell.admin.clubs.index.tsx:190` — give it `to: "."` (or `from` with trailing slash) so the search updater types.
 
-## Expected result
+No changes to business logic, DB, or the admin auth stack.
 
-The build should clear the known `TS2741: Property 'search' is missing` error, and any remaining error will be isolated to a specific import if the prior crypto issue still exists elsewhere.
+## Verification
+
+- `bunx tsgo --noEmit` clean.
+- Load `/admin/clubs` and `/admin/events`, click pagination — URL updates, list refetches.
