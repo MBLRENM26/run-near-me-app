@@ -11,14 +11,14 @@ import { requireSameOriginOrThrow } from "@/lib/admin-csrf.server";
 // Confirmed-date overwrites are skipped unless the operator opts in per-row
 // (`force_ids`).
 
-function requireAdminOrThrow() {
-  if (!isAdminAuthenticated()) {
+async function requireAdminOrThrow() {
+  if (!(await isAdminAuthenticated())) {
     throw new Error("Unauthorized");
   }
 }
 
-function requireAdminMutation() {
-  requireAdminOrThrow();
+async function requireAdminMutation() {
+  await requireAdminOrThrow();
   requireSameOriginOrThrow();
 }
 
@@ -102,7 +102,7 @@ export const previewDateEnrichments = createServerFn({ method: "POST" })
     z.object({ rows: inputBatchSchema }).parse(d),
   )
   .handler(async ({ data }): Promise<EnrichPreview> => {
-    requireAdminOrThrow();
+    await requireAdminOrThrow();
 
     const submittedIds = data.rows.map((r) => r.id);
     const { data: existing, error } = await supabaseAdmin
@@ -225,7 +225,7 @@ export const applyDateEnrichments = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }): Promise<EnrichApplyResult> => {
-    requireAdminMutation();
+    await requireAdminMutation();
 
     const force = new Set(data.force_ids);
     const submittedIds = data.rows.map((r) => r.id);

@@ -23,12 +23,12 @@ export type ClubClaimRow = {
   club_name: string | null;
 };
 
-function requireAdminOrThrow() {
-  if (!isAdminAuthenticated()) throw new Error("Unauthorized");
+async function requireAdminOrThrow() {
+  if (!(await isAdminAuthenticated())) throw new Error("Unauthorized");
 }
 
-function requireAdminMutation() {
-  requireAdminOrThrow();
+async function requireAdminMutation() {
+  await requireAdminOrThrow();
   requireSameOriginOrThrow();
 }
 
@@ -43,7 +43,7 @@ export const listClubClaims = createServerFn({ method: "POST" })
       .parse(d ?? {}),
   )
   .handler(async ({ data }) => {
-    requireAdminOrThrow();
+    await requireAdminOrThrow();
 
     let q = supabaseAdmin
       .from("club_claims")
@@ -104,7 +104,7 @@ export const updateClubClaim = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }) => {
-    requireAdminMutation();
+    await requireAdminMutation();
 
     const { data: claim, error: lookupErr } = await supabaseAdmin
       .from("club_claims")
@@ -227,7 +227,7 @@ export const listAdminClubs = createServerFn({ method: "POST" })
       .parse(d ?? {}),
   )
   .handler(async ({ data }) => {
-    requireAdminOrThrow();
+    await requireAdminOrThrow();
 
     let q = supabaseAdmin
       .from("clubs")
@@ -259,7 +259,7 @@ export const listAdminClubs = createServerFn({ method: "POST" })
 export const getAdminClub = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
-    requireAdminOrThrow();
+    await requireAdminOrThrow();
     const { data: row, error } = await supabaseAdmin
       .from("clubs")
       .select(ADMIN_DETAIL_COLS)
@@ -313,7 +313,7 @@ async function ensureUniqueSlug(base: string, excludeId?: string): Promise<strin
 export const createAdminClub = createServerFn({ method: "POST" })
   .inputValidator((d) => ClubPayloadSchema.parse(d))
   .handler(async ({ data }) => {
-    requireAdminMutation();
+    await requireAdminMutation();
     const base = (data.slug && data.slug.length > 0 ? data.slug : slugify(data.name)) || "club";
     const slug = await ensureUniqueSlug(base);
     const norm_id = `manual:${crypto.randomUUID()}`;
@@ -354,7 +354,7 @@ export const updateAdminClub = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }) => {
-    requireAdminMutation();
+    await requireAdminMutation();
     const { data: existing, error: lookupErr } = await supabaseAdmin
       .from("clubs")
       .select("id, slug, is_claimed, claimed_at")
@@ -409,7 +409,7 @@ export const updateAdminClub = createServerFn({ method: "POST" })
 export const deleteAdminClub = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
-    requireAdminMutation();
+    await requireAdminMutation();
     // Soft delete — keeps norm_id stable so re-imports don't resurrect it.
     const { error } = await supabaseAdmin
       .from("clubs")

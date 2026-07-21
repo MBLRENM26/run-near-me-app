@@ -26,7 +26,7 @@ export type SearchAnalytics = {
 export const getSearchAnalytics = createServerFn({ method: "GET" })
   .inputValidator((input: unknown) => inputSchema.parse(input))
   .handler(async ({ data }): Promise<SearchAnalytics> => {
-    if (!isAdminAuthenticated()) throw new Error("Unauthorized");
+    if (!(await isAdminAuthenticated())) throw new Error("Unauthorized");
 
     const since = new Date(
       Date.now() - data.days * 24 * 60 * 60 * 1000,

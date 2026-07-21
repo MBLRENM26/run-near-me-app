@@ -4,12 +4,12 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { isAdminAuthenticated } from "@/lib/admin-session.server";
 import { requireSameOriginOrThrow } from "@/lib/admin-csrf.server";
 
-function requireAdmin() {
-  if (!isAdminAuthenticated()) throw new Error("Unauthorized");
+async function requireAdmin() {
+  if (!(await isAdminAuthenticated())) throw new Error("Unauthorized");
 }
 
-function requireAdminMutation() {
-  requireAdmin();
+async function requireAdminMutation() {
+  await requireAdmin();
   requireSameOriginOrThrow();
 }
 
@@ -26,7 +26,7 @@ export const getUnseenCounts = createServerFn({ method: "GET" }).handler(
     // Called from the admin shell on every page — return zeros instead of
     // throwing when the session is missing/expired so the shell doesn't
     // blank-screen before the child route redirects to /admin/login.
-    if (!isAdminAuthenticated()) {
+    if (!(await isAdminAuthenticated())) {
       return { submissions: 0, clubClaims: 0, total: 0 };
     }
     const [{ count: subs }, { count: claims }] = await Promise.all([
@@ -49,7 +49,7 @@ export const getUnseenCounts = createServerFn({ method: "GET" }).handler(
 // Called by the /admin/claims page when the admin lands on it.
 export const markSubmissionsSeen = createServerFn({ method: "POST" }).handler(
   async (): Promise<{ ok: true; marked: number }> => {
-    requireAdminMutation();
+    await requireAdminMutation();
     const { data, error } = await supabaseAdmin
       .from("submissions")
       .update({ seen_at: new Date().toISOString() })
@@ -62,7 +62,7 @@ export const markSubmissionsSeen = createServerFn({ method: "POST" }).handler(
 
 export const markClubClaimsSeen = createServerFn({ method: "POST" }).handler(
   async (): Promise<{ ok: true; marked: number }> => {
-    requireAdminMutation();
+    await requireAdminMutation();
     const { data, error } = await supabaseAdmin
       .from("club_claims")
       .update({ seen_at: new Date().toISOString() })
@@ -87,7 +87,7 @@ export const resendAdminNotification = createServerFn({ method: "POST" })
       status: "sent" | "suppressed" | "failed" | "skipped" | "not-found";
       reason?: string;
     }> => {
-      requireAdminMutation();
+      await requireAdminMutation();
       const { data: row, error } = await supabaseAdmin
         .from("submissions")
         .select("id, email, kind, claim_slug, submitted_at")

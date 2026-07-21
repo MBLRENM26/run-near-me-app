@@ -108,14 +108,14 @@ export interface SubmissionCounts {
 const SUBMISSION_COLUMNS =
   "id,email,event_details,submitted_at,kind,claim_slug,status,admin_note,reviewed_at,race_name,race_date,website_url,distances,town,county,postcode,organiser,terrain,submitted_entry_fee,created_event_id,event_id,change_type,proof_url,reporter_name,reporter_relationship,proposed_new_date";
 
-function requireAdminOrThrow() {
-  if (!isAdminAuthenticated()) {
+async function requireAdminOrThrow() {
+  if (!(await isAdminAuthenticated())) {
     throw new Error("Unauthorized");
   }
 }
 
-function requireAdminMutation() {
-  requireAdminOrThrow();
+async function requireAdminMutation() {
+  await requireAdminOrThrow();
   requireSameOriginOrThrow();
 }
 
@@ -141,11 +141,11 @@ export const adminLogin = createServerFn({ method: "POST" })
       return { ok: false as const, reason: "server_error" as const };
     }
 
-    if (!verifyAdminPassword(data.password)) {
+    if (!(await verifyAdminPassword(data.password))) {
       await new Promise((r) => setTimeout(r, 400));
       return { ok: false as const, reason: "incorrect_password" as const };
     }
-    issueAdminSession();
+    await issueAdminSession();
     return { ok: true as const };
   });
 
@@ -157,7 +157,7 @@ export const adminLogout = createServerFn({ method: "POST" }).handler(async () =
 
 export const adminCheckSession = createServerFn({ method: "GET" }).handler(
   async () => {
-    return { authenticated: isAdminAuthenticated() };
+    return { authenticated: await isAdminAuthenticated() };
   },
 );
 
@@ -175,7 +175,7 @@ export const listSubmissions = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }) => {
-    requireAdminOrThrow();
+    await requireAdminOrThrow();
 
     let query = supabaseAdmin
       .from("submissions")
@@ -220,7 +220,7 @@ export const updateSubmission = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }) => {
-    requireAdminMutation();
+    await requireAdminMutation();
 
     const patch: {
       status?: (typeof STATUSES)[number];
@@ -253,7 +253,7 @@ export const bulkUpdateSubmissions = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }) => {
-    requireAdminMutation();
+    await requireAdminMutation();
 
     const { error } = await supabaseAdmin
       .from("submissions")
@@ -408,7 +408,7 @@ export const createEventFromSubmission = createServerFn({ method: "POST" })
     z.object({ submissionId: z.string().uuid() }).parse(d),
   )
   .handler(async ({ data }) => {
-    requireAdminMutation();
+    await requireAdminMutation();
 
     const { data: sub, error: subErr } = await supabaseAdmin
       .from("submissions")
