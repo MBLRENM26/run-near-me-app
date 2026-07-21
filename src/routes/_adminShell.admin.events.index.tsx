@@ -147,7 +147,7 @@ function AdminEventsPage() {
   });
 
   const update = (patch: Partial<typeof search>) =>
-    navigate({ search: { ...search, ...patch, page: undefined } });
+    navigate({ to: ".", search: { ...search, ...patch, page: undefined } });
 
   if (!authChecked) {
     return <p className="text-sm text-muted-foreground">Checking session…</p>;
