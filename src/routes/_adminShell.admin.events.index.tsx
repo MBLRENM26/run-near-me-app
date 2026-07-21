@@ -50,7 +50,7 @@ export const Route = createFileRoute("/_adminShell/admin/events/")({
 
 function AdminEventsPage() {
   const search = Route.useSearch();
-  const navigate = useNavigate({ from: "/admin/events" });
+  const navigate = useNavigate({ from: "/admin/events/" });
   const fetchList = useServerFn(listAdminEvents);
   const fetchSources = useServerFn(listAdminEventSources);
   const runBackfill = useServerFn(backfillEventTags);
@@ -147,7 +147,7 @@ function AdminEventsPage() {
   });
 
   const update = (patch: Partial<typeof search>) =>
-    navigate({ search: { ...search, ...patch, page: undefined } });
+    navigate({ to: ".", search: { ...search, ...patch, page: undefined } });
 
   if (!authChecked) {
     return <p className="text-sm text-muted-foreground">Checking session…</p>;
@@ -451,7 +451,7 @@ function AdminEventsPage() {
             size="sm"
             variant="outline"
             disabled={page === 0}
-            onClick={() => navigate({ search: { ...search, page: page - 1 } })}
+            onClick={() => navigate({ to: ".", search: { ...search, page: page - 1 } })}
           >
             ← Prev
           </Button>
@@ -462,7 +462,7 @@ function AdminEventsPage() {
             size="sm"
             variant="outline"
             disabled={page + 1 >= totalPages}
-            onClick={() => navigate({ search: { ...search, page: page + 1 } })}
+            onClick={() => navigate({ to: ".", search: { ...search, page: page + 1 } })}
           >
             Next →
           </Button>

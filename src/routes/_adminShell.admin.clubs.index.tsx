@@ -42,7 +42,7 @@ export const Route = createFileRoute("/_adminShell/admin/clubs/")({
 
 function AdminClubsPage() {
   const search = Route.useSearch();
-  const navigate = useNavigate({ from: "/admin/clubs" });
+  const navigate = useNavigate({ from: "/admin/clubs/" });
   const fetchList = useServerFn(listAdminClubs);
   const checkSession = useServerFn(adminCheckSession);
 
@@ -85,7 +85,7 @@ function AdminClubsPage() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const applySearch = (next: Partial<z.infer<typeof searchSchema>>) =>
-    navigate({ search: { ...search, ...next, page: 0 } });
+    navigate({ to: ".", search: { ...search, ...next, page: 0 } });
 
   if (!authed) return <p className="text-sm text-muted-foreground">Checking session…</p>;
 
@@ -187,7 +187,7 @@ function AdminClubsPage() {
             variant="outline"
             onClick={() => {
               setQInput("");
-              navigate({ search: {} });
+              navigate({ to: ".", search: {} });
             }}
           >
             Reset
@@ -272,7 +272,7 @@ function AdminClubsPage() {
               variant="outline"
               disabled={page === 0}
               onClick={() =>
-                navigate({ search: { ...search, page: Math.max(0, page - 1) } })
+                navigate({ to: ".", search: { ...search, page: Math.max(0, page - 1) } })
               }
             >
               Previous
@@ -281,7 +281,7 @@ function AdminClubsPage() {
               size="sm"
               variant="outline"
               disabled={page + 1 >= totalPages}
-              onClick={() => navigate({ search: { ...search, page: page + 1 } })}
+              onClick={() => navigate({ to: ".", search: { ...search, page: page + 1 } })}
             >
               Next
             </Button>
