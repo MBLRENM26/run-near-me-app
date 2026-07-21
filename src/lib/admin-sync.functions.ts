@@ -3,8 +3,8 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { isAdminAuthenticated } from "@/lib/admin-session.server";
 import { requireSameOriginOrThrow } from "@/lib/admin-csrf.server";
 
-function requireAdminMutation() {
-  if (!isAdminAuthenticated()) throw new Error("Unauthorized");
+async function requireAdminMutation() {
+  if (!(await isAdminAuthenticated())) throw new Error("Unauthorized");
   requireSameOriginOrThrow();
 }
 
@@ -35,7 +35,7 @@ export type SyncRun = {
 
 export const getSyncRuns = createServerFn({ method: "GET" }).handler(
   async (): Promise<SyncRun[]> => {
-    if (!isAdminAuthenticated()) throw new Error("Unauthorized");
+    if (!(await isAdminAuthenticated())) throw new Error("Unauthorized");
 
     const { data, error } = await supabaseAdmin
       .from("sync_runs")

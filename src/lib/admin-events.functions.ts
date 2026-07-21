@@ -19,14 +19,14 @@ const REGION_NAMES = REGIONS.map((r) => r.name);
 
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
-function requireAdminOrThrow() {
-  if (!isAdminAuthenticated()) {
+async function requireAdminOrThrow() {
+  if (!(await isAdminAuthenticated())) {
     throw new Error("Unauthorized");
   }
 }
 
-function requireAdminMutation() {
-  requireAdminOrThrow();
+async function requireAdminMutation() {
+  await requireAdminOrThrow();
   requireSameOriginOrThrow();
 }
 

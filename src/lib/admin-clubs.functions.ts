@@ -23,12 +23,12 @@ export type ClubClaimRow = {
   club_name: string | null;
 };
 
-function requireAdminOrThrow() {
-  if (!isAdminAuthenticated()) throw new Error("Unauthorized");
+async function requireAdminOrThrow() {
+  if (!(await isAdminAuthenticated())) throw new Error("Unauthorized");
 }
 
-function requireAdminMutation() {
-  requireAdminOrThrow();
+async function requireAdminMutation() {
+  await requireAdminOrThrow();
   requireSameOriginOrThrow();
 }
 

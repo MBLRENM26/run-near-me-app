@@ -11,14 +11,14 @@ import { requireSameOriginOrThrow } from "@/lib/admin-csrf.server";
 // Confirmed-date overwrites are skipped unless the operator opts in per-row
 // (`force_ids`).
 
-function requireAdminOrThrow() {
-  if (!isAdminAuthenticated()) {
+async function requireAdminOrThrow() {
+  if (!(await isAdminAuthenticated())) {
     throw new Error("Unauthorized");
   }
 }
 
-function requireAdminMutation() {
-  requireAdminOrThrow();
+async function requireAdminMutation() {
+  await requireAdminOrThrow();
   requireSameOriginOrThrow();
 }
 

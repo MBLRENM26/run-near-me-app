@@ -26,7 +26,7 @@ export const getUnseenCounts = createServerFn({ method: "GET" }).handler(
     // Called from the admin shell on every page — return zeros instead of
     // throwing when the session is missing/expired so the shell doesn't
     // blank-screen before the child route redirects to /admin/login.
-    if (!isAdminAuthenticated()) {
+    if (!(await isAdminAuthenticated())) {
       return { submissions: 0, clubClaims: 0, total: 0 };
     }
     const [{ count: subs }, { count: claims }] = await Promise.all([
