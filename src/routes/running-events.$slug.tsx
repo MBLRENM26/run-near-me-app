@@ -131,7 +131,7 @@ function RegionPage() {
   const setMonth = (m: MonthKey | undefined) =>
     navigate({
       to: ".",
-      search: (prev) => ({ ...prev, month: m }),
+      search: { ...search, month: m },
       replace: true,
     });
 

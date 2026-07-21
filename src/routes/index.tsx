@@ -166,16 +166,16 @@ function HomePage() {
   const setCoords = (c: Coords) =>
     navigate({
       to: ".",
-      search: (prev) => ({ ...prev, lat: c.lat, lng: c.lng, label: c.label }),
+      search: { ...search, lat: c.lat, lng: c.lng, label: c.label },
     });
   const setRadius = (r: Radius) =>
-    navigate({ to: ".", search: (prev) => ({ ...prev, radius: r }) });
+    navigate({ to: ".", search: { ...search, radius: r } });
   const setEventType = (t: EventType) =>
-    navigate({ to: ".", search: (prev) => ({ ...prev, type: t }) });
+    navigate({ to: ".", search: { ...search, type: t } });
   const setGovernance = (v: string | null) =>
-    navigate({ to: ".", search: (prev) => ({ ...prev, gov: v ?? undefined }) });
+    navigate({ to: ".", search: { ...search, gov: v ?? undefined } });
   const setRaceProfile = (v: string | null) =>
-    navigate({ to: ".", search: (prev) => ({ ...prev, profile: v ?? undefined }) });
+    navigate({ to: ".", search: { ...search, profile: v ?? undefined } });
 
   const { data: nearbyEvents, isLoading, error: nearbyError } = useQuery({
     queryKey: ["events", "nearby", coords?.lat, coords?.lng, radius],
