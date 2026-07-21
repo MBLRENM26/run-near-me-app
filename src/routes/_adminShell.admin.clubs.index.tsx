@@ -272,7 +272,7 @@ function AdminClubsPage() {
               variant="outline"
               disabled={page === 0}
               onClick={() =>
-                navigate({ search: { ...search, page: Math.max(0, page - 1) } })
+                navigate({ to: ".", search: { ...search, page: Math.max(0, page - 1) } })
               }
             >
               Previous
@@ -281,7 +281,7 @@ function AdminClubsPage() {
               size="sm"
               variant="outline"
               disabled={page + 1 >= totalPages}
-              onClick={() => navigate({ search: { ...search, page: page + 1 } })}
+              onClick={() => navigate({ to: ".", search: { ...search, page: page + 1 } })}
             >
               Next
             </Button>
