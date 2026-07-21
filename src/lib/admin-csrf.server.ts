@@ -1,16 +1,22 @@
-import { getRequestHeader, getRequestUrl } from "@tanstack/react-start/server";
+import { createServerOnlyFn } from "@tanstack/react-start";
 
 /**
  * Lightweight same-origin check for state-changing admin server functions.
  *
- * - If the browser sends an Origin header, it must match the request's own
- *   origin (scheme + host). This blocks cross-site POSTs while still allowing
- *   same-origin form submissions.
- * - If Origin is absent, we fall back to the Referer header. A missing Origin
- *   on a same-origin POST is normal for some browsers / form submissions, so
- *   we only reject when an origin/referer is present and does not match.
+ * Wrapped in `createServerOnlyFn` so the underlying `@tanstack/react-start/server`
+ * import (denied in the client environment) never lands in a client bundle,
+ * even if this module is transitively reachable via a `*.functions.ts` file's
+ * top-level imports (only handler bodies are stripped by the server-fn splitter).
  */
-export function requireSameOriginOrThrow(): void {
+export const requireSameOriginOrThrow = createServerOnlyFn((): void => {
+  // Loaded lazily inside the server-only body to avoid the `/server` specifier
+  // appearing in the module graph seen by the client bundler.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const {
+    getRequestHeader,
+    getRequestUrl,
+  } = require("@tanstack/react-start/server") as typeof import("@tanstack/react-start/server");
+
   const url = getRequestUrl();
   const expectedOrigin = `${url.protocol}//${url.host}`;
 
@@ -34,4 +40,4 @@ export function requireSameOriginOrThrow(): void {
       throw new Error("Invalid referer");
     }
   }
-}
+});
