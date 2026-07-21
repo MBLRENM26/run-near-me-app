@@ -1,42 +1,30 @@
-## What's breaking
+## What’s going on
 
-TanStack Start upgraded and now requires an explicit CSRF stance for server functions. The dev server is emitting:
+The current evidence points to a leftover TypeScript build blocker, not a new app/runtime failure:
 
-> TanStack Start server functions are not protected by the CSRF middleware.
+1. `src/routes/events.$slug.tsx` has a `<Link to="/search">` with no `search` prop.
+   - This route’s `/search` search params are typed, so TanStack Router requires an explicit `search` value even when it is empty/defaulted.
+   - The same component pattern in `BackToSearchBar` already passes `search={{ q }}`.
 
-Because it's thrown during SSR, the render aborts and the build reports unsuccessful. Our own same-origin check in `admin-csrf.server.ts` only wraps admin mutations — TanStack wants a framework-level middleware covering **all** server functions.
+2. The previous `crypto` issue appears mostly addressed in `admin-session.server.ts`.
+   - The file now uses lazy dynamic imports inside functions, so the client bundle should no longer statically resolve `crypto` from that file.
+   - I did still find top-level `crypto` imports in public API route files; those are server-route handlers and may be fine, but if the build still reports `__vite-browser-external` after the link fix, those are the next suspects to convert to Web Crypto / dynamic imports.
 
-## Fix (single file: `src/start.ts`)
+## Plan
 
-Add TanStack's built-in CSRF middleware to `requestMiddleware`, scoped to server-function calls:
+1. Fix the typed search link in `src/routes/events.$slug.tsx`.
+   - Add the required `search` prop to the tombstone CTA linking to `/search`.
+   - Use the route’s default/empty search shape rather than changing search behavior.
 
-```ts
-import { createStart, createMiddleware } from "@tanstack/react-start";
-import { createCsrfMiddleware } from "@tanstack/react-start/server";
-// ...existing imports
+2. Re-check for remaining build blockers.
+   - If the build output still mentions `__vite-browser-external` or `crypto`, inspect the exact file named by the error.
+   - Convert only that offending top-level server import to a runtime-safe pattern.
 
-const csrfMiddleware = createCsrfMiddleware({
-  filter: (ctx) => ctx.handlerType === "serverFn",
-});
+3. Keep the fix narrow.
+   - No route restructuring.
+   - No database changes.
+   - No changes to public submission/admin logic unless a fresh build error names those files.
 
-export const startInstance = createStart(() => ({
-  functionMiddleware: [attachSupabaseAuth],
-  requestMiddleware: [errorMiddleware, csrfMiddleware],
-}));
-```
+## Expected result
 
-(If the exact import path differs in the installed version, I'll resolve to the correct one — the message above shows the exact API TanStack expects.)
-
-## Why this over disabling the warning
-
-- Framework-level defense covers every server function, not just admin.
-- Our custom `assertSameOrigin` in admin functions stays as defense-in-depth.
-- Public webhook routes under `src/routes/api/public/*` are file routes, not server functions, so they're unaffected (they still verify signatures themselves).
-
-## Verification
-
-1. `bun run typecheck` passes.
-2. Dev-server logs no longer show the CSRF warning or aborted renders.
-3. Smoke test: load `/`, `/admin`, and submit `/list-your-event` — all continue to work.
-
-No schema changes, no other files touched.
+The build should clear the known `TS2741: Property 'search' is missing` error, and any remaining error will be isolated to a specific import if the prior crypto issue still exists elsewhere.
