@@ -1423,6 +1423,15 @@ export type Database = {
           retry_after_s: number
         }[]
       }
+      consume_login_rate_global: {
+        Args: never
+        Returns: {
+          allowed: boolean
+          bucket_hits: number
+          day_hits: number
+          retry_after_s: number
+        }[]
+      }
       consume_submission_rate: {
         Args: { _key_hash: string }
         Returns: {
