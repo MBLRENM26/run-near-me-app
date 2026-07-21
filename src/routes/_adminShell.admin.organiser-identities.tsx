@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
@@ -50,7 +50,7 @@ const ALLOWED: Record<ReviewStatus, Action[]> = {
 
 function OrganiserIdentitiesPage() {
   const search = Route.useSearch();
-  const navigate = useNavigate({ from: "/admin/organiser-identities" });
+  const navigate = Route.useNavigate();
   const qc = useQueryClient();
 
   const check = useServerFn(adminCheckSession);
@@ -111,14 +111,14 @@ function OrganiserIdentitiesPage() {
       </div>
 
       <div className="flex gap-2 text-sm">
-        <FilterChip active={!status} onClick={() => navigate({ search: {} })}>
+        <FilterChip active={!status} onClick={() => navigate({ to: ".", search: {} })}>
           All
         </FilterChip>
         {STATUSES.map((s) => (
           <FilterChip
             key={s}
             active={status === s}
-            onClick={() => navigate({ search: { status: s } })}
+            onClick={() => navigate({ to: ".", search: { status: s } })}
           >
             {s}
           </FilterChip>

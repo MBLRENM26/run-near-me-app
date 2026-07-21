@@ -1,5 +1,5 @@
 import { Suspense, useMemo } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { SITE_URL, SITE_NAME, SOCIALS } from "@/lib/site";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -153,7 +153,7 @@ export const Route = createFileRoute("/")({
 
 function HomePage() {
   const search = Route.useSearch();
-  const navigate = useNavigate({ from: "/" });
+  const navigate = Route.useNavigate();
   const coords: Coords | null =
     search.lat != null && search.lng != null
       ? { lat: search.lat, lng: search.lng, label: search.label }
@@ -165,16 +165,17 @@ function HomePage() {
 
   const setCoords = (c: Coords) =>
     navigate({
-      search: (prev: HomeSearch) => ({ ...prev, lat: c.lat, lng: c.lng, label: c.label }),
+      to: ".",
+      search: (prev) => ({ ...prev, lat: c.lat, lng: c.lng, label: c.label }),
     });
   const setRadius = (r: Radius) =>
-    navigate({ search: (prev: HomeSearch) => ({ ...prev, radius: r }) });
+    navigate({ to: ".", search: (prev) => ({ ...prev, radius: r }) });
   const setEventType = (t: EventType) =>
-    navigate({ search: (prev: HomeSearch) => ({ ...prev, type: t }) });
+    navigate({ to: ".", search: (prev) => ({ ...prev, type: t }) });
   const setGovernance = (v: string | null) =>
-    navigate({ search: (prev: HomeSearch) => ({ ...prev, gov: v ?? undefined }) });
+    navigate({ to: ".", search: (prev) => ({ ...prev, gov: v ?? undefined }) });
   const setRaceProfile = (v: string | null) =>
-    navigate({ search: (prev: HomeSearch) => ({ ...prev, profile: v ?? undefined }) });
+    navigate({ to: ".", search: (prev) => ({ ...prev, profile: v ?? undefined }) });
 
   const { data: nearbyEvents, isLoading, error: nearbyError } = useQuery({
     queryKey: ["events", "nearby", coords?.lat, coords?.lng, radius],

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { createFileRoute, Link, notFound, redirect, useNavigate, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, redirect, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { trackRegionView } from "@/lib/analytics";
 import { ArrowLeft, X } from "lucide-react";
@@ -125,12 +125,13 @@ function RegionPage() {
   const { slug } = Route.useParams();
   const region = slugToRegion(slug)!;
   const search = Route.useSearch() as MonthSearch;
-  const navigate = useNavigate({ from: "/running-events/$slug" });
+  const navigate = Route.useNavigate();
   const month = search.month;
 
   const setMonth = (m: MonthKey | undefined) =>
     navigate({
-      search: (prev: MonthSearch) => ({ ...prev, month: m }),
+      to: ".",
+      search: (prev) => ({ ...prev, month: m }),
       replace: true,
     });
 

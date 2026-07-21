@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
@@ -34,7 +34,7 @@ export const Route = createFileRoute("/_adminShell/admin/club-claims")({
 
 function AdminClubClaimsPage() {
   const search = Route.useSearch();
-  const navigate = useNavigate({ from: "/admin/club-claims" });
+  const navigate = Route.useNavigate();
   const queryClient = useQueryClient();
   const fetchList = useServerFn(listClubClaims);
   const updateOne = useServerFn(updateClubClaim);
@@ -97,6 +97,7 @@ function AdminClubClaimsPage() {
               key={s}
               onClick={() =>
                 navigate({
+                  to: ".",
                   search: { status: s === "pending" ? undefined : s },
                 })
               }
