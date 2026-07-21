@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
@@ -44,7 +44,7 @@ export const Route = createFileRoute("/_adminShell/admin/claims")({
 
 function AdminClaimsPage() {
   const search = Route.useSearch();
-  const navigate = useNavigate({ from: "/admin/claims" });
+  const navigate = Route.useNavigate();
   const queryClient = useQueryClient();
 
   const fetchList = useServerFn(listSubmissions);
@@ -145,9 +145,9 @@ function AdminClaimsPage() {
   };
 
   const setKind = (k: KindFilter) =>
-    navigate({ search: { ...search, kind: k === "all" ? undefined : k } });
+    navigate({ to: ".", search: { ...search, kind: k === "all" ? undefined : k } });
   const setStatus = (s: Status) =>
-    navigate({ search: { ...search, status: s === "new" ? undefined : s } });
+    navigate({ to: ".", search: { ...search, status: s === "new" ? undefined : s } });
 
   if (!authChecked) {
     return <p className="text-sm text-muted-foreground">Checking session…</p>;

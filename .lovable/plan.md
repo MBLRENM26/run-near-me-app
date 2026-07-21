@@ -1,25 +1,36 @@
 ## Diagnosis
 
-The build breaks on two files only:
+This does look like a broader class of bug rather than a single bad line.
 
-- `src/routes/_adminShell.admin.clubs.index.tsx`
-- `src/routes/_adminShell.admin.events.index.tsx`
+The latest dev-server log available here only shows `createServerFn().inputValidator()` deprecation warnings, not the current production-build failure. However, the codebase still contains several routes using the same fragile typed-navigation pattern that caused the previous errors: `navigate({ search: ... })` without an explicit same-route target, and route-local navigation not consistently scoped through the generated route object.
 
-Both are index routes whose generated IDs end in a trailing slash (`/admin/clubs/`, `/admin/events/`), but their `useNavigate({ from: "/admin/clubs" })` / `useNavigate({ from: "/admin/events" })` calls omit it. TanStack's typed router then can't resolve `from`, which cascades into the `search: (prev) => ({ ...prev, page: ... })` updaters — with no route scope, `page` is reported as an unknown search key.
+This is probably why it feels like the bug is being moved around: TypeScript reports the next route where TanStack Router cannot infer the search shape, we patch that instance, then another similar instance surfaces.
 
-This is unrelated to the CSRF / admin-session hardening from yesterday. Those touched `src/lib/admin-*` and `src/start.ts`; the failing lines are pure route-scope typing.
+## Plan
 
-## Fix (narrow, presentation only)
+1. **Capture the real current failing signal first**
+   - Run the project’s typecheck/build command once and capture the full error list.
+   - Do not assume the remaining failure is the same unless the output confirms it.
 
-In both files:
+2. **Fix the navigation pattern across the affected class**
+   - In route components that call search-only navigation, prefer the generated route hook:
+     - `const navigate = Route.useNavigate()`
+   - For same-route search updates, make the target explicit:
+     - `navigate({ to: ".", search: ... })`
+   - Apply this consistently to the routes already identified as using this pattern, including:
+     - `/admin/claims`
+     - `/admin/club-claims`
+     - `/admin/organiser-identities`
+     - `/running-clubs/`
+     - any route surfaced by the fresh typecheck/build output
 
-1. Change `useNavigate({ from: "/admin/clubs" })` → `useNavigate({ from: "/admin/clubs/" })` (and same for `/admin/events/`).
-2. On every `navigate({ search: (prev) => ... })` call in those files, add `to: "."` so the updater is scoped to the current route and `page` types resolve.
-3. Same treatment for the one `<Link search={...}>` in `_adminShell.admin.clubs.index.tsx:190` — give it `to: "."` (or `from` with trailing slash) so the search updater types.
+3. **Keep admin/auth hardening separate**
+   - Do not unwind yesterday’s security hardening unless the build output directly points to it.
+   - The current pattern I can verify is route/navigation type inference, not CSRF/session logic.
 
-No changes to business logic, DB, or the admin auth stack.
+4. **Verify the fix at the correct level**
+   - Re-run typecheck/build after the navigation cleanup.
+   - If new errors remain, group them by category before patching so we do not continue one-error-at-a-time.
 
-## Verification
-
-- `bunx tsgo --noEmit` clean.
-- Load `/admin/clubs` and `/admin/events`, click pagination — URL updates, list refetches.
+5. **Optional follow-up after the build is green**
+   - Add a small route-navigation hygiene pass: avoid unscoped `navigate({ search: ... })` in route files with `validateSearch` so this does not recur when new filters/pagination are added.

@@ -167,6 +167,7 @@ function ClubsIndexPage() {
         active={region}
         onChange={(r) =>
           navigate({
+            to: ".",
             search: { region: r ?? undefined, page: undefined },
           })
         }
@@ -214,7 +215,10 @@ function ClubsIndexPage() {
           <button
             disabled={page <= 1}
             onClick={() =>
-              navigate({ search: { region, page: page > 2 ? page - 1 : undefined } })
+              navigate({
+                to: ".",
+                search: { region, page: page > 2 ? page - 1 : undefined },
+              })
             }
             className="rounded-md border border-border px-3 py-1.5 disabled:opacity-40"
           >
@@ -225,7 +229,7 @@ function ClubsIndexPage() {
           </span>
           <button
             disabled={page >= totalPages}
-            onClick={() => navigate({ search: { region, page: page + 1 } })}
+            onClick={() => navigate({ to: ".", search: { region, page: page + 1 } })}
             className="rounded-md border border-border px-3 py-1.5 disabled:opacity-40"
           >
             Next
