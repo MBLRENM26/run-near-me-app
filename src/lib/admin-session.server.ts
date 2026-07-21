@@ -1,18 +1,11 @@
-import {
-  getCookie,
-  setCookie,
-  deleteCookie,
-} from "@tanstack/react-start/server";
-
 const COOKIE_NAME = "admin_session";
 const MAX_AGE_SECONDS = 60 * 60 * 24 * 14; // 14 days
 
-// NOTE: node:crypto is loaded via dynamic import inside each function so this
-// module is safe to appear (even transiently) in the client dependency graph
-// via the *.functions.ts files that import it. A top-level
-// `import { createHmac } from "crypto"` breaks the client build because Vite
-// resolves "crypto" to the browser-external stub during the client
-// environment pass.
+// All `@tanstack/react-start/server` and `node:crypto` imports are loaded
+// via dynamic import inside each function so this module is safe to appear
+// (even transiently, via top-level imports of *.functions.ts modules) in
+// the client dependency graph. Top-level imports of either would be
+// rejected by TanStack's client-environment import-protection plugin.
 
 function getSecret(): string {
   const secret = process.env.ADMIN_SESSION_SECRET;
@@ -28,6 +21,7 @@ async function sign(payload: string): Promise<string> {
 }
 
 export async function issueAdminSession(): Promise<void> {
+  const { setCookie } = await import("@tanstack/react-start/server");
   const expMs = Date.now() + MAX_AGE_SECONDS * 1000;
   const payload = String(expMs);
   const sig = await sign(payload);
@@ -40,7 +34,8 @@ export async function issueAdminSession(): Promise<void> {
   });
 }
 
-export function clearAdminSession(): void {
+export async function clearAdminSession(): Promise<void> {
+  const { deleteCookie } = await import("@tanstack/react-start/server");
   deleteCookie(COOKIE_NAME, {
     path: "/",
     secure: true,
@@ -49,6 +44,7 @@ export function clearAdminSession(): void {
 }
 
 export async function isAdminAuthenticated(): Promise<boolean> {
+  const { getCookie } = await import("@tanstack/react-start/server");
   const raw = getCookie(COOKIE_NAME);
   if (!raw) return false;
   const [payload, sig] = raw.split(".");
