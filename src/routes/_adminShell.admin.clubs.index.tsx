@@ -42,7 +42,7 @@ export const Route = createFileRoute("/_adminShell/admin/clubs/")({
 
 function AdminClubsPage() {
   const search = Route.useSearch();
-  const navigate = useNavigate({ from: "/admin/clubs" });
+  const navigate = useNavigate({ from: "/admin/clubs/" });
   const fetchList = useServerFn(listAdminClubs);
   const checkSession = useServerFn(adminCheckSession);
 
