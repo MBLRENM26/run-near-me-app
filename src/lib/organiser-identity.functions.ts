@@ -2,7 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { isAdminAuthenticated } from "@/lib/admin-session.server";
-import { requireSameOriginOrThrow } from "@/lib/admin-csrf.server";
 
 const REVIEW_STATUSES = ["proposed", "accepted", "rejected", "reopened"] as const;
 const REVIEW_ACTIONS = ["accepted", "rejected", "reopened"] as const;
@@ -44,7 +43,6 @@ async function requireAdminOrThrow() {
 
 async function requireAdminMutation() {
   await requireAdminOrThrow();
-  requireSameOriginOrThrow();
 }
 
 // ---------------------------------------------------------------------------
