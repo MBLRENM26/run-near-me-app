@@ -85,7 +85,7 @@ function AdminClubsPage() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const applySearch = (next: Partial<z.infer<typeof searchSchema>>) =>
-    navigate({ search: { ...search, ...next, page: 0 } });
+    navigate({ to: ".", search: { ...search, ...next, page: 0 } });
 
   if (!authed) return <p className="text-sm text-muted-foreground">Checking session…</p>;
 
