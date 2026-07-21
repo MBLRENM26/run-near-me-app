@@ -50,7 +50,7 @@ export const Route = createFileRoute("/_adminShell/admin/events/")({
 
 function AdminEventsPage() {
   const search = Route.useSearch();
-  const navigate = useNavigate({ from: "/admin/events" });
+  const navigate = useNavigate({ from: "/admin/events/" });
   const fetchList = useServerFn(listAdminEvents);
   const fetchSources = useServerFn(listAdminEventSources);
   const runBackfill = useServerFn(backfillEventTags);
