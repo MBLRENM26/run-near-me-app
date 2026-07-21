@@ -4,12 +4,12 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { isAdminAuthenticated } from "@/lib/admin-session.server";
 import { requireSameOriginOrThrow } from "@/lib/admin-csrf.server";
 
-function requireAdmin() {
-  if (!isAdminAuthenticated()) throw new Error("Unauthorized");
+async function requireAdmin() {
+  if (!(await isAdminAuthenticated())) throw new Error("Unauthorized");
 }
 
-function requireAdminMutation() {
-  requireAdmin();
+async function requireAdminMutation() {
+  await requireAdmin();
   requireSameOriginOrThrow();
 }
 
