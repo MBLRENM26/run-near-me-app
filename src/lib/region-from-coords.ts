@@ -28,8 +28,12 @@ export function regionFromCoords(
   if (lat >= 53.9 && lat <= 55.4 && lng <= -5.3) return "northern-ireland";
   // Scotland (everything north of ~55, plus Borders that extends a touch south)
   if (lat >= 54.85) return "scotland";
-  // Wales
-  if (lat >= 51.3 && lat <= 53.5 && lng <= -2.65) return "wales";
+  // Wales — polygon test. A longitude cut mislabels Merseyside/Wirral,
+  // Cheshire, Shropshire, Herefordshire and the Somerset side of the
+  // Severn estuary as Welsh, because England's coast reaches further
+  // west than the Welsh border at those latitudes.
+  if (isInWales(lat, lng)) return "wales";
+
   // London (greater London bbox)
   if (lat >= 51.28 && lat <= 51.72 && lng >= -0.55 && lng <= 0.32)
     return "london";
