@@ -12,8 +12,8 @@
  * Rules (any one triggers noindex):
  *  - Past — race already happened. Page stays live but stops asking
  *    Google to keep it as a candidate result.
- *  - Slug-suffix duplicate — `-race-\d+` or `-{month-name}` suffix
- *    is a near-certain templated copy.
+ *  - Slug-suffix duplicate — a `-race-N` suffix is a near-certain
+ *    templated series copy.
  *  - Orphan — no entry url, no organiser url, no organiser name.
  *    Nothing on the page beyond the structured fields.
  *  - Duplicate sibling — ≥2 ACTIVE events share the normalised name,
@@ -24,10 +24,13 @@
 const MONTH_PATTERN =
   "(january|february|march|april|may|june|july|august|september|october|november|december)";
 
-const SLUG_SUFFIX_DUPLICATE_RE = new RegExp(
-  `(?:-race-\\d+|-${MONTH_PATTERN})$`,
-  "i",
-);
+// Only `-race-N` is a near-certain templated series member. A trailing
+// month name is NOT: 82 future singleton events ("Rock Up 'n' Run Bingley
+// August", "Thurlby 10K … September") were noindexed by that clause with
+// no duplicate at all. Genuine month-suffixed series are still caught by
+// the duplicate-sibling rule below, which normalises month names out of
+// the event name before grouping.
+const SLUG_SUFFIX_DUPLICATE_RE = /-race-\d+$/i;
 
 const NAME_NORMALISE_STRIP = new RegExp(
   // Strip trailing year (2024…2099), month names, and "race N" tokens
