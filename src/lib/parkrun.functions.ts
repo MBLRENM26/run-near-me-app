@@ -3,6 +3,8 @@ import { notFound, redirect } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { regionFromCoords, type UKRegionSlug } from "@/lib/region-from-coords";
+import { hasOrganiserOwnedLink } from "@/lib/link-trust";
+
 
 export type ParkrunVariant = "adult" | "junior";
 
