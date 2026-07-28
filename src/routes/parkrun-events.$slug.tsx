@@ -147,6 +147,16 @@ function ParkrunLocationPage() {
     : "Every Saturday at 9:00am";
   const distanceLabel = p.distance ?? (isJunior ? "2K" : "5K");
   const regionName = p.regionSlug ? REGION_BY_SLUG[p.regionSlug]?.name : null;
+  // Prefer the town/county we hold; otherwise use the parkrun's own place
+  // name (its name minus the "junior parkrun" / "parkrun" suffix).
+  const locationLabel =
+    p.town?.trim() ||
+    p.county?.trim() ||
+    p.name.replace(/\s*(junior\s+)?parkrun.*$/i, "").trim() ||
+    regionName ||
+    null;
+
+
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -169,12 +179,18 @@ function ParkrunLocationPage() {
             <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
               Free · Weekly · {distanceLabel}
             </span>
-            {regionName && (
-              <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
-                <MapPin className="h-3 w-3 mr-1" />
-                {regionName}
-              </span>
-            )}
+            {[p.town?.trim(), p.county?.trim(), regionName]
+              .filter((v, i, arr): v is string => !!v && arr.indexOf(v) === i)
+              .map((label) => (
+                <span
+                  key={label}
+                  className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground"
+                >
+                  <MapPin className="h-3 w-3 mr-1" />
+                  {label}
+                </span>
+              ))}
+
           </div>
 
           <p className="mt-4 text-base text-muted-foreground">{schedule}</p>
@@ -224,6 +240,38 @@ function ParkrunLocationPage() {
               </ul>
             </div>
           )}
+
+          {p.nearbyRaces.length > 0 && (
+            <div className="mt-10">
+              <h2 className="text-xl font-semibold text-foreground mb-3">
+                Upcoming races near {locationLabel ?? p.name}
+              </h2>
+              <ul className="divide-y divide-border rounded-xl border border-border">
+                {p.nearbyRaces.map((r) => (
+                  <li key={r.id} className="px-4 py-3">
+                    <Link
+                      to="/events/$slug"
+                      params={{ slug: r.slug }}
+                      className="text-sm font-medium text-foreground hover:text-primary hover:underline"
+                    >
+                      {r.name}
+                    </Link>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {[
+                        r.dateRaw,
+                        r.distances,
+                        r.town,
+                        `${r.distanceMiles.toFixed(1)} mi away`,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
 
           {regionName && p.regionSlug && (
             <div className="mt-10 rounded-2xl border border-border bg-card p-6">

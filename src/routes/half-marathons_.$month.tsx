@@ -3,7 +3,7 @@ import { getEventsForMonth } from "@/lib/month-page.functions";
 import { MonthPage, buildMonthHead } from "@/components/month/MonthPage";
 import { parseMonthSlug } from "@/lib/month-slug";
 
-export const Route = createFileRoute("/half-marathons/$month")({
+export const Route = createFileRoute("/half-marathons_/$month")({
   beforeLoad: ({ params }) => {
     if (!parseMonthSlug(params.month)) throw notFound();
   },
