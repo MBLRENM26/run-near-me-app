@@ -118,11 +118,25 @@ const slugSchema = z.object({
   slug: z.string().trim().min(1).max(255).regex(/^[a-z0-9-]+$/),
 });
 
+export interface NearbyRace {
+  id: string;
+  slug: string;
+  name: string;
+  dateRaw: string | null;
+  sortDate: string | null;
+  town: string | null;
+  county: string | null;
+  distances: string | null;
+  distanceMiles: number;
+}
+
 export interface ParkrunDetail extends ParkrunLocation {
   town: string | null;
   county: string | null;
   nearby: (ParkrunLocation & { distanceMiles: number })[];
+  nearbyRaces: NearbyRace[];
 }
+
 
 function haversineMiles(
   lat1: number,
