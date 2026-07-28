@@ -225,6 +225,38 @@ function ParkrunLocationPage() {
             </div>
           )}
 
+          {p.nearbyRaces.length > 0 && (
+            <div className="mt-10">
+              <h2 className="text-xl font-semibold text-foreground mb-3">
+                Upcoming races near {locationLabel ?? p.name}
+              </h2>
+              <ul className="divide-y divide-border rounded-xl border border-border">
+                {p.nearbyRaces.map((r) => (
+                  <li key={r.id} className="px-4 py-3">
+                    <Link
+                      to="/events/$slug"
+                      params={{ slug: r.slug }}
+                      className="text-sm font-medium text-foreground hover:text-primary hover:underline"
+                    >
+                      {r.name}
+                    </Link>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {[
+                        r.dateRaw,
+                        r.distances,
+                        r.town,
+                        `${r.distanceMiles.toFixed(1)} mi away`,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+
           {regionName && p.regionSlug && (
             <div className="mt-10 rounded-2xl border border-border bg-card p-6">
               <h2 className="text-lg font-semibold text-foreground">
