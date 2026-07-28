@@ -47,7 +47,10 @@ const WALES_POLYGON: [number, number][] = [
   [-4.3, 51.55], // Gower / Carmarthen Bay
   [-5.3, 51.68], // Pembrokeshire
   [-4.6, 52.1], // Cardigan Bay
-  [-4.1, 52.9], // Llŷn approaches
+  [-4.8, 52.85], // Llŷn peninsula tip
+  [-4.35, 53.1], // Caernarfon
+  [-4.8, 53.25], // Holy Island / west Anglesey
+
   [-4.7, 53.42], // close
 ];
 
