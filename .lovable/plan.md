@@ -1,60 +1,56 @@
-## Runtime smoke test — admin auth + rate-limit hardening
+## What the export actually says
 
-Close-out verification for the dual-gate rate limiter and CSRF/session changes on the **published** environment (`https://run-near-me-app.lovable.app`). Read-only where possible; the only writes are one login + one logout.
+The file is a **"Crawled – currently not indexed"** validation, not a new failure:
 
-### 1. Preflight (local, no state change)
-- `bun run build` — production build must exit 0.
-- `bun run lint` — ESLint clean (or only pre-existing warnings; diff against baseline).
-- `bun run test` — vitest suite green.
-- Typecheck already green; re-run `bunx tsgo --noEmit` for parity.
+- 50 URLs sampled: **48 Pending**, **2 Failed**.
+- Pending is normal — Google re-crawls in batches and this validation is still running.
+- The two Failed URLs are the useful signal: `/10k-races/september-2026` and `/parkrun-events/crosby`. Google re-crawled both on 2026-07-18 and still declined to index.
 
-Abort the runtime phase if any of the above fail; capture output under `/tmp/browser/smoke/`.
+I checked both live. One is a real bug; the other is a content/data problem.
 
-### 2. Runtime smoke via Playwright (published URL)
-Single script under `/tmp/browser/admin-smoke/`, headless Chromium, viewport 1280×1800, screenshots at each step. Uses `ADMIN_PASSWORD` from env — never logged, never screenshotted into a visible field (password input masked).
+## Finding 1 (bug, high impact): every distance × month page renders the hub page
 
-Steps and assertions:
+`src/routes/10k-races.tsx` is a parent of `src/routes/10k-races.$month.tsx` under flat routing, and it has no `<Outlet />`. Verified live:
 
-1. **Login UI flow**
-   - GET `/admin/login`, submit the password form.
-   - Assert redirect to `/admin/claims` and 200 response.
+- `/10k-races/september-2026` and `/10k-races` render the **identical** H1 and body (`10K Races in the UK 2026`, ~10,800 words).
+- The month page emits **two** canonical tags — the parent's `.../10k-races` first, then the child's `.../10k-races/september-2026`.
 
-2. **Cookie attributes**
-   - Read `admin_session` via `context.cookies()`.
-   - Assert: `httpOnly=true`, `secure=true`, `sameSite="Lax"`, `path="/"`, `expires` ≈ now + 14 days (±1 day tolerance).
-   - Assert value matches `^\d+\.[0-9a-f]{64}$` (payload.sig shape) — do not log the value.
+So Google sees a byte-near-duplicate of the hub with a canonical pointing away from itself. "Crawled – currently not indexed" is the expected outcome. The same pattern applies to all five pairs: `5k-races`, `10k-races`, `half-marathons`, `marathons`, `ultra-marathons` — and the sitemap actively submits these URLs.
 
-3. **Authenticated session check + protected read**
-   - Call `adminCheckSession` server fn via the page (`useServerFn` route already exists) → expect `{ authenticated: true }`.
-   - Trigger a protected read-only submissions call (navigate to `/admin/claims` list, or invoke `adminNotify`/submissions list fn) → expect 200 with data shape, no 401/403.
+**Fix:** rename each child to escape nesting, matching the existing `running-events.$slug_.$distance.tsx` convention:
 
-4. **CSRF: hostile origin replay**
-   - Using the authenticated cookie, `fetch` the same server-fn endpoint from a new page context with `Origin: https://evil.example`.
-   - Expect rejection (403 from `createCsrfMiddleware`). Record status + body.
+```text
+10k-races.$month.tsx      -> 10k-races_.$month.tsx
+5k-races.$month.tsx       -> 5k-races_.$month.tsx
+half-marathons.$month.tsx -> half-marathons_.$month.tsx
+marathons.$month.tsx      -> marathons_.$month.tsx
+ultra-marathons.$month.tsx-> ultra-marathons_.$month.tsx
+```
 
-5. **CSRF: missing origin metadata replay**
-   - Repeat the fetch with `Origin` and `Referer` stripped.
-   - Expect rejection (403). Record status + body.
+URLs are unchanged. After the rename each month route renders `MonthPage` on its own with a single self-referencing canonical. Verify by curling one page and confirming exactly one `<link rel="canonical">` and a month-specific H1.
 
-6. **Logout**
-   - Invoke `adminLogout` server fn.
-   - Assert `admin_session` is gone from `context.cookies()` (or has past expiry).
+## Finding 2 (content/data): parkrun detail pages are thin, and some are mis-regioned
 
-7. **Post-logout session check + protected call**
-   - `adminCheckSession` → `{ authenticated: false }`.
-   - Protected mutation (e.g. admin submissions action) → expect `Unauthorized` / 401-equivalent handled response (no crash).
+`/parkrun-events/crosby` server-renders correctly but carries roughly 120 words of unique body text — name, distance, day/time, five nearby links, one outbound link. There is also a data error: Crosby parkrun sits at 53.48 / -3.05 (Merseyside) but the page, its breadcrumb, and its schema all say **Wales**.
 
-### 3. Missing-IP warning payload check
-- Grep worker logs from the smoke run via `stack_modern--server-function-logs` (search: `admin_login_trusted_ip_missing`).
-- If present, assert the log line is exactly `[admin-login-rate] admin_login_trusted_ip_missing {}` — no IP, headers, cookie, password, or payload fields. If absent (Cloudflare edge did populate `cf-connecting-ip` in prod), record that and note the per-IP gate was exercised instead.
-- Also confirm no other log entry in the run contains the password, `Authorization`, `Cookie`, or the raw session value.
+Proposed, in order:
+1. Audit region assignment for parkrun locations against latitude/longitude using the existing region-from-coords helper, and report how many rows disagree with their stored region before changing anything.
+2. Correct the mismatched rows.
+3. Add non-invented, structured depth to the parkrun template: nearest town/county, distance-to-nearest-city, a "races near this parkrun" block drawn from live event rows in the same county, and the region breadcrumb. No generated prose — stable structured fields and live counts only, per the project rule.
 
-### 4. Deliverable
-A single report back in chat with:
-- Build/lint/test exit codes.
-- Cookie attribute table.
-- Status codes + brief body for each of the 4 auth/CSRF checks (pre- and post-logout).
-- Screenshot filenames under `/tmp/browser/admin-smoke/screenshots/`.
-- Log-line evidence for the missing-IP warning (or note that per-IP gate ran).
+## Finding 3 (low priority): legacy URLs still in the validation set
 
-No source edits unless a check fails; failures return with a diagnosis and a follow-up plan, not an in-place fix.
+`/browse`, `/submit`, `/event/big-half`, `/event/north-downs-30k`, `/event/vitality-london-10k`, `/north-downs-30k` all correctly return 404 now. They were last crawled Feb–Mar and will drop out on their own. The `?claim=` variants correctly emit `noindex, follow` plus a canonical to `/list-your-event` — also fine, and no action needed.
+
+## Sequencing
+
+1. Route rename (finding 1) — small, self-contained, unblocks ~60 submitted URLs.
+2. Read-only parkrun region audit, report the number before any write.
+3. Parkrun template depth, once the region data is trustworthy.
+4. Re-run GSC validation only after step 1 ships and is published.
+
+## Technical notes
+
+- Flat-route trailing `_` escapes parent nesting in TanStack Router; `src/routeTree.gen.ts` regenerates automatically and must not be hand-edited.
+- No sitemap change is needed — the URLs it emits are already correct; they just render the wrong component today.
+- No change to `src/lib/event-indexability.ts` or the `X-Status-Override` interceptor is implied by this work.
