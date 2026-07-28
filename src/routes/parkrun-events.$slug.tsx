@@ -172,12 +172,18 @@ function ParkrunLocationPage() {
             <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
               Free · Weekly · {distanceLabel}
             </span>
-            {regionName && (
-              <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
-                <MapPin className="h-3 w-3 mr-1" />
-                {regionName}
-              </span>
-            )}
+            {[p.town?.trim(), p.county?.trim(), regionName]
+              .filter((v, i, arr): v is string => !!v && arr.indexOf(v) === i)
+              .map((label) => (
+                <span
+                  key={label}
+                  className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground"
+                >
+                  <MapPin className="h-3 w-3 mr-1" />
+                  {label}
+                </span>
+              ))}
+
           </div>
 
           <p className="mt-4 text-base text-muted-foreground">{schedule}</p>
