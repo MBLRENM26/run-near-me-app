@@ -147,8 +147,15 @@ function ParkrunLocationPage() {
     : "Every Saturday at 9:00am";
   const distanceLabel = p.distance ?? (isJunior ? "2K" : "5K");
   const regionName = p.regionSlug ? REGION_BY_SLUG[p.regionSlug]?.name : null;
+  // Prefer the town/county we hold; otherwise use the parkrun's own place
+  // name (its name minus the "junior parkrun" / "parkrun" suffix).
   const locationLabel =
-    p.town?.trim() || p.county?.trim() || regionName || null;
+    p.town?.trim() ||
+    p.county?.trim() ||
+    p.name.replace(/\s*(junior\s+)?parkrun.*$/i, "").trim() ||
+    regionName ||
+    null;
+
 
 
   return (
