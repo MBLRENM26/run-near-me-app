@@ -12,8 +12,8 @@
  * Rules (any one triggers noindex):
  *  - Past — race already happened. Page stays live but stops asking
  *    Google to keep it as a candidate result.
- *  - Slug-suffix duplicate — `-race-\d+` or `-{month-name}` suffix
- *    is a near-certain templated copy.
+ *  - Slug-suffix duplicate — a `-race-N` suffix is a near-certain
+ *    templated series copy.
  *  - Orphan — no entry url, no organiser url, no organiser name.
  *    Nothing on the page beyond the structured fields.
  *  - Duplicate sibling — ≥2 ACTIVE events share the normalised name,
