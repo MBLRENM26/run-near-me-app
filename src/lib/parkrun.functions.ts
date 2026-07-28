@@ -203,5 +203,57 @@ export const getParkrunBySlug = createServerFn({ method: "GET" })
         .sort((a, b) => a.distanceMiles - b.distanceMiles)
         .slice(0, 5);
     }
-    return { ...me, town, county, nearby };
+    // One-off races near this parkrun. Same discovery gate as every other
+    // discovery surface: organiser-owned link only, mainland-or-null bounds
+    // are implied by the bbox below. Structured fields only — no prose.
+    let nearbyRaces: NearbyRace[] = [];
+    if (me.lat != null && me.lng != null) {
+      const today = new Date().toISOString().slice(0, 10);
+      const dLat = 0.45; // ~31 miles
+      const dLng = 0.7;
+      const { data: raceRows } = await supabaseAdmin
+        .from("events")
+        .select(
+          "id, slug, name, date_raw, sort_date, town, county, distances, entry_url, organiser_url, lat, lng",
+        )
+        .eq("status", "ACTIVE")
+        .not("slug", "is", null)
+        .not("name", "ilike", "%parkrun%")
+        .gte("sort_date", today)
+        .gte("lat", me.lat - dLat)
+        .lte("lat", me.lat + dLat)
+        .gte("lng", me.lng - dLng)
+        .lte("lng", me.lng + dLng)
+        .order("sort_date", { ascending: true })
+        .limit(400);
+      nearbyRaces = (raceRows ?? [])
+        .filter((r) =>
+          hasOrganiserOwnedLink(
+            r.entry_url as string | null,
+            r.organiser_url as string | null,
+          ),
+        )
+        .map((r) => ({
+          id: r.id as string,
+          slug: r.slug as string,
+          name: r.name as string,
+          dateRaw: (r.date_raw as string | null) ?? null,
+          sortDate: (r.sort_date as string | null) ?? null,
+          town: (r.town as string | null)?.trim() || null,
+          county: (r.county as string | null)?.trim() || null,
+          distances: (r.distances as string | null)?.trim() || null,
+          distanceMiles: haversineMiles(
+            me.lat!,
+            me.lng!,
+            r.lat as number,
+            r.lng as number,
+          ),
+        }))
+        .filter((r) => r.distanceMiles <= 20)
+        .sort((a, b) => a.distanceMiles - b.distanceMiles)
+        .slice(0, 8);
+    }
+
+    return { ...me, town, county, nearby, nearbyRaces };
+
   });
