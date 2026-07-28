@@ -3,19 +3,19 @@ import { getEventsForMonth } from "@/lib/month-page.functions";
 import { MonthPage, buildMonthHead } from "@/components/month/MonthPage";
 import { parseMonthSlug } from "@/lib/month-slug";
 
-export const Route = createFileRoute("/5k-races/$month")({
+export const Route = createFileRoute("/ultra-marathons_/$month")({
   beforeLoad: ({ params }) => {
     if (!parseMonthSlug(params.month)) throw notFound();
   },
   loader: async ({ params }) => {
     const m = parseMonthSlug(params.month)!;
     return await getEventsForMonth({
-      data: { monthKey: m.key, distanceKey: "5k" },
+      data: { monthKey: m.key, distanceKey: "ultra" },
     });
   },
   head: ({ params, loaderData }) =>
     loaderData
-      ? buildMonthHead(loaderData, `/5k-races/${params.month}`, "5k")
-      : { meta: [{ title: "5K Races" }] },
-  component: () => <MonthPage data={Route.useLoaderData()} distanceKey="5k" />,
+      ? buildMonthHead(loaderData, `/ultra-marathons/${params.month}`, "ultra")
+      : { meta: [{ title: "Ultra Marathons" }] },
+  component: () => <MonthPage data={Route.useLoaderData()} distanceKey="ultra" />,
 });
