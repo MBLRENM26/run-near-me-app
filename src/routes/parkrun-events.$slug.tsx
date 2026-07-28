@@ -147,6 +147,9 @@ function ParkrunLocationPage() {
     : "Every Saturday at 9:00am";
   const distanceLabel = p.distance ?? (isJunior ? "2K" : "5K");
   const regionName = p.regionSlug ? REGION_BY_SLUG[p.regionSlug]?.name : null;
+  const locationLabel =
+    p.town?.trim() || p.county?.trim() || regionName || null;
+
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
