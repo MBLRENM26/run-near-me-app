@@ -1,4 +1,4 @@
-import { setCookie, deleteCookie, getCookie } from "@tanstack/react-start/server";
+import { setCookie, deleteCookie, getCookie, getRequestUrl } from "@tanstack/react-start/server";
 import { createHmac, timingSafeEqual } from "crypto";
 
 const COOKIE_NAME = "admin_session";
@@ -25,9 +25,11 @@ export async function issueAdminSession(): Promise<void> {
   const expMs = Date.now() + MAX_AGE_SECONDS * 1000;
   const payload = String(expMs);
   const sig = await sign(payload);
+  const requestUrl = getRequestUrl();
+  const secure = requestUrl.protocol === "https:";
   setCookie(COOKIE_NAME, `${payload}.${sig}`, {
     httpOnly: true,
-    secure: true,
+    secure,
     sameSite: "lax",
     maxAge: MAX_AGE_SECONDS,
     path: "/",
@@ -35,9 +37,10 @@ export async function issueAdminSession(): Promise<void> {
 }
 
 export async function clearAdminSession(): Promise<void> {
+  const requestUrl = getRequestUrl();
   deleteCookie(COOKIE_NAME, {
     path: "/",
-    secure: true,
+    secure: requestUrl.protocol === "https:",
     sameSite: "lax",
   });
 }
