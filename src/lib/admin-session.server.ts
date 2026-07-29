@@ -1,11 +1,13 @@
+import { setCookie, deleteCookie, getCookie } from "@tanstack/react-start/server";
+import { createHmac, timingSafeEqual } from "crypto";
+
 const COOKIE_NAME = "admin_session";
 const MAX_AGE_SECONDS = 60 * 60 * 24 * 14; // 14 days
 
-// All `@tanstack/react-start/server` and `node:crypto` imports are loaded
-// via dynamic import inside each function so this module is safe to appear
-// (even transiently, via top-level imports of *.functions.ts modules) in
-// the client dependency graph. Top-level imports of either would be
-// rejected by TanStack's client-environment import-protection plugin.
+// Server-only module. Every consumer (admin *.functions.ts) loads it with a
+// dynamic import inside a function body so it never enters the client import
+// graph — TanStack's import-protection plugin rejects
+// `@tanstack/react-start/server` in the client environment.
 
 function getSecret(): string {
   const secret = process.env.ADMIN_SESSION_SECRET;
@@ -16,12 +18,10 @@ function getSecret(): string {
 }
 
 async function sign(payload: string): Promise<string> {
-  const { createHmac } = await import("crypto");
   return createHmac("sha256", getSecret()).update(payload).digest("hex");
 }
 
 export async function issueAdminSession(): Promise<void> {
-  const { setCookie } = await import("@tanstack/react-start/server");
   const expMs = Date.now() + MAX_AGE_SECONDS * 1000;
   const payload = String(expMs);
   const sig = await sign(payload);
@@ -35,7 +35,6 @@ export async function issueAdminSession(): Promise<void> {
 }
 
 export async function clearAdminSession(): Promise<void> {
-  const { deleteCookie } = await import("@tanstack/react-start/server");
   deleteCookie(COOKIE_NAME, {
     path: "/",
     secure: true,
@@ -44,7 +43,6 @@ export async function clearAdminSession(): Promise<void> {
 }
 
 export async function isAdminAuthenticated(): Promise<boolean> {
-  const { getCookie } = await import("@tanstack/react-start/server");
   const raw = getCookie(COOKIE_NAME);
   if (!raw) return false;
   const [payload, sig] = raw.split(".");
@@ -57,8 +55,6 @@ export async function isAdminAuthenticated(): Promise<boolean> {
     return false;
   }
 
-  const { timingSafeEqual } = await import("crypto");
-  const { Buffer } = await import("buffer");
   const a = Buffer.from(sig, "hex");
   const b = Buffer.from(expected, "hex");
   if (a.length !== b.length || a.length === 0) return false;
@@ -72,7 +68,6 @@ export async function isAdminAuthenticated(): Promise<boolean> {
 export async function verifyAdminPassword(input: string): Promise<boolean> {
   const expected = process.env.ADMIN_PASSWORD;
   if (!expected) return false;
-  const { createHmac, timingSafeEqual } = await import("crypto");
   // HMAC both sides to a fixed length so comparison time doesn't leak
   // the configured password's byte length via an early length check.
   const key = getSecret();

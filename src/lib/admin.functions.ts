@@ -1,13 +1,26 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import {
-  isAdminAuthenticated,
-  issueAdminSession,
-  clearAdminSession,
-  verifyAdminPassword,
-} from "@/lib/admin-session.server";
 import { sendNewSubmissionNotification } from "@/lib/notify.server";
+
+// Loaded lazily so the server-only session module never enters the client
+// import graph (route components statically import this module).
+const adminSession = createServerOnlyFn(() =>
+  import("@/lib/admin-session.server"),
+);
+async function isAdminAuthenticated(): Promise<boolean> {
+  return (await adminSession()).isAdminAuthenticated();
+}
+async function issueAdminSession(): Promise<void> {
+  return (await adminSession()).issueAdminSession();
+}
+async function clearAdminSession(): Promise<void> {
+  return (await adminSession()).clearAdminSession();
+}
+async function verifyAdminPassword(input: string): Promise<boolean> {
+  return (await adminSession()).verifyAdminPassword(input);
+}
+
 
 // The in-memory burst limiter lives in a .server.ts module so its daily-salt
 // state never leaks into the client bundle. Handlers dynamically import it
