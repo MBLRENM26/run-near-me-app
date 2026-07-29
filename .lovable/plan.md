@@ -1,56 +1,50 @@
-## What the export actually says
+# Fix: admin login is broken
 
-The file is a **"Crawled – currently not indexed"** validation, not a new failure:
+## What's actually wrong
 
-- 50 URLs sampled: **48 Pending**, **2 Failed**.
-- Pending is normal — Google re-crawls in batches and this validation is still running.
-- The two Failed URLs are the useful signal: `/10k-races/september-2026` and `/parkrun-events/crosby`. Google re-crawled both on 2026-07-18 and still declined to index.
+The admin login page renders, but signing in does nothing and the admin pages fail to load. This is not a password or session problem — the admin JavaScript never loads.
 
-I checked both live. One is a real bug; the other is a content/data problem.
-
-## Finding 1 (bug, high impact): every distance × month page renders the hub page
-
-`src/routes/10k-races.tsx` is a parent of `src/routes/10k-races.$month.tsx` under flat routing, and it has no `<Outlet />`. Verified live:
-
-- `/10k-races/september-2026` and `/10k-races` render the **identical** H1 and body (`10K Races in the UK 2026`, ~10,800 words).
-- The month page emits **two** canonical tags — the parent's `.../10k-races` first, then the child's `.../10k-races/september-2026`.
-
-So Google sees a byte-near-duplicate of the hub with a canonical pointing away from itself. "Crawled – currently not indexed" is the expected outcome. The same pattern applies to all five pairs: `5k-races`, `10k-races`, `half-marathons`, `marathons`, `ultra-marathons` — and the sitemap actively submits these URLs.
-
-**Fix:** rename each child to escape nesting, matching the existing `running-events.$slug_.$distance.tsx` convention:
+Confirmed from the dev server: requesting the admin session helper module returns a 500 with
 
 ```text
-10k-races.$month.tsx      -> 10k-races_.$month.tsx
-5k-races.$month.tsx       -> 5k-races_.$month.tsx
-half-marathons.$month.tsx -> half-marathons_.$month.tsx
-marathons.$month.tsx      -> marathons_.$month.tsx
-ultra-marathons.$month.tsx-> ultra-marathons_.$month.tsx
+[import-protection] Import denied in client environment
+  Denied by specifier pattern: @tanstack/react-start/server
+  Importer: src/lib/admin-session.server.ts
+  Trace: routeTree.gen -> routes/_adminShell.admin.events.index.tsx
+         -> src/lib/admin-events.functions.ts
+         -> src/lib/admin-session.server.ts
 ```
 
-URLs are unchanged. After the rename each month route renders `MonthPage` on its own with a single self-referencing canonical. Verify by curling one page and confirming exactly one `<link rel="canonical">` and a month-specific H1.
+The cause: every admin server-function module imports the session helper at the top of the file:
 
-## Finding 2 (content/data): parkrun detail pages are thin, and some are mis-regioned
+```ts
+import { isAdminAuthenticated } from "@/lib/admin-session.server";
+```
 
-`/parkrun-events/crosby` server-renders correctly but carries roughly 120 words of unique body text — name, distance, day/time, five nearby links, one outbound link. There is also a data error: Crosby parkrun sits at 53.48 / -3.05 (Merseyside) but the page, its breadcrumb, and its schema all say **Wales**.
+Because route components import those `*.functions.ts` modules, the server-only session helper is dragged into the browser bundle graph. The framework's import protection rejects it, the admin route chunk fails to load, and the browser reports "Failed to fetch dynamically imported module". Login can never complete.
 
-Proposed, in order:
-1. Audit region assignment for parkrun locations against latitude/longitude using the existing region-from-coords helper, and report how many rows disagree with their stored region before changing anything.
-2. Correct the mismatched rows.
-3. Add non-invented, structured depth to the parkrun template: nearest town/county, distance-to-nearest-city, a "races near this parkrun" block drawn from live event rows in the same county, and the region breadcrumb. No generated prose — stable structured fields and live counts only, per the project rule.
+This affects 8 modules: `admin.functions.ts`, `admin-events`, `admin-clubs`, `admin-search`, `admin-notify`, `admin-date-enrich`, `admin-sync`, `organiser-identity`.
 
-## Finding 3 (low priority): legacy URLs still in the validation set
+## The fix
 
-`/browse`, `/submit`, `/event/big-half`, `/event/north-downs-30k`, `/event/vitality-london-10k`, `/north-downs-30k` all correctly return 404 now. They were last crawled Feb–Mar and will drop out on their own. The `?claim=` variants correctly emit `noindex, follow` plus a canonical to `/list-your-event` — also fine, and no action needed.
+Move the session helper import out of module scope and into each server-function handler, so it only ever loads on the server:
 
-## Sequencing
+```ts
+// remove the top-level import
+export const something = createServerFn(...).handler(async () => {
+  const { isAdminAuthenticated } = await import("@/lib/admin-session.server");
+  ...
+});
+```
 
-1. Route rename (finding 1) — small, self-contained, unblocks ~60 submitted URLs.
-2. Read-only parkrun region audit, report the number before any write.
-3. Parkrun template depth, once the region data is trustworthy.
-4. Re-run GSC validation only after step 1 ships and is published.
+Where a file has a shared `requireAdmin()` helper, do the dynamic import inside that helper once rather than repeating it in every handler.
 
-## Technical notes
+Also apply the same treatment to the login/logout path in `admin.functions.ts` (`issueAdminSession`, `clearAdminSession`, `verifyAdminPassword`) and to any admin CSRF helper imported the same way.
 
-- Flat-route trailing `_` escapes parent nesting in TanStack Router; `src/routeTree.gen.ts` regenerates automatically and must not be hand-edited.
-- No sitemap change is needed — the URLs it emits are already correct; they just render the wrong component today.
-- No change to `src/lib/event-indexability.ts` or the `X-Status-Override` interceptor is implied by this work.
+No behaviour, auth model, password, or database change — purely moving where the server-only module is loaded.
+
+## Verification
+
+1. Confirm `GET /src/lib/admin-session.server.ts` no longer 500s and the admin route chunks load.
+2. Drive a real browser session: open `/admin/login`, submit the admin password, and confirm it lands on `/admin/claims` with the admin shell rendered and no console errors.
+3. Load `/admin/events` and `/admin/sync-runs` to confirm the other admin chunks resolve.
