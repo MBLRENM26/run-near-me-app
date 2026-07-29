@@ -99,6 +99,12 @@ function AdminLayout() {
             >
               Organisers
             </Link>
+            <Link
+              to="/admin/subscriptions"
+              className="text-sm font-medium text-foreground hover:text-primary"
+            >
+              Subscribers
+            </Link>
           </div>
           <Button variant="ghost" size="sm" onClick={handleLogout}>
             Log out
