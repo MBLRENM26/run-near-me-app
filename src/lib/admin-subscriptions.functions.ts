@@ -1,5 +1,4 @@
 import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const isAdminAuthenticated = createServerOnlyFn(async () => {
   const { isAdminAuthenticated: impl } = await import(
@@ -8,9 +7,6 @@ const isAdminAuthenticated = createServerOnlyFn(async () => {
   return impl();
 });
 
-async function requireAdmin() {
-  if (!(await isAdminAuthenticated())) throw new Error("Unauthorized");
-}
 
 export interface SubscriptionRow {
   id: string;
