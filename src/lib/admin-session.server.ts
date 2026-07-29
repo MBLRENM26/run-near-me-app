@@ -30,7 +30,7 @@ export async function issueAdminSession(): Promise<void> {
   setCookie(COOKIE_NAME, `${payload}.${sig}`, {
     httpOnly: true,
     secure,
-    sameSite: "lax",
+    sameSite: secure ? "none" : "lax",
     maxAge: MAX_AGE_SECONDS,
     path: "/",
   });
@@ -41,7 +41,7 @@ export async function clearAdminSession(): Promise<void> {
   deleteCookie(COOKIE_NAME, {
     path: "/",
     secure: requestUrl.protocol === "https:",
-    sameSite: "lax",
+    sameSite: requestUrl.protocol === "https:" ? "none" : "lax",
   });
 }
 
