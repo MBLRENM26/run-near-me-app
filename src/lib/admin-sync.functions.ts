@@ -1,6 +1,15 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { isAdminAuthenticated } from "@/lib/admin-session.server";
+
+// Loaded lazily so the server-only session module never enters the client
+// import graph (route components statically import this module).
+const isAdminAuthenticated = createServerOnlyFn(async () => {
+  const { isAdminAuthenticated: impl } = await import(
+    "@/lib/admin-session.server"
+  );
+  return impl();
+});
+
 
 async function requireAdminMutation() {
   if (!(await isAdminAuthenticated())) throw new Error("Unauthorized");

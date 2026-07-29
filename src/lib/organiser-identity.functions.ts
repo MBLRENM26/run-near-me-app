@@ -1,7 +1,16 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { isAdminAuthenticated } from "@/lib/admin-session.server";
+
+// Loaded lazily so the server-only session module never enters the client
+// import graph (route components statically import this module).
+const isAdminAuthenticated = createServerOnlyFn(async () => {
+  const { isAdminAuthenticated: impl } = await import(
+    "@/lib/admin-session.server"
+  );
+  return impl();
+});
+
 
 const REVIEW_STATUSES = ["proposed", "accepted", "rejected", "reopened"] as const;
 const REVIEW_ACTIONS = ["accepted", "rejected", "reopened"] as const;
