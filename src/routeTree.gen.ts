@@ -69,6 +69,7 @@ import { Route as ApiPublicTrackSearchRouteImport } from './routes/api/public/tr
 import { Route as ApiPublicImportEventsRouteImport } from './routes/api/public/import-events'
 import { Route as ApiPublicImportClubsRouteImport } from './routes/api/public/import-clubs'
 import { Route as AdminShellAdminSyncRunsRouteImport } from './routes/_adminShell.admin.sync-runs'
+import { Route as AdminShellAdminSubscriptionsRouteImport } from './routes/_adminShell.admin.subscriptions'
 import { Route as AdminShellAdminSearchRouteImport } from './routes/_adminShell.admin.search'
 import { Route as AdminShellAdminOrganiserIdentitiesRouteImport } from './routes/_adminShell.admin.organiser-identities'
 import { Route as AdminShellAdminClubClaimsRouteImport } from './routes/_adminShell.admin.club-claims'
@@ -405,6 +406,12 @@ const AdminShellAdminSyncRunsRoute = AdminShellAdminSyncRunsRouteImport.update({
   path: '/admin/sync-runs',
   getParentRoute: () => AdminShellRoute,
 } as any)
+const AdminShellAdminSubscriptionsRoute =
+  AdminShellAdminSubscriptionsRouteImport.update({
+    id: '/admin/subscriptions',
+    path: '/admin/subscriptions',
+    getParentRoute: () => AdminShellRoute,
+  } as any)
 const AdminShellAdminSearchRoute = AdminShellAdminSearchRouteImport.update({
   id: '/admin/search',
   path: '/admin/search',
@@ -606,6 +613,7 @@ export interface FileRoutesByFullPath {
   '/admin/club-claims': typeof AdminShellAdminClubClaimsRoute
   '/admin/organiser-identities': typeof AdminShellAdminOrganiserIdentitiesRouteWithChildren
   '/admin/search': typeof AdminShellAdminSearchRoute
+  '/admin/subscriptions': typeof AdminShellAdminSubscriptionsRoute
   '/admin/sync-runs': typeof AdminShellAdminSyncRunsRoute
   '/api/public/import-clubs': typeof ApiPublicImportClubsRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
@@ -692,6 +700,7 @@ export interface FileRoutesByTo {
   '/admin/club-claims': typeof AdminShellAdminClubClaimsRoute
   '/admin/organiser-identities': typeof AdminShellAdminOrganiserIdentitiesRouteWithChildren
   '/admin/search': typeof AdminShellAdminSearchRoute
+  '/admin/subscriptions': typeof AdminShellAdminSubscriptionsRoute
   '/admin/sync-runs': typeof AdminShellAdminSyncRunsRoute
   '/api/public/import-clubs': typeof ApiPublicImportClubsRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
@@ -780,6 +789,7 @@ export interface FileRoutesById {
   '/_adminShell/admin/club-claims': typeof AdminShellAdminClubClaimsRoute
   '/_adminShell/admin/organiser-identities': typeof AdminShellAdminOrganiserIdentitiesRouteWithChildren
   '/_adminShell/admin/search': typeof AdminShellAdminSearchRoute
+  '/_adminShell/admin/subscriptions': typeof AdminShellAdminSubscriptionsRoute
   '/_adminShell/admin/sync-runs': typeof AdminShellAdminSyncRunsRoute
   '/api/public/import-clubs': typeof ApiPublicImportClubsRoute
   '/api/public/import-events': typeof ApiPublicImportEventsRoute
@@ -868,6 +878,7 @@ export interface FileRouteTypes {
     | '/admin/club-claims'
     | '/admin/organiser-identities'
     | '/admin/search'
+    | '/admin/subscriptions'
     | '/admin/sync-runs'
     | '/api/public/import-clubs'
     | '/api/public/import-events'
@@ -954,6 +965,7 @@ export interface FileRouteTypes {
     | '/admin/club-claims'
     | '/admin/organiser-identities'
     | '/admin/search'
+    | '/admin/subscriptions'
     | '/admin/sync-runs'
     | '/api/public/import-clubs'
     | '/api/public/import-events'
@@ -1041,6 +1053,7 @@ export interface FileRouteTypes {
     | '/_adminShell/admin/club-claims'
     | '/_adminShell/admin/organiser-identities'
     | '/_adminShell/admin/search'
+    | '/_adminShell/admin/subscriptions'
     | '/_adminShell/admin/sync-runs'
     | '/api/public/import-clubs'
     | '/api/public/import-events'
@@ -1568,6 +1581,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminShellAdminSyncRunsRouteImport
       parentRoute: typeof AdminShellRoute
     }
+    '/_adminShell/admin/subscriptions': {
+      id: '/_adminShell/admin/subscriptions'
+      path: '/admin/subscriptions'
+      fullPath: '/admin/subscriptions'
+      preLoaderRoute: typeof AdminShellAdminSubscriptionsRouteImport
+      parentRoute: typeof AdminShellRoute
+    }
     '/_adminShell/admin/search': {
       id: '/_adminShell/admin/search'
       path: '/admin/search'
@@ -1766,6 +1786,7 @@ interface AdminShellRouteChildren {
   AdminShellAdminClubClaimsRoute: typeof AdminShellAdminClubClaimsRoute
   AdminShellAdminOrganiserIdentitiesRoute: typeof AdminShellAdminOrganiserIdentitiesRouteWithChildren
   AdminShellAdminSearchRoute: typeof AdminShellAdminSearchRoute
+  AdminShellAdminSubscriptionsRoute: typeof AdminShellAdminSubscriptionsRoute
   AdminShellAdminSyncRunsRoute: typeof AdminShellAdminSyncRunsRoute
   AdminShellAdminClubsIdRoute: typeof AdminShellAdminClubsIdRoute
   AdminShellAdminClubsNewRoute: typeof AdminShellAdminClubsNewRoute
@@ -1783,6 +1804,7 @@ const AdminShellRouteChildren: AdminShellRouteChildren = {
   AdminShellAdminOrganiserIdentitiesRoute:
     AdminShellAdminOrganiserIdentitiesRouteWithChildren,
   AdminShellAdminSearchRoute: AdminShellAdminSearchRoute,
+  AdminShellAdminSubscriptionsRoute: AdminShellAdminSubscriptionsRoute,
   AdminShellAdminSyncRunsRoute: AdminShellAdminSyncRunsRoute,
   AdminShellAdminClubsIdRoute: AdminShellAdminClubsIdRoute,
   AdminShellAdminClubsNewRoute: AdminShellAdminClubsNewRoute,
