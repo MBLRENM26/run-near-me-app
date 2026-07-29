@@ -1,5 +1,4 @@
 import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const isAdminAuthenticated = createServerOnlyFn(async () => {
   const { isAdminAuthenticated: impl } = await import(
@@ -8,9 +7,6 @@ const isAdminAuthenticated = createServerOnlyFn(async () => {
   return impl();
 });
 
-async function requireAdmin() {
-  if (!(await isAdminAuthenticated())) throw new Error("Unauthorized");
-}
 
 export interface SubscriptionRow {
   id: string;
@@ -25,7 +21,11 @@ export interface SubscriptionRow {
 
 export const getEmailSubscriptions = createServerFn({ method: "GET" }).handler(
   async (): Promise<SubscriptionRow[]> => {
-    await requireAdmin();
+    if (!(await isAdminAuthenticated())) return [];
+
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
 
     const { data, error } = await supabaseAdmin
       .from("email_subscriptions")
@@ -37,13 +37,13 @@ export const getEmailSubscriptions = createServerFn({ method: "GET" }).handler(
 
     if (error) throw new Error(error.message);
 
-    return (data ?? []).map((row) => ({
-      id: row.id,
-      email: row.email,
-      event_id: row.event_id,
-      kind: row.kind,
-      created_at: row.created_at,
-      reminder_sent_at: row.reminder_sent_at,
+    return (data ?? []).map((row: Record<string, unknown>) => ({
+      id: row.id as string,
+      email: row.email as string,
+      event_id: row.event_id as string,
+      kind: row.kind as string,
+      created_at: row.created_at as string,
+      reminder_sent_at: (row.reminder_sent_at as string | null) ?? null,
       event_name: (row.events as { name: string }).name,
       event_slug: (row.events as { slug: string | null }).slug,
     }));
@@ -52,7 +52,11 @@ export const getEmailSubscriptions = createServerFn({ method: "GET" }).handler(
 
 export const getSubscriptionStats = createServerFn({ method: "GET" }).handler(
   async (): Promise<{ total: number; byKind: Record<string, number> }> => {
-    await requireAdmin();
+    if (!(await isAdminAuthenticated())) return { total: 0, byKind: {} };
+
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
 
     const { data, error } = await supabaseAdmin
       .from("email_subscriptions")
@@ -66,4 +70,5 @@ export const getSubscriptionStats = createServerFn({ method: "GET" }).handler(
 
     return { total: data?.length ?? 0, byKind };
   },
+
 );
