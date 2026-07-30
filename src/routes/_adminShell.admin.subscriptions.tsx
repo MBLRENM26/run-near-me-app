@@ -1,10 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useRef } from "react";
 import {
   getEmailSubscriptions,
   getSubscriptionStats,
 } from "@/lib/admin-subscriptions.functions";
+import { markEmailSubscriptionsSeen } from "@/lib/admin-notify.functions";
 import {
   deriveViewState,
   type SubscriptionRow,
@@ -17,6 +19,9 @@ export const Route = createFileRoute("/_adminShell/admin/subscriptions")({
 function AdminSubscriptionsPage() {
   const fetchSubs = useServerFn(getEmailSubscriptions);
   const fetchStats = useServerFn(getSubscriptionStats);
+  const markSeen = useServerFn(markEmailSubscriptionsSeen);
+  const queryClient = useQueryClient();
+  const markedRef = useRef(false);
 
   const { data: subs, isLoading, error } = useQuery({
     queryKey: ["admin", "subscriptions"],
@@ -29,6 +34,17 @@ function AdminSubscriptionsPage() {
   });
 
   const state = deriveViewState({ isLoading, error, subs, stats });
+
+  // Only an authenticated, successful load marks rows seen. Unauthenticated,
+  // error and loading states must not mutate anything.
+  useEffect(() => {
+    if (state.kind !== "data" || markedRef.current) return;
+    markedRef.current = true;
+    void markSeen().then(() => {
+      queryClient.invalidateQueries({ queryKey: ["admin-unseen-counts"] });
+    });
+  }, [state.kind, markSeen, queryClient]);
+
 
   if (state.kind === "unauthenticated") {
     return (
