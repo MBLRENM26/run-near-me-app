@@ -24,6 +24,7 @@ async function requireAdminMutation() {
 export interface UnseenCounts {
   submissions: number;
   clubClaims: number;
+  emailSubscriptions: number;
   total: number;
 }
 
@@ -34,23 +35,35 @@ export const getUnseenCounts = createServerFn({ method: "GET" }).handler(
     // throwing when the session is missing/expired so the shell doesn't
     // blank-screen before the child route redirects to /admin/login.
     if (!(await isAdminAuthenticated())) {
-      return { submissions: 0, clubClaims: 0, total: 0 };
+      return { submissions: 0, clubClaims: 0, emailSubscriptions: 0, total: 0 };
     }
-    const [{ count: subs }, { count: claims }] = await Promise.all([
-      supabaseAdmin
-        .from("submissions")
-        .select("id", { count: "exact", head: true })
-        .is("seen_at", null),
-      supabaseAdmin
-        .from("club_claims")
-        .select("id", { count: "exact", head: true })
-        .is("seen_at", null),
-    ]);
+    const [{ count: subs }, { count: claims }, { count: emailSubs }] =
+      await Promise.all([
+        supabaseAdmin
+          .from("submissions")
+          .select("id", { count: "exact", head: true })
+          .is("seen_at", null),
+        supabaseAdmin
+          .from("club_claims")
+          .select("id", { count: "exact", head: true })
+          .is("seen_at", null),
+        supabaseAdmin
+          .from("email_subscriptions")
+          .select("id", { count: "exact", head: true })
+          .is("seen_at", null),
+      ]);
     const s = subs ?? 0;
     const c = claims ?? 0;
-    return { submissions: s, clubClaims: c, total: s + c };
+    const e = emailSubs ?? 0;
+    return {
+      submissions: s,
+      clubClaims: c,
+      emailSubscriptions: e,
+      total: s + c + e,
+    };
   },
 );
+
 
 
 // Called by the /admin/claims page when the admin lands on it.
