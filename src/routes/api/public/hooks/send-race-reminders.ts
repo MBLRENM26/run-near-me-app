@@ -6,6 +6,10 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { sendRaceEmail } from "@/lib/race-email.server";
 import { formatEventDate } from "@/lib/date";
 import { SITE_URL } from "@/lib/site";
+import {
+  isReminderSendingEnabled,
+  reminderDisabledResponse,
+} from "@/lib/reminder-gate";
 
 interface SubscriptionRow {
   id: string;
@@ -34,6 +38,11 @@ export const Route = createFileRoute(
   server: {
     handlers: {
       POST: async ({ request }) => {
+        // Containment gate: fail closed before auth, DB reads or any side effect.
+        if (!isReminderSendingEnabled(process.env.REMINDER_SENDING_ENABLED)) {
+          return reminderDisabledResponse();
+        }
+
         const expected = process.env.IMPORT_SECRET;
         if (!expected) {
           return Response.json(
