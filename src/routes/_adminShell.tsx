@@ -44,6 +44,8 @@ function AdminLayout() {
 
   const subs = counts?.submissions ?? 0;
   const claims = counts?.clubClaims ?? 0;
+  const emailSubs = counts?.emailSubscriptions ?? 0;
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -103,8 +105,9 @@ function AdminLayout() {
               to="/admin/subscriptions"
               className="text-sm font-medium text-foreground hover:text-primary"
             >
-              Subscribers
+              Subscribers<Badge n={emailSubs} />
             </Link>
+
           </div>
           <Button variant="ghost" size="sm" onClick={handleLogout}>
             Log out

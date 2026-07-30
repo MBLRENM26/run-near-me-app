@@ -280,6 +280,7 @@ export type Database = {
           id: string
           kind: string
           reminder_sent_at: string | null
+          seen_at: string | null
           unsubscribe_token: string
         }
         Insert: {
@@ -289,6 +290,7 @@ export type Database = {
           id?: string
           kind?: string
           reminder_sent_at?: string | null
+          seen_at?: string | null
           unsubscribe_token?: string
         }
         Update: {
@@ -298,6 +300,7 @@ export type Database = {
           id?: string
           kind?: string
           reminder_sent_at?: string | null
+          seen_at?: string | null
           unsubscribe_token?: string
         }
         Relationships: [
