@@ -105,8 +105,9 @@ function AdminLayout() {
               to="/admin/subscriptions"
               className="text-sm font-medium text-foreground hover:text-primary"
             >
-              Subscribers
+              Subscribers<Badge n={emailSubs} />
             </Link>
+
           </div>
           <Button variant="ghost" size="sm" onClick={handleLogout}>
             Log out
