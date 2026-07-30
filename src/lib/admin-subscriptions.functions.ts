@@ -1,74 +1,36 @@
 import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
+import {
+  loadSubscriptions,
+  loadSubscriptionStats,
+  type SubscriptionDeps,
+  type SubscriptionsResult,
+  type SubscriptionStatsResult,
+} from "@/lib/admin-subscriptions.core";
 
-const isAdminAuthenticated = createServerOnlyFn(async () => {
-  const { isAdminAuthenticated: impl } = await import(
-    "@/lib/admin-session.server"
-  );
-  return impl();
-});
+export type {
+  SubscriptionRow,
+  SubscriptionsResult,
+  SubscriptionStatsResult,
+} from "@/lib/admin-subscriptions.core";
 
-
-export interface SubscriptionRow {
-  id: string;
-  email: string;
-  event_id: string;
-  event_name: string;
-  event_slug: string | null;
-  kind: string;
-  created_at: string;
-  reminder_sent_at: string | null;
-}
-
-export const getEmailSubscriptions = createServerFn({ method: "GET" }).handler(
-  async (): Promise<SubscriptionRow[]> => {
-    if (!(await isAdminAuthenticated())) return [];
-
+const buildDeps = createServerOnlyFn((): SubscriptionDeps => ({
+  isAuthenticated: async () => {
+    const { isAdminAuthenticated } = await import("@/lib/admin-session.server");
+    return isAdminAuthenticated();
+  },
+  getClient: async () => {
     const { supabaseAdmin } = await import(
       "@/integrations/supabase/client.server"
     );
-
-    const { data, error } = await supabaseAdmin
-      .from("email_subscriptions")
-      .select(
-        "id, email, event_id, kind, created_at, reminder_sent_at, events!inner(name, slug)",
-      )
-      .order("created_at", { ascending: false })
-      .limit(500);
-
-    if (error) throw new Error(error.message);
-
-    return (data ?? []).map((row: Record<string, unknown>) => ({
-      id: row.id as string,
-      email: row.email as string,
-      event_id: row.event_id as string,
-      kind: row.kind as string,
-      created_at: row.created_at as string,
-      reminder_sent_at: (row.reminder_sent_at as string | null) ?? null,
-      event_name: (row.events as { name: string }).name,
-      event_slug: (row.events as { slug: string | null }).slug,
-    }));
+    return supabaseAdmin as unknown as { from: (table: string) => any };
   },
+}));
+
+export const getEmailSubscriptions = createServerFn({ method: "GET" }).handler(
+  async (): Promise<SubscriptionsResult> => loadSubscriptions(buildDeps()),
 );
 
 export const getSubscriptionStats = createServerFn({ method: "GET" }).handler(
-  async (): Promise<{ total: number; byKind: Record<string, number> }> => {
-    if (!(await isAdminAuthenticated())) return { total: 0, byKind: {} };
-
-    const { supabaseAdmin } = await import(
-      "@/integrations/supabase/client.server"
-    );
-
-    const { data, error } = await supabaseAdmin
-      .from("email_subscriptions")
-      .select("kind");
-    if (error) throw new Error(error.message);
-
-    const byKind: Record<string, number> = {};
-    for (const row of data ?? []) {
-      byKind[row.kind] = (byKind[row.kind] ?? 0) + 1;
-    }
-
-    return { total: data?.length ?? 0, byKind };
-  },
-
+  async (): Promise<SubscriptionStatsResult> =>
+    loadSubscriptionStats(buildDeps()),
 );

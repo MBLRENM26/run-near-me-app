@@ -4,8 +4,11 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   getEmailSubscriptions,
   getSubscriptionStats,
-  type SubscriptionRow,
 } from "@/lib/admin-subscriptions.functions";
+import {
+  deriveViewState,
+  type SubscriptionRow,
+} from "@/lib/admin-subscriptions.core";
 
 export const Route = createFileRoute("/_adminShell/admin/subscriptions")({
   component: AdminSubscriptionsPage,
@@ -25,18 +28,41 @@ function AdminSubscriptionsPage() {
     queryFn: () => fetchStats(),
   });
 
+  const state = deriveViewState({ isLoading, error, subs, stats });
+
+  if (state.kind === "unauthenticated") {
+    return (
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Email subscribers</h1>
+        <div className="mt-6 rounded-lg border border-border bg-muted/30 p-6">
+          <p className="font-medium text-foreground">Session expired</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            You are not signed in, so subscriber data cannot be shown. This is
+            not an empty list.
+          </p>
+          <a
+            href="/admin/login"
+            className="mt-4 inline-block rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
+          >
+            Log in
+          </a>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="flex items-baseline justify-between gap-4">
         <h1 className="text-2xl font-bold text-foreground">Email subscribers</h1>
         <p className="text-sm text-muted-foreground">
-          {stats ? `${stats.total} total` : "Loading count…"}
+          {state.kind === "data" ? `${state.total} total` : "Loading count…"}
         </p>
       </div>
 
-      {stats && Object.keys(stats.byKind).length > 0 && (
+      {state.kind === "data" && Object.keys(state.byKind).length > 0 && (
         <div className="mt-2 flex flex-wrap gap-2 text-sm text-muted-foreground">
-          {Object.entries(stats.byKind).map(([kind, count]) => (
+          {Object.entries(state.byKind).map(([kind, count]) => (
             <span
               key={kind}
               className="rounded-full bg-muted px-2.5 py-0.5 capitalize"
@@ -47,20 +73,20 @@ function AdminSubscriptionsPage() {
         </div>
       )}
 
-      {isLoading && <p className="mt-8 text-muted-foreground">Loading…</p>}
-      {error && (
-        <p className="mt-8 text-destructive">
-          {error instanceof Error ? error.message : "Failed to load"}
-        </p>
+      {state.kind === "loading" && (
+        <p className="mt-8 text-muted-foreground">Loading…</p>
+      )}
+      {state.kind === "error" && (
+        <p className="mt-8 text-destructive">{state.message}</p>
       )}
 
-      {!isLoading && subs && subs.length === 0 && (
+      {state.kind === "data" && state.rows.length === 0 && (
         <p className="mt-8 text-muted-foreground">
           No email subscriptions yet.
         </p>
       )}
 
-      {subs && subs.length > 0 && (
+      {state.kind === "data" && state.rows.length > 0 && (
         <div className="mt-6 overflow-x-auto rounded-lg border border-border">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-left text-muted-foreground">
@@ -73,7 +99,7 @@ function AdminSubscriptionsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {subs.map((row: SubscriptionRow) => (
+              {state.rows.map((row: SubscriptionRow) => (
                 <tr key={row.id} className="hover:bg-muted/30">
                   <td className="px-3 py-2 font-mono text-xs">{row.email}</td>
                   <td className="px-3 py-2">
