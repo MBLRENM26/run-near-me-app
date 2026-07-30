@@ -23,11 +23,11 @@ describe("isReminderSendingEnabled", () => {
     }
   });
 
-  it("disabled response is non-2xx and explains why", async () => {
+  it("disabled response is 503 and generic", async () => {
     const res = reminderDisabledResponse();
     expect(res.status).toBe(503);
     const body = await res.json();
-    expect(body.error).toBe("Reminder sending disabled");
+    expect(body.error).toBe("Reminder sending unavailable");
   });
 });
 
