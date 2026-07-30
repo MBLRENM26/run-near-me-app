@@ -32,7 +32,7 @@ function AdminLoginPage() {
     try {
       const res = await login({ data: { password } });
       if (res.ok) {
-        await navigate({ to: "/admin/" });
+        await navigate({ to: "/admin" });
       } else {
         setError("Incorrect password.");
       }
