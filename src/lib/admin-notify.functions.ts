@@ -93,6 +93,21 @@ export const markClubClaimsSeen = createServerFn({ method: "POST" }).handler(
   },
 );
 
+export const markEmailSubscriptionsSeen = createServerFn({
+  method: "POST",
+}).handler(async (): Promise<{ ok: true; marked: number }> => {
+  await requireAdminMutation();
+  const { data, error } = await supabaseAdmin
+    .from("email_subscriptions")
+    .update({ seen_at: new Date().toISOString() })
+    .is("seen_at", null)
+    .select("id");
+  if (error) throw new Error(error.message);
+  return { ok: true, marked: data?.length ?? 0 };
+});
+
+
+
 // Manual "Resend admin email" for a single submission — used to recover
 // from any historical miss.
 export const resendAdminNotification = createServerFn({ method: "POST" })
