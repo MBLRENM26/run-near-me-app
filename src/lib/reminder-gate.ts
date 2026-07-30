@@ -10,11 +10,7 @@ export function isReminderSendingEnabled(
 
 export function reminderDisabledResponse(): Response {
   return Response.json(
-    {
-      error: "Reminder sending disabled",
-      detail:
-        "Race-reminder sending is disabled by containment policy. Set REMINDER_SENDING_ENABLED=\"true\" to re-enable.",
-    },
+    { error: "Reminder sending unavailable" },
     { status: 503 },
   );
 }
