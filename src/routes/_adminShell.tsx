@@ -44,6 +44,8 @@ function AdminLayout() {
 
   const subs = counts?.submissions ?? 0;
   const claims = counts?.clubClaims ?? 0;
+  const emailSubs = counts?.emailSubscriptions ?? 0;
+
 
   return (
     <div className="min-h-screen bg-background">
