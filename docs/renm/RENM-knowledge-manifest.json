@@ -22,7 +22,7 @@
       "path": "docs/current/RENM-CURRENT.md",
       "status": "current",
       "role": "immediate operating state and Lovable context source",
-      "sha256": "78efd6b77c168117fe911bf579f9c80fd001c1a5a446849b496c408b29ede555"
+      "sha256": "0c406144e110e124eda57e523dbb3c0fb80f3246f746952d7578b1a41226671a"
     },
     {
       "id": "project_knowledge",
@@ -79,6 +79,13 @@
       "status": "completed_production_schema_package",
       "role": "additive unused public projection migration and production acceptance evidence",
       "sha256": "257cc5c8a4346a974d42f1b1cd9238f3bc31319f034b3b676d773d6371dd9e3c"
+    },
+    {
+      "id": "l3ar_security_invoker_remediation",
+      "path": "docs/current/RENM-L3A-R-security-invoker-remediation-2026-08-02.md",
+      "status": "completed_security_remediation",
+      "role": "superseding security-invoker migration and verified linter remediation evidence",
+      "sha256": "890c0bf7210ea3d2c8739e0c8e671fbf3ddf54e6d6e25eec9952d09218097a27"
     }
   ],
   "hashes_refreshed_for_review_date": "2026-08-02"
