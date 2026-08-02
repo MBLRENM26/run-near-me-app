@@ -595,19 +595,22 @@ same calendar date — it will matter at the boundary, not in this snapshot.
 
 | Bucket | Count | Notes |
 | --- | --- | --- |
-| Retained | 2,490 | unchanged membership |
+| Retained | 2,506 | unchanged membership |
 | Newly included | 0 | the candidate is strictly narrower than current discovery |
-| Newly excluded | 38 | ACTIVE rows with `duplicate_of IS NOT NULL` |
-| Current-only | 38 | same set as newly excluded |
+| Newly excluded | 22 | the subset of the 38 `duplicate_of IS NOT NULL` ACTIVE rows that currently pass discovery |
+| Current-only | 22 | same set as newly excluded |
 | Candidate-only | 0 | — |
-| Excluded by reason `non-canonical` | 38 | |
+| Excluded by reason `non-canonical` | 22 | the other 16 of the 38 are already excluded by the link gate or by being past |
 | Excluded by reason `quarantined` | unresolved | no field (L5) — expected ≥2 (`test-tra`, `test3-tra`) once an approved list exists |
 | Excluded by reason `terminal` | unresolved | no field (L6) — expected ≥1 (`down-by-the-river-races-event-cancelled`) |
 | Unresolved | ≥3 | the rows above, pending L5/L6 fields |
 
-Sampled newly-excluded IDs: `0333ad39-bed9-452e-8147-5360d2e040dd`,
-`15817343-861b-412f-b817-b5354adff65b`, `1f91dde0-028f-4de6-b9b2-1cf9648cfc16`,
-`2244a8f7-29ab-4609-a513-53bef5d2e039`, `26006ae4-19bf-4665-b232-c04373d19c80`.
+Sampled newly-excluded IDs (all currently discoverable):
+`1f91dde0-028f-4de6-b9b2-1cf9648cfc16` (`acronyms-tamar-10k`),
+`6d383442-548d-4078-a627-8f459065a6fe` (`aepg-great-eastern-run-2026`),
+`ccd28d98-246f-41e4-ad8d-22ba53bb4d4a` (`banbury-10k`),
+`ddc8a68e-9145-4087-be6e-670441052bda` (`chelmsford-marathon-half-marathon`),
+`5ef55aa5-2f93-40ae-9c35-5389fc1438c8` (`crowborough-10k-5k`).
 
 Affected surfaces if adopted: homepage nearby and curated strips, region, county,
 city, distance, region×distance, terrain, taxonomy, month, weekend, related /
