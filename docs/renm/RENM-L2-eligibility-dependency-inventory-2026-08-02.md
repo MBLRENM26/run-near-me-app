@@ -122,7 +122,7 @@ eligibility hits).
 | Caller/runtime, role | **browser client, anon role** | **browser client, anon role** |
 | Source object | SQL fn `public.events_within_radius` | `public.events` |
 | Current predicate | `lat/lng NOT NULL AND status='ACTIVE' AND (sort_date IS NULL OR sort_date >= CURRENT_DATE)` + bbox + haversine ≤ radius, `LIMIT least(max,500)` | `status='ACTIVE' AND date_is_estimated=false AND sort_date BETWEEN today+30d AND today+120d AND lat/lng NOT NULL AND UK_BOUNDS_OR_NULL AND town/county/distances NOT NULL AND distances<>'' AND name NOT ILIKE '%parkrun%'`, ordered featured-first, `LIMIT 20` then sliced to 9 |
-| Date/timezone | `CURRENT_DATE` — **database timezone**, not the JS UTC string used elsewhere | UTC JS date arithmetic |
+| Date/timezone | `CURRENT_DATE` — **session-timezone dependent**, not the JS UTC string used elsewhere. **[OE]** Observed session/server setting at audit time: `TimeZone = UTC`, so `current_date = 2026-08-02` matched the UTC date. This is an observation of the current session/server configuration, not a universal guarantee. | UTC JS date arithmetic |
 | Canonical/duplicate | **no `duplicate_of` filter** | **no `duplicate_of` filter** |
 | Test/cancelled/terminal | none | none |
 | Then filtered in JS | `hasDiscoverableLink` | `hasDiscoverableLink` |
