@@ -1,6 +1,25 @@
 # RENM — Phased Build Brief for Approval
 
-Status: revised 24 July 2026 following production, database, Plausible and competitive review. This is an approval sequence only; it has not been installed in Lovable or applied to production.
+Status: current sequencing contract, updated 2 August 2026 after Phase 0 and urgent production containment. Later phases remain approval-gated.
+
+## Operational checkpoint — 2 August 2026
+
+Phase 0 has been installed in Lovable. Urgent containment and admin observability work has also shipped as narrowly approved maintenance. Production baseline commit: `c1cdc4a7e9ae4d16766125f7e56509affe6b79d4`.
+
+- Reminder cron job 6 is inactive and the sender HTTP endpoint is fail-closed unless an explicit enable flag equals `true`; no reminder emails were sent by the failed cron history.
+- Twenty-four reminder requests remain stored. The public form remains unchanged under Mike's temporary manual-monitoring decision; this is not approval for automated or bulk fulfilment.
+- Admin subscriber authentication failure is explicit rather than rendering as zero rows.
+- Aggregate unseen badges now identify new subscriber, race-submission and club-submission work without sending admin email. Existing subscriber rows were backfilled as seen.
+- Full typecheck is clean, 31 tests pass and the production build succeeds.
+- These repairs create a safe operating baseline; they do not complete Phase 1 data/publication trust work or validate the organiser/distribution commercial thesis.
+
+The next implementation sequence is now:
+
+1. Preserve the containment baseline and manually monitor new work.
+2. Run the outbound-click organiser validation and record responses/outcomes privately.
+3. Specify Phase 1 trust work as small packages: safe public projection, shared eligibility, test/duplicate containment, destination verification and source-run observability.
+4. Keep automated reminders disabled until Phase 3B's lifecycle and affected-record decisions are approved.
+5. Do not build an organiser portal, broad syndication layer or regional bulk import before manual validation and staging/reconciliation gates.
 
 ## Context-reset checkpoint — 25 July 2026
 
