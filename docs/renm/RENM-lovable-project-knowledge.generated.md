@@ -61,17 +61,21 @@ The wider canonical organiser/series/occurrence and authorised change-distributi
 - L1 public-access dependency inventory: complete, subject to reconciliation. Verified correction: the live `events` table has 41 columns; anonymous access can select 38, while `source`, `source_url` and `organiser_club_id` are withheld.
 - L2 eligibility dependency inventory: complete and reconciled as a read-only report. At the 14:09 UTC snapshot, the current structural future-or-undated pre-link set was 2,972 and its link-aware membership was 2,522; the contract-aligned dated, non-estimated candidate, additionally applying the proposed `duplicate_of IS NULL` rule, was 1,552 before link trust and 1,114 after it. A six-row difference from the earlier 13:41 link-aware snapshot remains unresolved and must be rechecked before any acceptance threshold is fixed.
 - L2 found that the 5,368 headline count is not a discovery count; public surfaces, sitemap and direct-page rules disagree; UTC/application and session-dependent SQL date authorities differ; ordinary discovery currently admits undated and estimated rows; and cancellation/terminal occurrence state has no owning Phase 1 package. These are audit findings, not approved implementation changes.
-- No L1 or L2 implementation has been approved. No projection, predicate, consumer migration, grant/RLS, event, sitemap, route or deployment change has occurred.
-- Next proposed package: L3, an additive safe public event projection and consumer-by-consumer migration design. Its implementation prompt must return to Mike before being sent. L4 eligibility decisions remain separate.
+- L3A additive safe public projection: complete in the live database and unused by the application. `public.events_public_v1` exposes exactly 25 approved columns for `status = 'ACTIVE'` rows only; it applies no date, canonical, link, quarantine, terminal, indexability or destination-validity rule.
+- L3A verification: 5,406 view rows equal 5,406 ACTIVE base rows; two-way projection comparison passed; all 38 ACTIVE mapped rows remain; `anon` and `authenticated` have SELECT only; PUBLIC has no SELECT; base grants/RLS and `public.public_events` are unchanged; 7,385 event rows and their pre/post fingerprint were unchanged. The final Lovable repository head is `febce0366b6eb7ca362d8cf07dd708149d12aa15`.
+- The platform initially granted write privileges on the new definer view through default privileges; a second migration revoked them and restored SELECT-only access. The security-definer-view linter warning remains an accepted, recorded design consequence for the future base-grant revocation path.
+- No L3B consumer migration, L3C base-grant hardening or L4 eligibility implementation has been approved. No application publish/deploy, event change, sitemap/count/routing change or reminder change occurred.
+- Next proposed package: L3B, migrating the identified anonymous/publishable consumers to the shadow boundary one bounded consumer group at a time while preserving current eligibility. Its prompt must return to Mike before being sent.
 
 ## Phase 1 order
 
-1. L3 safe public event projection: additive shadow boundary, incremental consumer migration, then separately approved grant hardening.
-2. L4 one shared future/canonical discovery eligibility rule.
-3. L5 reversible quarantine of exact approved test records and reviewed duplicate batches.
-4. L6 destination role, validity and verification state.
-5. Define ownership for cancellation/postponement/terminal occurrence lifecycle state before implementing it; do not assign it to L6 by implication.
-6. L7 logical source-run manifests, material-change reporting and non-destructive source-missing observations.
+1. L3B incremental migration of anonymous/publishable consumers to the unused projection and separately designed safe functions.
+2. L3C base-table grant/RLS hardening only after zero required public dependencies are proven.
+3. L4 one shared future/canonical discovery eligibility rule.
+4. L5 reversible quarantine of exact approved test records and reviewed duplicate batches.
+5. L6 destination role, validity and verification state.
+6. Define ownership for cancellation/postponement/terminal occurrence lifecycle state before implementing it; do not assign it to L6 by implication.
+7. L7 logical source-run manifests, material-change reporting and non-destructive source-missing observations.
 
 Kent and South London remain offline throughout these packages.
 
