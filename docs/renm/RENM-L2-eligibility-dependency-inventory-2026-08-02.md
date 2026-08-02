@@ -498,28 +498,52 @@ the 450 link-gate exclusions: reachable, sometimes indexable, never recommended.
 
 ### `discovery_eligibility_v1` — plain rules
 
-An event is **discovery-eligible** when **all** of the following hold:
+An **ordinary occurrence** is **discovery-eligible** when **all** of the
+following hold. "Ordinary occurrence" excludes recurring networks (parkrun) and
+series parents, which are a separate segmented-representation design question,
+not a relaxation of these rules.
 
 1. `status = 'ACTIVE'`.
-2. The occurrence is not in the past against a single declared UK boundary:
-   either `sort_date IS NULL` (recurring/undated, admitted) **or**
+2. **The occurrence has a date at all:** `sort_date IS NOT NULL`. Undated rows
+   are **not** discovery-, count- or sitemap-eligible. This is the governed
+   canonical contract ("canonical confirmed-future only"), not a new choice.
+3. **The date is not past** against a single declared UK boundary:
    `sort_date >= uk_today()`.
-3. `duplicate_of IS NULL` — it is the canonical record for its occurrence.
-4. Coordinates are either absent or inside the UK mainland box
+4. **The date is confirmed, not estimated:** `date_is_estimated IS NOT TRUE`.
+   `date_is_estimated` is the only date-confidence field in the live schema; if a
+   safer or more expressive representation is later added, it supersedes this
+   clause. Written as `IS NOT TRUE` so `NULL` is treated as not-estimated,
+   matching the stored data (no future ACTIVE row has `date_is_estimated IS NULL`
+   with a confirmed-date claim).
+5. `duplicate_of IS NULL` — it is the canonical record for its occurrence.
+   **Candidate decision, not an approved implementation** (see D-L2-3).
+6. Coordinates are either absent or inside the UK mainland box
    (`lat IS NULL OR (lat BETWEEN 49.9 AND 60.9 AND lng BETWEEN -8.6 AND 1.8)`).
-5. It is not in the approved quarantine list (test records; reviewed duplicate
+7. It is not in the approved quarantine list (test records; reviewed duplicate
    batches) — **L5 field, does not yet exist**.
-6. It is not marked cancelled or terminal — **L6 field, does not yet exist**.
-7. It passes `hasDiscoverableLink(entry_url, organiser_url, governance)`.
+8. It is not marked cancelled or otherwise terminal — **no field exists and no
+   governed package owns this**; see the lifecycle gap note below.
+9. It passes `hasDiscoverableLink(entry_url, organiser_url, governance)`.
 
-Rules 1–4 and 7 are implementable today. Rules 5–6 must be represented as
+Rules 1–6 and 9 are implementable today. Rules 7–8 must be represented as
 declared-unavailable, not invented.
 
+**Lifecycle gap (corrected package attribution).** L6 is **destination validity,
+role and verification state** — whether a link is an official information
+destination or an entry destination, and whether that destination is verified. L6
+does **not** implement cancellation or terminal occurrence lifecycle state.
+Cancellation/postponement/terminal representation is therefore a **missing
+lifecycle decision and package**, unowned by any governed package in the Phase 1
+order, and must be raised as such rather than relabelled L6. Test-record
+quarantine remains **L5**.
+
 **UK boundary, explicit:** `uk_today()` = the current date in `Europe/London`,
-i.e. `(now() AT TIME ZONE 'Europe/London')::date`. This is a deliberate change
-from both current authorities (JS UTC string and SQL `CURRENT_DATE`) and is the
-single most consequential decision in this predicate — it must be Mike's call,
-not an implementation detail.
+i.e. `(now() AT TIME ZONE 'Europe/London')::date`. This remains a **proposed
+single authority, not an implemented decision**. It is a deliberate change from
+both current authorities (JS UTC string, and session-timezone-dependent SQL
+`CURRENT_DATE` — observed as `UTC` at audit time) and is the single most
+consequential choice in this predicate: Mike's call, not an implementation
+detail.
 
 ### Illustrative SQL (not executed, not to be created as an object)
 
@@ -529,11 +553,13 @@ WITH uk AS (SELECT (now() AT TIME ZONE 'Europe/London')::date AS today)
 SELECT e.id
 FROM public.events e, uk
 WHERE e.status = 'ACTIVE'
-  AND (e.sort_date IS NULL OR e.sort_date >= uk.today)
-  AND e.duplicate_of IS NULL
+  AND e.sort_date IS NOT NULL
+  AND e.sort_date >= uk.today
+  AND e.date_is_estimated IS NOT TRUE
+  AND e.duplicate_of IS NULL                -- candidate decision
   AND (e.lat IS NULL OR (e.lat BETWEEN 49.9 AND 60.9 AND e.lng BETWEEN -8.6 AND 1.8))
   -- AND NOT e.is_quarantined      -- L5, field does not exist
-  -- AND e.lifecycle <> 'cancelled' -- L6, field does not exist
+  -- AND NOT e.is_terminal         -- missing lifecycle package, field does not exist
 ;
 -- link gate still applied in TypeScript: hasDiscoverableLink(...)
 ```
@@ -541,47 +567,56 @@ WHERE e.status = 'ACTIVE'
 ### Pseudocode for the application-side wrapper
 
 ```
-function discoveryEligibleV1(row, ukToday):
+function discoveryEligibleV1(row, ukToday):        # deterministic reason priority
     if row.status != 'ACTIVE':                  return exclude('status')
-    if row.sort_date != null and row.sort_date < ukToday:
-                                                return exclude('past')
+    if row.sort_date == null:                   return exclude('undated')
+    if row.sort_date < ukToday:                 return exclude('past')
+    if row.date_is_estimated == true:           return exclude('estimated-date')
     if row.duplicate_of != null:                return exclude('non-canonical')
     if row.lat != null and outsideUkBox(row):   return exclude('outside-uk')
-    if quarantineIds.has(row.id):               return exclude('quarantined')      # L5
-    if row.lifecycle in TERMINAL:               return exclude('terminal')         # L6
+    if quarantineIds.has(row.id):               return exclude('quarantined')   # L5
+    if terminalIds.has(row.id):                 return exclude('terminal')      # missing package
     if not hasDiscoverableLink(row):            return exclude('no-discoverable-link')
     return include
 ```
 
 ### Exclusion reason codes
 
-`status`, `past`, `non-canonical`, `outside-uk`, `quarantined` (L5),
-`terminal` (L6), `no-discoverable-link`.
+`status`, `undated`, `past`, `estimated-date`, `non-canonical`, `outside-uk`,
+`quarantined` (L5), `terminal` (missing lifecycle package),
+`no-discoverable-link`. The order above is the **deterministic reason priority**
+used in §7; a row is attributed to its first matching reason only.
 
 ### Assessment against the required dimensions
 
 | Dimension | Assessment |
 | --- | --- |
-| Confirmed future date | Partially satisfiable. `sort_date` exists; `date_is_estimated` distinguishes estimated from confirmed but the predicate deliberately does **not** exclude estimated dates (293 rows) — the homepage curated strip already does that locally, and promoting it site-wide would be a behaviour change, not a reconciliation. |
-| Canonical identity | Satisfiable now via `duplicate_of IS NULL`; adopting it removes 38 rows from discovery and aligns discovery with the headline count and search. |
-| Existing discovery state | Rules 1, 2, 4, 7 reproduce today's landing-page behaviour almost exactly. |
-| Cancellation / terminal | **Not satisfiable.** No field exists; the only signal is free text in `name`. Must remain a declared gap until L6. |
-| Test quarantine | **Not satisfiable.** No field, no list. Must be an explicit approved ID list (L5), never a name pattern — see §5.6. |
+| Confirmed future date | Satisfiable now, and required by the governed contract: `sort_date IS NOT NULL AND sort_date >= uk_today() AND date_is_estimated IS NOT TRUE`. `date_is_estimated` is the only date-confidence field available; a richer date-state representation would supersede it. |
+| Canonical identity | Satisfiable now via `duplicate_of IS NULL`; adopting it removes 38 ACTIVE rows from discovery and aligns discovery with the headline count and search. Candidate decision. |
+| Existing discovery state | Rules 1, 3, 6 and 9 reproduce today's landing-page behaviour; rules 2 and 4 deliberately correct it toward the governed contract. |
+| Cancellation / terminal | **Not satisfiable.** No field exists; the only signal is free text in `name`. Declared gap with **no owning package** — not L6. |
+| Test quarantine | **Not satisfiable.** No field, no list. Must be an explicit approved ID list (**L5**), never a name pattern — see §5.6. |
+| Destination validity / "enterable now" | **Not satisfiable.** This — and only this — is the L6 scope: destination role, validity and verification state. |
 | Reviewed duplicate treatment | Partially. `duplicate_of` covers admin-merged duplicates; `computeIndexability`'s `duplicate-sibling` heuristic is a separate, name-based notion that must not be folded in without review. |
 
 ### Direct-page / reference treatment
 
-Kept **separate**. Nothing in this predicate should change what
-`/events/{slug}` returns. A record excluded by `discovery_eligibility_v1`
-remains stored and remains directly reachable exactly as today. Combining the
-two is not supported by any evidence gathered here.
+Kept **separate**, and this separation is load-bearing for rules 2 and 4.
+Nothing in this predicate changes what `/events/{slug}` returns. A record
+excluded by `discovery_eligibility_v1` — including every undated parkrun row and
+every series parent — remains stored and remains directly reachable exactly as
+today. Excluding a record from discovery, counts and the sitemap is not the same
+as making it unreachable, and the two must not be merged.
 
 ### Unresolved decisions inside the predicate
 
-- Europe/London vs UTC vs `CURRENT_DATE` boundary (see above).
-- Whether undated non-parkrun series parents (5 rows) stay discoverable.
-- Whether `date_is_estimated` should gate discovery site-wide.
+- Europe/London as the single clock authority: **proposed, not decided.**
+- `duplicate_of IS NULL`: **candidate, not approved.**
+- How recurring networks (1,384 parkrun rows) and series parents (5 rows) should
+  be modelled and surfaced as their own segmented representation. **Not** a
+  question about relaxing ordinary occurrence eligibility.
 - Whether the sitemap adopts the same predicate or stays deliberately wider.
+- Which package owns cancellation/terminal lifecycle state (currently unowned).
 
 ---
 
