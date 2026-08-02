@@ -15,9 +15,10 @@ Evidence labels used throughout: **[SF]** sourced fact (named reproducible sourc
 ### Commits and deployment
 
 - **[SF]** Declared production baseline in the operating kernel: `c1cdc4a7e9ae4d16766125f7e56509affe6b79d4`.
-- **[OE]** Repository head inspected for this audit: `373cb8882846f708dbb84ef7ce62c7b004cba21f` (`git rev-parse HEAD`, working tree clean before the report was written).
-- **[OE]** The inspected head is **not** the declared production baseline. Deployment state was not independently observable from inside this environment; no build, publish or deploy was performed. All code statements below therefore describe the inspected head, not necessarily what production is serving.
-- **Unresolved:** the delta between `c1cdc4a…` and `373cb88…` was not enumerated (out of scope, and the L2 permission set does not allow altering repository state to compare builds). Mike should confirm which commit production currently serves before any L3/L4 implementation prompt is issued.
+- **[SF]** Authoritative Lovable project head immediately before L2: `3b6d5012a3f32063a1d261f4bc4ece22825b117d`.
+- **[SF]** An independent connector diff from `c1cdc4a…` to `3b6d5012…` shows changes only in `.lovable/plan.md` and `docs/renm/`. There is **no application source, migration, configuration or package difference** between the declared production baseline and the governed head that L2 inspected.
+- **[OE]** The local `git rev-parse HEAD` value observed while writing this report was `373cb8882846f708dbb84ef7ce62c7b004cba21f`. This is a **transient/internal audit sandbox head**, not the governed Lovable repository head: the sandbox rewrites/relabels working commits as documentation-only edits are made, so its SHA is an artefact of the audit environment and carries no deployment meaning. Correction to the earlier draft: it must **not** be read as an unexplained divergent application version, because the governed head `3b6d5012…` is application-identical to `c1cdc4a…`.
+- **Unresolved (separately):** the **deployed** commit was still not independently observable from inside this environment; no build, publish or deploy was performed. Mike should confirm which commit production currently serves before any L3/L4 implementation prompt is issued. That is a deployment-observability gap, not an application-source divergence.
 
 ### Database access
 
