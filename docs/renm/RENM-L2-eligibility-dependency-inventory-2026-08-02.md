@@ -787,32 +787,50 @@ change ships:
 
 ## 9. Conflicts and decisions required
 
+### Classification of the issues raised
+
+To avoid presenting settled contract as an open choice, every item below is one of:
+
+- **[GOV]** already governed — the contract decides it; deviation is a defect.
+- **[L4]** a genuine L4 design choice needing Mike's decision.
+- **[GAP]** missing lifecycle design with no owning package.
+
 ### Conflicts with current knowledge and contracts
 
-1. **Kernel vs repository head.** The kernel names `c1cdc4a…` as the production
-   baseline; the inspected head is `373cb88…`. Raised, not merged.
-2. **"Discovery/counts = canonical confirmed-future G3/G4 only"** (core memory)
-   vs the live headline count of 5,368, which includes 2,428 past events and
-   applies no link gate. The code contradicts the stated contract.
-3. **"410 needs affirmative terminal evidence"** vs the 90-day age-based 410
+1. **Kernel vs repository head — resolved.** The kernel names `c1cdc4a…` as the
+   production baseline; the governed Lovable head before L2 was `3b6d5012…`, and an
+   independent connector diff shows the two differ only in `.lovable/plan.md` and
+   `docs/renm/`. The earlier `373cb88…` reference was a transient audit-sandbox
+   head, not a divergent application version. **Still open:** which commit is
+   actually deployed (observability gap, §1).
+2. **[GOV] "Discovery/counts = canonical confirmed-future G3/G4 only"** (core
+   memory / canonical contract) vs the live code, which (a) admits undated rows via
+   `FUTURE_OR_NULL`, (b) does not exclude estimated dates outside the homepage
+   strip, (c) largely ignores `duplicate_of`, and (d) reports a headline count of
+   5,368 including 2,428 past events with no link gate. These are **defects against
+   a governed rule**, not open questions.
+3. **[GOV] "410 needs affirmative terminal evidence"** vs the 90-day age-based 410
    rule, which uses elapsed time, not evidence.
 4. **"Records are demoted/rechecked, not deleted"** is upheld — no deletion path
    exists — but `HIDDEN` (233) and `EXPIRED` (327) both 404 with no UI path back,
    which is demotion without a recheck loop.
+5. **[GAP] Cancellation / terminal occurrence state has no owner.** L6 covers
+   destination validity, role and verification state, not occurrence cancellation.
+   No governed package currently owns cancelled/postponed/terminal representation.
 
 ### Decisions required from Mike
 
-| # | Decision | Why it blocks implementation |
-| --- | --- | --- |
-| D-L2-1 | Which commit does production serve? | Every count and behaviour claim is head-relative until this is fixed. |
-| D-L2-2 | Declare the single UK date boundary (`Europe/London` proposed) and retire both the JS-UTC and `CURRENT_DATE` authorities. | L4 cannot have one rule with two clocks. |
-| D-L2-3 | Should discovery require `duplicate_of IS NULL`? (38 such ACTIVE rows exist; 22 currently discoverable, sampled in §7.) | Only behavioural change in the candidate predicate. |
-| D-L2-4 | Should the headline count become a discovery count, or be relabelled? | 5,368 vs 2,528 is a factual claim on the homepage. |
-| D-L2-5 | Should the sitemap adopt the discovery link gate? (360 URLs affected.) | Currently asks Google to index pages the site will not link to. |
-| D-L2-6 | Approve an explicit test-record quarantine **ID list** (L5), not a name pattern. | `test-tra` and `test3-tra` are live, discoverable and in the sitemap today. |
-| D-L2-7 | Approve a cancelled/terminal field (L6). | One cancelled event is currently discoverable and sitemap-eligible. |
-| D-L2-8 | Should undated non-parkrun series parents (5 rows) stay discoverable? | Unclassified difference. |
-| D-L2-9 | What happens to `HIDDEN` (233), `EXPIRED` (327) and `ARCHIVED` (1)? | Three statuses with no writer, no documentation and no recheck path. |
+| # | Class | Decision | Why it blocks implementation |
+| --- | --- | --- | --- |
+| D-L2-1 | — | Which commit does production serve? (Repository divergence is resolved; this is deployment observability only.) | Behaviour claims stay unverified against production until confirmed. |
+| D-L2-2 | [L4] | Declare the single UK date boundary (`Europe/London` **proposed, not decided**) and retire both the JS-UTC and session-dependent `CURRENT_DATE` authorities. | L4 cannot have one rule with two clocks. During BST, UTC lags London for the first hour of each day, retaining the prior local day as current. |
+| D-L2-3 | [L4] | Should discovery additionally require `duplicate_of IS NULL`? (38 such ACTIVE rows; 22 dated-and-confirmed ones sampled in §7.) | Candidate decision in the predicate, not yet approved. |
+| D-L2-4 | [GOV]→action | Bring the headline count into line with the governed contract (canonical, confirmed-future) or relabel it. | 5,368 is a factual claim on the homepage that the contract does not support. |
+| D-L2-5 | [L4] | Should the sitemap adopt the discovery link gate? (360 URLs affected.) | Currently asks Google to index pages the site will not link to. |
+| D-L2-6 | [L5] | Approve an explicit test-record quarantine **ID list** (**L5**), not a name pattern. | `test-tra` and `test3-tra` are live, discoverable and in the sitemap today. |
+| D-L2-7 | [GAP] | Create the missing lifecycle decision/package for cancelled/postponed/terminal occurrence state. **Do not assign this to L6** (L6 = destination validity, role, verification). | One cancelled event is discoverable and sitemap-eligible today, with cancellation only in free text. |
+| D-L2-8 | [L4] | How should recurring networks (1,384 parkrun rows) and series parents (5 rows) be modelled and surfaced as a **separate segmented representation**? Their exclusion from ordinary occurrence discovery is already governed **[GOV]** and is not reopened by this decision. | Adopting the corrected predicate removes them from lists; a segmented representation should land alongside it. |
+| D-L2-9 | [L4] | What happens to `HIDDEN` (233), `EXPIRED` (327) and `ARCHIVED` (1)? | Three statuses with no writer, no documentation and no recheck path. |
 
 ### Missing evidence
 
