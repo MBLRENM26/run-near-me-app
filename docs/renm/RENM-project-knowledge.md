@@ -1,6 +1,6 @@
 # RunningEventsNearMe — Project Knowledge Draft
 
-Status: proposed master context for approval. This is not yet installed in Lovable.
+Status: current master context. Installed in Lovable during Phase 0; subsequent operational decisions remain governed by the decision register.
 
 ## Context-reset status — 25 July 2026
 
@@ -164,9 +164,11 @@ On 29 July 2026, a newly added admin interface exposed 23 distinct stored remind
 
 This is meaningful behavioural evidence of unfinished runner intent and willingness to establish a return channel, but it does not yet prove confirmed consent, email delivery, return visits or entries. The public form copy, stored consent/confirmation state, provider records, admin visibility failure and reminder delivery path must be reconciled before contacting subscribers or treating the rows as successful subscriptions.
 
-Mike confirms that no scheduled reminder-delivery system was implemented: fulfilment was deliberately parked until runner demand existed. The immediate acknowledgement path is live, but the later promised reminder path is absent by design rather than known to be failing. The 22 apparent external records therefore validate demand strongly enough to specify a bounded fulfilment pilot, while creating an obligation to reconcile what was promised to existing subscribers before accepting further unsupported reminder requests.
+The later code and production audit superseded the initial belief that no scheduled sender existed. Source contained a sender endpoint and a daily cron definition; production job 6 was active but its calls returned `401`, and no reminder emails were sent. On 30 July 2026 job 6 was made inactive. The HTTP endpoint now also fails closed with `503` unless `REMINDER_SENDING_ENABLED` is exactly `true`. Neither boundary may be enabled until a truthful trigger, consent, unsubscribe, retry/failure state and affected-record treatment are separately approved.
 
 Temporary operating decision: Mike will leave the public form unchanged and monitor new requests, responding manually where a valid reminder becomes due. This is not permanent product doctrine or authorisation for bulk/backfilled messaging. Manual fulfilment must verify the relevant occurrence and entry fact, use the purpose the runner requested, include a usable unsubscribe route and record the action/outcome in a private operational log.
+
+By the containment release, the store held 24 reminder requests in total, including Mike's controlled test. Existing rows were backfilled as seen for admin notification purposes; new subscriber, race-submission and club-submission work can produce an aggregate red unseen badge. The badge is an operator-work signal only and says nothing about consent, eligibility or delivery.
 
 At the July 2026 audit, the public view/count included ACTIVE canonical records without requiring a future date. Of 5,320 public-view rows, only 2,891 were upcoming; 1,389 lacked `sort_date`, 954 lacked both principal outbound links, 186 lacked coordinates and 1,734 lacked town and county. Two public test records and several public duplicate pairs were found. Direct anonymous SELECT on the base `events` table also exposed fields intended to remain private.
 

@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "source": "docs/current/RENM-decision-register.md",
+  "status_defaults": {
+    "D": "approved",
+    "S": "approved",
+    "A": "proposed",
+    "Q": "proposed"
+  },
+  "allowed_statuses": [
+    "proposed",
+    "approved",
+    "superseded",
+    "rejected"
+  ],
+  "overrides": {
+    "D44": {
+      "status": "superseded",
+      "superseded_by": [
+        "D47"
+      ],
+      "note": "Factually superseded when the sender endpoint and scheduled job were discovered."
+    },
+    "D47": {
+      "supersedes": [
+        "D44"
+      ]
+    }
+  }
+}
+

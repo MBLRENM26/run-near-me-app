@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "last_reviewed": "2026-08-02",
+  "current_kernel": "docs/current/RENM-CURRENT.md",
+  "lovable_project_knowledge": "docs/current/RENM-lovable-project-knowledge.generated.md",
+  "decision_register": "docs/current/RENM-decision-register.md",
+  "decision_overrides": "docs/current/RENM-decision-lifecycle-overrides.json",
+  "decision_ledger": "docs/current/RENM-decision-ledger.generated.json",
+  "authority_order": [
+    "latest_mike_instruction",
+    "current_kernel",
+    "project_knowledge",
+    "data_lifecycle_contract",
+    "decision_register",
+    "phased_build_brief",
+    "dated_current_evidence",
+    "historic_context"
+  ],
+  "governed_documents": [
+    {
+      "id": "current_kernel",
+      "path": "docs/current/RENM-CURRENT.md",
+      "status": "current",
+      "role": "immediate operating state and Lovable context source",
+      "sha256": "618ba4b08f164f9f8d6b91d769d65f43ddf54d71b17508da2fe4442be71de05e"
+    },
+    {
+      "id": "project_knowledge",
+      "path": "docs/current/RENM-project-knowledge.md",
+      "status": "current",
+      "role": "product and operating doctrine",
+      "sha256": "074e9a88d1196ca95c96dc54d6a59cf3a8f7c37d65f27a4932ee2890bd4dba6c"
+    },
+    {
+      "id": "data_lifecycle_contract",
+      "path": "docs/current/RENM-data-lifecycle-contract.md",
+      "status": "current",
+      "role": "enforceable data, evidence, visibility and lifecycle behaviour",
+      "sha256": "9d890823895a45344d52275a8e6e094dac660749f94fbc5fcbb6c8a922d7703c"
+    },
+    {
+      "id": "decision_register",
+      "path": "docs/current/RENM-decision-register.md",
+      "status": "current",
+      "role": "canonical decision text and unresolved questions",
+      "sha256": "7a1d334834faaab536981f5d679f28e3582262cf809a1c2c61fde1e09cd639d6"
+    },
+    {
+      "id": "phased_build_brief",
+      "path": "docs/current/RENM-phased-build-brief.md",
+      "status": "current",
+      "role": "approval-gated implementation sequence",
+      "sha256": "f3d790c741367cfc20f2ecc05f334d30382e0b4e1fc7fd818451507f85a24e6a"
+    },
+    {
+      "id": "next_thread_handover",
+      "path": "docs/current/RENM-next-thread-handover-2026-08-02.md",
+      "status": "current_snapshot",
+      "role": "dated containment handover",
+      "sha256": "5fc8bd5f62b42424f2b9ae94ff74afb1e0dd6e4f5cb20dd568e504945a7ff5e2"
+    },
+    {
+      "id": "validation_monitoring_phase1_plan",
+      "path": "docs/current/RENM-validation-monitoring-and-phase-1-packages-2026-08-02.md",
+      "status": "approved_operating_plan",
+      "role": "organiser validation, manual reminder controls and package register",
+      "sha256": "8c5c1bd34ee00471a11887bfe0e67c2d003718f050ecc3f421d2c29ac5ccd1d6"
+    }
+  ],
+  "hashes_refreshed_for_review_date": "2026-08-02"
+}
