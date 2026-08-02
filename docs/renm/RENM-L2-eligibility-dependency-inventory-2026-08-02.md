@@ -592,7 +592,7 @@ used in §7; a row is attributed to its first matching reason only.
 | Dimension | Assessment |
 | --- | --- |
 | Confirmed future date | Satisfiable now, and required by the governed contract: `sort_date IS NOT NULL AND sort_date >= uk_today() AND date_is_estimated IS NOT TRUE`. `date_is_estimated` is the only date-confidence field available; a richer date-state representation would supersede it. |
-| Canonical identity | Satisfiable now via `duplicate_of IS NULL`; adopting it removes 38 ACTIVE rows from discovery and aligns discovery with the headline count and search. Candidate decision. |
+| Canonical identity | Satisfiable now via `duplicate_of IS NULL`. Precise population and impact: **38** ACTIVE rows in storage carry a duplicate mapping (§5.8), but only **22** of those are currently in link-aware discovery membership (dated, future, UK-box, `hasDiscoverableLink`). Adopting the rule therefore removes **22 rows from current discovery**, while the remaining 16 mapped rows are already excluded by other gates (past date, link gate or geography) and are unaffected. It aligns discovery with the headline count and search. Candidate decision. |
 | Existing discovery state | Rules 1, 3, 6 and 9 reproduce today's landing-page behaviour; rules 2 and 4 deliberately correct it toward the governed contract. |
 | Cancellation / terminal | **Not satisfiable.** No field exists; the only signal is free text in `name`. Declared gap with **no owning package** — not L6. |
 | Test quarantine | **Not satisfiable.** No field, no list. Must be an explicit approved ID list (**L5**), never a name pattern — see §5.6. |
