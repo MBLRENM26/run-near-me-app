@@ -55,7 +55,7 @@ The wider canonical organiser/series/occurrence and authorised change-distributi
 
 ## Current work state
 
-- Knowledge-control package K1: approved and being installed. It creates this kernel, a hashed authority manifest, a generated decision ledger and deterministic Lovable context.
+- Knowledge-control package K1: complete. The canonical documents are governed locally by this kernel, a hashed authority manifest, a generated decision ledger and deterministic Lovable context; the governed documents are mirrored under `docs/renm/` and the generated context is installed as Lovable Project Knowledge. K1 made documentation-only changes and did not alter the app, database or production deployment.
 - L1 public-access dependency inventory: complete, subject to reconciliation. Verified correction: the live `events` table has 41 columns; anonymous access can select 38, while `source`, `source_url` and `organiser_club_id` are withheld.
 - No L1 implementation has been approved. No projection, consumer migration or grant/RLS change has occurred.
 - Next proposed package: L2, a read-only inventory of discovery, count, index, sitemap and direct-page eligibility rules. Its prompt must return to Mike before being sent.
