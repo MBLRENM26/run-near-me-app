@@ -725,7 +725,7 @@ change ships:
 | --- | --- | --- |
 | D-L2-1 | Which commit does production serve? | Every count and behaviour claim is head-relative until this is fixed. |
 | D-L2-2 | Declare the single UK date boundary (`Europe/London` proposed) and retire both the JS-UTC and `CURRENT_DATE` authorities. | L4 cannot have one rule with two clocks. |
-| D-L2-3 | Should discovery require `duplicate_of IS NULL`? (38 rows affected, sampled in §7.) | Only behavioural change in the candidate predicate. |
+| D-L2-3 | Should discovery require `duplicate_of IS NULL`? (38 such ACTIVE rows exist; 22 currently discoverable, sampled in §7.) | Only behavioural change in the candidate predicate. |
 | D-L2-4 | Should the headline count become a discovery count, or be relabelled? | 5,368 vs 2,528 is a factual claim on the homepage. |
 | D-L2-5 | Should the sitemap adopt the discovery link gate? (360 URLs affected.) | Currently asks Google to index pages the site will not link to. |
 | D-L2-6 | Approve an explicit test-record quarantine **ID list** (L5), not a name pattern. | `test-tra` and `test3-tra` are live, discoverable and in the sitemap today. |
