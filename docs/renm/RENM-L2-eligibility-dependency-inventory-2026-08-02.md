@@ -10,6 +10,28 @@ Evidence labels used throughout: **[SF]** sourced fact (named reproducible sourc
 
 ---
 
+## 0. Headline summary — structural pre-link vs link-aware discovery counts
+
+**[OE]** Read-only, `2026-08-02 14:09 UTC`, `Europe/London` today `2026-08-02`.
+Two different kinds of count appear in this report and must never be swapped:
+
+| Kind | Current behaviour | Corrected candidate | Note |
+| --- | --- | --- | --- |
+| **Structural pre-link set** (SQL only, before link/quarantine/terminal gates) | **2,972** | **1,552** | dependency preview only — **not** discovery membership |
+| **Link-aware discovery membership** (adds unmodified `hasDiscoverableLink`) | **2,522** | **1,114** | the sets that correspond to what discovery surfaces actually admit |
+
+- The link gate removes **450** rows from the current structural set and **438**
+  from the corrected candidate structural set.
+- Link-aware reconciliation: retained **1,114**, current-only **1,408**,
+  candidate-only **0** (the candidate is strictly narrower).
+- Structural reconciliation: retained **1,552**, current-only **1,420**,
+  candidate-only **0**.
+- Neither `1,552` nor `2,972` is a discovery count. Full method and attribution
+  in §7.
+
+---
+
+
 ## 1. Baseline and method
 
 ### Commits and deployment
@@ -592,7 +614,7 @@ used in §7; a row is attributed to its first matching reason only.
 | Dimension | Assessment |
 | --- | --- |
 | Confirmed future date | Satisfiable now, and required by the governed contract: `sort_date IS NOT NULL AND sort_date >= uk_today() AND date_is_estimated IS NOT TRUE`. `date_is_estimated` is the only date-confidence field available; a richer date-state representation would supersede it. |
-| Canonical identity | Satisfiable now via `duplicate_of IS NULL`; adopting it removes 38 ACTIVE rows from discovery and aligns discovery with the headline count and search. Candidate decision. |
+| Canonical identity | Satisfiable now via `duplicate_of IS NULL`. Precise population and impact: **38** ACTIVE rows in storage carry a duplicate mapping (§5.8), but only **22** of those are currently in link-aware discovery membership (dated, future, UK-box, `hasDiscoverableLink`). Adopting the rule therefore removes **22 rows from current discovery**, while the remaining 16 mapped rows are already excluded by other gates (past date, link gate or geography) and are unaffected. It aligns discovery with the headline count and search. Candidate decision. |
 | Existing discovery state | Rules 1, 3, 6 and 9 reproduce today's landing-page behaviour; rules 2 and 4 deliberately correct it toward the governed contract. |
 | Cancellation / terminal | **Not satisfiable.** No field exists; the only signal is free text in `name`. Declared gap with **no owning package** — not L6. |
 | Test quarantine | **Not satisfiable.** No field, no list. Must be an explicit approved ID list (**L5**), never a name pattern — see §5.6. |
@@ -622,28 +644,88 @@ as making it unreachable, and the two must not be merged.
 
 ## 7. Affected-record preview (no mutation)
 
-**Recomputed read-only for the corrected candidate predicate** at
-`2026-08-02 14:01 UTC` (`Europe/London` today = `2026-08-02`, observed session
-`TimeZone = UTC`, role read-only, `SELECT` only).
+**Recomputed read-only** at `2026-08-02 14:09 UTC` (`Europe/London` today =
+`2026-08-02`, observed session `TimeZone = UTC`, role read-only, `SELECT` only).
+Two different kinds of set are reported and must not be conflated:
 
-Comparison sets, both restricted to `status = 'ACTIVE'` and to the UK-mainland
-box (`lat IS NULL OR in-box`), with the link gate, L5 quarantine and the
-unowned terminal-lifecycle rule treated as **no-ops** (they cannot be evaluated
-in SQL / no field exists):
+- **§7.1 structural pre-link sets** — SQL-only candidate populations, computed
+  *before* `hasDiscoverableLink`, L5 quarantine and the unowned terminal rule.
+  These are a **dependency preview**, not discovery membership.
+- **§7.2 link-aware discovery membership** — the sets that actually correspond to
+  what discovery surfaces admit, produced by replaying the unmodified
+  `src/lib/link-trust.ts` (`hasDiscoverableLink`) against the same read-only
+  export (method as in §1).
 
-- **Current** (`FUTURE_OR_NULL` behaviour): `sort_date IS NULL OR sort_date >= london_today` → **2,972 rows**.
-- **Candidate** (corrected): `sort_date IS NOT NULL AND sort_date >= london_today AND date_is_estimated IS NOT TRUE AND duplicate_of IS NULL` → **1,552 rows**.
+### 7.1 Structural pre-link dependency preview (SQL only)
 
-| Bucket | Count | Notes |
+Both sets are restricted to `status = 'ACTIVE'` and to the UK-mainland box
+(`lat IS NULL OR in-box`), with the link gate, L5 quarantine and the unowned
+terminal-lifecycle rule treated as **no-ops** (they cannot be evaluated in SQL /
+no field exists). These are **pre-link structural sets**:
+
+- **Current structural pre-link set** (`FUTURE_OR_NULL` behaviour): `sort_date IS NULL OR sort_date >= london_today` → **2,972 rows**.
+- **Corrected candidate structural pre-link set**: `sort_date IS NOT NULL AND sort_date >= london_today AND date_is_estimated IS NOT TRUE AND duplicate_of IS NULL` → **1,552 rows**.
+
+Neither figure is candidate discovery membership; `1,552` is the structural SQL
+candidate *before* the link, quarantine and terminal gates.
+
+| Bucket (structural pre-link) | Count | Notes |
 | --- | --- | --- |
 | Retained (in both) | **1,552** | unchanged membership |
 | Current-only (dropped) | **1,420** | 2,972 − 1,552 |
 | Candidate-only (newly included) | **0** | the corrected candidate is strictly narrower |
 | Unique membership check | 2,972 = 1,552 + 1,420 | no double counting |
 
-Exclusion reasons over the 1,420 current-only rows, using the **deterministic
-reason priority** `undated → estimated-date → non-canonical` (each row counted
-once, so these sum exactly to 1,420):
+### 7.2 Link-aware discovery membership (replayed `hasDiscoverableLink`)
+
+Same export, same UK-mainland box, same `status='ACTIVE'` restriction, with the
+project's unmodified link gate applied. L5 quarantine and terminal state remain
+unevaluable (no field).
+
+| Link-aware set | Predicate | Count |
+| --- | --- | --- |
+| **Current link-aware discovery membership** | `FUTURE_OR_NULL` + UK-box + `hasDiscoverableLink` | **2,522** |
+| **Corrected candidate link-aware membership** | dated + London-today-or-future + non-estimated + `duplicate_of IS NULL` + UK-box + `hasDiscoverableLink` | **1,114** |
+
+| Bucket (link-aware) | Count | Notes |
+| --- | --- | --- |
+| Retained (in both) | **1,114** | every candidate row is already in the current set |
+| Current-only (dropped) | **1,408** | 2,522 − 1,114 |
+| Candidate-only (newly included) | **0** | the corrected candidate is strictly narrower |
+| Unique membership check | 2,522 = 1,114 + 1,408 | no double counting |
+
+Priority-attributed reasons over the **1,408 link-aware current-only rows**
+(`undated → estimated-date → non-canonical`; each row counted once):
+
+| Reason (priority order) | Count |
+| --- | --- |
+| `undated` (`sort_date IS NULL`) | **1,385** |
+| `estimated-date` (dated, future, `date_is_estimated = true`) | **1** |
+| `non-canonical` (dated, confirmed, `duplicate_of IS NOT NULL`) | **22** |
+| **total** | **1,408** |
+
+Overlaps within that population: `undated ∧ estimated-date` **0**,
+`undated ∧ non-canonical` **0**, `estimated-date ∧ non-canonical` **0**.
+
+`no-discoverable-link` is **not** a current-only reason in this comparison,
+because both link-aware sets already require `hasDiscoverableLink`. Where the
+comparison logically requires it — i.e. moving from the structural sets of §7.1
+to the link-aware sets here — the link gate removes **450** rows from the current
+structural set (2,972 → 2,522) and **438** rows from the corrected candidate
+structural set (1,552 → 1,114).
+
+**[OE]** Measurement note: §4 recorded 2,528 discoverable rows at
+`13:41 UTC` and this replay recorded 2,522 at `14:09 UTC` on the same day. The
+6-row difference is unreconciled (either live ingestion between the two reads or
+export-scope variance) and should be re-verified before any figure here is used
+as an acceptance threshold.
+
+### 7.3 Structural exclusion attribution (pre-link, for reference)
+
+Exclusion reasons over the **1,420 structural pre-link current-only rows**, using
+the **deterministic reason priority** `undated → estimated-date →
+non-canonical` (each row counted once, so these sum exactly to 1,420):
+
 
 | Reason (priority order) | Count |
 | --- | --- |
