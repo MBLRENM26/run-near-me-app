@@ -57,17 +57,18 @@ The wider canonical organiser/series/occurrence and authorised change-distributi
 
 - Knowledge-control package K1: complete. The canonical documents are governed locally by this kernel, a hashed authority manifest, a generated decision ledger and deterministic Lovable context; the governed documents are mirrored under `docs/renm/` and the generated context is installed as Lovable Project Knowledge. K1 made documentation-only changes and did not alter the app, database or production deployment.
 - L1 public-access dependency inventory: complete, subject to reconciliation. Verified correction: the live `events` table has 41 columns; anonymous access can select 38, while `source`, `source_url` and `organiser_club_id` are withheld.
-- No L1 implementation has been approved. No projection, consumer migration or grant/RLS change has occurred.
-- Next proposed package: L2, a read-only inventory of discovery, count, index, sitemap and direct-page eligibility rules. Its prompt must return to Mike before being sent.
-- L3 safe projection implementation follows only after L1 and L2 are reconciled.
+- L2 eligibility dependency inventory: complete and reconciled as a read-only report. At the 14:09 UTC snapshot, the current structural future-or-undated pre-link set was 2,972 and its link-aware membership was 2,522; the contract-aligned dated, non-estimated candidate, additionally applying the proposed `duplicate_of IS NULL` rule, was 1,552 before link trust and 1,114 after it. A six-row difference from the earlier 13:41 link-aware snapshot remains unresolved and must be rechecked before any acceptance threshold is fixed.
+- L2 found that the 5,368 headline count is not a discovery count; public surfaces, sitemap and direct-page rules disagree; UTC/application and session-dependent SQL date authorities differ; ordinary discovery currently admits undated and estimated rows; and cancellation/terminal occurrence state has no owning Phase 1 package. These are audit findings, not approved implementation changes.
+- No L1 or L2 implementation has been approved. No projection, predicate, consumer migration, grant/RLS, event, sitemap, route or deployment change has occurred.
+- Next proposed package: L3, an additive safe public event projection and consumer-by-consumer migration design. Its implementation prompt must return to Mike before being sent. L4 eligibility decisions remain separate.
 
 ## Phase 1 order
 
-1. L2 read-only eligibility dependency inventory.
-2. L3 safe public event projection: additive shadow boundary, incremental consumer migration, then separately approved grant hardening.
-3. L4 one shared future/canonical discovery eligibility rule.
-4. L5 reversible quarantine of exact approved test records and reviewed duplicate batches.
-5. L6 destination role, validity and verification state.
+1. L3 safe public event projection: additive shadow boundary, incremental consumer migration, then separately approved grant hardening.
+2. L4 one shared future/canonical discovery eligibility rule.
+3. L5 reversible quarantine of exact approved test records and reviewed duplicate batches.
+4. L6 destination role, validity and verification state.
+5. Define ownership for cancellation/postponement/terminal occurrence lifecycle state before implementing it; do not assign it to L6 by implication.
 6. L7 logical source-run manifests, material-change reporting and non-destructive source-missing observations.
 
 Kent and South London remain offline throughout these packages.
