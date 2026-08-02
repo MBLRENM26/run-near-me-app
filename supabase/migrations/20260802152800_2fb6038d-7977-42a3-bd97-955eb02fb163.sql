@@ -1,0 +1,1 @@
+ALTER VIEW public.events_public_v1 SET (security_invoker = true);
