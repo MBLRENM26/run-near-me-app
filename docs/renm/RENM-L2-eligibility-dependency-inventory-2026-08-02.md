@@ -622,42 +622,87 @@ as making it unreachable, and the two must not be merged.
 
 ## 7. Affected-record preview (no mutation)
 
-Comparison basis: current discovery membership (2,528) vs
-`discovery_eligibility_v1` with rules 5 and 6 treated as no-ops (unavailable
-fields), evaluated at 2026-08-02 13:41 UTC. Rule 3 (`duplicate_of IS NULL`) is
-the only behavioural change; the UK-boundary change (Europe/London) does not
-alter membership at this timestamp because 13:41 UTC and 13:41 BST fall on the
-same calendar date — it will matter at the boundary, not in this snapshot.
+**Recomputed read-only for the corrected candidate predicate** at
+`2026-08-02 14:01 UTC` (`Europe/London` today = `2026-08-02`, observed session
+`TimeZone = UTC`, role read-only, `SELECT` only).
+
+Comparison sets, both restricted to `status = 'ACTIVE'` and to the UK-mainland
+box (`lat IS NULL OR in-box`), with the link gate, L5 quarantine and the
+unowned terminal-lifecycle rule treated as **no-ops** (they cannot be evaluated
+in SQL / no field exists):
+
+- **Current** (`FUTURE_OR_NULL` behaviour): `sort_date IS NULL OR sort_date >= london_today` → **2,972 rows**.
+- **Candidate** (corrected): `sort_date IS NOT NULL AND sort_date >= london_today AND date_is_estimated IS NOT TRUE AND duplicate_of IS NULL` → **1,552 rows**.
 
 | Bucket | Count | Notes |
 | --- | --- | --- |
-| Retained | 2,506 | unchanged membership |
-| Newly included | 0 | the candidate is strictly narrower than current discovery |
-| Newly excluded | 22 | the subset of the 38 `duplicate_of IS NOT NULL` ACTIVE rows that currently pass discovery |
-| Current-only | 22 | same set as newly excluded |
-| Candidate-only | 0 | — |
-| Excluded by reason `non-canonical` | 22 | the other 16 of the 38 are already excluded by the link gate or by being past |
-| Excluded by reason `quarantined` | unresolved | no field (L5) — expected ≥2 (`test-tra`, `test3-tra`) once an approved list exists |
-| Excluded by reason `terminal` | unresolved | no field (L6) — expected ≥1 (`down-by-the-river-races-event-cancelled`) |
-| Unresolved | ≥3 | the rows above, pending L5/L6 fields |
+| Retained (in both) | **1,552** | unchanged membership |
+| Current-only (dropped) | **1,420** | 2,972 − 1,552 |
+| Candidate-only (newly included) | **0** | the corrected candidate is strictly narrower |
+| Unique membership check | 2,972 = 1,552 + 1,420 | no double counting |
 
-Sampled newly-excluded IDs (all currently discoverable):
-`1f91dde0-028f-4de6-b9b2-1cf9648cfc16` (`acronyms-tamar-10k`),
-`6d383442-548d-4078-a627-8f459065a6fe` (`aepg-great-eastern-run-2026`),
-`ccd28d98-246f-41e4-ad8d-22ba53bb4d4a` (`banbury-10k`),
-`ddc8a68e-9145-4087-be6e-670441052bda` (`chelmsford-marathon-half-marathon`),
-`5ef55aa5-2f93-40ae-9c35-5389fc1438c8` (`crowborough-10k-5k`).
+Exclusion reasons over the 1,420 current-only rows, using the **deterministic
+reason priority** `undated → estimated-date → non-canonical` (each row counted
+once, so these sum exactly to 1,420):
+
+| Reason (priority order) | Count |
+| --- | --- |
+| `undated` (`sort_date IS NULL`) | **1,389** |
+| `estimated-date` (dated, future, `date_is_estimated = true`) | **9** |
+| `non-canonical` (dated, confirmed, `duplicate_of IS NOT NULL`) | **22** |
+| **total** | **1,420** |
+
+Overlaps, stated explicitly so the figures above are not summed incorrectly with
+raw per-condition counts:
+
+| Overlap | Count |
+| --- | --- |
+| `undated ∧ estimated-date` | **0** (no undated row carries an estimated date) |
+| `undated ∧ non-canonical` | **0** |
+| `estimated-date ∧ non-canonical` | **0** |
+
+Because all three pairwise overlaps are empty at this snapshot, the raw
+per-condition counts happen to equal the priority-attributed counts. That is a
+property of today's data, not a guarantee — any future recomputation must keep
+the priority attribution.
+
+Composition of the 1,389 `undated` rows: **1,384** match `name ILIKE '%parkrun%'`
+(recurring network) and **5** do not (series parents). Both groups are excluded
+from ordinary occurrence discovery, counts and sitemap eligibility by the
+governed contract, and both remain **directly reachable** at `/events/{slug}`.
+
+Sample slugs per reason (public slugs and dates only; no personal or private
+data, no provenance or moderation fields):
+
+- `undated`: `abbeypark`, `abbotswood`, `aberbeeg`, `aberdare` (all parkrun rows, `sort_date` NULL).
+- `estimated-date`: `hyde-park-5k-10k-october-westminster-2026` (2026-10-01), `hyde-park-5k-10k-november-westminster-2026` (2026-11-01), `kinver-edge-autumn-trail-kinver-2026` (2026-10-01), `london-bridges-10k-westminster-2026` (2026-09-01) — all first-of-month placeholders.
+- `non-canonical`: `acronyms-tamar-10k` (2026-10-18), `aepg-great-eastern-run-2026` (2026-10-11), `banbury-10k` (2026-09-06), `baxters-loch-ness-marathon-festival-of-running-2026` (2026-09-27).
+
+Unresolved rather than counted:
+
+| Rule | State | Expectation once available |
+| --- | --- | --- |
+| `quarantined` (**L5**) | no field / no approved list | ≥2 (`test-tra`, `test3-tra`) |
+| `terminal` (**missing lifecycle package — not L6**) | no field; only free text in `name` | ≥1 (`down-by-the-river-races-event-cancelled`) |
+| `no-discoverable-link` | evaluated in TypeScript, excluded from this SQL preview | previously measured at 450 over the current 2,978-row set (§4) |
 
 Affected surfaces if adopted: homepage nearby and curated strips, region, county,
 city, distance, region×distance, terrain, taxonomy, month, weekend, related /
 same-town / nearby blocks, and the region×distance and month sitemap thresholds
-(a cell sitting on exactly 3 could drop below the threshold). **Not** affected:
-`/events/{slug}` status codes, `/search` (already filters `duplicate_of`), the
-headline count (already filters `duplicate_of`), MCP `get_event`.
+(a cell sitting on exactly 3 could drop below the threshold). The undated
+exclusion is the large one: every parkrun row currently admitted by
+`FUTURE_OR_NULL` on radius, city, county and region surfaces leaves those lists.
+**Not** affected: `/events/{slug}` status codes, `/search` (already filters
+`duplicate_of` and uses `.gte` on dates), MCP `get_event`. The headline count
+(5,368) is affected in the opposite direction — it is far wider than either set
+here.
 
-**[INF]** Adopting rule 3 makes discovery, the headline count and search agree on
-canonical identity for the first time. That is the single highest-value,
-lowest-risk alignment available.
+**[INF]** Rules 2 and 4 (dated, confirmed) bring discovery back into line with the
+governed canonical contract; rule 5 (`duplicate_of IS NULL`) additionally makes
+discovery, the headline count and search agree on canonical identity for the
+first time. Because the parkrun exclusion is large and user-visible, adopting it
+should be paired with the separate segmented recurring-network representation
+rather than shipped alone.
 
 ---
 
