@@ -10,6 +10,28 @@ Evidence labels used throughout: **[SF]** sourced fact (named reproducible sourc
 
 ---
 
+## 0. Headline summary — structural pre-link vs link-aware discovery counts
+
+**[OE]** Read-only, `2026-08-02 14:09 UTC`, `Europe/London` today `2026-08-02`.
+Two different kinds of count appear in this report and must never be swapped:
+
+| Kind | Current behaviour | Corrected candidate | Note |
+| --- | --- | --- | --- |
+| **Structural pre-link set** (SQL only, before link/quarantine/terminal gates) | **2,972** | **1,552** | dependency preview only — **not** discovery membership |
+| **Link-aware discovery membership** (adds unmodified `hasDiscoverableLink`) | **2,522** | **1,114** | the sets that correspond to what discovery surfaces actually admit |
+
+- The link gate removes **450** rows from the current structural set and **438**
+  from the corrected candidate structural set.
+- Link-aware reconciliation: retained **1,114**, current-only **1,408**,
+  candidate-only **0** (the candidate is strictly narrower).
+- Structural reconciliation: retained **1,552**, current-only **1,420**,
+  candidate-only **0**.
+- Neither `1,552` nor `2,972` is a discovery count. Full method and attribution
+  in §7.
+
+---
+
+
 ## 1. Baseline and method
 
 ### Commits and deployment
