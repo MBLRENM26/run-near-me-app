@@ -26,8 +26,6 @@ const RaceReminderConfirmationEmail = ({
   eventLocation = null,
   eventUrl = 'https://runningeventsnearme.com/',
 }: Props) => {
-  const datePhrase = eventDate ? ` on ${eventDate}` : ''
-  const placePhrase = eventLocation ? ` in ${eventLocation}` : ''
   return (
     <Html lang="en" dir="ltr">
       <Head />
@@ -73,7 +71,7 @@ const RaceReminderConfirmationEmail = ({
 export const template = {
   component: RaceReminderConfirmationEmail,
   subject: (data: Record<string, any>) =>
-    `You're signed up for ${data?.eventName ?? 'your race'}`,
+    `Your reminder is confirmed for ${data?.eventName ?? 'your race'}`,
   displayName: 'Race reminder: confirmation',
   previewData: {
     eventName: 'London Winter 10K',
