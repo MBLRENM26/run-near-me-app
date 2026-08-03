@@ -4,7 +4,7 @@
 
 Status: canonical short-form context for Mike, Codex and Lovable. Detailed contracts remain authoritative through the links below. Generated Lovable context must come from this file; do not maintain a separate handwritten copy.
 
-Last reviewed: 2 August 2026
+Last reviewed: 3 August 2026
 
 ## Authority order
 
@@ -28,7 +28,7 @@ Conflicts must be raised. Never silently combine a superseded fact with a curren
 - Reminder cron job 6 is inactive.
 - Reminder HTTP sending is fail-closed with `503` unless `REMINDER_SENDING_ENABLED` is exactly `true`.
 - No automated reminder emails were sent.
-- Twenty-four reminder requests are stored, including Mike's controlled test. They demonstrate behavioural demand for a return channel, not fulfilment, return visits, entries or organiser value.
+- Twenty-five reminder requests are stored, including Mike's controlled test. At the 3 August verification, one was unseen and none had `reminder_sent_at`. They demonstrate behavioural demand for a return channel, not fulfilment, return visits, entries or organiser value.
 - The live form remains unchanged under temporary manual monitoring. Valid new requests may be handled only through the approved record-level manual controls.
 
 ## Demonstrated product and open hypothesis
@@ -57,20 +57,21 @@ The wider canonical organiser/series/occurrence and authorised change-distributi
 
 ## Current work state
 
-- Knowledge-control package K1: complete. The canonical documents are governed locally by this kernel, a hashed authority manifest, a generated decision ledger and deterministic Lovable context; the governed documents are mirrored under `docs/renm/` and the generated context is installed as Lovable Project Knowledge. K1 made documentation-only changes and did not alter the app, database or production deployment.
+- K1 knowledge control: complete. This kernel, hashed manifest and generated ledger govern the local canon; governed documents and deterministic Project Knowledge are mirrored to Lovable.
 - L1 public-access dependency inventory: complete, subject to reconciliation. Verified correction: the live `events` table has 41 columns; anonymous access can select 38, while `source`, `source_url` and `organiser_club_id` are withheld.
-- L2 eligibility dependency inventory: complete and reconciled as a read-only report. At the 14:09 UTC snapshot, the current structural future-or-undated pre-link set was 2,972 and its link-aware membership was 2,522; the contract-aligned dated, non-estimated candidate, additionally applying the proposed `duplicate_of IS NULL` rule, was 1,552 before link trust and 1,114 after it. A six-row difference from the earlier 13:41 link-aware snapshot remains unresolved and must be rechecked before any acceptance threshold is fixed.
-- L2 found that the 5,368 headline count is not a discovery count; public surfaces, sitemap and direct-page rules disagree; UTC/application and session-dependent SQL date authorities differ; ordinary discovery currently admits undated and estimated rows; and cancellation/terminal occurrence state has no owning Phase 1 package. These are audit findings, not approved implementation changes.
-- L3A projection: complete, live and unused. `events_public_v1` exposes 25 approved columns for ACTIVE rows only; it adds no date, canonical, link, quarantine, terminal, indexability or destination rule.
+- L2 read-only inventory: complete. Snapshot counts were 2,972 structural and 2,522 link-aware under current logic; the dated, non-estimated candidate with proposed `duplicate_of IS NULL` was 1,552 and 1,114 respectively. A six-row earlier-snapshot difference remains unresolved.
+- L2 found that the 5,368 headline is not a discovery count; surfaces and date authorities disagree; ordinary discovery admits undated/estimated rows; terminal lifecycle state lacks an owner. These are findings, not approved changes.
+- L3A projection: complete and live. `events_public_v1` exposes 25 approved columns for ACTIVE rows only; it adds no date, canonical, link, quarantine, terminal, indexability or destination rule. It is now used by the regional discovery route only.
 - L3A acceptance passed: 5,406 view/ACTIVE rows, two-way equality, 38 ACTIVE mapped rows retained, public roles SELECT-only, base grants/RLS and legacy view unchanged, and no event-data change.
 - L3A-R remediation: complete. Migration `20260802152800_2fb6038d-7977-42a3-bd97-955eb02fb163.sql` set `security_invoker=true` while retaining `security_barrier=true`; all public views now use invoker semantics and linter `0010` is clear. Lovable head: `e643fa8cff674d2420a182207ddb0e99fe8eaaf6`.
 - The scanner entry remains labelled ignored because Lovable could not unignore it; the live condition is fixed. The separate unauthenticated MCP finding remains active and untouched.
-- No L3B consumer migration, L3C base-grant hardening or L4 eligibility implementation has been approved. No application publish/deploy, event change, sitemap/count/routing change or reminder change occurred.
-- Next proposed package: L3B, migrating the identified anonymous/publishable consumers to the shadow boundary one bounded consumer group at a time while preserving current eligibility. Its prompt must return to Mike before being sent.
+- L3B-1 regional migration: complete at Lovable head `624c65d9991c7e1b20087c9eb9f3e4005b193b52`. Only the region route moved to `events_public_v1`; generated view types and one regression test were added. TypeScript, 35 tests and build passed; all 14 ordered-ID sets matched (2,933 each); three regional smoke pages had no permission errors.
+- L3B-1 required correction because Lovable used internal head `2135286...`, not authoritative `a32a2ea...`. Final cumulative diff is limited to route, generated types, test and report; dependency files match `a32a2ea...`. The divergence cause is unresolved.
+- No L3C base-grant hardening or L4 eligibility implementation has been approved. L3B must continue, if approved, one separately bounded consumer group at a time; every prompt returns to Mike before sending.
 
 ## Phase 1 order
 
-1. L3B incremental migration of anonymous/publishable consumers to the unused projection and separately designed safe functions.
+1. Continue L3B incremental migration of remaining anonymous/publishable consumers to the projection and separately designed safe functions; L3B-1 regional discovery is complete.
 2. L3C base-table grant/RLS redesign only after zero required public dependencies are proven. The invoker view cannot survive full underlying grant revocation by itself; choose separately between exact 25-column base grants plus an ACTIVE RLS policy or another approved server-side boundary.
 3. L4 one shared future/canonical discovery eligibility rule.
 4. L5 reversible quarantine of exact approved test records and reviewed duplicate batches.
@@ -98,7 +99,7 @@ Structural package acceptance is not production promotion. Stored, current/live,
 - D44 is superseded by D47: a sender and scheduled job existed despite earlier understanding.
 - D46: temporary manual monitoring only, with verified facts, purpose, unsubscribe and private logging.
 - D48/D49: job 6 remains inactive and HTTP sending remains fail-closed.
-- D50: 24 stored requests are behavioural evidence only.
+- D50 recorded 24 stored requests as behavioural evidence only; the current observed count is 25, with one unseen and none marked sent.
 - D53: the containment release is the operating baseline.
 
 The generated ledger is a machine-readable index of lifecycle state; the decision text remains canonical in the Decision Register.

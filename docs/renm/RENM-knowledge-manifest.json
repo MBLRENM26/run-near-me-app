@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "last_reviewed": "2026-08-02",
+  "last_reviewed": "2026-08-03",
   "current_kernel": "docs/current/RENM-CURRENT.md",
   "lovable_project_knowledge": "docs/current/RENM-lovable-project-knowledge.generated.md",
   "decision_register": "docs/current/RENM-decision-register.md",
@@ -22,7 +22,7 @@
       "path": "docs/current/RENM-CURRENT.md",
       "status": "current",
       "role": "immediate operating state and Lovable context source",
-      "sha256": "0c406144e110e124eda57e523dbb3c0fb80f3246f746952d7578b1a41226671a"
+      "sha256": "2822be7b00686edbc731f4b18408fe8a7053ef38da8c0b00e1e3c0e8c296e5ad"
     },
     {
       "id": "project_knowledge",
@@ -86,7 +86,14 @@
       "status": "completed_security_remediation",
       "role": "superseding security-invoker migration and verified linter remediation evidence",
       "sha256": "890c0bf7210ea3d2c8739e0c8e671fbf3ddf54e6d6e25eec9952d09218097a27"
+    },
+    {
+      "id": "l3b1_region_consumer_migration_acceptance",
+      "path": "docs/current/RENM-L3B1-region-consumer-migration-acceptance-2026-08-03.md",
+      "status": "completed_production_consumer_package",
+      "role": "regional discovery migration, reconciliation and production acceptance evidence",
+      "sha256": "f6a5ce92065da49008494f760b758823e6fab1c7ab9003cdd2d418f955bfe60f"
     }
   ],
-  "hashes_refreshed_for_review_date": "2026-08-02"
+  "hashes_refreshed_for_review_date": "2026-08-03"
 }
