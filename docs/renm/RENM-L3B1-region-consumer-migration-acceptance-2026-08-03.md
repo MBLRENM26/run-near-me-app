@@ -74,23 +74,31 @@ every group, which is the acceptance criterion. No data was modified.)
 - Vitest full suite: 5 files, **35 tests passed** (31 pre-existing + 4 new).
 - Production build (`bun run build`): succeeded.
 
-### 2.4 Scoped diff audit
+### 2.4 Scoped diff audit against the authoritative head
 
-`git diff 2135286929e3c1459cd1febe5a6ea0e05cadfebe --stat`:
+True final cumulative diff against `a32a2ea393be7175a7da4c9db1e5b18abd416d70`
+after this correction (`git diff --stat a32a2ea…`):
 
-- `src/routes/running-events.$slug.tsx` (+1 / -2)
+- `src/routes/running-events.$slug.tsx` (+1 / -2) — query source only
+- `src/integrations/supabase/types.ts` (+143) — generated metadata for
+  `public.events_public_v1` (`Views.events_public_v1`, the 25 approved columns
+  plus the generated relationship references); permitted by the approved L3B-1
+  prompt, and listed here as **changed** relative to `a32a2ea`
 - `src/lib/region-consumer-projection.test.ts` (new, 42 lines)
+- `docs/renm/RENM-L3B1-region-consumer-migration-acceptance-2026-08-03.md` —
+  this report
 
-plus this acceptance report. No migration, no database object, no
-`src/integrations/supabase/types.ts` change, no `package.json`/`bun.lock`
-change, no other consumer.
+`package.json` no longer differs from `a32a2ea`
+(`@lovable.dev/vite-tanstack-config` restored from the prohibited `2.8.5` to the
+authoritative `2.7.7`), and no lockfile differs: `bun.lock` matches the `a32a2ea`
+baseline byte-for-byte. No migration, no database object, no other consumer, no
+other dependency change.
 
-Pre-existing drift note (not introduced by L3B-1): `package.json` already
-contained `@lovable.dev/vite-tanstack-config` `2.8.5` at the preflight baseline
-commit `2135286`, and that baseline commit itself carries a
-`src/integrations/supabase/types.ts` change. Both predate this package and were
-left untouched because this package prohibits editing them. Flagged for
-separate governance decision.
+Correction of an earlier inaccuracy: the previous version of this report claimed
+`src/integrations/supabase/types.ts`, `package.json` and `bun.lock` were
+unchanged, and framed the `2.8.5` version as harmless pre-existing drift. That
+was wrong on both counts — see §1 for the head discrepancy and the paragraph
+above for the true diff.
 
 ## 3. Exact files changed
 
