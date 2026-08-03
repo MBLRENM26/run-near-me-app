@@ -125,13 +125,26 @@ true, nullsFirst: false })`, 1000-row `range()` pagination loop,
 
 ## 6. Deployment evidence and production smoke checks
 
-See §6 addendum recorded at deploy time in the chat transcript: deployment was
-performed once for this package after all verification above passed. Smoke
-targets: `/running-events/south-east`, `/running-events/scotland`,
-`/running-events/london`. Checks: page loads, ordering and visible content
-unchanged versus pre-deploy behaviour, outbound links still present under the
-existing trust rules, and no console or query error indicating a missing
-view/base permission.
+Deployment: this package was deployed once, after all verification in §2 passed,
+to `https://runningeventsnearme.com` (Lovable publish of the working tree at the
+implementation state described in §3).
+
+Production smoke checks (headless Chromium, 3 August 2026, post-deploy):
+
+| page | H1 | visible count | event links |
+|---|---|---|---|
+| `/running-events/south-east` | "Running events in South East" | 178 events | 356 |
+| `/running-events/scotland` | "Running events in Scotland" | 161 events | 322 |
+| `/running-events/london` | "Running events in London" | 122 events | 244 |
+
+- All three pages loaded and rendered event cards in the existing order
+  (`sort_date` ascending, estimated dates last within month).
+- Visible counts are the link-aware (`hasDiscoverableLink`) subsets of the
+  structural per-region sets in §2.1, as before the change.
+- Outbound links remain present under the existing trust rules.
+- Console errors captured during the three loads: **none** — in particular no
+  permission or missing-relation error for `events_public_v1`.
+
 
 ## 7. Rollback
 
