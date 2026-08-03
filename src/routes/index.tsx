@@ -206,9 +206,8 @@ function HomePage() {
         .toISOString()
         .slice(0, 10);
       const { data, error } = await supabase
-        .from("events")
+        .from("events_public_v1")
         .select(DISCOVERY_EVENT_COLUMNS)
-        .eq("status", "ACTIVE")
         .eq("date_is_estimated", false)
         .gte("sort_date", from)
         .lte("sort_date", to)
@@ -552,11 +551,11 @@ function HomePage() {
             <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {upcomingEvents.map((e) => (
                 <EventCard
-                  key={e.id}
+                  key={e.id as string}
                   event={{
-                    id: e.id,
-                    slug: e.slug,
-                    name: e.name,
+                    id: e.id as string,
+                    slug: e.slug as string,
+                    name: e.name as string,
                     date_raw: e.date_raw,
                     town: e.town,
                     county: e.county,
@@ -564,8 +563,8 @@ function HomePage() {
                     entry_fee: e.entry_fee,
                     entry_url: e.entry_url,
                     organiser_url: e.organiser_url,
-                    
-                    is_featured: e.is_featured,
+
+                    is_featured: e.is_featured ?? false,
                     date_is_estimated: e.date_is_estimated,
                   }}
                 />
