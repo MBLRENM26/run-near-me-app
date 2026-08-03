@@ -315,6 +315,13 @@ export type Database = {
             foreignKeyName: "email_subscriptions_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
+            referencedRelation: "events_public_v1"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_subscriptions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
             referencedRelation: "public_events"
             referencedColumns: ["id"]
           },
@@ -372,6 +379,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_edits_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_public_v1"
             referencedColumns: ["id"]
           },
           {
@@ -529,6 +543,13 @@ export type Database = {
             columns: ["duplicate_of"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_duplicate_of_fkey"
+            columns: ["duplicate_of"]
+            isOneToOne: false
+            referencedRelation: "events_public_v1"
             referencedColumns: ["id"]
           },
           {
@@ -740,6 +761,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organisation_event_links_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_public_v1"
             referencedColumns: ["id"]
           },
           {
@@ -1078,6 +1106,13 @@ export type Database = {
             foreignKeyName: "submissions_created_event_id_fkey"
             columns: ["created_event_id"]
             isOneToOne: false
+            referencedRelation: "events_public_v1"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "submissions_created_event_id_fkey"
+            columns: ["created_event_id"]
+            isOneToOne: false
             referencedRelation: "public_events"
             referencedColumns: ["id"]
           },
@@ -1086,6 +1121,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "submissions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_public_v1"
             referencedColumns: ["id"]
           },
           {
@@ -1170,6 +1212,13 @@ export type Database = {
             foreignKeyName: "sync_dedupe_candidates_matched_event_id_fkey"
             columns: ["matched_event_id"]
             isOneToOne: false
+            referencedRelation: "events_public_v1"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sync_dedupe_candidates_matched_event_id_fkey"
+            columns: ["matched_event_id"]
+            isOneToOne: false
             referencedRelation: "public_events"
             referencedColumns: ["id"]
           },
@@ -1241,6 +1290,100 @@ export type Database = {
       }
     }
     Views: {
+      events_public_v1: {
+        Row: {
+          country: string | null
+          county: string | null
+          date_from: string | null
+          date_is_estimated: boolean | null
+          date_raw: string | null
+          date_to: string | null
+          distance_tags: string[] | null
+          distances: string | null
+          entry_fee: string | null
+          entry_url: string | null
+          governance: Database["public"]["Enums"]["event_governance"] | null
+          id: string | null
+          is_featured: boolean | null
+          is_recurring: boolean | null
+          lat: number | null
+          lng: number | null
+          name: string | null
+          organiser_type:
+            | Database["public"]["Enums"]["event_organiser_type"]
+            | null
+          organiser_url: string | null
+          race_profile: Database["public"]["Enums"]["event_race_profile"] | null
+          region: string | null
+          slug: string | null
+          sort_date: string | null
+          terrain_tags: string[] | null
+          town: string | null
+        }
+        Insert: {
+          country?: string | null
+          county?: string | null
+          date_from?: string | null
+          date_is_estimated?: boolean | null
+          date_raw?: string | null
+          date_to?: string | null
+          distance_tags?: string[] | null
+          distances?: string | null
+          entry_fee?: string | null
+          entry_url?: string | null
+          governance?: Database["public"]["Enums"]["event_governance"] | null
+          id?: string | null
+          is_featured?: boolean | null
+          is_recurring?: boolean | null
+          lat?: number | null
+          lng?: number | null
+          name?: string | null
+          organiser_type?:
+            | Database["public"]["Enums"]["event_organiser_type"]
+            | null
+          organiser_url?: string | null
+          race_profile?:
+            | Database["public"]["Enums"]["event_race_profile"]
+            | null
+          region?: string | null
+          slug?: string | null
+          sort_date?: string | null
+          terrain_tags?: string[] | null
+          town?: string | null
+        }
+        Update: {
+          country?: string | null
+          county?: string | null
+          date_from?: string | null
+          date_is_estimated?: boolean | null
+          date_raw?: string | null
+          date_to?: string | null
+          distance_tags?: string[] | null
+          distances?: string | null
+          entry_fee?: string | null
+          entry_url?: string | null
+          governance?: Database["public"]["Enums"]["event_governance"] | null
+          id?: string | null
+          is_featured?: boolean | null
+          is_recurring?: boolean | null
+          lat?: number | null
+          lng?: number | null
+          name?: string | null
+          organiser_type?:
+            | Database["public"]["Enums"]["event_organiser_type"]
+            | null
+          organiser_url?: string | null
+          race_profile?:
+            | Database["public"]["Enums"]["event_race_profile"]
+            | null
+          region?: string | null
+          slug?: string | null
+          sort_date?: string | null
+          terrain_tags?: string[] | null
+          town?: string | null
+        }
+        Relationships: []
+      }
       public_clubs: {
         Row: {
           affiliation_number: string | null
