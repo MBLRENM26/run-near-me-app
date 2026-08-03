@@ -206,9 +206,8 @@ function HomePage() {
         .toISOString()
         .slice(0, 10);
       const { data, error } = await supabase
-        .from("events")
+        .from("events_public_v1")
         .select(DISCOVERY_EVENT_COLUMNS)
-        .eq("status", "ACTIVE")
         .eq("date_is_estimated", false)
         .gte("sort_date", from)
         .lte("sort_date", to)
