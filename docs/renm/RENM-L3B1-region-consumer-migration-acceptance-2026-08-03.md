@@ -25,8 +25,11 @@ Scope: migrate the regional discovery route from `public.events` to `public.even
 - Grants (`aclexplode(pg_class.relacl)`): `anon` = SELECT only; `authenticated`
   = SELECT only; no INSERT/UPDATE/DELETE for either; `PUBLIC` has no entry, so
   no PUBLIC SELECT. `postgres` and `service_role` retain full privileges.
-- Generated types already describe `events_public_v1` (`src/integrations/supabase/types.ts`,
-  `Views.events_public_v1`), so no regeneration was required or performed.
+- Generated types describe `events_public_v1` (`src/integrations/supabase/types.ts`,
+  `Views.events_public_v1`) with exactly the 25 approved columns. Confirmed as
+  accurate generated metadata for the deployed view. Relative to the
+  authoritative head `a32a2ea`, `src/integrations/supabase/types.ts` **is
+  changed** (+143 lines); no regeneration was run during this correction.
 
 ## 2. Observed evidence
 
