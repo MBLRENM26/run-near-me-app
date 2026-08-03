@@ -6,7 +6,15 @@ Scope: migrate the regional discovery route from `public.events` to `public.even
 
 ## 1. Sourced facts (verifiable at named sources)
 
-- Preflight repository head: `2135286929e3c1459cd1febe5a6ea0e05cadfebe`.
+- Authoritative connector/project head before this package:
+  `a32a2ea393be7175a7da4c9db1e5b18abd416d70`.
+- Agent working-tree preflight head observed during implementation:
+  `2135286929e3c1459cd1febe5a6ea0e05cadfebe`.
+- Observed evidence: these two heads are not the same commit. The agent
+  implemented and audited against `2135286`, not against the authoritative head
+  `a32a2ea`. This head discrepancy is recorded as observed evidence of a
+  divergent working tree; it is not characterised as harmless pre-existing
+  drift, and its cause is unresolved here.
 - Live view options (`pg_class.reloptions` for `public.events_public_v1`):
   `{security_barrier=true, security_invoker=true}`; owner `postgres`.
 - View column list (`information_schema.columns`, 25 columns, ordinal order):
