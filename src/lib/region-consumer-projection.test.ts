@@ -8,7 +8,7 @@ import { DISCOVERY_EVENT_COLUMNS } from "@/lib/events-query";
  * not re-apply the redundant status predicate.
  */
 const source = readFileSync(
-  new URL("./running-events.$slug.tsx", import.meta.url),
+  new URL("../routes/running-events.$slug.tsx", import.meta.url),
   "utf8",
 );
 
