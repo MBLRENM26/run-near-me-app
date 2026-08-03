@@ -80,7 +80,7 @@ export function RaceReminderSignup({ eventId, eventName, sortDate }: Props) {
                 aria-hidden
               />
               <p className="text-sm text-foreground">
-                You're on the list. Check your inbox for confirmation.
+                Your reminder is confirmed. Check your inbox for confirmation.
               </p>
             </div>
           ) : (
