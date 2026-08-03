@@ -133,9 +133,15 @@ true, nullsFirst: false })`, 1000-row `range()` pagination loop,
 
 ## 6. Deployment evidence and production smoke checks
 
-Deployment: this package was deployed once, after all verification in §2 passed,
-to `https://runningeventsnearme.com` (Lovable publish of the working tree at the
-implementation state described in §3).
+Deployment sequence (two deployments in total, not one):
+
+1. The original L3B-1 build was deployed once to production after the
+   verification in §2 passed (working tree state described in §3; commit
+   `75ca9907c2abc61f28b4c4dc0c31f99741b8f053`).
+2. This close-out correction required one additional corrective deployment,
+   restoring `@lovable.dev/vite-tanstack-config` to `2.7.7` in `package.json`,
+   restoring `bun.lock` to the `a32a2ea` baseline content, and correcting this
+   report. The corrective commit/head is recorded in §2.4.
 
 Production smoke checks (headless Chromium, 3 August 2026, post-deploy):
 
@@ -145,13 +151,22 @@ Production smoke checks (headless Chromium, 3 August 2026, post-deploy):
 | `/running-events/scotland` | "Running events in Scotland" | 161 events | 322 |
 | `/running-events/london` | "Running events in London" | 122 events | 244 |
 
-- All three pages loaded and rendered event cards in the existing order
-  (`sort_date` ascending, estimated dates last within month).
-- Visible counts are the link-aware (`hasDiscoverableLink`) subsets of the
-  structural per-region sets in §2.1, as before the change.
-- Outbound links remain present under the existing trust rules.
+Observed evidence (directly captured post-deploy):
+
+- All three pages loaded successfully.
+- The H1, the visible event count and event links rendered as tabulated above.
 - Console errors captured during the three loads: **none** — in particular no
   permission or missing-relation error for `events_public_v1`.
+
+Inference (not directly proven):
+
+- Ordering and content are unchanged relative to before the migration. No
+  captured pre/post browser comparison exists, so this conclusion is inferred
+  from the exact ordered-ID database equivalence in §2.1/§2.2 plus the fact that
+  all route logic other than the query source was preserved (§3).
+- Visible counts being the link-aware (`hasDiscoverableLink`) subsets of the
+  structural per-region sets in §2.1 is likewise inferred from the same
+  evidence, not from a captured pre-change browser baseline.
 
 
 ## 7. Rollback
