@@ -143,10 +143,9 @@ function RegionPage() {
       const all: EventCardData[] = [];
       for (let from = 0; ; from += pageSize) {
         const { data, error } = await supabase
-          .from("events")
+          .from("events_public_v1")
           .select(DISCOVERY_EVENT_COLUMNS)
           .eq("region", region.name)
-          .eq("status", "ACTIVE")
           .or(`sort_date.gte.${today},sort_date.is.null`)
           .or(UK_BOUNDS_OR_NULL)
           .order("sort_date", { ascending: true, nullsFirst: false })
