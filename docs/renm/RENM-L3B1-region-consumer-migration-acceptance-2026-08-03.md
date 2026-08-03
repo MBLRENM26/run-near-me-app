@@ -64,9 +64,11 @@ Result: 14 regions, `ordered_ids_equal = true` for every region.
 Same comparison re-run after the code change: `regions = 14`,
 `all_equal = true`, `base_rows = 2933`, `view_rows = 2933`.
 
-(The 2,933 total differs from the sum of the earlier per-region table only by
-rows whose `region IS NULL`/unmatched grouping; both sides remain identical in
-every group, which is the acceptance criterion. No data was modified.)
+(The 14 region counts listed in §2.1 sum to exactly 2,933, matching both
+`base_rows` and `view_rows`. An earlier version of this report wrongly stated
+the totals differed; there is no residual unmatched-grouping remainder. Both
+sides remain identical in every group, which is the acceptance criterion. No
+data was modified.)
 
 ### 2.3 Verification results
 
