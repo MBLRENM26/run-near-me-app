@@ -49,9 +49,8 @@ export const getEventsForCounty = createServerFn({ method: "GET" })
     const pageSize = 1000;
     for (let from = 0; ; from += pageSize) {
       const { data: rows, error } = await supabaseAdmin
-        .from("events")
+        .from("events_public_v1")
         .select(DISCOVERY_EVENT_COLUMNS)
-        .eq("status", "ACTIVE")
         .in("county", cfg.dbNames)
         .or(`sort_date.gte.${today},sort_date.is.null`)
         .or(UK_BOUNDS_OR_NULL)
