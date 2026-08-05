@@ -30,7 +30,7 @@ Every product, data and SEO decision should improve at least one of:
 4. Whether an organiser can recognise the listing as fair and useful.
 5. Whether RENM provides the correct next action for the occurrence's real entry state.
 
-Successfully resolved intent includes a verified entry click when entries are open, a verified waitlist action when applicable, a confirmed reminder when entries are not yet open, an official-information visit where entry is unavailable, or clear cancellation/closure information. `Entry Click` is the principal current conversion signal but is not sufficient without destination accuracy.
+Successfully resolved intent includes a verified activation of a booking destination when entries are open, a verified waitlist action when applicable, a confirmed reminder when entries are not yet open, an official-information visit where entry is unavailable, or clear cancellation/closure information. `Outbound Click` is the current hand-off signal, with `destination_role` used to separate booking, ballot/waitlist, official-information and unknown destinations; it is not evidence of a completed entry and is not sufficient without destination accuracy.
 
 ## Non-negotiable principles
 
@@ -45,7 +45,7 @@ Successfully resolved intent includes a verified entry click when entries are op
 - Duplicate evidence is retained internally, but one real-world occurrence has one public canonical representation.
 - Search-results pages are noindex. New indexable SEO surfaces require enough genuine inventory and differentiated value.
 - Uncertain records receive reversible treatment: quarantine, limited visibility, noindex or dormant. A 410 is reserved for confirmed terminal removal.
-- Entry/outbound clicks are the primary product conversion. Search success, reminder consent and return usage are supporting measures.
+- Outbound destination activation is the primary observed product hand-off. Completed entry, search success, reminder consent and return usage remain separate measures.
 - Accuracy, basic corrections and inclusion are never pay-to-play. Payment cannot buy a higher trust gate or unlabelled organic prominence.
 - LLMs, search engines, publishers and applications are distribution channels or data consumers; machine visibility must not compromise usefulness or truth for runners.
 - Mobile is the primary journey.
@@ -172,7 +172,7 @@ By the containment release, the store held 24 reminder requests in total, includ
 
 At the July 2026 audit, the public view/count included ACTIVE canonical records without requiring a future date. Of 5,320 public-view rows, only 2,891 were upcoming; 1,389 lacked `sort_date`, 954 lacked both principal outbound links, 186 lacked coordinates and 1,734 lacked town and county. Two public test records and several public duplicate pairs were found. Direct anonymous SELECT on the base `events` table also exposed fields intended to remain private.
 
-Plausible's 28-day snapshot on 24 July 2026 reported roughly 1.7k visitors, 700 unique `Entry Click` converters and a nominal 40.4% Entry Click conversion rate. Most traffic landed on specific event pages from Google; internal search use was small. ChatGPT sent 19 measured visitors, seven of whom fired Entry Click. This supports event-intent resolution and routing as RENM's demonstrated present value, subject to an instrumentation audit.
+Plausible's 28-day snapshot on 24 July 2026 reported roughly 1.7k visitors, 700 unique converters under the then-current custom event name `Entry Click` and a nominal 40.4% event rate. Most traffic landed on specific event pages from Google; internal search use was small. ChatGPT sent 19 measured visitors, seven of whom fired that historical event. This supports event-intent resolution and routing as RENM's demonstrated present value, subject to the stated instrumentation limitations. It must not be spliced into the later `Outbound Click` series introduced at application head `9558063`.
 
 These figures are an audit snapshot, not permanent Project Knowledge. They belong in the implementation record and must be re-measured before and after repair.
 
@@ -185,7 +185,7 @@ The supervised England Athletics run later that day completed four independent c
 Primary:
 
 - Successfully resolved runner intent, broken down by verified entry, waitlist, official-information, reminder and closure outcomes.
-- Qualified entry clicks to verified-open destinations and, where controllable, completed paid entries.
+- Qualified booking-destination activations and, where controllable, completed paid entries.
 - Discovery-qualified canonical future occurrences.
 - Percentage of discovery inventory at G3 and G4.
 - Confirmed accuracy/error rate from audits and corrections.

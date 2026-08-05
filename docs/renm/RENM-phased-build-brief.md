@@ -178,9 +178,9 @@ Critical incident input — 29 July 2026: a quick admin interface exposed 23 sto
 
 Work:
 
-- Audit precisely when custom `Entry Click` fires and ensure it requires deliberate user activation of an entry CTA.
-- Document that Plausible automatic `Outbound Link: Click` and custom `Entry Click` can describe the same click; never sum them.
-- Validate existing event properties and add organiser, series, entry state, destination role/provider, gate, verification-age bucket and experiment/campaign ID where appropriate.
+- Treat the historical `Entry Click` series as closed at application head `9558063`; verify that the replacement `Outbound Click` fires only on deliberate activation of a rendered outbound event-detail CTA.
+- Document that Plausible automatic `Outbound Link: Click`, historical `Entry Click` and current `Outbound Click` can describe overlapping actions; never sum or splice the series.
+- Validate existing event properties. `destination_role` is now emitted conservatively for analytics; add organiser, series, entry state, provider, gate, verification-age bucket and experiment/campaign ID only where appropriate and evidence-backed.
 - Replace ambiguous automatic-form reliance with explicit Reminder Started/Confirmed/Sent/Clicked, Search Results Shown/Zero/Clicked, Organiser Portfolio Viewed, Claim Started/Submitted and Correction Submitted events.
 - Verify the exact steps behind Search Performed and Organiser Acquisition funnels.
 - Establish saved Plausible segments excluding Lovable/internal activity and document bot-filtering differences from Lovable analytics.
@@ -189,7 +189,7 @@ Work:
 Acceptance:
 
 - A manual test occurrence/action produces exactly the expected custom events and properties.
-- Entry Click has no render, automatic-navigation or non-entry false positives.
+- `Outbound Click` has no render or automatic-navigation false positives, and no outbound activation is described as a completed entry.
 - Reminders, search and organiser actions are independently measurable.
 - A reproducible 28-day baseline report can be generated without manual interpretation.
 

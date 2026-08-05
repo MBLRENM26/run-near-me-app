@@ -22,11 +22,11 @@ For custom properties (step 3 below) go to **Site Settings → Custom Properties
 
 Every name here is the exact string passed to `window.plausible(name, …)`. Copy-paste it verbatim — Plausible matches on string equality.
 
-### P0 — register now (conversion proxies)
+### P0 — register now (outbound-handoff and form proxies)
 
 | Goal name | Type | Fires from | Trigger | Props sent |
 |---|---|---|---|---|
-| `Entry Click` | Custom Event | `src/lib/analytics.ts` → `trackEntryClick` (called from event card / event detail CTAs) | User clicks an outbound entry / organiser link | `slug`, `region`, `link_type` (`entry` \| `organiser-site` \| `organiser-other`), `proximity` (`future` \| `today` \| `imminent` \| `past`), `event_name`, `distance`, `discipline`, `entry_domain` |
+| `Outbound Click` | Custom Event | `src/lib/analytics.ts` → `trackOutboundClick` (called from event-detail outbound CTAs) | User deliberately clicks a rendered outbound event/organiser destination | `slug`, `region`, `link_type` (`entry` \| `organiser-site` \| `organiser-other`), `proximity` (`future` \| `today` \| `imminent` \| `past`), `event_name`, `distance`, `discipline`, `entry_domain`, `destination_role` (`booking_destination` \| `ballot_waitlist` \| `official_information` \| `unknown`) |
 | `Form: Submission` | Custom Event | `src/routes/list-your-event.tsx:98`, `src/components/events/RaceReminderSignup.tsx:43`, `src/routes/running-clubs.$slug.claim.tsx:102` | Any of the three forms submits successfully | `form` (`list-your-event` \| `race-reminder` \| `club_claim`), `slug` (claim only) |
 | `Search Result Click` | Custom Event | `src/lib/analytics.ts` → `trackSearchResultClick` | User clicks a result in the search UI | `query`, `slug`, `position`, `results_count` |
 | `Club Website Click` | Custom Event | `src/routes/running-clubs.$slug.tsx:252` | User clicks the outbound club website link | `slug`, `region` |
@@ -49,7 +49,7 @@ Every name here is the exact string passed to `window.plausible(name, …)`. Cop
 
 Add each of these under **Site Settings → Custom Properties** so they become filterable in the dashboard and usable in breakdowns:
 
-`link_type`, `proximity`, `entry_domain`, `event_name`, `slug`, `region`, `distance`, `discipline`, `form`, `method`, `filter_type`, `page`, `query`, `results_count`, `position`, `total_events`, `is_claimed`, `governing_body`, `q`.
+`link_type`, `proximity`, `entry_domain`, `destination_role`, `event_name`, `slug`, `region`, `distance`, `discipline`, `form`, `method`, `filter_type`, `page`, `query`, `results_count`, `position`, `total_events`, `is_claimed`, `governing_body`, `q`.
 
 Keep the list flat and stable — Plausible drops nested objects, and renaming a prop later loses history.
 
@@ -59,13 +59,14 @@ Keep the list flat and stable — Plausible drops nested objects, and renaming a
 
 Plausible → **Funnels → + Create Funnel**. All three require the goals above to exist first.
 
-1. **Search → Click → Entry**
-   `Search Performed` → `Search Result Click` → `Entry Click`
-   Measures whether the site actually gets people from a query to an outbound entry.
+1. **Search → Result → Outbound handoff**
+   `Search Performed` → `Search Result Click` → `Outbound Click`
+   Measures whether the site gets people from a query to an outbound destination.
+   Break down by `destination_role`; do not describe the final step as a completed entry.
 
-2. **Region browse → Entry**
-   `Region View` → `Entry Click`
-   Isolates conversion from the SEO landing pages vs. the search flow.
+2. **Region browse → Outbound handoff**
+   `Region View` → `Outbound Click`
+   Isolates outbound-destination activation from regional landing pages versus search.
 
 3. **List-your-event lead**
    Pageview `/list-your-event` → `Form: Submission` (filter `form=list-your-event`)
@@ -89,4 +90,5 @@ The bootstrap only initialises Plausible on `runningeventsnearme.com` / `www.run
 
 - No `Event Page View` custom goal — event-detail pageviews are only in the raw pageview stream and can't be filtered by `slug` / `region` / `distance` for cohorting.
 - No `Outbound: Club Directory` or `Outbound: Governing Body` event on directory-style pages.
-- `Entry Click` fires from the shared helper, but coverage on every card variant (homepage carousel, "same weekend nearby", "other races by organiser") should be audited — see the related-events coverage audit script proposed alongside this doc.
+- `Outbound Click` currently fires only from outbound CTAs rendered by the event-detail route. Coverage on other outbound surfaces should be audited before claiming site-wide handoff coverage.
+- Historical `Entry Click` data remains a separate, unchanged series. Do not add it to, splice it into or backfill it as `Outbound Click`.

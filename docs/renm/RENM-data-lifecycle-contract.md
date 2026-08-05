@@ -275,10 +275,10 @@ Where an organiser-control or distribution pilot is tested, maintain a destinati
 
 Participant-level booking or results data must not be collected merely to prove attribution. Prefer privacy-preserving aggregate reconciliation, campaign identifiers, referral codes or an authorised provider callback with documented minimisation and retention.
 
-- Audit the implementation of custom `Entry Click` before adopting it as a contractual KPI; automatic outbound tracking and the custom event may describe the same user action and must not be summed.
-- Track typed actions explicitly: Entry CTA Viewed, Entry Click, Entry Destination Failed where observable, Reminder Started/Confirmed/Sent/Clicked, Search Results Shown/Zero/Clicked, Organiser Portfolio Viewed, Claim Started/Submitted and Correction Submitted.
+- Application head `9558063` replaced the ambiguous custom `Entry Click` emission with `Outbound Click`. Historical `Entry Click`, current `Outbound Click` and Plausible automatic outbound tracking are separate series and must not be summed or backfilled into one another.
+- Track typed actions explicitly: Entry CTA Viewed, Outbound Click, Entry Destination Failed where observable, Reminder Started/Confirmed/Sent/Clicked, Search Results Shown/Zero/Clicked, Organiser Portfolio Viewed, Claim Started/Submitted and Correction Submitted.
 - Automatic `Form: Submission` is diagnostic only and cannot stand in for reminder or organiser conversions.
-- Entry Click properties should include canonical occurrence, organiser, series where known, destination role/provider, entry state, verification-age bucket, visibility gate and experiment/campaign ID.
+- Outbound Click properties should include canonical occurrence, organiser, series where known, destination role/provider, entry state, verification-age bucket, visibility gate and experiment/campaign ID. The current analytics-only `destination_role` is a conservative first step, not the public/data-layer destination model.
 - Completed-entry and revenue attribution are recorded only when RENM controls the booking funnel or an organiser/provider supplies a lawful, agreed conversion signal.
 - RENM-owned events use the same public gate/ranking rules but may carry an internal `founder_event_experiment` marker for measurement and disclosure.
 - Experiment reports distinguish organic inclusion, clearly labelled promotion and other acquisition so RENM does not mistake self-preferencing for product-market fit.

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "last_reviewed": "2026-08-03",
+  "last_reviewed": "2026-08-04",
   "current_kernel": "docs/current/RENM-CURRENT.md",
   "lovable_project_knowledge": "docs/current/RENM-lovable-project-knowledge.generated.md",
   "decision_register": "docs/current/RENM-decision-register.md",
@@ -22,21 +22,21 @@
       "path": "docs/current/RENM-CURRENT.md",
       "status": "current",
       "role": "immediate operating state and Lovable context source",
-      "sha256": "2822be7b00686edbc731f4b18408fe8a7053ef38da8c0b00e1e3c0e8c296e5ad"
+      "sha256": "0fb8ad4004ab516725a179e773d4c39f74c851e2d33ccdec98262989878d102c"
     },
     {
       "id": "project_knowledge",
       "path": "docs/current/RENM-project-knowledge.md",
       "status": "current",
       "role": "product and operating doctrine",
-      "sha256": "074e9a88d1196ca95c96dc54d6a59cf3a8f7c37d65f27a4932ee2890bd4dba6c"
+      "sha256": "34999758d126009e5f59c3889d9aa1a0ad8e96d6a8aa9633ad3de2c80f1728b8"
     },
     {
       "id": "data_lifecycle_contract",
       "path": "docs/current/RENM-data-lifecycle-contract.md",
       "status": "current",
       "role": "enforceable data, evidence, visibility and lifecycle behaviour",
-      "sha256": "9d890823895a45344d52275a8e6e094dac660749f94fbc5fcbb6c8a922d7703c"
+      "sha256": "3dcde80741d2a3122cc9a1e9f688c3e4dd4004b9ed9e048755fbee23a4397f96"
     },
     {
       "id": "decision_register",
@@ -50,7 +50,7 @@
       "path": "docs/current/RENM-phased-build-brief.md",
       "status": "current",
       "role": "approval-gated implementation sequence",
-      "sha256": "f3d790c741367cfc20f2ecc05f334d30382e0b4e1fc7fd818451507f85a24e6a"
+      "sha256": "d392ff4b52aa6224eb7c055332b6ceae152af9bad18329170ba72558521ec066"
     },
     {
       "id": "next_thread_handover",
@@ -64,7 +64,7 @@
       "path": "docs/current/RENM-validation-monitoring-and-phase-1-packages-2026-08-02.md",
       "status": "approved_operating_plan",
       "role": "organiser validation, manual reminder controls and package register",
-      "sha256": "8c5c1bd34ee00471a11887bfe0e67c2d003718f050ecc3f421d2c29ac5ccd1d6"
+      "sha256": "0504799e3f670abedb226e846199050f372aeab7426958822083b7976d269c46"
     },
     {
       "id": "l2_eligibility_dependency_inventory",
@@ -93,7 +93,35 @@
       "status": "completed_production_consumer_package",
       "role": "regional discovery migration, reconciliation and production acceptance evidence",
       "sha256": "f6a5ce92065da49008494f760b758823e6fab1c7ab9003cdd2d418f955bfe60f"
+    },
+    {
+      "id": "reminder_confirmation_copy_hotfix",
+      "path": "docs/current/RENM-reminder-confirmation-copy-hotfix-2026-08-03.md",
+      "status": "completed_production_copy_hotfix",
+      "role": "automatic confirmation discovery, corrected copy and production acceptance evidence",
+      "sha256": "2a74d83ac30002ee8086d6dfcf66bfd287010b7031c54e6bb96c7ef4a1f37d5e"
+    },
+    {
+      "id": "l3b2_homepage_curated_migration",
+      "path": "docs/current/RENM-L3B2-homepage-curated-migration-rejected-2026-08-03.md",
+      "status": "completed_after_rejected_attempt",
+      "role": "failed initial acceptance, selective rollback and successful simplified production retry",
+      "sha256": "c2210f324a523ebb5be24989ab668151fd738ef7c0d860a7f5fbb0c173a9c2c0"
+    },
+    {
+      "id": "organiser_validation_preflight_2026_08_04",
+      "path": "docs/current/RENM-organiser-validation-preflight-2026-08-04.md",
+      "status": "completed_read_only_preflight",
+      "role": "aggregate reminder check, audited strict outbound evidence and public-evidence cohort",
+      "sha256": "97b1e88c482a94d0a6da21663af79ff6512dc42505cf8fbc93f9513de9399eee"
+    },
+    {
+      "id": "organiser_evidence_pack_org_v_004",
+      "path": "docs/current/RENM-organiser-evidence-pack-ORG-V-004-2026-08-04.md",
+      "status": "contact_ready_no_outreach",
+      "role": "read-only Cock Crow evidence, role, destination and contact-readiness pack",
+      "sha256": "a3d3a1fdb2ea7ea076778594a857d0903c800ee0c43ef0bb4ff2b8cf748d7fdc"
     }
   ],
-  "hashes_refreshed_for_review_date": "2026-08-03"
+  "hashes_refreshed_for_review_date": "2026-08-04"
 }
