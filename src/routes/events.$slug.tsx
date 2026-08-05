@@ -90,7 +90,8 @@ function formatTerrain(
 }
 
 import { classifyEventLink, isTrustedLink } from "@/lib/link-trust";
-import { trackEntryClick, trackClaimInterest } from "@/lib/analytics";
+import { trackOutboundClick, trackClaimInterest } from "@/lib/analytics";
+import { classifyDestinationRole } from "@/lib/destination-role";
 
 function hostnameOf(url: string | null | undefined): string | undefined {
   if (!url) return undefined;
@@ -616,7 +617,7 @@ function EventDetailPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() =>
-                    trackEntryClick({
+                    trackOutboundClick({
                       slug: e.slug,
                       region: e.region,
                       link_type: primaryCta!.linkType,
@@ -625,6 +626,10 @@ function EventDetailPage() {
                       distance: e.distances ?? "unknown",
                       discipline: e.discipline ?? "road",
                       entry_domain: hostnameOf(primaryCta!.href),
+                      destination_role: classifyDestinationRole(
+                        primaryCta!.href,
+                        primaryCta!.label,
+                      ),
                     })
                   }
                 >
@@ -662,7 +667,7 @@ function EventDetailPage() {
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() =>
-                      trackEntryClick({
+                      trackOutboundClick({
                         slug: e.slug,
                         region: e.region,
                         link_type: secondaryCta.linkType,
@@ -671,6 +676,10 @@ function EventDetailPage() {
                         distance: e.distances ?? "unknown",
                         discipline: e.discipline ?? "road",
                         entry_domain: hostnameOf(secondaryCta.href),
+                        destination_role: classifyDestinationRole(
+                          secondaryCta.href,
+                          secondaryCta.label,
+                        ),
                       })
                     }
                     className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground hover:underline"
@@ -705,7 +714,7 @@ function EventDetailPage() {
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={() =>
-                        trackEntryClick({
+                        trackOutboundClick({
                           slug: e.slug,
                           region: e.region,
                           link_type: ul.linkType,
@@ -714,6 +723,10 @@ function EventDetailPage() {
                           distance: e.distances ?? "unknown",
                           discipline: e.discipline ?? "road",
                           entry_domain: hostnameOf(ul.href),
+                          destination_role: classifyDestinationRole(
+                            ul.href,
+                            ul.label,
+                          ),
                         })
                       }
                       className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
@@ -737,7 +750,7 @@ function EventDetailPage() {
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() =>
-                      trackEntryClick({
+                      trackOutboundClick({
                         slug: e.slug,
                         region: e.region,
                         link_type: "organiser-site",
@@ -746,6 +759,9 @@ function EventDetailPage() {
                         distance: e.distances ?? "unknown",
                         discipline: e.discipline ?? "road",
                         entry_domain: hostnameOf(pastOrganiserLink!.href),
+                        destination_role: classifyDestinationRole(
+                          pastOrganiserLink!.href,
+                        ),
                       })
                     }
                     className="font-medium text-primary hover:underline"

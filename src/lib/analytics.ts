@@ -10,6 +10,8 @@
  * shallow objects of primitives — Plausible drops nested structures.
  */
 
+import type { DestinationRole } from "@/lib/destination-role";
+
 type PlausibleProps = Record<string, string | number | boolean | undefined | null>;
 
 type PlausibleFn = (
@@ -46,7 +48,17 @@ export function track(name: string, props?: PlausibleProps) {
 
 // Named helpers — keeps goal names consistent across the codebase.
 
-export const trackEntryClick = (props: {
+/**
+ * Outbound destination click.
+ *
+ * Replaces the historical `Entry Click` goal: a click on an outbound event
+ * link is not evidence of an entry. Existing properties are preserved so
+ * breakdowns stay comparable; `destination_role` is analytics-only (see
+ * src/lib/destination-role.ts) and asserts nothing publicly.
+ *
+ * Historical `Entry Click` data is left untouched — no backfill.
+ */
+export const trackOutboundClick = (props: {
   slug: string;
   region?: string | null;
   link_type: "entry" | "organiser-site" | "organiser-other";
@@ -57,8 +69,9 @@ export const trackEntryClick = (props: {
   discipline?: string | null;
   /** Hostname of the outbound URL, `www.` stripped. Omitted when the URL is unparseable. */
   entry_domain?: string;
+  destination_role: DestinationRole;
 }) =>
-  track("Entry Click", {
+  track("Outbound Click", {
     ...props,
     proximity: props.proximity ?? "future",
   });
