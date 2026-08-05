@@ -56,7 +56,7 @@ function labelFor(
 
 /**
  * `linkType` matches the prior `primaryCta.linkType` mapping so Plausible
- * `Entry Click` breakdowns stay consistent:
+ * `Outbound Click` breakdowns stay consistent:
  *   - entry_url, kind=entry       → "entry"
  *   - entry_url, kind=organiser   → "organiser-site"
  *   - organiser_url (any trusted) → "organiser-other"

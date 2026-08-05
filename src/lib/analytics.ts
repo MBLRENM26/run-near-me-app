@@ -10,6 +10,8 @@
  * shallow objects of primitives — Plausible drops nested structures.
  */
 
+import type { DestinationRole } from "@/lib/destination-role";
+
 type PlausibleProps = Record<string, string | number | boolean | undefined | null>;
 
 type PlausibleFn = (
