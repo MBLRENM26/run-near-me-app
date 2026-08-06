@@ -1,5 +1,9 @@
 # L1 — read-only public-access dependency inventory for `public.events`
 
+> Historical L1 audit snapshot. Use `docs/renm/RENM-CURRENT.md` for current
+> operating state; later L3A/L3B packages and application head `9558063`
+> supersede this file's baseline and proposed migration status.
+
 Read-only audit. No mutation of any kind occurred (see §10).
 
 ## 0. Context mismatch finding (reported, not repaired)

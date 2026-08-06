@@ -30,7 +30,7 @@ The test is not whether organisers politely like directories or the general idea
 
 ### 2.2 Cohort construction
 
-Build the first cohort from occurrences with audited custom `Entry Click` evidence. Do not sum custom `Entry Click` and automatic outbound-click events. Until the custom event audit is complete, mark click figures `provisional` and show them as ranges or exact observed counts with the audit limitation.
+Build the first cohort from occurrences with audited historical custom `Entry Click` evidence. Do not sum that series with Plausible automatic outbound events or the replacement `Outbound Click` series introduced at application head `9558063`. New observations use `Outbound Click` and its conservative analytics-only `destination_role`; historical figures remain labelled with their original event definition and limitations.
 
 Stratify the reachable cohort rather than selecting only the largest accounts:
 
@@ -346,4 +346,3 @@ Reasoned inference:
 > Stop after the report. Do not implement the projection, migrate consumers or revoke any access. Separate sourced repository/database facts, observed runtime evidence and inference.
 
 Mike must approve or amend this prompt before it is sent to Lovable.
-

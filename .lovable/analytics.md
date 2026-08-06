@@ -16,7 +16,7 @@ once the goal has been added and an event has fired.
 
 | Goal name | Fired from | Props |
 |---|---|---|
-| `Entry Click` | Primary CTA on `/events/$slug`; past-event "Visit organiser website" link in the same route | `slug`, `region`, `link_type` (`entry` \| `organiser-site` \| `organiser-other`), `proximity` (`future` \| `today` \| `imminent` \| `past`), `event_name`, `distance`, `discipline`, `entry_domain` (hostname of outbound URL, `www.` stripped; omitted when the URL is unparseable — register under Plausible → Site Settings → Custom Properties to make it filterable) |
+| `Outbound Click` | Primary, secondary and useful outbound CTAs on `/events/$slug`; past-event "Visit organiser website" link in the same route | `slug`, `region`, `link_type` (`entry` \| `organiser-site` \| `organiser-other`), `proximity` (`future` \| `today` \| `imminent` \| `past`), `event_name`, `distance`, `discipline`, `entry_domain` (hostname of outbound URL, `www.` stripped), `destination_role` (`booking_destination` \| `ballot_waitlist` \| `official_information` \| `unknown`) |
 | `Club Website Click` | Club page CTA (`/running-clubs/$slug`) | `slug`, `host`, `kind` (link-trust kind) |
 | `Club Page View` | Club page mount | `slug`, `region`, `is_claimed`, `governing_body` |
 | `Claim Interest` | "Claim this event" CTA on `/events/$slug` | `slug`, `region` |
@@ -27,24 +27,25 @@ once the goal has been added and an event has fired.
 | `Search Result Click` | Click on a result row on `/search` | `query`, `slug`, `position`, `results_count` |
 | `Form: Submission` | List-your-event form + club claim form submit | `form` (`list-your-event` \| `club_claim`), `slug` (claim only) |
 
-## Conversion model
+## Outbound-handoff model
 
-The runner-conversion funnel is:
+The runner outbound-handoff funnel is:
 
 ```text
-pageview (/events/<slug>)  →  Entry Click (link_type = "entry")
+pageview (/events/<slug>)  →  Outbound Click
 ```
 
-Both events carry `slug` (Entry Click as a prop, pageview as the URL), so
-once `Entry Click` is registered as a goal you can break conversion rate
-down per event in Plausible. Filter on `link_type=entry` for the strictest
-read of "this runner went to enter a race"; include `organiser-site` /
-`organiser-other` for the looser "intent" funnel.
+Both events carry `slug` (`Outbound Click` as a prop, pageview as the URL), so
+once `Outbound Click` is registered as a goal you can break the outbound
+handoff rate down per event in Plausible. Use `destination_role` to distinguish
+recognised booking destinations, explicit ballot/waitlist destinations,
+official-information visits and unknown destinations. None of these clicks is
+evidence of a completed entry, registration, revenue or organiser value.
 
 Search funnel:
 
 ```text
-pageview (/search?q=...)  →  Search Performed  →  Search Result Click  →  Entry Click
+pageview (/search?q=...)  →  Search Performed  →  Search Result Click  →  Outbound Click
 ```
 
 `Search Result Click` and `Search Performed` share `query` + `results_count`,
@@ -64,3 +65,6 @@ so search→click CTR is one filtered chart in Plausible.
   adding a goal in the Plausible dashboard.
 - **Don't put PII in props.** No email, no IP, no full postcode (the
   `Location Set` event records the *method*, not the value).
+- **Do not combine the historical `Entry Click` series with `Outbound Click`.**
+  The new event starts a separate series at application head `9558063`; no
+  historical data is backfilled or reclassified.

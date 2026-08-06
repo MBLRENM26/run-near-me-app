@@ -1,8 +1,8 @@
 # RENM — Current Operating Kernel
 
-Status: canonical short-form context for Mike, Codex and Lovable. Detailed contracts remain authoritative through the links below. Generated Lovable context must come from this file; do not maintain a separate handwritten copy.
+Status: canonical short-form context for Mike, Codex and Lovable. Linked contracts retain authority; Lovable context is generated from this file.
 
-Last reviewed: 3 August 2026
+Last reviewed: 5 August 2026
 
 ## Authority order
 
@@ -21,13 +21,12 @@ Conflicts must be raised. Never silently combine a superseded fact with a curren
 
 ## Verified operating baseline
 
-- Production baseline commit: `c1cdc4a7e9ae4d16766125f7e56509affe6b79d4`.
+- Verified app head: `955806328cf0e7d3caa804808d89cae8557c7604`; local and origin `main` matched on 5 August.
+- Containment baseline: `c1cdc4a7e9ae4d16766125f7e56509affe6b79d4`; later acceptance is recorded below.
 - Full TypeScript check clean, 31 tests passing and production build passing at that baseline.
-- Reminder cron job 6 is inactive.
-- Reminder HTTP sending is fail-closed with `503` unless `REMINDER_SENDING_ENABLED` is exactly `true`.
-- No automated reminder emails were sent.
-- Twenty-five reminder requests are stored, including Mike's controlled test. At the 3 August verification, one was unseen and none had `reminder_sent_at`. They demonstrate behavioural demand for a return channel, not fulfilment, return visits, entries or organiser value.
-- The live form remains unchanged under temporary manual monitoring. Valid new requests may be handled only through the approved record-level manual controls.
+- Reminder job 6 is inactive; HTTP fulfilment fails closed with `503` unless `REMINDER_SENDING_ENABLED=true`. No scheduled reminder was sent; first requests do receive an automatic transactional confirmation.
+- Twenty-five requests are stored; none is unseen or marked sent. The newest is the 2 August controlled test: demand evidence only, not fulfilment, entries or value.
+- Confirmation-copy hotfix `92123320...` is live (38 tests/build passed). The form remains under approved record-level manual monitoring.
 
 ## Demonstrated product and open hypothesis
 
@@ -37,7 +36,7 @@ Demonstrated journey:
 
 RENM has observed occurrence-page traffic followed by outbound hand-offs. Outbound clicks are not registrations, revenue or organiser value.
 
-The next commercial validation is manual: use audited outbound evidence, resolve the correct organiser/contact role, apply the private prospectability gate, ask whether traffic is recognised or useful, obtain corrections, test return behaviour and seek a bounded attribution/distribution test. If broad properly targeted outreach produces no recognition, correction, return behaviour or testable value, park the organiser commercial thesis.
+Next validation is an attributed distribution test. The 90d review found 832 strict-labelled visitors, but Adnams and Meteor are not clean entry. Cock Crow was not contacted because it cannot observe third-party booking. On 4 August Mike sent RunEvents one no-cost featured-race pilot approach; outcome pending, with no entry, revenue or value claim.
 
 The wider canonical organiser/series/occurrence and authorised change-distribution concept remains plausible but unvalidated.
 
@@ -56,20 +55,19 @@ The wider canonical organiser/series/occurrence and authorised change-distributi
 ## Current work state
 
 - K1 knowledge control: complete. This kernel, hashed manifest and generated ledger govern the local canon; governed documents and deterministic Project Knowledge are mirrored to Lovable.
-- L1 public-access dependency inventory: complete, subject to reconciliation. Verified correction: the live `events` table has 41 columns; anonymous access can select 38, while `source`, `source_url` and `organiser_club_id` are withheld.
-- L2 read-only inventory: complete. Snapshot counts were 2,972 structural and 2,522 link-aware under current logic; the dated, non-estimated candidate with proposed `duplicate_of IS NULL` was 1,552 and 1,114 respectively. A six-row earlier-snapshot difference remains unresolved.
-- L2 found that the 5,368 headline is not a discovery count; surfaces and date authorities disagree; ordinary discovery admits undated/estimated rows; terminal lifecycle state lacks an owner. These are findings, not approved changes.
-- L3A projection: complete and live. `events_public_v1` exposes 25 approved columns for ACTIVE rows only; it adds no date, canonical, link, quarantine, terminal, indexability or destination rule. It is now used by the regional discovery route only.
-- L3A acceptance passed: 5,406 view/ACTIVE rows, two-way equality, 38 ACTIVE mapped rows retained, public roles SELECT-only, base grants/RLS and legacy view unchanged, and no event-data change.
-- L3A-R remediation: complete. Migration `20260802152800_2fb6038d-7977-42a3-bd97-955eb02fb163.sql` set `security_invoker=true` while retaining `security_barrier=true`; all public views now use invoker semantics and linter `0010` is clear. Lovable head: `e643fa8cff674d2420a182207ddb0e99fe8eaaf6`.
-- The scanner entry remains labelled ignored because Lovable could not unignore it; the live condition is fixed. The separate unauthenticated MCP finding remains active and untouched.
-- L3B-1 regional migration: complete at Lovable head `624c65d9991c7e1b20087c9eb9f3e4005b193b52`. Only the region route moved to `events_public_v1`; generated view types and one regression test were added. TypeScript, 35 tests and build passed; all 14 ordered-ID sets matched (2,933 each); three regional smoke pages had no permission errors.
-- L3B-1 required correction because Lovable used internal head `2135286...`, not authoritative `a32a2ea...`. Final cumulative diff is limited to route, generated types, test and report; dependency files match `a32a2ea...`. The divergence cause is unresolved.
+- L1 is complete subject to reconciliation: live `events` has 41 columns; anonymous access has 38, excluding `source`, `source_url` and `organiser_club_id`.
+- L2 is complete: 2,972 structural/2,522 link-aware rows; dated non-estimated candidates with proposed non-duplicate gating were 1,552/1,114. A six-row snapshot difference remains. The 5,368 headline is not a discovery count; surface/date rules disagree, undated/estimated rows enter discovery and terminal state lacks an owner. No change is approved by these findings.
+- L3A is live: `events_public_v1` exposes 25 ACTIVE-only columns without adding discovery/lifecycle rules. Acceptance showed 5,406 equal rows, retained 38 mapped ACTIVE rows, SELECT-only public roles and no data/base-grant/RLS/legacy-view change.
+- L3A-R migration `20260802152800_...sql` set invoker semantics with the barrier retained; linter `0010` is clear (`e643fa8...`). The scanner label remains ignored although fixed; unauthenticated MCP remains open.
+- L3B-1 region is complete at `624c65d9...`; tests/build and 14 ordered-ID comparisons passed after correcting Lovable's baseline divergence.
+- L3B-2 homepage is complete at `659f7756...`; only `src/routes/index.tsx` changed, and production retained all nine cards in order without errors.
+- L3B-3 county is present at `4ec4d950...`: `county.functions.ts` uses the view without the redundant ACTIVE predicate. It lacks a separate acceptance report and regression test; claim only verified app state.
+- At `9558063`, event-detail analytics changed from `Entry Click` to `Outbound Click` with conservative analytics-only `destination_role`. Historical data stays separate; a click is only a hand-off. This is not public/data-layer L6 and changes no CTA, trust or discovery rule.
 - No L3C base-grant hardening or L4 eligibility implementation has been approved. L3B must continue, if approved, one separately bounded consumer group at a time; every prompt returns to Mike before sending.
 
 ## Phase 1 order
 
-1. Continue L3B incremental migration of remaining anonymous/publishable consumers to the projection and separately designed safe functions; L3B-1 regional discovery is complete.
+1. Continue L3B only when proportionate. Region/homepage are complete; county is present but lacks separate acceptance and regression evidence. Use short prompts plus independent diff/live checks.
 2. L3C base-table grant/RLS redesign only after zero required public dependencies are proven. The invoker view cannot survive full underlying grant revocation by itself; choose separately between exact 25-column base grants plus an ACTIVE RLS policy or another approved server-side boundary.
 3. L4 one shared future/canonical discovery eligibility rule.
 4. L5 reversible quarantine of exact approved test records and reviewed duplicate batches.
@@ -81,7 +79,7 @@ Kent and South London remain offline throughout these packages.
 
 ## Evidence discipline
 
-Every material statement is labelled as:
+Label material statements as:
 
 - **Sourced fact:** supported by a named reproducible source.
 - **Observed evidence:** directly observed in a defined period with method and limitations.
@@ -97,10 +95,10 @@ Structural package acceptance is not production promotion. Stored, current/live,
 - D44 is superseded by D47: a sender and scheduled job existed despite earlier understanding.
 - D46: temporary manual monitoring only, with verified facts, purpose, unsubscribe and private logging.
 - D48/D49: job 6 remains inactive and HTTP sending remains fail-closed.
-- D50 recorded 24 stored requests as behavioural evidence only; the current observed count is 25, with one unseen and none marked sent.
+- D50 recorded 24 stored requests as behavioural evidence only; the current observed count is 25, with none unseen and none marked sent.
 - D53: the containment release is the operating baseline.
 
-The generated ledger is a machine-readable index of lifecycle state; the decision text remains canonical in the Decision Register.
+The ledger indexes lifecycle state; Decision Register text remains canonical.
 
 ## Update protocol
 
