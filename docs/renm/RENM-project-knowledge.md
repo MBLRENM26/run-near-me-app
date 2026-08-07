@@ -2,19 +2,31 @@
 
 Status: current master context. Installed in Lovable during Phase 0; subsequent operational decisions remain governed by the decision register.
 
-## Context-reset status — 25 July 2026
+## Historical context-reset evidence — 25 July 2026
 
-- Lovable and production have not yet received this revised knowledge contract or any regional research package.
+- This section records the pre-Phase-0 evidence state. Phase 0 knowledge control has since been installed; the current operating kernel governs immediate state.
 - Kent & Medway and South London have demonstrated that external research can recover organisers, portfolios, series, occurrence dates, entry destinations and relationship roles that are absent or poorly connected in the live dataset. They also demonstrated that agent-generated PASS reports are insufficient without independent cross-table validation.
 - The accepted Kent candidate source is `kent-medway-candidate-evidence-reviewed-normalised-final`. It contains 71 organisations, 64 series, 57 dated occurrences, 110 typed relationship edges, 222 destinations and 224 evidence observations/raw claims. All 57 occurrences were reviewed for entry state: 21 open, 23 closed, 11 unknown, one sold out and one opening later. The 11 unknowns are deliberate and carry reasons/recheck instructions.
 - Kent’s targeted 27 collision decisions comprise 23 identity merges and four relationship-only corrections. They are operationally resolved but retain 27 explicit residual uncertainties. A separate 120 rows in the wider conflict queue remain open; the collision pilot did not resolve every research conflict.
 - The accepted South London corrected package remains candidate-stage and structurally sound, with clean relationship integrity and cross-region identity alignment. It has not received the same entry-state verification pass as Kent; its occurrence entry states remain unknown and two high-confidence inaccessible evidence items remain review work.
 - Neither package has passed RENM production G2/G3/G4 promotion or reconciliation against the live database. Structural package acceptance means the evidence can enter staging/reconciliation, not discovery.
-- The next strategy thread will synthesise Reddit runner-problem research, competition, moat, monetisation and the founder-event experiment before this draft is installed in Lovable. No further build should be authorised from market research alone without reconciling it with the trust/data contract.
+- This evidence did not authorise production import or a broad organiser product. Those boundaries remain unless a later explicit decision changes them.
+
+## Operating product reset — 7 August 2026
+
+RENM will run a 120–150 day evidence experiment focused on trusted UK race intelligence. The operating order is: contract the scope, rectify canonical and synchronisation defects, ship a bounded interactive Race Explorer, add authorised direct data, distribute data-led content and decide from fixed continuation signals whether to continue, narrow or stop major investment.
+
+OpenRouter is the interaction reference, not a visual template or business-model copy. RENM should turn a fragmented catalogue into an explorable decision surface with persistent search, comparable records, detailed metrics, connected editions, results state and visible source freshness. Existing indexable occurrence and landing pages remain acquisition routes into that experience.
+
+The preferred data backbone is governing/licensing bodies, registration platforms, timing/results providers and organisers under explicit use terms. Open-licensed infrastructure may enrich it. Strava and Garmin are optional runner-authorised enrichment or course-delivery channels; neither may become an unauthorised substitute for the canonical race catalogue.
+
+Every implementation remains bounded, reversible and separately approved. The reset approves strategy, documentation and preparation—not an unreviewed application, schema, production-data, external-integration or deployment mutation.
+
+Lovable is the validation/incubation platform for this evidence window, not an assumed permanent home. GitHub remains source of truth; schema migrations, canonical data, integration boundaries, analytics definitions and configuration must remain reproducible and portable. Do not migrate pre-emptively. Assess deliberate platform graduation only when sustained traffic, automated feeds/background work, SEO/performance, CI/CD, observability, security, cost or deployment constraints demonstrate the need; frontend/hosting may graduate without replacing Supabase/Postgres.
 
 ## Product identity
 
-RunningEventsNearMe (RENM) is a trusted UK race-intelligence, discovery and entry-routing service. It resolves fragmented event information into one canonical public view and directs runners to the correct next action. Its ambition is to become the most trusted, useful and complete public map of UK running opportunities, beginning with races and extending through organisers, clubs and related running infrastructure.
+RunningEventsNearMe (RENM) is a trusted UK race-intelligence, discovery, comparison and action-routing service. It resolves fragmented event information into canonical series, editions, races, destinations and result states, then presents them as one explorable public decision layer. Its ambition is to become the most trusted, useful and complete public map of UK running opportunities, beginning with races and their results history.
 
 RENM helps runners discover events, understand their current state and leave for the verified official information, entry or waitlist destination. The platform does not ordinarily sell entries, take payment or replace organisers, governing bodies, parkrun or booking platforms. Any event related through ownership or control to RENM or its operator must be disclosed and receive no unlabelled ranking, trust or data-quality advantage.
 
@@ -50,6 +62,10 @@ Successfully resolved intent includes a verified activation of a booking destina
 - LLMs, search engines, publishers and applications are distribution channels or data consumers; machine visibility must not compromise usefulness or truth for runners.
 - Mobile is the primary journey.
 - Changes are narrow, phased, measurable and reversible. Data repair precedes presentation claims.
+- Core data and product rules must not exist only in platform-specific prompts or opaque workflows; successful validation must not force a panicked rewrite.
+- No partner feed is accepted without stable identity, update semantics, display/storage rights, attribution, correction and termination treatment.
+- Public availability alone does not grant permission to warehouse named runner results; begin with authoritative result state, links and permitted aggregates.
+- Social and video output must be anchored to RENM data, deep-linked to a useful product journey and measured separately from vanity reach.
 - External research agents and regional sweeps produce candidate evidence only. Their entities, relationships, facts and destinations cannot enter canonical or public state until they pass the same controlled schema, global identity, referential-integrity, evidence and visibility gates as every other source.
 
 ## Canonical data model
@@ -58,12 +74,16 @@ The real-world entity model is:
 
 - **Organiser:** the canonical owner or operator where one can be identified.
 - **Series:** the stable identity shared by recurring editions or a branded multi-event family.
-- **Occurrence:** one event at a particular date and place. Public discovery and “live” counts operate on occurrences.
+- **Occurrence/edition:** one event at a particular date and place. Public discovery and “live” counts operate on occurrences.
+- **Race/distance:** a separately comparable race within an occurrence, with its own distance, start, cut-off, entry offer and result coverage where supported.
+- **Course:** the edition/race-specific route, surface, elevation, certification and practical course data, with provenance and version state.
+- **Result set:** the official result publication for one occurrence/race, beginning with provider, state, destination, coverage and permitted aggregates.
+- **Source record:** the partner/feed observation and stable source identity that supports claims without becoming a duplicate public occurrence.
 - **Evidence:** private observations supporting identity, date, venue, status, links and other fields.
 - **Destination:** a typed public link for official information, entry, waitlist or organiser context, with verification and freshness state.
 - **Identity endpoint:** an organiser-controlled website, social profile, governing-body/club profile or other channel used to resolve the same real-world organisation across the fragmented web.
 
-A source row is evidence, not automatically a separate public event. Multiple source rows describing the same occurrence must converge on one canonical occurrence.
+A source row is evidence, not automatically a separate public event. Multiple source rows describing the same occurrence must converge on one canonical occurrence. The target hierarchy is `series → occurrence/edition → race/distance → course, entry offer, result set and source records`.
 
 Canonical identifiers are global and stable across regions, sources and research runs. A graph relationship is one unique typed edge between canonical entities and may have many supporting evidence observations; repeated evidence must not create repeated edges. Programme/recurrence rules, series and dated occurrences are distinct concepts. Dates contain dates, not schedule prose.
 
@@ -201,6 +221,8 @@ Supporting:
 - Organic landing-page quality and return usage.
 - Attributable organiser portfolio views, corrections, claims and commercial-funnel outcomes.
 - AI-referred visits, resolved intent and sampled citation share; citations without runner or partner value remain secondary.
+
+For the 120–150 day reset, PX1 fixes the numeric baseline and exact definitions before product exposure. The PX5 decision considers traffic trajectory, organic deep-page demand, repeat/results behaviour, source freshness, unresolved conflicts, partner adoption and attributable destination actions together. Approximately three times the current monthly visitor baseline is a useful ambition, not a licence to buy or manufacture low-quality traffic. Thresholds are not moved retrospectively to protect the project from a negative result.
 
 Traffic alone is not proof of trust or completeness.
 

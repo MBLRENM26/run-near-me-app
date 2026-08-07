@@ -22,35 +22,35 @@
       "path": "docs/current/RENM-CURRENT.md",
       "status": "current",
       "role": "immediate operating state and Lovable context source",
-      "sha256": "a4ad654591be787484b7dfc79232c17232b5cf05607ac44fc233ccd626e2f050"
+      "sha256": "521750a95a00f4ab16213c24aeca51fdec4bdbf133bf1526f970c576ab0226b4"
     },
     {
       "id": "project_knowledge",
       "path": "docs/current/RENM-project-knowledge.md",
       "status": "current",
       "role": "product and operating doctrine",
-      "sha256": "34999758d126009e5f59c3889d9aa1a0ad8e96d6a8aa9633ad3de2c80f1728b8"
+      "sha256": "b764a349faf0e00cb9f6975a309a8e1ad20912f120504c4ce7fcf653d447af21"
     },
     {
       "id": "data_lifecycle_contract",
       "path": "docs/current/RENM-data-lifecycle-contract.md",
       "status": "current",
       "role": "enforceable data, evidence, visibility and lifecycle behaviour",
-      "sha256": "3dcde80741d2a3122cc9a1e9f688c3e4dd4004b9ed9e048755fbee23a4397f96"
+      "sha256": "9216fe446ae0fb05797e256aa23f05fca3f5d3ca6c24e7867a8cf8e4465bae7e"
     },
     {
       "id": "decision_register",
       "path": "docs/current/RENM-decision-register.md",
       "status": "current",
       "role": "canonical decision text and unresolved questions",
-      "sha256": "7a1d334834faaab536981f5d679f28e3582262cf809a1c2c61fde1e09cd639d6"
+      "sha256": "90eede41a4466d17773cea4c3b15c8a1c24dc3207b1df7215b652297e21f9311"
     },
     {
       "id": "phased_build_brief",
       "path": "docs/current/RENM-phased-build-brief.md",
       "status": "current",
       "role": "approval-gated implementation sequence",
-      "sha256": "d392ff4b52aa6224eb7c055332b6ceae152af9bad18329170ba72558521ec066"
+      "sha256": "6cbf8511f1b3ec3d15fa6e1e6be6da8f0d423727b586b99c560800449bb77325"
     },
     {
       "id": "next_thread_handover",
@@ -128,6 +128,13 @@
       "status": "completed_production_consumer_prerequisite",
       "role": "national distance pagination defect evidence, deterministic-order stabilization and production acceptance",
       "sha256": "155ecefc93dc4a9d05684a89227ffc593b676cf60307801b243e69329d6ca347"
+    },
+    {
+      "id": "interactive_race_explorer_product_reset",
+      "path": "docs/current/RENM-interactive-race-explorer-product-reset-2026-08-07.md",
+      "status": "approved_operating_product_reset",
+      "role": "120–150 day race-intelligence experiment, partnership hierarchy, Explorer MVP, results boundary and PX delivery order",
+      "sha256": "d230158c2e409f3a7695c9a3332db3d8159a5bafd9a7bff1bf664530add865fb"
     },
     {
       "id": "organiser_validation_preflight_2026_08_04",
