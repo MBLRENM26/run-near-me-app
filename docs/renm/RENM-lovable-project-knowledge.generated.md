@@ -4,7 +4,7 @@
 
 Status: canonical short-form context for Mike, Codex and Lovable. Linked contracts retain authority; Lovable context is generated from this file.
 
-Last reviewed: 5 August 2026
+Last reviewed: 7 August 2026
 
 ## Authority order
 
@@ -23,7 +23,7 @@ Conflicts must be raised. Never silently combine a superseded fact with a curren
 
 ## Verified operating baseline
 
-- Verified app head: `955806328cf0e7d3caa804808d89cae8557c7604`; local and origin `main` matched on 5 August.
+- Verified merged app head: `6a360e20c17af8cc31c9bced07d28a35b4717d14`; local and origin `main` matched at the start of the 7 August L3B-4 run.
 - Containment baseline: `c1cdc4a7e9ae4d16766125f7e56509affe6b79d4`; later acceptance is recorded below.
 - Full TypeScript check clean, 31 tests passing and production build passing at that baseline.
 - Reminder job 6 is inactive; HTTP fulfilment fails closed with `503` unless `REMINDER_SENDING_ENABLED=true`. No scheduled reminder was sent; first requests do receive an automatic transactional confirmation.
@@ -64,12 +64,13 @@ The wider canonical organiser/series/occurrence and authorised change-distributi
 - L3B-1 region is complete at `624c65d9...`; tests/build and 14 ordered-ID comparisons passed after correcting Lovable's baseline divergence.
 - L3B-2 homepage is complete at `659f7756...`; only `src/routes/index.tsx` changed, and production retained all nine cards in order without errors.
 - L3B-3 county is complete: `county.functions.ts` uses the view without the redundant ACTIVE predicate; the dedicated projection regression passed 4/4, the full suite passed 49/49, TypeScript and production build passed, and representative London, Devon and West Yorkshire pages rendered without console errors. Acceptance is recorded in `RENM-L3B3-county-consumer-migration-acceptance-2026-08-07.md`.
+- L3B-4 city implementation is locally verified and pending merge/publish/live acceptance: both the city-page and sitemap-count queries use the view without the redundant ACTIVE predicate. Read-only production-data comparison found exact ordered-ID equality for all 40 configured cities, exact equality across 2,831 bulk eligible-coordinate rows and identical 39-city sitemap membership/counts. The dedicated regression passed 4/4, the full suite passed 53/53, TypeScript and the isolated production build passed. Evidence is recorded in `RENM-L3B4-city-consumer-migration-acceptance-2026-08-07.md`.
 - At `9558063`, event-detail analytics changed from `Entry Click` to `Outbound Click` with conservative analytics-only `destination_role`. Historical data stays separate; a click is only a hand-off. This is not public/data-layer L6 and changes no CTA, trust or discovery rule.
 - No L3C base-grant hardening or L4 eligibility implementation has been approved. L3B must continue, if approved, one separately bounded consumer group at a time; every prompt returns to Mike before sending.
 
 ## Phase 1 order
 
-1. Continue L3B only when proportionate. Region, homepage and county are complete. Use short prompts plus independent diff/live checks for any separately approved consumer group.
+1. Finish L3B-4 city merge/publish/live acceptance. Region, homepage and county are complete; city is locally verified. Continue any later L3B work only when proportionate, one separately approved consumer group at a time.
 2. L3C base-table grant/RLS redesign only after zero required public dependencies are proven. The invoker view cannot survive full underlying grant revocation by itself; choose separately between exact 25-column base grants plus an ACTIVE RLS policy or another approved server-side boundary.
 3. L4 one shared future/canonical discovery eligibility rule.
 4. L5 reversible quarantine of exact approved test records and reviewed duplicate batches.

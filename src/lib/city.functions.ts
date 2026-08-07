@@ -70,9 +70,8 @@ async function fetchEventsNearCity(city: CityConfig): Promise<{
   const pageSize = 1000;
   for (let from = 0; ; from += pageSize) {
     const { data: rows, error } = await supabaseAdmin
-      .from("events")
+      .from("events_public_v1")
       .select(`${DISCOVERY_EVENT_COLUMNS}, lat, lng`)
-      .eq("status", "ACTIVE")
       .gte("lat", minLat)
       .lte("lat", maxLat)
       .gte("lng", minLng)
@@ -158,9 +157,8 @@ export const getCityEventCounts = createServerFn({ method: "GET" }).handler(
     const pageSize = 1000;
     for (let from = 0; ; from += pageSize) {
       const { data: rows, error } = await supabaseAdmin
-        .from("events")
+        .from("events_public_v1")
         .select(`${DISCOVERY_EVENT_COLUMNS}, lat, lng`)
-        .eq("status", "ACTIVE")
         .not("lat", "is", null)
         .not("lng", "is", null)
         .or(`sort_date.gte.${today},sort_date.is.null`)
