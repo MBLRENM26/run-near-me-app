@@ -62,13 +62,14 @@ The wider canonical organiser/series/occurrence and authorised change-distributi
 - L3B-1 region is complete at `624c65d9...`; tests/build and 14 ordered-ID comparisons passed after correcting Lovable's baseline divergence.
 - L3B-2 homepage is complete at `659f7756...`; only `src/routes/index.tsx` changed, and production retained all nine cards in order without errors.
 - L3B-3 county is complete: `county.functions.ts` uses the view without the redundant ACTIVE predicate; the dedicated projection regression passed 4/4, the full suite passed 49/49, TypeScript and production build passed, and representative London, Devon and West Yorkshire pages rendered without console errors. Acceptance is recorded in `RENM-L3B3-county-consumer-migration-acceptance-2026-08-07.md`.
-- L3B-4 city is complete at `f05895a...`: page and sitemap queries use the view without redundant ACTIVE filters. All 40 city ordered-ID comparisons and the 2,831-row bulk comparison matched; sitemap membership/counts matched for 39 eligible cities. Regression 4/4, full suite 53/53, TypeScript and build passed. Live London, Manchester and Aberdeen rendered 248, 100 and 11 matching cards/links with zero console errors; the sitemap retained 39 cities and excluded Dundee. See `RENM-L3B4-city-consumer-migration-acceptance-2026-08-07.md`.
+- L3B-4 city is complete at `f05895a...`: page/sitemap queries use the view; 40 city and 2,831-row comparisons matched. Regression 4/4, full suite 53/53, TypeScript/build and representative live pages passed; the sitemap retained 39 cities and excluded Dundee. See `RENM-L3B4-city-consumer-migration-acceptance-2026-08-07.md`.
+- L3B-5A distance pagination stabilization is locally verified pending promotion: an `id` tie-breaker eliminates skipped/duplicate page-boundary rows and yields 2,904 unique rows. No view migration; tests, TypeScript and build passed. See `RENM-L3B5A-distance-pagination-stabilization-acceptance-2026-08-07.md`.
 - At `9558063`, event-detail analytics changed from `Entry Click` to `Outbound Click` with conservative analytics-only `destination_role`. Historical data stays separate; a click is only a hand-off. This is not public/data-layer L6 and changes no CTA, trust or discovery rule.
 - No L3C base-grant hardening or L4 eligibility implementation has been approved. L3B must continue, if approved, one separately bounded consumer group at a time; every prompt returns to Mike before sending.
 
 ## Phase 1 order
 
-1. Continue L3B only when proportionate. Region, homepage, county and city are complete. Migrate any later consumer group only as a separately approved bounded package.
+1. Finish L3B-5A distance stabilization acceptance, then consider L3B-5B view migration separately. Region, homepage, county and city are complete; every later consumer remains separately approved.
 2. L3C base-table grant/RLS redesign only after zero required public dependencies are proven. The invoker view cannot survive full underlying grant revocation by itself; choose separately between exact 25-column base grants plus an ACTIVE RLS policy or another approved server-side boundary.
 3. L4 one shared future/canonical discovery eligibility rule.
 4. L5 reversible quarantine of exact approved test records and reviewed duplicate batches.

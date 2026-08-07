@@ -286,6 +286,7 @@ export const getEventsByDistance = createServerFn({ method: "GET" })
         .or(`sort_date.gte.${today},sort_date.is.null`)
         .or(UK_BOUNDS_OR_NULL)
         .order("sort_date", { ascending: true, nullsFirst: false })
+        .order("id", { ascending: true })
         .range(from, to),
     );
     const all: DistanceEvent[] = [];
