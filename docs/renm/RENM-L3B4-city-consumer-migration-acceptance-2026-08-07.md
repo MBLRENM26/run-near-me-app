@@ -1,7 +1,7 @@
 # RENM L3B-4 — City discovery consumer migration acceptance
 
 Date: 7 August 2026
-Status: implementation verified; merge, publish and live acceptance pending
+Status: completed and independently verified in production
 Scope: migrate only the city landing-page and city sitemap-count reads from `public.events` to `public.events_public_v1`.
 
 ## 1. Starting state and approved boundary
@@ -57,15 +57,23 @@ No dependency installation or package-tree modification was performed in the One
 - No eligibility, lifecycle, duplicate, link-trust, date, distance, radius, sitemap threshold, reminder or analytics rule changed.
 - No package or lockfile changed.
 - No other consumer was migrated.
-- This document does not claim production acceptance until the change is merged, published and checked live.
+- Production acceptance is limited to the merged package and observations recorded below; it does not approve another consumer migration.
 
-## 6. Remaining acceptance
+## 6. Merge and live production acceptance
 
-1. Review and commit only the bounded source, regression and governance files.
-2. Push a `codex/` branch and merge through GitHub.
-3. Republish the resulting GitHub merge in Lovable.
-4. Check representative city pages and sitemap behaviour for rendering or permission errors.
-5. Record the merged head and live observations, then mark L3B-4 complete.
+GitHub PR #3 was squash-merged to `main` as `f05895a94ebb24371cd161ca74ce537466e4d34e`. Mike then republished that GitHub merge through Lovable.
+
+Read-only production browser checks on 7 August 2026 observed:
+
+| City page | Headline count | Rendered event cards | Detail links | Console errors |
+|---|---:|---:|---:|---:|
+| London | 248 | 248 | 248 | 0 |
+| Manchester | 100 | 100 | 100 | 0 |
+| Aberdeen | 11 | 11 | 11 | 0 |
+
+No visible error, failed-load message, base-permission error or missing-view error was observed. The live sitemap contained exactly 39 distinct city URLs, included London, Manchester and Aberdeen, and excluded Dundee as expected because it remained below `CITY_MIN_EVENTS = 10`.
+
+These observations confirm that representative high-, medium- and near-threshold city pages render through the published migration and that live sitemap membership matches the preflight result. Together with the exact database comparisons in §2, L3B-4 is accepted as complete.
 
 ## 7. Rollback
 
