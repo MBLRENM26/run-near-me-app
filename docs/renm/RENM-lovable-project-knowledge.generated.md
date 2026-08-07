@@ -63,13 +63,13 @@ The wider canonical organiser/series/occurrence and authorised change-distributi
 - L3A-R migration `20260802152800_...sql` set invoker semantics with the barrier retained; linter `0010` is clear (`e643fa8...`). The scanner label remains ignored although fixed; unauthenticated MCP remains open.
 - L3B-1 region is complete at `624c65d9...`; tests/build and 14 ordered-ID comparisons passed after correcting Lovable's baseline divergence.
 - L3B-2 homepage is complete at `659f7756...`; only `src/routes/index.tsx` changed, and production retained all nine cards in order without errors.
-- L3B-3 county is present at `4ec4d950...`: `county.functions.ts` uses the view without the redundant ACTIVE predicate. It lacks a separate acceptance report and regression test; claim only verified app state.
+- L3B-3 county is complete: `county.functions.ts` uses the view without the redundant ACTIVE predicate; the dedicated projection regression passed 4/4, the full suite passed 49/49, TypeScript and production build passed, and representative London, Devon and West Yorkshire pages rendered without console errors. Acceptance is recorded in `RENM-L3B3-county-consumer-migration-acceptance-2026-08-07.md`.
 - At `9558063`, event-detail analytics changed from `Entry Click` to `Outbound Click` with conservative analytics-only `destination_role`. Historical data stays separate; a click is only a hand-off. This is not public/data-layer L6 and changes no CTA, trust or discovery rule.
 - No L3C base-grant hardening or L4 eligibility implementation has been approved. L3B must continue, if approved, one separately bounded consumer group at a time; every prompt returns to Mike before sending.
 
 ## Phase 1 order
 
-1. Continue L3B only when proportionate. Region/homepage are complete; county is present but lacks separate acceptance and regression evidence. Use short prompts plus independent diff/live checks.
+1. Continue L3B only when proportionate. Region, homepage and county are complete. Use short prompts plus independent diff/live checks for any separately approved consumer group.
 2. L3C base-table grant/RLS redesign only after zero required public dependencies are proven. The invoker view cannot survive full underlying grant revocation by itself; choose separately between exact 25-column base grants plus an ACTIVE RLS policy or another approved server-side boundary.
 3. L4 one shared future/canonical discovery eligibility rule.
 4. L5 reversible quarantine of exact approved test records and reviewed duplicate batches.

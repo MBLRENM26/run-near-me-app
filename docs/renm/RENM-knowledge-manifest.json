@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "last_reviewed": "2026-08-04",
+  "last_reviewed": "2026-08-07",
   "current_kernel": "docs/current/RENM-CURRENT.md",
   "lovable_project_knowledge": "docs/current/RENM-lovable-project-knowledge.generated.md",
   "decision_register": "docs/current/RENM-decision-register.md",
@@ -22,7 +22,7 @@
       "path": "docs/current/RENM-CURRENT.md",
       "status": "current",
       "role": "immediate operating state and Lovable context source",
-      "sha256": "0fb8ad4004ab516725a179e773d4c39f74c851e2d33ccdec98262989878d102c"
+      "sha256": "9606f10b5beb2577ceb8a22fd54f9827da979eceb76b438af93dfca0bca9ffd1"
     },
     {
       "id": "project_knowledge",
@@ -109,6 +109,13 @@
       "sha256": "c2210f324a523ebb5be24989ab668151fd738ef7c0d860a7f5fbb0c173a9c2c0"
     },
     {
+      "id": "l3b3_county_consumer_migration_acceptance",
+      "path": "docs/current/RENM-L3B3-county-consumer-migration-acceptance-2026-08-07.md",
+      "status": "completed_production_consumer_package",
+      "role": "county discovery migration regression and production acceptance evidence",
+      "sha256": "8c70944e0a9fb421eef2891ff39547ed5a588c3445e368ea6a1418661b1944c5"
+    },
+    {
       "id": "organiser_validation_preflight_2026_08_04",
       "path": "docs/current/RENM-organiser-validation-preflight-2026-08-04.md",
       "status": "completed_read_only_preflight",
@@ -123,5 +130,5 @@
       "sha256": "a3d3a1fdb2ea7ea076778594a857d0903c800ee0c43ef0bb4ff2b8cf748d7fdc"
     }
   ],
-  "hashes_refreshed_for_review_date": "2026-08-04"
+  "hashes_refreshed_for_review_date": "2026-08-07"
 }
