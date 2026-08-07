@@ -22,7 +22,7 @@
       "path": "docs/current/RENM-CURRENT.md",
       "status": "current",
       "role": "immediate operating state and Lovable context source",
-      "sha256": "347651fa2f6ba425e4fab7ccc9dcd2ff98f262f09b09e7c7e0d51390ef83e743"
+      "sha256": "e54a07c3985865f727e9744fb12582588e9dd2f649c4115f974666d3d7177050"
     },
     {
       "id": "project_knowledge",
@@ -121,6 +121,13 @@
       "status": "completed_production_consumer_package",
       "role": "city discovery and sitemap consumer migration equivalence and production acceptance evidence",
       "sha256": "b9f686bcec4ef103a79745ad73eaf42a0b8d3ee985e62513c502b36b4a99d4ed"
+    },
+    {
+      "id": "l3b5a_distance_pagination_stabilization_acceptance",
+      "path": "docs/current/RENM-L3B5A-distance-pagination-stabilization-acceptance-2026-08-07.md",
+      "status": "implementation_verified_pending_production",
+      "role": "national distance pagination defect evidence and deterministic-order stabilization acceptance",
+      "sha256": "630053025e339789358cf2dc131db36d1a99c18fbc3e7219312f8708db130cc6"
     },
     {
       "id": "organiser_validation_preflight_2026_08_04",
