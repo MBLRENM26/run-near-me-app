@@ -22,7 +22,7 @@
       "path": "docs/current/RENM-CURRENT.md",
       "status": "current",
       "role": "immediate operating state and Lovable context source",
-      "sha256": "e54a07c3985865f727e9744fb12582588e9dd2f649c4115f974666d3d7177050"
+      "sha256": "a4ad654591be787484b7dfc79232c17232b5cf05607ac44fc233ccd626e2f050"
     },
     {
       "id": "project_knowledge",
@@ -125,9 +125,9 @@
     {
       "id": "l3b5a_distance_pagination_stabilization_acceptance",
       "path": "docs/current/RENM-L3B5A-distance-pagination-stabilization-acceptance-2026-08-07.md",
-      "status": "implementation_verified_pending_production",
-      "role": "national distance pagination defect evidence and deterministic-order stabilization acceptance",
-      "sha256": "630053025e339789358cf2dc131db36d1a99c18fbc3e7219312f8708db130cc6"
+      "status": "completed_production_consumer_prerequisite",
+      "role": "national distance pagination defect evidence, deterministic-order stabilization and production acceptance",
+      "sha256": "155ecefc93dc4a9d05684a89227ffc593b676cf60307801b243e69329d6ca347"
     },
     {
       "id": "organiser_validation_preflight_2026_08_04",
