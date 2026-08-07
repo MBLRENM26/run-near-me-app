@@ -1,7 +1,7 @@
 # RENM L3B-5A — Distance pagination stabilization acceptance
 
 Date: 7 August 2026
-Status: implementation verified; merge, publish and live acceptance pending
+Status: completed and independently verified in production
 Scope: stabilize pagination in `getEventsByDistance` before any separately approved migration to `events_public_v1`.
 
 ## 1. Starting state and approved boundary
@@ -68,12 +68,21 @@ The 5K total remains 1,159, but 175 events enter and 175 leave the displayed 500
 - Region×distance, its matrix and every other consumer remain untouched.
 - L3B-5B view migration remains unapproved and must use this deterministic baseline.
 
-## 7. Remaining acceptance
+## 7. Merge and live production acceptance
 
-1. Review and merge only the source, regression and governance files.
-2. Republish the GitHub merge through Lovable.
-3. Confirm corrected totals and successful rendering on representative distance pages, with particular attention to the 5K capped list.
-4. Record the merged head and live observations before marking L3B-5A complete.
+GitHub PR #5 was squash-merged to `main` as `17c9916077c0a8353eaf3362926cad28f9afba47`. Mike then republished that GitHub merge through Lovable.
+
+Read-only production browser checks on 7 August 2026 observed:
+
+| Page | Headline total | Rendered cards | Detail links | Console errors |
+|---|---:|---:|---:|---:|
+| 5K | 1,159 | 500 | 500 | 0 |
+| 10K | 390 | 390 | 390 | 0 |
+| Half marathon | 209 | 209 | 209 | 0 |
+| Marathon | 37 | 37 | 37 | 0 |
+| Ultra | 54 | 54 | 54 | 0 |
+
+The corrected totals matched the deterministic preflight. Every expected card had a detail link, the 5K page stopped at its intentional 500-card display cap, and no visible failed-load, permission or query error was observed. L3B-5A is therefore accepted as complete; L3B-5B remains a separate unapproved view migration.
 
 ## 8. Rollback
 
