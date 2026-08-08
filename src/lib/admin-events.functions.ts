@@ -9,6 +9,24 @@ import {
   type DistanceTag,
   type TerrainTag,
 } from "@/lib/event-tags";
+import {
+  buildDuplicateClusters,
+  buildRectificationInventory,
+  type DuplicateCluster,
+  type DuplicateConfidence,
+  type DuplicateKind,
+  type DuplicateRow,
+  type RectificationInventory,
+  type RectificationInventoryRow,
+} from "@/lib/event-rectification";
+
+export type {
+  DuplicateCluster,
+  DuplicateConfidence,
+  DuplicateKind,
+  DuplicateRow,
+  RectificationInventory,
+} from "@/lib/event-rectification";
 
 // Loaded lazily so the server-only session module never enters the client
 // import graph (route components statically import this module).
@@ -646,211 +664,28 @@ function sameSet(a: string[], b: string[]): boolean {
 // filters surface the lower-quality copy. This pair of fns powers an admin
 // UI to find clusters and merge them.
 
-export interface DuplicateRow {
-  id: string;
-  slug: string | null;
-  name: string;
-  date_raw: string | null;
-  sort_date: string | null;
-  region: string | null;
-  town: string | null;
-  distances: string | null;
-  discipline: string | null;
-  source: string | null;
-  source_url: string | null;
-  distance_tags: string[];
-  terrain_tags: string[];
-  is_recurring: boolean;
-}
-
-export type DuplicateConfidence = "high" | "medium" | "low";
-export type DuplicateKind = "duplicate" | "series";
-
-export interface DuplicateCluster {
-  key: string;
-  rows: DuplicateRow[];
-  confidence: DuplicateConfidence;
-  reason: string;
-  kind: DuplicateKind;
-}
-
-function hostOf(url: string | null): string | null {
-  if (!url) return null;
-  try {
-    return new URL(url).hostname.toLowerCase().replace(/^www\./, "");
-  } catch {
-    return null;
-  }
-}
-
-function monthOf(sortDate: string | null): string | null {
-  if (!sortDate) return null;
-  // sort_date is yyyy-mm-dd
-  return sortDate.slice(0, 7);
-}
-
-function normTown(town: string | null): string | null {
-  if (!town) return null;
-  const t = town.trim().toLowerCase();
-  return t.length ? t : null;
-}
-
-/**
- * Score a cluster from data on the rows. Conservative: any pair of rows with
- * conflicting populated dates or conflicting populated towns drops the whole
- * cluster to "low". Used to decide which clusters can be safely bulk-merged.
- */
-function scoreCluster(rows: DuplicateRow[]): {
-  confidence: DuplicateConfidence;
-  reason: string;
-} {
-  const dates = rows.map((r) => r.sort_date);
-  const months = rows.map((r) => monthOf(r.sort_date));
-  const towns = rows.map((r) => normTown(r.town));
-  const hosts = rows.map((r) => hostOf(r.source_url));
-
-  const populatedDates = dates.filter((d): d is string => !!d);
-  const populatedMonths = months.filter((m): m is string => !!m);
-  const populatedTowns = towns.filter((t): t is string => !!t);
-  const populatedHosts = hosts.filter((h): h is string => !!h);
-
-  const allDatesEqual =
-    populatedDates.length >= 2 &&
-    populatedDates.every((d) => d === populatedDates[0]);
-  const conflictingDates =
-    new Set(populatedDates).size > 1 && populatedDates.length === rows.length;
-  const allMonthsEqual =
-    populatedMonths.length >= 2 &&
-    new Set(populatedMonths).size === 1;
-  const conflictingMonths =
-    new Set(populatedMonths).size > 1 && populatedMonths.length === rows.length;
-  const allTownsEqual =
-    populatedTowns.length >= 2 && new Set(populatedTowns).size === 1;
-  const conflictingTowns =
-    new Set(populatedTowns).size > 1 && populatedTowns.length === rows.length;
-  const sharedHost =
-    populatedHosts.length >= 2 && new Set(populatedHosts).size === 1;
-
-  if (conflictingDates || conflictingTowns) {
-    return {
-      confidence: "low",
-      reason: conflictingTowns
-        ? "Towns differ — likely a name collision, not a duplicate."
-        : "Dates differ — likely a recurring series.",
-    };
-  }
-
-  if (allDatesEqual) {
-    return { confidence: "high", reason: "Identical sort_date." };
-  }
-  if (allMonthsEqual && allTownsEqual) {
-    return {
-      confidence: "high",
-      reason: "Same month and town.",
-    };
-  }
-  if (allMonthsEqual && sharedHost) {
-    return {
-      confidence: "high",
-      reason: "Same month and same source host.",
-    };
-  }
-  if (allMonthsEqual) {
-    return { confidence: "medium", reason: "Same month, town unknown." };
-  }
-  if (conflictingMonths) {
-    return {
-      confidence: "low",
-      reason: "Months differ — likely a recurring series.",
-    };
-  }
-  return {
-    confidence: "medium",
-    reason: "Some dates missing — review before merging.",
-  };
-}
-
-/**
- * Strip year tokens, trailing parentheticals, and noise so two scraped names
- * for the same race normalise to the same string. Tuned conservatively — a
- * false negative (cluster missed) is fine; a false positive (different
- * races merged) is expensive to unwind.
- */
-function normaliseEventName(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/\(.*?\)/g, " ")
-    .replace(/\b(19|20)\d{2}\b/g, " ")
-    .replace(/\b(spring|summer|autumn|fall|winter)\b/g, " ")
-    .replace(/\b(the|a|an|race|run|running|event|events)\b/g, " ")
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim()
-    .split(/\s+/)
-    .filter((t) => t.length > 1)
-    .sort()
-    .join(" ");
-}
-
-/**
- * A cluster is treated as a "recurring series" (not duplicates) when there
- * are 3+ rows in the same region with consistent town/distances, but their
- * dates are spread across multiple distinct days/months. Strong example:
- * RunThrough Tatton Park 5k, fortnightly, all from the same EA feed.
- */
-function detectSeries(rows: DuplicateRow[]): boolean {
-  if (rows.length < 3) return false;
-  const towns = rows
-    .map((r) => normTown(r.town))
-    .filter((t): t is string => !!t);
-  const townsConsistent =
-    towns.length === 0 || new Set(towns).size === 1;
-  if (!townsConsistent) return false;
-
-  const dates = rows
-    .map((r) => r.sort_date)
-    .filter((d): d is string => !!d);
-  const distinctDates = new Set(dates).size;
-  const distinctMonths = new Set(
-    dates.map((d) => d.slice(0, 7)),
-  ).size;
-  // Need at least 3 distinct dates OR 2+ distinct months — a single fixture
-  // with two slightly-different scraped rows shouldn't trigger this.
-  return distinctDates >= 3 || distinctMonths >= 2;
-}
-
-function seriesReason(rows: DuplicateRow[]): string {
-  const sources = new Set(rows.map((r) => r.source).filter(Boolean));
-  const dates = rows
-    .map((r) => r.sort_date)
-    .filter((d): d is string => !!d);
-  const months = new Set(dates.map((d) => d.slice(0, 7))).size;
-  const sourceNote =
-    sources.size === 1 ? ` from ${[...sources][0]}` : "";
-  return `Recurring series — ${rows.length} dates across ${months} month${months === 1 ? "" : "s"}${sourceNote}.`;
-}
-
-
 export const findPotentialDuplicates = createServerFn({ method: "GET" })
-  .handler(async (): Promise<{ clusters: DuplicateCluster[]; total: number }> => {
+  .handler(async (): Promise<{
+    clusters: DuplicateCluster[];
+    total: number;
+    inventory: RectificationInventory;
+  }> => {
     await requireAdminOrThrow();
 
     const pageSize = 1000;
-    const all: (DuplicateRow & { _norm: string })[] = [];
+    const inventoryRows: RectificationInventoryRow[] = [];
     for (let from = 0; ; from += pageSize) {
       const { data: rows, error } = await supabaseAdmin
         .from("events")
         .select(
-          "id, slug, name, date_raw, sort_date, region, town, distances, discipline, source, source_url, distance_tags, terrain_tags, is_recurring, series_key",
+          "id, slug, name, date_raw, date_from, sort_date, region, town, distances, discipline, source, source_url, entry_url, organiser_url, distance_tags, terrain_tags, status, date_is_estimated, is_upcoming, norm_id, duplicate_of, is_recurring, series_key",
         )
-        .eq("status", "ACTIVE")
-        .eq("is_recurring", false)
-        .is("series_key", null)
         .order("id", { ascending: true })
         .range(from, from + pageSize - 1);
       if (error) throw new Error(error.message);
       if (!rows || rows.length === 0) break;
       for (const r of rows) {
-        all.push({
+        inventoryRows.push({
           id: r.id as string,
           slug: (r.slug as string | null) ?? null,
           name: r.name as string,
@@ -862,71 +697,33 @@ export const findPotentialDuplicates = createServerFn({ method: "GET" })
           discipline: (r.discipline as string | null) ?? null,
           source: (r.source as string | null) ?? null,
           source_url: (r.source_url as string | null) ?? null,
+          entry_url: (r.entry_url as string | null) ?? null,
+          organiser_url: (r.organiser_url as string | null) ?? null,
           distance_tags: (r.distance_tags as string[] | null) ?? [],
           terrain_tags: (r.terrain_tags as string[] | null) ?? [],
+          status: r.status as string,
+          date_from: (r.date_from as string | null) ?? null,
+          date_is_estimated: !!(r.date_is_estimated as boolean | null),
+          is_upcoming: !!(r.is_upcoming as boolean | null),
+          norm_id: (r.norm_id as string | null) ?? null,
+          duplicate_of: (r.duplicate_of as string | null) ?? null,
           is_recurring: !!(r.is_recurring as boolean | null),
-          _norm: normaliseEventName(r.name as string),
+          series_key: (r.series_key as string | null) ?? null,
         });
       }
       if (rows.length < pageSize) break;
     }
 
-    // Group by (normalised name + region). Empty norm is too noisy to cluster.
-    const groups = new Map<string, (DuplicateRow & { _norm: string })[]>();
-    for (const r of all) {
-      if (!r._norm) continue;
-      const key = `${r._norm}::${r.region ?? ""}`;
-      const arr = groups.get(key) ?? [];
-      arr.push(r);
-      groups.set(key, arr);
-    }
-
-    const clusters: DuplicateCluster[] = [];
-    for (const [key, rows] of groups) {
-      if (rows.length < 2) continue;
-      // Sort: rows with sort_date first, then most-complete tags — gives the
-      // admin a sensible default survivor at the top of each cluster.
-      rows.sort((a, b) => {
-        const aHas = a.sort_date ? 1 : 0;
-        const bHas = b.sort_date ? 1 : 0;
-        if (aHas !== bHas) return bHas - aHas;
-        const aTags = a.distance_tags.length + a.terrain_tags.length;
-        const bTags = b.distance_tags.length + b.terrain_tags.length;
-        return bTags - aTags;
-      });
-      const cleanRows = rows.map(({ _norm: _n, ...rest }) => {
-        void _n;
-        return rest;
-      });
-      const { confidence, reason } = scoreCluster(cleanRows);
-      const kind = detectSeries(cleanRows) ? "series" : "duplicate";
-      const finalReason =
-        kind === "series"
-          ? seriesReason(cleanRows)
-          : reason;
-      clusters.push({
-        key,
-        rows: cleanRows,
-        confidence,
-        reason: finalReason,
-        kind,
-      });
-    }
-
-    // Sort: series first (most actionable separately), then high → low,
-    // then largest clusters within tier.
-    const tierRank: Record<DuplicateConfidence, number> = {
-      high: 0,
-      medium: 1,
-      low: 2,
+    const candidates = inventoryRows.filter(
+      (row) => row.status === "ACTIVE" && !row.is_recurring && !row.series_key,
+    );
+    const clusters = buildDuplicateClusters(candidates);
+    const todayISO = new Date().toISOString().slice(0, 10);
+    return {
+      clusters,
+      total: clusters.length,
+      inventory: buildRectificationInventory(inventoryRows, todayISO),
     };
-    clusters.sort((a, b) => {
-      if (a.kind !== b.kind) return a.kind === "series" ? -1 : 1;
-      const t = tierRank[a.confidence] - tierRank[b.confidence];
-      if (t !== 0) return t;
-      return b.rows.length - a.rows.length;
-    });
-    return { clusters, total: clusters.length };
   });
 
 export const mergeDuplicateEvents = createServerFn({ method: "POST" })
@@ -1095,33 +892,6 @@ export const mergeDuplicateCluster = createServerFn({ method: "POST" })
     }
     return { merged: merged.length, failed };
   });
-
-export const mergeAllHighConfidenceClusters = createServerFn({
-  method: "POST",
-}).handler(async () => {
-  await requireAdminOrThrow();
-  // Re-fetch clusters server-side so the admin's stale view can't drive a
-  // batch merge with outdated survivor picks.
-  const { clusters } = await findPotentialDuplicates();
-  const high = clusters.filter((c) => c.confidence === "high");
-  let merged = 0;
-  const failed: { id: string; error: string }[] = [];
-  for (const cluster of high) {
-    const [survivor, ...rest] = cluster.rows;
-    for (const dupe of rest) {
-      try {
-        await mergePairInternal(survivor.id, dupe.id);
-        merged++;
-      } catch (e) {
-        failed.push({
-          id: dupe.id,
-          error: e instanceof Error ? e.message : "Unknown error",
-        });
-      }
-    }
-  }
-  return { clusters_processed: high.length, merged, failed };
-});
 
 // ---- Unmerge (safety net) ----
 

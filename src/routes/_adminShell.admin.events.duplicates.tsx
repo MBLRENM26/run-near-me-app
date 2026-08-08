@@ -8,7 +8,6 @@ import {
   findPotentialDuplicates,
   mergeDuplicateEvents,
   mergeDuplicateCluster,
-  mergeAllHighConfidenceClusters,
   markClusterAsSeries,
   type DuplicateCluster,
   type DuplicateConfidence,
@@ -35,8 +34,8 @@ const TIER_LABEL: Record<DuplicateConfidence, string> = {
 };
 
 const TIER_DESC: Record<DuplicateConfidence, string> = {
-  high: "Same race based on date/town/source. Safe to bulk-merge.",
-  medium: "Likely the same race but some signals are missing. Review per cluster.",
+  high: "Strong matching signals. Candidate only: review IDs and survivor rationale before correction.",
+  medium: "Likely related but some signals are missing. Review every row.",
   low: "Conflicting dates or towns. These are probably distinct events — hand-review only.",
 };
 
@@ -46,7 +45,6 @@ function AdminDuplicatesPage() {
   const fetchDuplicates = useServerFn(findPotentialDuplicates);
   const mergeFn = useServerFn(mergeDuplicateEvents);
   const mergeClusterFn = useServerFn(mergeDuplicateCluster);
-  const mergeAllHighFn = useServerFn(mergeAllHighConfidenceClusters);
   const markSeriesFn = useServerFn(markClusterAsSeries);
   const queryClient = useQueryClient();
 
@@ -121,45 +119,6 @@ function AdminDuplicatesPage() {
     }
   };
 
-  const handleMergeAllHigh = async () => {
-    const highClusters = (data?.clusters ?? []).filter(
-      (c) => c.confidence === "high",
-    );
-    const totalRows = highClusters.reduce((n, c) => n + (c.rows.length - 1), 0);
-    if (!totalRows) {
-      toast.info("No high-confidence duplicates to merge.");
-      return;
-    }
-    const sample = highClusters
-      .slice(0, 10)
-      .map((c) => `• ${c.rows[0]?.name ?? "?"} (${c.rows.length} rows)`)
-      .join("\n");
-    if (
-      !confirm(
-        `Merge ${totalRows} duplicate row${totalRows === 1 ? "" : "s"} across ${highClusters.length} high-confidence cluster${highClusters.length === 1 ? "" : "s"}?\n\nSample:\n${sample}`,
-      )
-    )
-      return;
-    setBusy(true);
-    try {
-      const res = await mergeAllHighFn();
-      if (res.failed.length) {
-        toast.warning(
-          `Merged ${res.merged} across ${res.clusters_processed} clusters; ${res.failed.length} failed.`,
-        );
-      } else {
-        toast.success(
-          `Merged ${res.merged} rows across ${res.clusters_processed} clusters.`,
-        );
-      }
-      invalidate();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Bulk merge failed");
-    } finally {
-      setBusy(false);
-    }
-  };
-
   const handleMarkSeries = async (cluster: DuplicateCluster) => {
     if (
       !confirm(
@@ -185,7 +144,7 @@ function AdminDuplicatesPage() {
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  const clusters = data?.clusters ?? [];
+  const clusters = useMemo(() => data?.clusters ?? [], [data?.clusters]);
   const seriesClusters = clusters.filter((c) => c.kind === "series");
   const dupeClusters = clusters.filter((c) => c.kind === "duplicate");
   const byTier: Record<DuplicateConfidence, DuplicateCluster[]> = {
@@ -304,24 +263,32 @@ function AdminDuplicatesPage() {
         </div>
       </div>
 
-      {byTier.high.length > 0 && (
-        <div className="rounded-lg border border-primary/40 bg-primary/5 p-4">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <div className="font-medium text-foreground">
-                Merge all high-confidence clusters
-              </div>
-              <div className="text-sm text-muted-foreground">
-                {byTier.high.reduce((n, c) => n + (c.rows.length - 1), 0)} rows
-                across {byTier.high.length} clusters will be marked as
-                duplicates of their auto-picked survivor.
-              </div>
-            </div>
-            <Button disabled={busy} onClick={handleMergeAllHigh}>
-              Merge all high
-            </Button>
+      {data?.inventory && (
+        <section className="space-y-3 rounded-lg border border-border bg-card p-4">
+          <div>
+            <h2 className="font-semibold text-foreground">
+              Existing-schema inventory
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Read-only snapshot for {data.inventory.generatedForDate}.
+              Candidate reporting makes no event changes.
+            </p>
           </div>
-        </div>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <InventoryStat label="All rows" value={data.inventory.total} />
+            <InventoryStat label="Active" value={data.inventory.active} />
+            <InventoryStat label="Future active" value={data.inventory.futureActive} />
+            <InventoryStat label="Undated" value={data.inventory.undated} />
+            <InventoryStat label="Estimated" value={data.inventory.estimated} />
+            <InventoryStat label="Duplicate-linked" value={data.inventory.duplicateLinked} />
+            <InventoryStat label="Recurring flags" value={data.inventory.recurring} />
+            <InventoryStat label="Series-linked" value={data.inventory.seriesLinked} />
+            <InventoryStat label="No destination" value={data.inventory.destinations.none} />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Sources: {data.inventory.bySource.map((item) => `${item.value} ${item.count}`).join(" · ")}
+          </p>
+        </section>
       )}
 
       {isLoading ? (
@@ -441,6 +408,15 @@ function AdminDuplicatesPage() {
   );
 }
 
+function InventoryStat({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded border border-border bg-muted/20 px-3 py-2">
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="text-lg font-semibold text-foreground">{value}</div>
+    </div>
+  );
+}
+
 function TierSelectAll({
   list,
   selected,
@@ -521,6 +497,8 @@ function ClusterCard({
               </span>
             </>
           )}
+          <span>·</span>
+          <span>{cluster.survivorReason}</span>
         </div>
         <div className="flex items-center gap-2">
           {onMarkSeries && (
@@ -549,7 +527,7 @@ function ClusterCard({
         <table className="w-full text-sm">
           <thead className="bg-muted/30 text-left text-xs uppercase text-muted-foreground">
             <tr>
-              <th className="px-3 py-2">Name / slug</th>
+              <th className="px-3 py-2">Name / slug / ID</th>
               <th className="px-3 py-2">Date</th>
               <th className="px-3 py-2">Town</th>
               <th className="px-3 py-2">Distances</th>
@@ -581,6 +559,9 @@ function ClusterCard({
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {row.slug ?? "—"}
+                    </div>
+                    <div className="font-mono text-[11px] text-muted-foreground">
+                      {row.id}
                     </div>
                   </td>
                   <td className="px-3 py-2 text-muted-foreground">
