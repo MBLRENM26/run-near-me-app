@@ -267,6 +267,25 @@ Research packages are reconciled against the existing RENM clue inventory before
 
 Observed pilot evidence on 24 July 2026: Kent delivered useful role discovery but contained duplicate organiser identity, unresolved foreign keys and no supplied evidence ledger. South London supplied a complete evidence ledger and clean foreign keys, but 151 relationship rows reduced to 125 unique edges, controlled state vocabularies diverged, cross-region entities received different IDs and parkrun evidence volume distorted portfolio ranking. Both packages remain candidate evidence only.
 
+### 13.4 Direct partner and platform-data contract
+
+An external API, export or partnership does not bypass the canonical and publication gates. Before a feed can influence public state, record:
+
+- provider, agreement/contact owner, permitted purpose and applicable licence or contract;
+- stable source identifiers and the canonical entities they are allowed to describe;
+- supplied fields, field semantics, null/unknown treatment and source authority by claim;
+- full/delta/webhook method, coverage window, expected cadence and retry/backfill behaviour;
+- storage, caching, transformation, public-display, attribution and derived-statistic rights;
+- correction, withdrawal, deletion, privacy-request and agreement-termination handling;
+- test/sandbox separation, credentials ownership and least-privilege access; and
+- monitoring, anomaly thresholds, support route and last-success/last-good state.
+
+Source precedence is field-specific. A governing body may be authoritative for licence state, an organiser for course and cancellation, a registration provider for current entry state, and a timer for official results. A higher-ranked source for one claim cannot silently overwrite a different claim outside its authority. Conflicts remain evidence and review work.
+
+Runner platforms require explicit user authorisation and data minimisation. Strava, Garmin or similar activity data may support the consenting runner's claimed participation, personal history, comparison or course-delivery journey; it must not be repurposed into an unauthorised public race catalogue, named results warehouse or public runner profile. Revocation must stop future collection and trigger the agreed minimisation/deletion treatment.
+
+Named result rows, club, category, age and performance data can identify a person. Public accessibility is not sufficient authority for bulk reuse. RENM begins with result-set state, authoritative destination, edition/race coverage and permitted aggregates. Named ingestion requires a separately approved lawful basis, transparency/correction model, source agreement, retention policy and identity-matching standard.
+
 ## 14. Analytics and commercial-attribution contract
 
 Outbound hand-off, booking start, completed registration and organiser value are separate outcomes. RENM must not represent an outbound click as an entry or revenue event. Commercial organiser evidence must state the measurement period, occurrence, destination, event definition, exclusions and known limitations.

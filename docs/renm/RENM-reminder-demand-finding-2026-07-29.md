@@ -59,3 +59,9 @@ If valid consent and delivery can be established, the next controlled product ex
 `unresolved race intent -> reminder subscription -> meaningful verified event change -> delivered reminder -> return visit -> verified next action -> attributable entry where measurable`
 
 Do not expand reminder features until the existing records and delivery path are reconciled.
+
+## Containment — 30 July 2026
+
+Lovable confirmed production cron job 6, `send-race-reminders-daily`, was active but its HTTP requests were receiving `401 Unauthorized`. With Mike's approval, Lovable executed only `select cron.alter_job(6, active := false);`. A post-change catalogue query showed the job retained with its schedule and command unchanged but `active = false`; the other four cron jobs were reported unchanged. No reminder endpoint, subscriber row, email queue, secret, code or deployment was changed.
+
+Reactivation remains unauthorised. The reversible command is `select cron.alter_job(6, active := true);`, but it must not be used until reminder eligibility, consent, fulfilment state and the secret mismatch have been resolved and separately approved.

@@ -1,6 +1,48 @@
 # RENM — Phased Build Brief for Approval
 
-Status: current sequencing contract, updated 2 August 2026 after Phase 0 and urgent production containment. Later phases remain approval-gated.
+Status: sequencing contract under the approved 120–150 day product reset of 7 August 2026. Earlier phases remain preserved as supporting packages; the PX sequence below controls new implementation.
+
+## Product-direction checkpoint — 7 August 2026
+
+Mike identified that RENM's current experience is too flat, transactional and thin relative to the value latent in its catalogue. RENM will not be abandoned or expanded indiscriminately. It will run as a bounded product experiment: contract, rectify and synchronise the data; present it through an interactive Race Explorer; grow it through authorised direct data; distribute data-led content; and make a continue/narrow/stop decision from fixed signals after 120–150 days.
+
+L3B-5B and the previous implementation sequence are paused, not cancelled. Existing indexable landing and occurrence pages remain the acquisition layer. The strategic wedge is trusted UK race intelligence: canonical series/editions/races, comparable course and practical data, authoritative destinations, source freshness and post-event results resolution. The governing product package is `RENM-interactive-race-explorer-product-reset-2026-08-07.md`.
+
+Revised immediate sequence:
+
+1. **PX0 — reset and preflight:** update canon; re-verify app/production/analytics state; inventory source and data defects; prepare the partnership brief. Documentation and read-only preparation only.
+2. **PX1 — bounded rectification:** use the existing schema to inventory and correct identity/source defects through separately approved, reversible packages; fix the evidence baseline without PostGIS, `pg_trgm` or broader canonical-schema work.
+3. **PX2 — bounded product tests:** first test a feature-flagged mobile-first Explorer on the existing backend; then test one authorised course-rich event page using toGeoJSON, Turf, Leaflet and Recharts while retaining existing SEO routes.
+4. **PX3 — evidence-led expansion:** prove direct-data/results pilots and introduce broader schema or search/geospatial infrastructure only where the two prototypes demonstrate a named need.
+5. **PX4 — distribution and return:** run tracked, data-led search/social/video campaigns and test shortlist/return behaviour.
+6. **PX5 — decision gate:** at day 120–150, continue, narrow or stop major investment without moving the evidence threshold retrospectively.
+
+No application, schema, production-data, external-integration or deployment mutation is authorised merely by this checkpoint. Each package still requires scope, migration/rollback where applicable, tests, measurement and Mike's approval.
+
+### Partner order for PX1–PX3
+
+1. England Athletics RunEvents: stable identity, licence/status change feed, official destinations, result continuity and permitted display/storage terms.
+2. One registration marketplace/provider: structured edition/race/location/price/entry data and attributable deep links under written terms.
+3. One timing/results provider: official result-set state, semantics, corrections and permitted aggregates.
+4. Ten to twenty organisers/clubs: authoritative GPX/course, facilities, cut-offs, accessibility and local corrections.
+5. Garmin after route provenance is reliable; Strava only for runner-authorised enrichment/distribution. Neither is the canonical catalogue source.
+
+### PX5 provisional continuation evidence
+
+- Approximately three times the current monthly visitor baseline, or a sustained equivalent trajectory.
+- Improving organic clicks and deep-page landings across two consecutive months.
+- Repeat usage, saved/return behaviour or authoritative post-event results demand.
+- At least one authorised automated source and two useful partner/organiser pilots.
+- High scoped-inventory freshness with low unresolved duplicate/conflict rates.
+- Attributable official-information, registration or results activations reported with their limitations.
+
+Weak combined evidence stops major investment. A low-cost pet project may remain live, while packaging, licensing, sale or open-source release of selected components requires its own decision.
+
+### Platform portability and graduation
+
+Lovable remains RENM's validation/incubation platform during the evidence window. GitHub is the application and documentation source of truth; database migrations, exports, source adapters, core rules, analytics definitions and deployment dependencies must remain reproducible and portable. No pre-emptive migration is authorised.
+
+At PX5, a strong continuation signal triggers a platform-fit assessment, not an automatic full rewrite. Graduate only where sustained traffic, automated feeds/background jobs, SSR/SEO or performance requirements, CI/CD/observability/security needs, or material cost/deployment constraints justify it. Moving frontend/hosting while retaining Supabase/Postgres is a valid staged outcome.
 
 ## Operational checkpoint — 2 August 2026
 
@@ -441,13 +483,21 @@ Acceptance:
 - No experiment changes verification gates or hides unpaid valid inventory.
 - Search-to-occurrence, resolved-intent and completed-entry outcomes improve without higher correction/duplicate rates.
 
-## Suggested first Lovable operation after approval
+## Next operation after this reset
 
-Send only Phase 0. Ask Lovable to install the approved Project Knowledge and return a conflict/gap report—no code or database changes. Review that report here. Then issue Phase 1 as small work packages, beginning with read-only dependency inventories for base-table access and shared eligibility. Phase 2 measurement audit should be specified alongside but implemented only after Phase 1 changes cannot invalidate its findings.
+Complete PX0 before another code run:
+
+1. refresh and commit the governed documentation;
+2. install the generated Lovable Project Knowledge and synchronise the governed documents;
+3. re-verify the application repository head, origin/main, Lovable publication state and production analytics baseline;
+4. inspect current schema/source behaviour against the series/edition/race/result/source contract; and
+5. return a bounded PX1 rectification package and partnership one-pager for approval.
+
+Do not ask Lovable to redesign the product or mutate the database from the whole strategy document. Each approved build package must be smaller, testable and rollbackable.
 
 ## Out of scope until validated
 
-- Large visual redesign.
+- Broad redesign of every legacy page before a bounded Explorer vertical slice is validated.
 - Broad new SEO-page generation.
 - RENM becoming a general booking platform for other organisers.
 - Public ingestion provenance.
@@ -461,8 +511,8 @@ Send only Phase 0. Ask Lovable to install the approved Project Knowledge and ret
 
 Mike can approve:
 
-- revised Project Knowledge, data/lifecycle contract and decision register;
-- Phase 0 installation and Lovable conflict report only;
-- preparation of Phase 1 and Phase 2 implementation prompts after that report;
-- organiser interview preparation; and
-- design of the founder-event experiment once the event concept, booking route and launch timing are known.
+- completion of PX0 documentation sync and read-only application/data preflight;
+- preparation of the England Athletics and general data-partner one-pagers without sending them;
+- one bounded PX1 rectification package at a time;
+- a later feature-flagged PX2 Explorer slice after the safe query/data evidence is reviewed; and
+- separately authorised partner outreach, external integrations, production mutations and deployments.
