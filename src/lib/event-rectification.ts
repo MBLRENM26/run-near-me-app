@@ -10,13 +10,15 @@ export interface DuplicateRow {
   discipline: string | null;
   source: string | null;
   source_url: string | null;
+  norm_id: string | null;
+  date_is_estimated: boolean;
   distance_tags: string[];
   terrain_tags: string[];
   is_recurring: boolean;
 }
 
 export type DuplicateConfidence = "high" | "medium" | "low";
-export type DuplicateKind = "duplicate" | "series";
+export type DuplicateKind = "duplicate" | "series" | "review";
 
 export interface DuplicateCluster {
   key: string;
@@ -24,15 +26,14 @@ export interface DuplicateCluster {
   confidence: DuplicateConfidence;
   reason: string;
   kind: DuplicateKind;
+  survivorId: string | null;
   survivorReason: string;
 }
 
 export interface RectificationInventoryRow extends DuplicateRow {
   status: string;
   date_from: string | null;
-  date_is_estimated: boolean;
   is_upcoming: boolean;
-  norm_id: string | null;
   duplicate_of: string | null;
   series_key: string | null;
   entry_url: string | null;
@@ -75,8 +76,54 @@ function monthOf(sortDate: string | null): string | null {
 }
 
 function normTown(town: string | null): string | null {
-  const value = town?.trim().toLowerCase();
+  const value = town
+    ?.trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\bnewcastle upon tyne\b/g, "newcastle")
+    .trim();
   return value || null;
+}
+
+function explicitYears(name: string): string[] {
+  return name.match(/\b(?:19|20)\d{2}\b/g) ?? [];
+}
+
+function sourceKey(row: DuplicateRow): string | null {
+  const source = row.source?.trim().toLowerCase();
+  return source || null;
+}
+
+function componentMarkers(name: string): string[] {
+  const value = name.toLowerCase();
+  const markers = new Set<string>();
+  if (/\b(junior|juniors|children|kids?)\b/.test(value)) markers.add("junior");
+  for (const match of value.matchAll(/\b(?:race|round|fixture)\s*#?\s*(\d+)\b/g)) {
+    markers.add(`number:${match[1]}`);
+  }
+  return [...markers].sort();
+}
+
+function hasComponentConflict(rows: DuplicateRow[]): boolean {
+  const markerSets = rows.map((row) => componentMarkers(row.name).join("|"));
+  return new Set(markerSets).size > 1 && markerSets.some(Boolean);
+}
+
+function hasYearConflict(rows: DuplicateRow[]): boolean {
+  const years = new Set(rows.flatMap((row) => explicitYears(row.name)));
+  return years.size > 1;
+}
+
+function hasSourceConflict(rows: DuplicateRow[]): boolean {
+  const sources = rows.map(sourceKey).filter((value): value is string => !!value);
+  return sources.length !== rows.length || new Set(sources).size > 1;
+}
+
+function hasMixedDates(rows: DuplicateRow[]): boolean {
+  const dates = rows.map((row) => row.sort_date).filter((value): value is string => !!value);
+  const counts = new Map<string, number>();
+  for (const date of dates) counts.set(date, (counts.get(date) ?? 0) + 1);
+  return counts.size > 1 && [...counts.values()].some((count) => count > 1);
 }
 
 export function normaliseEventName(name: string): string {
@@ -99,7 +146,7 @@ function hasExplicitCopySuffix(name: string): boolean {
   return /\s*[-–—:]?\s*\bcopy(?:\s+\d+)?\b\s*$/i.test(name);
 }
 
-function scoreCluster(rows: DuplicateRow[]): {
+function scoreDuplicateCluster(rows: DuplicateRow[]): {
   confidence: DuplicateConfidence;
   reason: string;
 } {
@@ -112,7 +159,9 @@ function scoreCluster(rows: DuplicateRow[]): {
   const populatedTowns = towns.filter((value): value is string => !!value);
   const populatedHosts = hosts.filter((value): value is string => !!value);
   const allDatesEqual =
-    populatedDates.length >= 2 && populatedDates.every((value) => value === populatedDates[0]);
+    populatedDates.length === rows.length &&
+    populatedDates.length >= 2 &&
+    populatedDates.every((value) => value === populatedDates[0]);
   const conflictingDates =
     populatedDates.length === rows.length && new Set(populatedDates).size > 1;
   const allMonthsEqual = populatedMonths.length >= 2 && new Set(populatedMonths).size === 1;
@@ -141,10 +190,16 @@ function scoreCluster(rows: DuplicateRow[]): {
     };
   }
   if (allMonthsEqual && allTownsEqual) {
-    return { confidence: "high", reason: "Same month and town; review before correction." };
+    return {
+      confidence: "medium",
+      reason: "Same month and town, but dates differ or are incomplete.",
+    };
   }
   if (allMonthsEqual && sharedHost) {
-    return { confidence: "high", reason: "Same month and source host; review before correction." };
+    return {
+      confidence: "medium",
+      reason: "Same month and source host, but evidence is incomplete.",
+    };
   }
   if (allMonthsEqual) {
     return { confidence: "medium", reason: "Same month, town unknown." };
@@ -160,22 +215,26 @@ function detectSeries(rows: DuplicateRow[]): boolean {
   const towns = rows.map((row) => normTown(row.town)).filter((value): value is string => !!value);
   if (towns.length > 0 && new Set(towns).size > 1) return false;
   const dates = rows.map((row) => row.sort_date).filter((value): value is string => !!value);
+  if (dates.length !== rows.length || new Set(dates).size !== dates.length) return false;
   return new Set(dates).size >= 3 || new Set(dates.map((date) => date.slice(0, 7))).size >= 2;
 }
 
 function completenessScore(row: DuplicateRow): number {
   return (
     (row.sort_date ? 8 : 0) +
+    (!row.date_is_estimated ? 4 : 0) +
     (row.slug ? 4 : 0) +
+    (row.norm_id ? 3 : 0) +
     (row.source_url ? 2 : 0) +
     row.distance_tags.length +
-    row.terrain_tags.length
+    row.terrain_tags.length -
+    (hasExplicitCopySuffix(row.name) ? 100 : 0)
   );
 }
 
 function survivorReason(row: DuplicateRow): string {
   const tags = row.distance_tags.length + row.terrain_tags.length;
-  return `Deterministic candidate: completeness ${completenessScore(row)} (${row.sort_date ? "dated" : "undated"}, ${tags} tags); ID tie-break.`;
+  return `Same-source candidate: completeness ${completenessScore(row)} (${row.sort_date ? "dated" : "undated"}, ${row.date_is_estimated ? "estimated" : "confirmed"}, ${row.norm_id ? "source ID" : "no source ID"}, ${tags} tags); ID tie-break.`;
 }
 
 function seriesReason(rows: DuplicateRow[]): string {
@@ -202,22 +261,67 @@ export function buildDuplicateClusters(rows: DuplicateRow[]): DuplicateCluster[]
       const score = completenessScore(b) - completenessScore(a);
       return score || a.id.localeCompare(b.id);
     });
-    const scored = scoreCluster(ordered);
-    const kind = detectSeries(ordered) ? "series" : "duplicate";
+    let kind: DuplicateKind = "duplicate";
+    let confidence: DuplicateConfidence;
+    let reason: string;
+    let survivorId: string | null = ordered[0].id;
+
+    if (hasMixedDates(ordered)) {
+      kind = "review";
+      confidence = "low";
+      reason =
+        "Mixed cluster: a same-date duplicate sits inside a multi-date event family. Resolve the duplicate before series linking.";
+      survivorId = null;
+    } else if (hasYearConflict(ordered)) {
+      kind = "review";
+      confidence = "low";
+      reason =
+        "Names contain conflicting edition years. Verify the authoritative date before any correction.";
+      survivorId = null;
+    } else if (hasComponentConflict(ordered)) {
+      kind = "review";
+      confidence = "low";
+      reason =
+        "Names indicate different race numbers or junior/parent components. Treat as distinct until verified.";
+      survivorId = null;
+    } else if (hasSourceConflict(ordered)) {
+      kind = "review";
+      confidence = "medium";
+      reason =
+        "Source authority is missing or conflicting. Resolve provenance and destinations before selecting a survivor.";
+      survivorId = null;
+    } else if (detectSeries(ordered)) {
+      kind = "series";
+      confidence = "low";
+      reason = seriesReason(ordered);
+      survivorId = null;
+    } else {
+      const scored = scoreDuplicateCluster(ordered);
+      confidence = scored.confidence;
+      reason = scored.reason;
+      if (confidence !== "high") {
+        kind = "review";
+        survivorId = null;
+      }
+    }
     clusters.push({
       key,
       rows: ordered,
-      confidence: scored.confidence,
-      reason: kind === "series" ? seriesReason(ordered) : scored.reason,
+      confidence,
+      reason,
       kind,
-      survivorReason: survivorReason(ordered[0]),
+      survivorId,
+      survivorReason: survivorId
+        ? survivorReason(ordered.find((row) => row.id === survivorId)!)
+        : "No survivor selected: manual evidence review required.",
     });
   }
 
   const tierRank: Record<DuplicateConfidence, number> = { high: 0, medium: 1, low: 2 };
   return clusters.sort((a, b) => {
-    if (a.kind !== b.kind) return a.kind === "series" ? -1 : 1;
+    const kindRank: Record<DuplicateKind, number> = { series: 0, duplicate: 1, review: 2 };
     return (
+      kindRank[a.kind] - kindRank[b.kind] ||
       tierRank[a.confidence] - tierRank[b.confidence] ||
       b.rows.length - a.rows.length ||
       a.key.localeCompare(b.key)

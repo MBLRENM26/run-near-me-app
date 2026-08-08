@@ -19,10 +19,7 @@ import { Toaster } from "@/components/ui/sonner";
 
 export const Route = createFileRoute("/_adminShell/admin/events/duplicates")({
   head: () => ({
-    meta: [
-      { title: "Duplicates — Admin" },
-      { name: "robots", content: "noindex, nofollow" },
-    ],
+    meta: [{ title: "Duplicates — Admin" }, { name: "robots", content: "noindex, nofollow" }],
   }),
   component: AdminDuplicatesPage,
 });
@@ -66,8 +63,7 @@ function AdminDuplicatesPage() {
     enabled: authChecked,
   });
 
-  const invalidate = () =>
-    queryClient.invalidateQueries({ queryKey: ["admin-duplicates"] });
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["admin-duplicates"] });
 
   const handleMerge = async (survivor: DuplicateRow, dupe: DuplicateRow) => {
     if (
@@ -147,6 +143,7 @@ function AdminDuplicatesPage() {
   const clusters = useMemo(() => data?.clusters ?? [], [data?.clusters]);
   const seriesClusters = clusters.filter((c) => c.kind === "series");
   const dupeClusters = clusters.filter((c) => c.kind === "duplicate");
+  const reviewClusters = clusters.filter((c) => c.kind === "review");
   const byTier: Record<DuplicateConfidence, DuplicateCluster[]> = {
     high: dupeClusters.filter((c) => c.confidence === "high"),
     medium: dupeClusters.filter((c) => c.confidence === "medium"),
@@ -154,10 +151,7 @@ function AdminDuplicatesPage() {
   };
 
   // Prune selected keys that no longer exist after a refetch.
-  const allKeys = useMemo(
-    () => new Set(clusters.map((c) => c.key)),
-    [clusters],
-  );
+  const allKeys = useMemo(() => new Set(clusters.map((c) => c.key)), [clusters]);
   useEffect(() => {
     setSelected((prev) => {
       let changed = false;
@@ -188,11 +182,8 @@ function AdminDuplicatesPage() {
       return next;
     });
 
-  const selectedClusters = clusters.filter((c) => selected.has(c.key));
-  const selectedRowCount = selectedClusters.reduce(
-    (n, c) => n + c.rows.length,
-    0,
-  );
+  const selectedClusters = seriesClusters.filter((c) => selected.has(c.key));
+  const selectedRowCount = selectedClusters.reduce((n, c) => n + c.rows.length, 0);
 
   const handleMarkSelectedAsSeries = async () => {
     if (!selectedClusters.length) return;
@@ -214,8 +205,7 @@ function AdminDuplicatesPage() {
         marked += res.marked;
       } catch (e) {
         failed += 1;
-        if (!firstError)
-          firstError = e instanceof Error ? e.message : String(e);
+        if (!firstError) firstError = e instanceof Error ? e.message : String(e);
       }
     }
     setBusy(false);
@@ -236,18 +226,14 @@ function AdminDuplicatesPage() {
     return <p className="text-sm text-muted-foreground">Checking session…</p>;
   }
 
-
   return (
     <div className="space-y-6">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            Potential duplicates
-          </h1>
+          <h1 className="text-2xl font-bold text-foreground">Potential duplicates</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Grouped by tier. Recurring series are surfaced separately —
-            don't merge those, mark them as a series so they're shown as
-            scheduled fixtures instead.
+            Grouped by tier. Recurring series are surfaced separately — don't merge those, mark them
+            as a series so they're shown as scheduled fixtures instead.
           </p>
         </div>
         <div className="flex flex-col items-end gap-2 text-sm text-muted-foreground">
@@ -255,9 +241,8 @@ function AdminDuplicatesPage() {
             ← Back to all events
           </Link>
           <div>
-            {clusters.length} cluster{clusters.length === 1 ? "" : "s"} ·{" "}
-            {seriesClusters.length} series · {byTier.high.length} high ·{" "}
-            {byTier.medium.length} medium · {byTier.low.length} low
+            {clusters.length} cluster{clusters.length === 1 ? "" : "s"} · {seriesClusters.length}{" "}
+            series · {byTier.high.length} merge candidates · {reviewClusters.length} manual review
             {isFetching && " · refreshing…"}
           </div>
         </div>
@@ -266,12 +251,10 @@ function AdminDuplicatesPage() {
       {data?.inventory && (
         <section className="space-y-3 rounded-lg border border-border bg-card p-4">
           <div>
-            <h2 className="font-semibold text-foreground">
-              Existing-schema inventory
-            </h2>
+            <h2 className="font-semibold text-foreground">Existing-schema inventory</h2>
             <p className="text-xs text-muted-foreground">
-              Read-only snapshot for {data.inventory.generatedForDate}.
-              Candidate reporting makes no event changes.
+              Read-only snapshot for {data.inventory.generatedForDate}. Candidate reporting makes no
+              event changes.
             </p>
           </div>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
@@ -286,7 +269,8 @@ function AdminDuplicatesPage() {
             <InventoryStat label="No destination" value={data.inventory.destinations.none} />
           </div>
           <p className="text-xs text-muted-foreground">
-            Sources: {data.inventory.bySource.map((item) => `${item.value} ${item.count}`).join(" · ")}
+            Sources:{" "}
+            {data.inventory.bySource.map((item) => `${item.value} ${item.count}`).join(" · ")}
           </p>
         </section>
       )}
@@ -295,9 +279,7 @@ function AdminDuplicatesPage() {
         <p className="text-sm text-muted-foreground">Scanning…</p>
       ) : clusters.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border p-12 text-center">
-          <p className="text-sm text-muted-foreground">
-            No obvious duplicates found.
-          </p>
+          <p className="text-sm text-muted-foreground">No obvious duplicates found.</p>
         </div>
       ) : (
         <>
@@ -309,9 +291,8 @@ function AdminDuplicatesPage() {
                     Recurring series ({seriesClusters.length})
                   </h2>
                   <p className="text-xs text-muted-foreground">
-                    Looks like a recurring series (e.g. RunThrough fortnightly,
-                    Grand Prix). Don't merge — mark as a series so they're
-                    flagged as recurring on listings.
+                    Looks like a recurring series (e.g. RunThrough fortnightly, Grand Prix). Don't
+                    merge — mark as a series so they're flagged as recurring on listings.
                   </p>
                 </div>
                 <TierSelectAll
@@ -344,37 +325,49 @@ function AdminDuplicatesPage() {
                     <h2 className="text-lg font-semibold text-foreground">
                       {TIER_LABEL[tier]} ({list.length})
                     </h2>
-                    <p className="text-xs text-muted-foreground">
-                      {TIER_DESC[tier]}
-                    </p>
+                    <p className="text-xs text-muted-foreground">{TIER_DESC[tier]}</p>
                   </div>
-                  <TierSelectAll
-                    list={list}
-                    selected={selected}
-                    onChange={(on) => setTierSelection(list, on)}
-                  />
                 </div>
                 {list.map((cluster) => (
                   <ClusterCard
                     key={cluster.key}
                     cluster={cluster}
                     busy={busy}
-                    selected={selected.has(cluster.key)}
-                    onToggleSelect={() => toggleCluster(cluster.key)}
-                    onMergeAll={
-                      tier !== "low" ? () => handleClusterMerge(cluster) : null
-                    }
+                    selected={false}
+                    onToggleSelect={() => undefined}
+                    onMergeAll={tier !== "low" ? () => handleClusterMerge(cluster) : null}
                     onMergeOne={handleMerge}
-                    onMarkSeries={
-                      tier === "low"
-                        ? () => handleMarkSeries(cluster)
-                        : null
-                    }
+                    onMarkSeries={null}
                   />
                 ))}
               </section>
             );
           })}
+          {reviewClusters.length > 0 && (
+            <section className="space-y-3">
+              <div className="border-b border-border pb-1">
+                <h2 className="text-lg font-semibold text-foreground">
+                  Manual evidence review ({reviewClusters.length})
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  Conflicting years, components, sources, places or mixed duplicate/series signals.
+                  No merge or series action is offered here.
+                </p>
+              </div>
+              {reviewClusters.map((cluster) => (
+                <ClusterCard
+                  key={cluster.key}
+                  cluster={cluster}
+                  busy={busy}
+                  selected={false}
+                  onToggleSelect={() => undefined}
+                  onMergeAll={null}
+                  onMergeOne={handleMerge}
+                  onMarkSeries={null}
+                />
+              ))}
+            </section>
+          )}
         </>
       )}
 
@@ -384,26 +377,16 @@ function AdminDuplicatesPage() {
             {selectedClusters.length} cluster
             {selectedClusters.length === 1 ? "" : "s"} selected ({selectedRowCount} rows)
           </span>
-          <Button
-            size="sm"
-            disabled={busy}
-            onClick={handleMarkSelectedAsSeries}
-          >
+          <Button size="sm" disabled={busy} onClick={handleMarkSelectedAsSeries}>
             Mark selected as series
           </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            disabled={busy}
-            onClick={() => setSelected(new Set())}
-          >
+          <Button size="sm" variant="ghost" disabled={busy} onClick={() => setSelected(new Set())}>
             Clear
           </Button>
         </div>
       )}
 
       <Toaster position="top-center" />
-
     </div>
   );
 }
@@ -429,10 +412,7 @@ function TierSelectAll({
   const allSelected = list.length > 0 && list.every((c) => selected.has(c.key));
   return (
     <label className="flex shrink-0 cursor-pointer items-center gap-2 text-xs text-muted-foreground">
-      <Checkbox
-        checked={allSelected}
-        onCheckedChange={(v) => onChange(v === true)}
-      />
+      <Checkbox checked={allSelected} onCheckedChange={(v) => onChange(v === true)} />
       Select all
     </label>
   );
@@ -455,26 +435,33 @@ function ClusterCard({
   onMergeOne: (survivor: DuplicateRow, dupe: DuplicateRow) => void;
   onMarkSeries?: (() => void) | null;
 }) {
-  const survivor = cluster.rows[0];
+  const survivor = cluster.survivorId
+    ? (cluster.rows.find((row) => row.id === cluster.survivorId) ?? null)
+    : null;
   const tierColor: Record<DuplicateConfidence, string> = {
     high: "bg-green-100 text-green-900 dark:bg-green-900/30 dark:text-green-200",
-    medium:
-      "bg-yellow-100 text-yellow-900 dark:bg-yellow-900/30 dark:text-yellow-200",
+    medium: "bg-yellow-100 text-yellow-900 dark:bg-yellow-900/30 dark:text-yellow-200",
     low: "bg-red-100 text-red-900 dark:bg-red-900/30 dark:text-red-200",
   };
   return (
     <div className="rounded-lg border border-border bg-card">
       <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2 text-xs">
         <div className="flex flex-wrap items-center gap-2 text-muted-foreground">
-          <Checkbox
-            checked={selected}
-            onCheckedChange={() => onToggleSelect()}
-            aria-label="Select cluster"
-          />
+          {cluster.kind === "series" && (
+            <Checkbox
+              checked={selected}
+              onCheckedChange={() => onToggleSelect()}
+              aria-label="Select cluster"
+            />
+          )}
 
           {cluster.kind === "series" ? (
             <span className="rounded bg-blue-100 px-1.5 py-0.5 font-medium uppercase text-blue-900 dark:bg-blue-900/30 dark:text-blue-200">
               series
+            </span>
+          ) : cluster.kind === "review" ? (
+            <span className="rounded bg-orange-100 px-1.5 py-0.5 font-medium uppercase text-orange-900 dark:bg-orange-900/30 dark:text-orange-200">
+              manual review
             </span>
           ) : (
             <span
@@ -486,7 +473,7 @@ function ClusterCard({
           <span>{cluster.reason}</span>
           <span>·</span>
           <span>{cluster.rows.length} rows</span>
-          {cluster.kind !== "series" && (
+          {survivor && (
             <>
               <span>·</span>
               <span>
@@ -512,12 +499,7 @@ function ClusterCard({
             </Button>
           )}
           {onMergeAll && (
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={busy}
-              onClick={onMergeAll}
-            >
+            <Button size="sm" variant="outline" disabled={busy} onClick={onMergeAll}>
               Merge all in cluster
             </Button>
           )}
@@ -538,8 +520,8 @@ function ClusterCard({
             </tr>
           </thead>
           <tbody>
-            {cluster.rows.map((row, i) => {
-              const isSurvivor = i === 0 && cluster.kind !== "series";
+            {cluster.rows.map((row) => {
+              const isSurvivor = row.id === cluster.survivorId;
               return (
                 <tr
                   key={row.id}
@@ -557,31 +539,36 @@ function ClusterCard({
                         </span>
                       )}
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      {row.slug ?? "—"}
-                    </div>
+                    <div className="text-xs text-muted-foreground">{row.slug ?? "—"}</div>
+                    <div className="font-mono text-[11px] text-muted-foreground">{row.id}</div>
                     <div className="font-mono text-[11px] text-muted-foreground">
-                      {row.id}
+                      source ID: {row.norm_id ?? "—"}
                     </div>
                   </td>
                   <td className="px-3 py-2 text-muted-foreground">
                     {row.sort_date ?? row.date_raw ?? "—"}
+                    {row.date_is_estimated && (
+                      <div className="text-xs text-orange-700 dark:text-orange-300">estimated</div>
+                    )}
                   </td>
-                  <td className="px-3 py-2 text-muted-foreground">
-                    {row.town ?? "—"}
-                  </td>
-                  <td className="px-3 py-2 text-muted-foreground">
-                    {row.distances ?? "—"}
-                  </td>
-                  <td className="px-3 py-2 text-muted-foreground">
-                    {row.discipline ?? "—"}
+                  <td className="px-3 py-2 text-muted-foreground">{row.town ?? "—"}</td>
+                  <td className="px-3 py-2 text-muted-foreground">{row.distances ?? "—"}</td>
+                  <td className="px-3 py-2 text-muted-foreground">{row.discipline ?? "—"}</td>
+                  <td className="px-3 py-2 text-xs text-muted-foreground">
+                    {[...row.distance_tags, ...row.terrain_tags].join(", ") || "—"}
                   </td>
                   <td className="px-3 py-2 text-xs text-muted-foreground">
-                    {[...row.distance_tags, ...row.terrain_tags].join(", ") ||
-                      "—"}
-                  </td>
-                  <td className="px-3 py-2 text-xs text-muted-foreground">
-                    {row.source ?? "—"}
+                    <div>{row.source ?? "—"}</div>
+                    {row.source_url && (
+                      <a
+                        href={row.source_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="break-all text-primary hover:underline"
+                      >
+                        source
+                      </a>
+                    )}
                   </td>
                   <td className="px-3 py-2 text-right">
                     <div className="flex justify-end gap-2">
@@ -592,7 +579,7 @@ function ClusterCard({
                       >
                         Edit
                       </Link>
-                      {!isSurvivor && cluster.kind !== "series" && (
+                      {survivor && !isSurvivor && cluster.kind === "duplicate" && (
                         <Button
                           size="sm"
                           variant="outline"

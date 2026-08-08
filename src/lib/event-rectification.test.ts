@@ -18,6 +18,8 @@ function row(overrides: Partial<DuplicateRow> & Pick<DuplicateRow, "id" | "name"
     discipline: "Road",
     source: "england-athletics",
     source_url: "https://example.com/race",
+    norm_id: `ea-${overrides.id}`,
+    date_is_estimated: false,
     distance_tags: ["10k"],
     terrain_tags: ["road"],
     is_recurring: false,
@@ -40,9 +42,11 @@ describe("event rectification", () => {
     ]);
     expect(clusters).toHaveLength(1);
     expect(clusters[0].confidence).toBe("high");
+    expect(clusters[0].kind).toBe("duplicate");
+    expect(clusters[0].survivorId).toBe("a");
     expect(clusters[0].reason).toContain("COPY suffix");
     expect(clusters[0].rows.map((candidate) => candidate.id)).toEqual(["a", "b"]);
-    expect(clusters[0].survivorReason).toContain("Deterministic candidate");
+    expect(clusters[0].survivorReason).toContain("Same-source candidate");
   });
 
   it("keeps conflicting-date fixtures out of high confidence", () => {
@@ -51,6 +55,63 @@ describe("event rectification", () => {
       row({ id: "b", name: "Tatton 10K", sort_date: "2026-08-22" }),
     ]);
     expect(clusters[0].confidence).toBe("low");
+    expect(clusters[0].kind).toBe("review");
+    expect(clusters[0].survivorId).toBeNull();
+  });
+
+  it("holds conflicting edition years for manual review", () => {
+    const clusters = buildDuplicateClusters([
+      row({ id: "a", name: "Saltfest 5K 2025", sort_date: "2026-09-06" }),
+      row({ id: "b", name: "Saltfest 5K 2026", sort_date: "2026-09-06" }),
+    ]);
+    expect(clusters[0]).toMatchObject({ kind: "review", confidence: "low", survivorId: null });
+    expect(clusters[0].reason).toContain("conflicting edition years");
+  });
+
+  it("keeps numbered race components distinct", () => {
+    const clusters = buildDuplicateClusters([
+      row({ id: "a", name: "Power of 5K Race 1" }),
+      row({ id: "b", name: "Power of 5K Race 2" }),
+    ]);
+    expect(clusters[0]).toMatchObject({ kind: "review", survivorId: null });
+    expect(clusters[0].reason).toContain("different race numbers");
+  });
+
+  it("does not select a survivor across sources", () => {
+    const clusters = buildDuplicateClusters([
+      row({ id: "a", name: "Telford 10K", source: "runabc" }),
+      row({ id: "b", name: "Telford 10K 2026", source: "england-athletics" }),
+    ]);
+    expect(clusters[0]).toMatchObject({ kind: "review", confidence: "medium", survivorId: null });
+    expect(clusters[0].reason).toContain("Source authority");
+  });
+
+  it("holds a same-date duplicate inside a multi-date family", () => {
+    const clusters = buildDuplicateClusters([
+      row({ id: "a", name: "Fast & Furious 5KM", sort_date: "2026-07-17" }),
+      row({ id: "b", name: "Fast & Furious 5KM", sort_date: "2026-08-21" }),
+      row({ id: "c", name: "Fast & Furious 5KM", sort_date: "2026-08-21" }),
+      row({ id: "d", name: "Fast & Furious 5KM", sort_date: "2026-09-18" }),
+    ]);
+    expect(clusters[0]).toMatchObject({ kind: "review", confidence: "low", survivorId: null });
+    expect(clusters[0].reason).toContain("same-date duplicate");
+  });
+
+  it("surfaces a clean multi-date family as a series", () => {
+    const clusters = buildDuplicateClusters([
+      row({ id: "a", name: "Northern AC Winter Road Series", sort_date: "2026-10-13" }),
+      row({ id: "b", name: "Northern AC Winter Road Series", sort_date: "2026-11-03" }),
+      row({ id: "c", name: "Northern AC Winter Road Series", sort_date: "2026-12-01" }),
+    ]);
+    expect(clusters[0]).toMatchObject({ kind: "series", survivorId: null });
+  });
+
+  it("normalises the common Newcastle place alias", () => {
+    const clusters = buildDuplicateClusters([
+      row({ id: "a", name: "Town Moor 10K", town: "Newcastle" }),
+      row({ id: "b", name: "Town Moor 10K 2026", town: "Newcastle upon Tyne" }),
+    ]);
+    expect(clusters[0]).toMatchObject({ kind: "duplicate", confidence: "high" });
   });
 
   it("builds stable existing-schema counts", () => {
