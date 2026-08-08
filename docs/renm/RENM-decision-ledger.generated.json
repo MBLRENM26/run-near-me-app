@@ -2,9 +2,9 @@
   "schema_version": 1,
   "generated_from": "docs/current/RENM-decision-register.md",
   "generated_for_review_date": "2026-08-07",
-  "generated_from_sha256": "90eede41a4466d17773cea4c3b15c8a1c24dc3207b1df7215b652297e21f9311",
+  "generated_from_sha256": "2ccbf80faeb819012fd125b9d2ad521ff7fb0f0f44487740479db057f90ee2fc",
   "lifecycle_source": "docs/current/RENM-decision-lifecycle-overrides.json",
-  "record_count": 100,
+  "record_count": 101,
   "records": [
     {
       "id": "S01",
@@ -1409,6 +1409,20 @@
       "lifecycle_note": null,
       "source_path": "docs/current/RENM-decision-register.md",
       "source_line": 203
+    },
+    {
+      "id": "D68",
+      "kind": "decision",
+      "status": "approved",
+      "recorded_date": "2026-08-07",
+      "section": "Decisions recorded at the interactive product reset — 7 August 2026",
+      "statement": "Finish and verify bounded existing-schema rectification, then run two product tests before broader infrastructure or schema work.",
+      "consequence_or_default": "Test the Explorer on the existing backend first, then one authorised course-rich event page using toGeoJSON, Turf, Leaflet and Recharts. Introduce PostGIS, `pg_trgm` or broader series/edition/race/result/source schema only when measured prototype evidence demonstrates a named need.",
+      "supersedes": [],
+      "superseded_by": [],
+      "lifecycle_note": null,
+      "source_path": "docs/current/RENM-decision-register.md",
+      "source_line": 204
     }
   ]
 }

@@ -22,7 +22,7 @@
       "path": "docs/current/RENM-CURRENT.md",
       "status": "current",
       "role": "immediate operating state and Lovable context source",
-      "sha256": "521750a95a00f4ab16213c24aeca51fdec4bdbf133bf1526f970c576ab0226b4"
+      "sha256": "711c10394307f3ce782d23a12e7273ea3d888633281aefe421221c2ba9c66037"
     },
     {
       "id": "project_knowledge",
@@ -43,14 +43,14 @@
       "path": "docs/current/RENM-decision-register.md",
       "status": "current",
       "role": "canonical decision text and unresolved questions",
-      "sha256": "90eede41a4466d17773cea4c3b15c8a1c24dc3207b1df7215b652297e21f9311"
+      "sha256": "2ccbf80faeb819012fd125b9d2ad521ff7fb0f0f44487740479db057f90ee2fc"
     },
     {
       "id": "phased_build_brief",
       "path": "docs/current/RENM-phased-build-brief.md",
       "status": "current",
       "role": "approval-gated implementation sequence",
-      "sha256": "6cbf8511f1b3ec3d15fa6e1e6be6da8f0d423727b586b99c560800449bb77325"
+      "sha256": "46a834e1d1e840824c5f721153746983a1a5d71481547dc2545d77d4895df442"
     },
     {
       "id": "next_thread_handover",
@@ -134,7 +134,7 @@
       "path": "docs/current/RENM-interactive-race-explorer-product-reset-2026-08-07.md",
       "status": "approved_operating_product_reset",
       "role": "120–150 day race-intelligence experiment, partnership hierarchy, Explorer MVP, results boundary and PX delivery order",
-      "sha256": "d230158c2e409f3a7695c9a3332db3d8159a5bafd9a7bff1bf664530add865fb"
+      "sha256": "c7f77c74aeaf4a8af5636dc7ca53d32c99c00a79e9fe727fbb814cac1d1f3e44"
     },
     {
       "id": "organiser_validation_preflight_2026_08_04",

@@ -260,21 +260,21 @@ No event is described as an entry, registration or organiser value without exter
 
 ### PX1 — Contract and rectify
 
-- Finalise the series/edition/race/result/source contract and source-authority matrix.
-- Repair source identity, material-change detection, source-missing treatment and conflict queues in separately approved packages.
-- Define the safe public query contract and representative performance tests.
+- Produce a deterministic inventory of current event, source, duplicate, recurrence, series and destination behaviour using the existing schema.
+- Correct only evidenced identity and source defects through separately approved, reversible packages; strengthen adapter and duplicate-classification tests before any production-data mutation.
+- Define the safe public query contract and representative performance tests using the existing backend.
 - Establish a reproducible analytics and Search Console baseline.
 
-Exit evidence: the selected pilot inventory reconciles, material changes are distinguishable from unchanged upserts, and every displayed material field has a defined source/freshness treatment.
+Exit evidence: the selected pilot inventory reconciles, repeated source input is demonstrably idempotent, correction candidates are reproducible and any production mutation is presented for separate approval. PX1 does not introduce PostGIS, `pg_trgm` or a broader series/edition/race/result/source schema.
 
 ### PX2 — Explorer vertical slice
 
-- Deliver one feature-flagged, mobile-first Race Explorer route with a bounded filter set, comparison and honest missing-data states.
+- Deliver one feature-flagged, mobile-first Race Explorer route on the existing backend with a bounded filter set, comparison and honest missing-data states.
 - Preserve existing indexable routes and use them as pre-filtered acquisition entrances.
-- Enrich occurrence pages with supported course, edition, source and results sections only.
+- Then deliver one authorised course-rich event-page prototype using toGeoJSON, Turf, Leaflet and Recharts, with supported course, elevation, edition, source and results sections only.
 - Instrument Explorer, compare, save/return and destination behaviours without describing clicks as entries.
 
-Exit evidence: representative runner tasks are materially clearer than the current flat journey, query performance is acceptable and the slice can be rolled back independently.
+Exit evidence: representative runner tasks are materially clearer than the current flat journey, the authorised course page adds useful decision value, query and rendering performance are acceptable and each test can be rolled back independently. Only this evidence may justify PostGIS, `pg_trgm` or broader schema work.
 
 ### PX3 — Direct-data and results pilots
 
@@ -311,7 +311,7 @@ If the combined signal is strong, assess platform graduation against the documen
 
 ### Resumption gate for prior infrastructure work
 
-L3B-5B, L3C and later packages are not cancelled. Resume only when a named Explorer, security or lifecycle dependency justifies them. L4 shared eligibility and L6 destination role/state are likely dependencies; their exact order follows PX1 evidence.
+L3B-5B, L3C and later packages are not cancelled. Resume only when a named Explorer, security or lifecycle dependency justifies them. L4 shared eligibility and L6 destination role/state are likely dependencies; their exact order follows PX1 evidence. PostGIS, `pg_trgm` and broader canonical schema changes remain gated until the bounded product tests demonstrate the need.
 
 ## MVP exclusions
 

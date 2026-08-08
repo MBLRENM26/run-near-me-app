@@ -11,9 +11,9 @@ L3B-5B and the previous implementation sequence are paused, not cancelled. Exist
 Revised immediate sequence:
 
 1. **PX0 — reset and preflight:** update canon; re-verify app/production/analytics state; inventory source and data defects; prepare the partnership brief. Documentation and read-only preparation only.
-2. **PX1 — contract and rectify:** implement the canonical series/edition/race/result/source contract and synchronisation repairs through separately approved packages; fix the evidence baseline.
-3. **PX2 — Explorer vertical slice:** ship one feature-flagged mobile-first discovery, comparison and event-intelligence journey while retaining existing SEO routes.
-4. **PX3 — direct-data/results pilots:** prove one governing/registration feed, one timing/results route and a small organiser GPX/course cohort before general integration.
+2. **PX1 — bounded rectification:** use the existing schema to inventory and correct identity/source defects through separately approved, reversible packages; fix the evidence baseline without PostGIS, `pg_trgm` or broader canonical-schema work.
+3. **PX2 — bounded product tests:** first test a feature-flagged mobile-first Explorer on the existing backend; then test one authorised course-rich event page using toGeoJSON, Turf, Leaflet and Recharts while retaining existing SEO routes.
+4. **PX3 — evidence-led expansion:** prove direct-data/results pilots and introduce broader schema or search/geospatial infrastructure only where the two prototypes demonstrate a named need.
 5. **PX4 — distribution and return:** run tracked, data-led search/social/video campaigns and test shortlist/return behaviour.
 6. **PX5 — decision gate:** at day 120–150, continue, narrow or stop major investment without moving the evidence threshold retrospectively.
 

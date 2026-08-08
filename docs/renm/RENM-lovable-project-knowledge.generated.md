@@ -4,7 +4,7 @@
 
 Status: canonical short-form context for Mike, Codex and Lovable. Linked contracts retain authority; Lovable context is generated from this file.
 
-Last reviewed: 7 August 2026
+Last reviewed: 8 August 2026
 
 ## Authority order
 
@@ -34,7 +34,7 @@ Conflicts must be raised. Never silently combine a superseded fact with a curren
 
 Demonstrated journey: `Google/AI → RENM occurrence page → correct official/entry destination`. Occurrence traffic and outbound hand-offs are observed; clicks are not registrations, revenue or organiser value.
 
-RENM will now run a 120–150 day evidence experiment as a trusted UK race-intelligence product. Contract the scope; rectify canonical series/edition/race/result/source data; build a mobile-first OpenRouter-style Explorer and comparison journey; add authorised direct feeds; distribute data-led search/social/video content; then continue, narrow or stop major investment from fixed signals.
+RENM will run a 120–150 day trusted UK race-intelligence experiment. Rectify the existing catalogue first; then test an OpenRouter-style Explorer on the existing backend and one authorised course-rich event page. Broader canonical modelling follows only where those tests demonstrate need. Add authorised feeds and data-led distribution in separate packages; then continue, narrow or stop major investment from fixed signals.
 
 Preferred data order: governing/licensing bodies, registration providers, timing/results providers and organisers. Strava and Garmin are optional runner-authorised enrichment/course-delivery channels, not the canonical catalogue. Named results remain separately rights/privacy-gated. See [Interactive Race Explorer product reset](RENM-interactive-race-explorer-product-reset-2026-08-07.md).
 
@@ -66,9 +66,9 @@ Lovable is the validation/incubation platform for the evidence window. GitHub re
 ## Active order
 
 1. PX0 reset/preflight: install canon; re-verify app head, production, analytics and worktree; inventory source/data defects; prepare the England Athletics and partner brief.
-2. PX1 contract/rectify: approve narrow packages for canonical series/edition/race/result/source identity, sync observability, conflicts and safe query feasibility.
-3. PX2 feature-flagged Explorer vertical slice; retain SEO routes as pre-filtered entrances.
-4. PX3 one governing/registration feed, one timing/results pilot and a small organiser GPX/course cohort.
+2. PX1 bounded rectification: inventory and correct identity/source defects with the existing schema through reversible, separately approved packages.
+3. PX2 bounded tests: an Explorer on the existing backend, then one authorised course-rich page using toGeoJSON, Turf, Leaflet and Recharts; retain SEO entrances.
+4. PX3 evidence-led expansion: add PostGIS, `pg_trgm`, broader schema or integrations only for a need demonstrated by the prototypes or source pilots.
 5. PX4 tracked data-led search/social/video distribution and return behaviour.
 6. PX5 day-120–150 evidence gate: continue, narrow or stop major investment; if continuing, assess platform fit without assuming a full-stack migration.
 
@@ -96,6 +96,7 @@ Structural package acceptance is not production promotion. Stored, current/live,
 - D53: the containment release is the operating baseline.
 - D54–D56: pause the old sequence; retain SEO acquisition; start results with authoritative resolution rather than copied runner rows.
 - D57–D67: run the time-boxed race-intelligence experiment; prefer authorised direct sources; treat Strava/Garmin as enrichment; require field-level provenance; distribute measurable data-led content; preserve option value if the gate fails; keep the build portable and graduate platforms only from demonstrated need.
+- D68: finish existing-schema rectification, then run the Explorer and authorised course-page tests before approving PostGIS, `pg_trgm` or broader schema work.
 
 The ledger indexes lifecycle state; Decision Register text remains canonical.
 
