@@ -14,6 +14,7 @@ import {
   type DuplicateRow,
 } from "@/lib/admin-events.functions";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -114,6 +115,56 @@ function AdminDuplicatesPage() {
       setBusy(false);
     }
   };
+
+  // Controlled manual override for ambiguous clusters: explicit survivor,
+  // explicit duplicates, mandatory audit note, explicit confirmation.
+  const handleManualMerge = async ({
+    survivor,
+    duplicates,
+    note,
+  }: {
+    cluster: DuplicateCluster;
+    survivor: DuplicateRow;
+    duplicates: DuplicateRow[];
+    note: string;
+  }) => {
+    if (!duplicates.length) return;
+    const trimmed = note.trim();
+    if (trimmed.length < 3 || trimmed.length > 500) {
+      toast.error("Audit note must be 3–500 characters.");
+      return;
+    }
+    if (
+      !confirm(
+        `Keep "${survivor.name}" (${survivor.slug ?? "no slug"}) and merge ${duplicates.length} selected duplicate${duplicates.length === 1 ? "" : "s"} into it?\n\nAudit note: ${trimmed}`,
+      )
+    )
+      return;
+    setBusy(true);
+    try {
+      const res = await mergeClusterFn({
+        data: {
+          survivorId: survivor.id,
+          duplicateIds: duplicates.map((r) => r.id),
+          note: trimmed,
+        },
+      });
+      if (res.failed.length) {
+        toast.warning(
+          `Merged ${res.merged}; ${res.failed.length} failed. ${res.failed[0]?.error ?? ""}`,
+        );
+      } else {
+        toast.success(`Merged ${res.merged} row${res.merged === 1 ? "" : "s"}.`);
+      }
+      invalidate();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Manual merge failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+
 
   const handleMarkSeries = async (cluster: DuplicateCluster) => {
     if (
@@ -351,19 +402,17 @@ function AdminDuplicatesPage() {
                 </h2>
                 <p className="text-xs text-muted-foreground">
                   Conflicting years, components, sources, places or mixed duplicate/series signals.
-                  No merge or series action is offered here.
+                  No survivor is chosen automatically and no automatic or bulk merge runs here — a
+                  controlled manual override is available after you have reviewed the evidence.
                 </p>
               </div>
               {reviewClusters.map((cluster) => (
-                <ClusterCard
+                <ManualMergeCluster
                   key={cluster.key}
                   cluster={cluster}
                   busy={busy}
-                  selected={false}
-                  onToggleSelect={() => undefined}
-                  onMergeAll={null}
                   onMergeOne={handleMerge}
-                  onMarkSeries={null}
+                  onSubmit={handleManualMerge}
                 />
               ))}
             </section>
@@ -426,6 +475,7 @@ function ClusterCard({
   onMergeAll,
   onMergeOne,
   onMarkSeries,
+  manual,
 }: {
   cluster: DuplicateCluster;
   busy: boolean;
@@ -434,6 +484,12 @@ function ClusterCard({
   onMergeAll: (() => void) | null;
   onMergeOne: (survivor: DuplicateRow, dupe: DuplicateRow) => void;
   onMarkSeries?: (() => void) | null;
+  manual?: {
+    keepId: string | null;
+    mergeIds: Set<string>;
+    onKeep: (id: string) => void;
+    onToggleMerge: (id: string) => void;
+  } | null;
 }) {
   const survivor = cluster.survivorId
     ? (cluster.rows.find((row) => row.id === cluster.survivorId) ?? null)
@@ -509,6 +565,7 @@ function ClusterCard({
         <table className="w-full text-sm">
           <thead className="bg-muted/30 text-left text-xs uppercase text-muted-foreground">
             <tr>
+              {manual && <th className="px-3 py-2">Keep / merge</th>}
               <th className="px-3 py-2">Name / slug / ID</th>
               <th className="px-3 py-2">Date</th>
               <th className="px-3 py-2">Town</th>
@@ -522,15 +579,42 @@ function ClusterCard({
           <tbody>
             {cluster.rows.map((row) => {
               const isSurvivor = row.id === cluster.survivorId;
+              const isKeep = manual?.keepId === row.id;
               return (
                 <tr
                   key={row.id}
                   className={
                     "border-t border-border " +
-                    (isSurvivor ? "bg-green-50/40 dark:bg-green-900/10" : "")
+                    (isSurvivor || isKeep ? "bg-green-50/40 dark:bg-green-900/10" : "")
                   }
                 >
+                  {manual && (
+                    <td className="whitespace-nowrap px-3 py-2">
+                      <div className="flex flex-col gap-1 text-xs">
+                        <label className="flex cursor-pointer items-center gap-2">
+                          <input
+                            type="radio"
+                            name={`keep-${cluster.key}`}
+                            checked={isKeep}
+                            disabled={busy}
+                            onChange={() => manual.onKeep(row.id)}
+                          />
+                          Keep
+                        </label>
+                        <label className="flex cursor-pointer items-center gap-2">
+                          <Checkbox
+                            checked={manual.mergeIds.has(row.id)}
+                            disabled={busy || isKeep}
+                            onCheckedChange={() => manual.onToggleMerge(row.id)}
+                            aria-label="Merge this row into the keeper"
+                          />
+                          Merge
+                        </label>
+                      </div>
+                    </td>
+                  )}
                   <td className="px-3 py-2">
+
                     <div className="font-medium text-foreground">
                       {row.name}
                       {isSurvivor && (
@@ -606,6 +690,113 @@ function ClusterCard({
             })}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+}
+
+// Controlled manual merge for ambiguous ("manual review") clusters.
+// Nothing is preselected: the administrator must pick exactly one row to keep,
+// tick the duplicates to merge, and write an audit note of 3–500 characters.
+function ManualMergeCluster({
+  cluster,
+  busy,
+  onMergeOne,
+  onSubmit,
+}: {
+  cluster: DuplicateCluster;
+  busy: boolean;
+  onMergeOne: (survivor: DuplicateRow, dupe: DuplicateRow) => void;
+  onSubmit: (args: {
+    cluster: DuplicateCluster;
+    survivor: DuplicateRow;
+    duplicates: DuplicateRow[];
+    note: string;
+  }) => Promise<void>;
+}) {
+  const [keepId, setKeepId] = useState<string | null>(null);
+  const [mergeIds, setMergeIds] = useState<Set<string>>(new Set());
+  const [note, setNote] = useState("");
+
+  const trimmedNote = note.trim();
+  const noteValid = trimmedNote.length >= 3 && trimmedNote.length <= 500;
+  const keepRow = cluster.rows.find((row) => row.id === keepId) ?? null;
+  const duplicates = cluster.rows.filter((row) => row.id !== keepId && mergeIds.has(row.id));
+  const canSubmit = !busy && !!keepRow && duplicates.length > 0 && noteValid;
+
+  const setKeep = (id: string) => {
+    setKeepId(id);
+    setMergeIds((prev) => {
+      if (!prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  };
+
+  const toggleMerge = (id: string) =>
+    setMergeIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  const submit = async () => {
+    if (!keepRow || !canSubmit) return;
+    await onSubmit({ cluster, survivor: keepRow, duplicates, note: trimmedNote });
+    setKeepId(null);
+    setMergeIds(new Set());
+    setNote("");
+  };
+
+  return (
+    <div className="space-y-0">
+      <ClusterCard
+        cluster={cluster}
+        busy={busy}
+        selected={false}
+        onToggleSelect={() => undefined}
+        onMergeAll={null}
+        onMergeOne={onMergeOne}
+        onMarkSeries={null}
+        manual={{ keepId, mergeIds, onKeep: setKeep, onToggleMerge: toggleMerge }}
+      />
+      <div className="space-y-3 rounded-b-lg border border-t-0 border-border bg-muted/20 px-4 py-3">
+        <p className="text-xs text-muted-foreground">
+          Controlled override: mark exactly one row as <strong>Keep</strong>, tick the rows to merge
+          into it, and record why the evidence supports this decision.
+        </p>
+        <div className="space-y-1">
+          <label
+            htmlFor={`note-${cluster.key}`}
+            className="text-xs font-medium text-muted-foreground"
+          >
+            Audit note (3–500 characters)
+          </label>
+          <Textarea
+            id={`note-${cluster.key}`}
+            value={note}
+            maxLength={500}
+            rows={3}
+            placeholder="Evidence reviewed and why this survivor is correct…"
+            onChange={(e) => setNote(e.target.value)}
+          />
+          <div className="text-[11px] text-muted-foreground">
+            {trimmedNote.length}/500
+            {!noteValid && trimmedNote.length > 0 && " · at least 3 characters required"}
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button size="sm" disabled={!canSubmit} onClick={submit}>
+            Merge selected into keeper
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            {keepRow
+              ? `Keeping ${keepRow.slug ?? keepRow.id.slice(0, 8)} · ${duplicates.length} selected duplicate${duplicates.length === 1 ? "" : "s"}`
+              : "No survivor selected"}
+          </span>
+        </div>
       </div>
     </div>
   );

@@ -810,6 +810,7 @@ export const mergeDuplicateEvents = createServerFn({ method: "POST" })
 async function mergePairInternal(
   survivorId: string,
   duplicateId: string,
+  note?: string | null,
 ): Promise<{ copied_tags: boolean }> {
   const { data: rows, error } = await supabaseAdmin
     .from("events")
@@ -859,7 +860,7 @@ async function mergePairInternal(
       duplicate_slug: dupe.slug,
       copied_tags: shouldCopyTags,
     },
-    note: null,
+    note: note ?? null,
   });
 
   return { copied_tags: shouldCopyTags };
@@ -871,6 +872,7 @@ export const mergeDuplicateCluster = createServerFn({ method: "POST" })
       .object({
         survivorId: z.string().uuid(),
         duplicateIds: z.array(z.string().uuid()).min(1).max(50),
+        note: z.string().trim().min(3).max(500).optional(),
       })
       .parse(d),
   )
@@ -881,7 +883,7 @@ export const mergeDuplicateCluster = createServerFn({ method: "POST" })
     for (const dupId of data.duplicateIds) {
       if (dupId === data.survivorId) continue;
       try {
-        await mergePairInternal(data.survivorId, dupId);
+        await mergePairInternal(data.survivorId, dupId, data.note ?? null);
         merged.push(dupId);
       } catch (e) {
         failed.push({
