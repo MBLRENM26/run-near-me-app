@@ -608,3 +608,110 @@ function ClusterCard({
     </div>
   );
 }
+
+// Controlled manual merge for ambiguous ("manual review") clusters.
+// Nothing is preselected: the administrator must pick exactly one row to keep,
+// tick the duplicates to merge, and write an audit note of 3–500 characters.
+function ManualMergeCluster({
+  cluster,
+  busy,
+  onMergeOne,
+  onSubmit,
+}: {
+  cluster: DuplicateCluster;
+  busy: boolean;
+  onMergeOne: (survivor: DuplicateRow, dupe: DuplicateRow) => void;
+  onSubmit: (args: {
+    cluster: DuplicateCluster;
+    survivor: DuplicateRow;
+    duplicates: DuplicateRow[];
+    note: string;
+  }) => Promise<void>;
+}) {
+  const [keepId, setKeepId] = useState<string | null>(null);
+  const [mergeIds, setMergeIds] = useState<Set<string>>(new Set());
+  const [note, setNote] = useState("");
+
+  const trimmedNote = note.trim();
+  const noteValid = trimmedNote.length >= 3 && trimmedNote.length <= 500;
+  const keepRow = cluster.rows.find((row) => row.id === keepId) ?? null;
+  const duplicates = cluster.rows.filter((row) => row.id !== keepId && mergeIds.has(row.id));
+  const canSubmit = !busy && !!keepRow && duplicates.length > 0 && noteValid;
+
+  const setKeep = (id: string) => {
+    setKeepId(id);
+    setMergeIds((prev) => {
+      if (!prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  };
+
+  const toggleMerge = (id: string) =>
+    setMergeIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  const submit = async () => {
+    if (!keepRow || !canSubmit) return;
+    await onSubmit({ cluster, survivor: keepRow, duplicates, note: trimmedNote });
+    setKeepId(null);
+    setMergeIds(new Set());
+    setNote("");
+  };
+
+  return (
+    <div className="space-y-0">
+      <ClusterCard
+        cluster={cluster}
+        busy={busy}
+        selected={false}
+        onToggleSelect={() => undefined}
+        onMergeAll={null}
+        onMergeOne={onMergeOne}
+        onMarkSeries={null}
+        manual={{ keepId, mergeIds, onKeep: setKeep, onToggleMerge: toggleMerge }}
+      />
+      <div className="space-y-3 rounded-b-lg border border-t-0 border-border bg-muted/20 px-4 py-3">
+        <p className="text-xs text-muted-foreground">
+          Controlled override: mark exactly one row as <strong>Keep</strong>, tick the rows to merge
+          into it, and record why the evidence supports this decision.
+        </p>
+        <div className="space-y-1">
+          <label
+            htmlFor={`note-${cluster.key}`}
+            className="text-xs font-medium text-muted-foreground"
+          >
+            Audit note (3–500 characters)
+          </label>
+          <Textarea
+            id={`note-${cluster.key}`}
+            value={note}
+            maxLength={500}
+            rows={3}
+            placeholder="Evidence reviewed and why this survivor is correct…"
+            onChange={(e) => setNote(e.target.value)}
+          />
+          <div className="text-[11px] text-muted-foreground">
+            {trimmedNote.length}/500
+            {!noteValid && trimmedNote.length > 0 && " · at least 3 characters required"}
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button size="sm" disabled={!canSubmit} onClick={submit}>
+            Merge selected into keeper
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            {keepRow
+              ? `Keeping ${keepRow.slug ?? keepRow.id.slice(0, 8)} · ${duplicates.length} selected duplicate${duplicates.length === 1 ? "" : "s"}`
+              : "No survivor selected"}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
