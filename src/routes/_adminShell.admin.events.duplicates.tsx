@@ -116,6 +116,56 @@ function AdminDuplicatesPage() {
     }
   };
 
+  // Controlled manual override for ambiguous clusters: explicit survivor,
+  // explicit duplicates, mandatory audit note, explicit confirmation.
+  const handleManualMerge = async ({
+    survivor,
+    duplicates,
+    note,
+  }: {
+    cluster: DuplicateCluster;
+    survivor: DuplicateRow;
+    duplicates: DuplicateRow[];
+    note: string;
+  }) => {
+    if (!duplicates.length) return;
+    const trimmed = note.trim();
+    if (trimmed.length < 3 || trimmed.length > 500) {
+      toast.error("Audit note must be 3–500 characters.");
+      return;
+    }
+    if (
+      !confirm(
+        `Keep "${survivor.name}" (${survivor.slug ?? "no slug"}) and merge ${duplicates.length} selected duplicate${duplicates.length === 1 ? "" : "s"} into it?\n\nAudit note: ${trimmed}`,
+      )
+    )
+      return;
+    setBusy(true);
+    try {
+      const res = await mergeClusterFn({
+        data: {
+          survivorId: survivor.id,
+          duplicateIds: duplicates.map((r) => r.id),
+          note: trimmed,
+        },
+      });
+      if (res.failed.length) {
+        toast.warning(
+          `Merged ${res.merged}; ${res.failed.length} failed. ${res.failed[0]?.error ?? ""}`,
+        );
+      } else {
+        toast.success(`Merged ${res.merged} row${res.merged === 1 ? "" : "s"}.`);
+      }
+      invalidate();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Manual merge failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+
+
   const handleMarkSeries = async (cluster: DuplicateCluster) => {
     if (
       !confirm(
