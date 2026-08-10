@@ -351,19 +351,17 @@ function AdminDuplicatesPage() {
                 </h2>
                 <p className="text-xs text-muted-foreground">
                   Conflicting years, components, sources, places or mixed duplicate/series signals.
-                  No merge or series action is offered here.
+                  No survivor is chosen automatically and no automatic or bulk merge runs here — a
+                  controlled manual override is available after you have reviewed the evidence.
                 </p>
               </div>
               {reviewClusters.map((cluster) => (
-                <ClusterCard
+                <ManualMergeCluster
                   key={cluster.key}
                   cluster={cluster}
                   busy={busy}
-                  selected={false}
-                  onToggleSelect={() => undefined}
-                  onMergeAll={null}
                   onMergeOne={handleMerge}
-                  onMarkSeries={null}
+                  onSubmit={handleManualMerge}
                 />
               ))}
             </section>
