@@ -266,6 +266,8 @@ function completenessScore(row: DuplicateRow): number {
     (row.entry_url ? 3 : 0) +
     (row.organiser_url ? 1 : 0) +
     (row.source_url ? 2 : 0) +
+    (row.distances ? 4 : 0) +
+    (row.discipline ? 1 : 0) +
     row.distance_tags.length +
     row.terrain_tags.length -
     (hasExplicitCopySuffix(row.name) ? 100 : 0)
@@ -274,7 +276,7 @@ function completenessScore(row: DuplicateRow): number {
 
 function survivorReason(row: DuplicateRow): string {
   const tags = row.distance_tags.length + row.terrain_tags.length;
-  return `Same-source candidate: completeness ${completenessScore(row)} (${row.sort_date ? "dated" : "undated"}, ${row.date_is_estimated ? "estimated" : "confirmed"}, ${row.norm_id ? "source ID" : "no source ID"}, ${tags} tags); ID tie-break.`;
+  return `Same-source candidate: completeness ${completenessScore(row)} (${row.sort_date ? "dated" : "undated"}, ${row.date_is_estimated ? "estimated" : "confirmed"}, ${row.norm_id ? "source ID" : "no source ID"}, ${row.distances ? "raw distance" : "no raw distance"}, ${tags} tags); ID tie-break.`;
 }
 
 function seriesReason(rows: DuplicateRow[]): string {

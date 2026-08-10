@@ -51,6 +51,27 @@ describe("event rectification", () => {
     expect(clusters[0].survivorReason).toContain("Same-source candidate");
   });
 
+  it("prefers a survivor whose raw distance can retain the other row's tags", () => {
+    const clusters = buildDuplicateClusters([
+      row({
+        id: "a",
+        name: "Kingsbridge Fair Week 10k Road Race",
+        distances: null,
+        distance_tags: ["10k"],
+        terrain_tags: ["road"],
+      }),
+      row({
+        id: "b",
+        name: "Kingsbridge Fair Week 10k Road Race",
+        distances: "10 km",
+        distance_tags: [],
+        terrain_tags: [],
+      }),
+    ]);
+    expect(clusters[0]).toMatchObject({ kind: "duplicate", survivorId: "b" });
+    expect(clusters[0].survivorReason).toContain("raw distance");
+  });
+
   it("keeps conflicting-date fixtures out of high confidence", () => {
     const clusters = buildDuplicateClusters([
       row({ id: "a", name: "Tatton 10K", sort_date: "2026-08-08" }),
