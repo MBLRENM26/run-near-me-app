@@ -10,6 +10,8 @@ export interface DuplicateRow {
   discipline: string | null;
   source: string | null;
   source_url: string | null;
+  entry_url: string | null;
+  organiser_url: string | null;
   norm_id: string | null;
   date_is_estimated: boolean;
   distance_tags: string[];
@@ -36,8 +38,6 @@ export interface RectificationInventoryRow extends DuplicateRow {
   is_upcoming: boolean;
   duplicate_of: string | null;
   series_key: string | null;
-  entry_url: string | null;
-  organiser_url: string | null;
 }
 
 export interface RectificationInventory {
@@ -98,8 +98,14 @@ function componentMarkers(name: string): string[] {
   const value = name.toLowerCase();
   const markers = new Set<string>();
   if (/\b(junior|juniors|children|kids?)\b/.test(value)) markers.add("junior");
-  for (const match of value.matchAll(/\b(?:race|round|fixture)\s*#?\s*(\d+)\b/g)) {
+  for (const match of value.matchAll(/\b(?:race|round|fixture)\s*#?\s*(\d{1,2})\b/g)) {
     markers.add(`number:${match[1]}`);
+  }
+  for (const match of value.matchAll(/\(([^)]*)\)/g)) {
+    const detail = match[1].replace(/[^a-z0-9]+/g, " ").trim();
+    if (/\b(junior|juniors|children|kids?|wee|fun|5k|10k|half|marathon|race)\b/.test(detail)) {
+      markers.add(`detail:${detail}`);
+    }
   }
   return [...markers].sort();
 }
@@ -117,6 +123,38 @@ function hasYearConflict(rows: DuplicateRow[]): boolean {
 function hasSourceConflict(rows: DuplicateRow[]): boolean {
   const sources = rows.map(sourceKey).filter((value): value is string => !!value);
   return sources.length !== rows.length || new Set(sources).size > 1;
+}
+
+function normaliseUrl(url: string | null): string | null {
+  if (!url) return null;
+  try {
+    const parsed = new URL(url);
+    parsed.hash = "";
+    return parsed.toString().replace(/\/$/, "").toLowerCase();
+  } catch {
+    return url.trim().replace(/\/$/, "").toLowerCase() || null;
+  }
+}
+
+function hasDestinationConflict(rows: DuplicateRow[]): boolean {
+  const destinations = rows
+    .map((row) => normaliseUrl(row.entry_url))
+    .filter((value): value is string => !!value);
+  return new Set(destinations).size > 1;
+}
+
+function hasDistanceComponentConflict(rows: DuplicateRow[]): boolean {
+  const tagSets = rows.map((row) => new Set(row.distance_tags)).filter((tags) => tags.size > 0);
+  for (let i = 0; i < tagSets.length; i += 1) {
+    for (let j = i + 1; j < tagSets.length; j += 1) {
+      const left = tagSets[i];
+      const right = tagSets[j];
+      const leftSubset = [...left].every((tag) => right.has(tag));
+      const rightSubset = [...right].every((tag) => left.has(tag));
+      if (!leftSubset && !rightSubset) return true;
+    }
+  }
+  return false;
 }
 
 function hasMixedDates(rows: DuplicateRow[]): boolean {
@@ -225,7 +263,11 @@ function completenessScore(row: DuplicateRow): number {
     (!row.date_is_estimated ? 4 : 0) +
     (row.slug ? 4 : 0) +
     (row.norm_id ? 3 : 0) +
+    (row.entry_url ? 3 : 0) +
+    (row.organiser_url ? 1 : 0) +
     (row.source_url ? 2 : 0) +
+    (row.distances ? 4 : 0) +
+    (row.discipline ? 1 : 0) +
     row.distance_tags.length +
     row.terrain_tags.length -
     (hasExplicitCopySuffix(row.name) ? 100 : 0)
@@ -234,7 +276,7 @@ function completenessScore(row: DuplicateRow): number {
 
 function survivorReason(row: DuplicateRow): string {
   const tags = row.distance_tags.length + row.terrain_tags.length;
-  return `Same-source candidate: completeness ${completenessScore(row)} (${row.sort_date ? "dated" : "undated"}, ${row.date_is_estimated ? "estimated" : "confirmed"}, ${row.norm_id ? "source ID" : "no source ID"}, ${tags} tags); ID tie-break.`;
+  return `Same-source candidate: completeness ${completenessScore(row)} (${row.sort_date ? "dated" : "undated"}, ${row.date_is_estimated ? "estimated" : "confirmed"}, ${row.norm_id ? "source ID" : "no source ID"}, ${row.distances ? "raw distance" : "no raw distance"}, ${tags} tags); ID tie-break.`;
 }
 
 function seriesReason(rows: DuplicateRow[]): string {
@@ -289,6 +331,18 @@ export function buildDuplicateClusters(rows: DuplicateRow[]): DuplicateCluster[]
       confidence = "medium";
       reason =
         "Source authority is missing or conflicting. Resolve provenance and destinations before selecting a survivor.";
+      survivorId = null;
+    } else if (hasDestinationConflict(ordered)) {
+      kind = "review";
+      confidence = "medium";
+      reason =
+        "Entry destinations conflict. Verify which destination represents the canonical occurrence before selecting a survivor.";
+      survivorId = null;
+    } else if (hasDistanceComponentConflict(ordered)) {
+      kind = "review";
+      confidence = "medium";
+      reason =
+        "Distance components conflict. Verify whether these rows represent the same occurrence before correction.";
       survivorId = null;
     } else if (detectSeries(ordered)) {
       kind = "series";

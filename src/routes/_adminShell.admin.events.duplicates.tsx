@@ -569,6 +569,16 @@ function ClusterCard({
                         source
                       </a>
                     )}
+                    {row.entry_url && (
+                      <a
+                        href={row.entry_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="ml-2 break-all text-primary hover:underline"
+                      >
+                        entry
+                      </a>
+                    )}
                   </td>
                   <td className="px-3 py-2 text-right">
                     <div className="flex justify-end gap-2">

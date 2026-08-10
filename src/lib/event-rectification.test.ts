@@ -18,6 +18,8 @@ function row(overrides: Partial<DuplicateRow> & Pick<DuplicateRow, "id" | "name"
     discipline: "Road",
     source: "england-athletics",
     source_url: "https://example.com/race",
+    entry_url: "https://entry.example.com/race",
+    organiser_url: "https://organiser.example.com/race",
     norm_id: `ea-${overrides.id}`,
     date_is_estimated: false,
     distance_tags: ["10k"],
@@ -49,6 +51,27 @@ describe("event rectification", () => {
     expect(clusters[0].survivorReason).toContain("Same-source candidate");
   });
 
+  it("prefers a survivor whose raw distance can retain the other row's tags", () => {
+    const clusters = buildDuplicateClusters([
+      row({
+        id: "a",
+        name: "Kingsbridge Fair Week 10k Road Race",
+        distances: null,
+        distance_tags: ["10k"],
+        terrain_tags: ["road"],
+      }),
+      row({
+        id: "b",
+        name: "Kingsbridge Fair Week 10k Road Race",
+        distances: "10 km",
+        distance_tags: [],
+        terrain_tags: [],
+      }),
+    ]);
+    expect(clusters[0]).toMatchObject({ kind: "duplicate", survivorId: "b" });
+    expect(clusters[0].survivorReason).toContain("raw distance");
+  });
+
   it("keeps conflicting-date fixtures out of high confidence", () => {
     const clusters = buildDuplicateClusters([
       row({ id: "a", name: "Tatton 10K", sort_date: "2026-08-08" }),
@@ -75,6 +98,43 @@ describe("event rectification", () => {
     ]);
     expect(clusters[0]).toMatchObject({ kind: "review", survivorId: null });
     expect(clusters[0].reason).toContain("different race numbers");
+  });
+
+  it("does not treat an edition year after Race as a race number", () => {
+    const clusters = buildDuplicateClusters([
+      row({ id: "a", name: "Wimborne 10 Mile Road Race" }),
+      row({ id: "b", name: "Wimborne 10 Mile Road Race 2026" }),
+    ]);
+    expect(clusters[0]).toMatchObject({ kind: "duplicate", confidence: "high" });
+  });
+
+  it("holds meaningful parenthetical components for review", () => {
+    const clusters = buildDuplicateClusters([
+      row({ id: "a", name: "Loch Ness Marathon & Festival of Running 2026" }),
+      row({
+        id: "b",
+        name: "Loch Ness Marathon & Festival of Running 2026 (10k Race and Wee Nessie)",
+      }),
+    ]);
+    expect(clusters[0]).toMatchObject({ kind: "review", confidence: "low", survivorId: null });
+  });
+
+  it("holds conflicting entry destinations for review", () => {
+    const clusters = buildDuplicateClusters([
+      row({ id: "a", name: "Flying Fox 10", entry_url: "https://timing.example/flying-fox" }),
+      row({ id: "b", name: "Flying Fox 10 2026", entry_url: "https://club.example/flying-fox" }),
+    ]);
+    expect(clusters[0]).toMatchObject({ kind: "review", confidence: "medium", survivorId: null });
+    expect(clusters[0].reason).toContain("Entry destinations conflict");
+  });
+
+  it("holds incompatible distance components for review", () => {
+    const clusters = buildDuplicateClusters([
+      row({ id: "a", name: "Tamworth 5 Mile", distance_tags: ["5-mile", "1-mile"] }),
+      row({ id: "b", name: "Tamworth 5 Mile 2026", distance_tags: ["5-mile", "fun-run"] }),
+    ]);
+    expect(clusters[0]).toMatchObject({ kind: "review", confidence: "medium", survivorId: null });
+    expect(clusters[0].reason).toContain("Distance components conflict");
   });
 
   it("does not select a survivor across sources", () => {
