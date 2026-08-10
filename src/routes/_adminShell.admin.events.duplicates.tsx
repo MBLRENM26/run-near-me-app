@@ -475,6 +475,7 @@ function ClusterCard({
   onMergeAll,
   onMergeOne,
   onMarkSeries,
+  manual,
 }: {
   cluster: DuplicateCluster;
   busy: boolean;
@@ -483,6 +484,12 @@ function ClusterCard({
   onMergeAll: (() => void) | null;
   onMergeOne: (survivor: DuplicateRow, dupe: DuplicateRow) => void;
   onMarkSeries?: (() => void) | null;
+  manual?: {
+    keepId: string | null;
+    mergeIds: Set<string>;
+    onKeep: (id: string) => void;
+    onToggleMerge: (id: string) => void;
+  } | null;
 }) {
   const survivor = cluster.survivorId
     ? (cluster.rows.find((row) => row.id === cluster.survivorId) ?? null)
