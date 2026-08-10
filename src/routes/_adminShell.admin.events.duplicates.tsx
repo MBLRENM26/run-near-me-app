@@ -565,6 +565,7 @@ function ClusterCard({
         <table className="w-full text-sm">
           <thead className="bg-muted/30 text-left text-xs uppercase text-muted-foreground">
             <tr>
+              {manual && <th className="px-3 py-2">Keep / merge</th>}
               <th className="px-3 py-2">Name / slug / ID</th>
               <th className="px-3 py-2">Date</th>
               <th className="px-3 py-2">Town</th>
@@ -578,15 +579,42 @@ function ClusterCard({
           <tbody>
             {cluster.rows.map((row) => {
               const isSurvivor = row.id === cluster.survivorId;
+              const isKeep = manual?.keepId === row.id;
               return (
                 <tr
                   key={row.id}
                   className={
                     "border-t border-border " +
-                    (isSurvivor ? "bg-green-50/40 dark:bg-green-900/10" : "")
+                    (isSurvivor || isKeep ? "bg-green-50/40 dark:bg-green-900/10" : "")
                   }
                 >
+                  {manual && (
+                    <td className="whitespace-nowrap px-3 py-2">
+                      <div className="flex flex-col gap-1 text-xs">
+                        <label className="flex cursor-pointer items-center gap-2">
+                          <input
+                            type="radio"
+                            name={`keep-${cluster.key}`}
+                            checked={isKeep}
+                            disabled={busy}
+                            onChange={() => manual.onKeep(row.id)}
+                          />
+                          Keep
+                        </label>
+                        <label className="flex cursor-pointer items-center gap-2">
+                          <Checkbox
+                            checked={manual.mergeIds.has(row.id)}
+                            disabled={busy || isKeep}
+                            onCheckedChange={() => manual.onToggleMerge(row.id)}
+                            aria-label="Merge this row into the keeper"
+                          />
+                          Merge
+                        </label>
+                      </div>
+                    </td>
+                  )}
                   <td className="px-3 py-2">
+
                     <div className="font-medium text-foreground">
                       {row.name}
                       {isSurvivor && (
