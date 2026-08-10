@@ -14,6 +14,7 @@ import {
   type DuplicateRow,
 } from "@/lib/admin-events.functions";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 
