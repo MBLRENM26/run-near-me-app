@@ -128,18 +128,18 @@ function AdminDuplicatesPage() {
     duplicates: DuplicateRow[];
     note: string;
   }) => {
-    if (!duplicates.length) return;
+    if (!duplicates.length) return false;
     const trimmed = note.trim();
     if (trimmed.length < 3 || trimmed.length > 500) {
       toast.error("Audit note must be 3–500 characters.");
-      return;
+      return false;
     }
     if (
       !confirm(
         `Keep "${survivor.name}" (${survivor.slug ?? "no slug"}) and merge ${duplicates.length} selected duplicate${duplicates.length === 1 ? "" : "s"} into it?\n\nAudit note: ${trimmed}`,
       )
     )
-      return;
+      return false;
     setBusy(true);
     try {
       const res = await mergeClusterFn({
@@ -157,14 +157,14 @@ function AdminDuplicatesPage() {
         toast.success(`Merged ${res.merged} row${res.merged === 1 ? "" : "s"}.`);
       }
       invalidate();
+      return res.failed.length === 0;
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Manual merge failed");
+      return false;
     } finally {
       setBusy(false);
     }
   };
-
-
 
   const handleMarkSeries = async (cluster: DuplicateCluster) => {
     if (
@@ -614,7 +614,6 @@ function ClusterCard({
                     </td>
                   )}
                   <td className="px-3 py-2">
-
                     <div className="font-medium text-foreground">
                       {row.name}
                       {isSurvivor && (
@@ -712,7 +711,7 @@ function ManualMergeCluster({
     survivor: DuplicateRow;
     duplicates: DuplicateRow[];
     note: string;
-  }) => Promise<void>;
+  }) => Promise<boolean>;
 }) {
   const [keepId, setKeepId] = useState<string | null>(null);
   const [mergeIds, setMergeIds] = useState<Set<string>>(new Set());
@@ -744,7 +743,8 @@ function ManualMergeCluster({
 
   const submit = async () => {
     if (!keepRow || !canSubmit) return;
-    await onSubmit({ cluster, survivor: keepRow, duplicates, note: trimmedNote });
+    const completed = await onSubmit({ cluster, survivor: keepRow, duplicates, note: trimmedNote });
+    if (!completed) return;
     setKeepId(null);
     setMergeIds(new Set());
     setNote("");
