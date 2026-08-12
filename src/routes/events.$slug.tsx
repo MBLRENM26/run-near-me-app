@@ -13,8 +13,10 @@ import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { RaceReminderSignup } from "@/components/events/RaceReminderSignup";
 import { TrustProfileStrip } from "@/components/events/TrustProfileStrip";
+import { CourseIntelligence } from "@/components/events/CourseIntelligence";
 import { getEventPageData } from "@/lib/events.functions";
 import { setEventResponseHeaders } from "@/lib/event-response-headers";
+import { courseProfileForEvent } from "@/lib/course-profile";
 
 import {
   buildAboutParagraph,
@@ -476,6 +478,7 @@ function EventDetailPage() {
     : null;
   const showCombo =
     !!regionSlug && !!comboSlug && related.totalCount >= 3;
+  const courseProfile = courseProfileForEvent(e.slug);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -811,6 +814,8 @@ function EventDetailPage() {
               </p>
             </div>
           )}
+
+          {courseProfile && <CourseIntelligence course={courseProfile} />}
 
 
           <div className="mt-8">

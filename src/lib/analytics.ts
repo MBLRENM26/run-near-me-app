@@ -136,3 +136,13 @@ export const trackExplorerEventOpen = (props: {
   slug: string;
   source: "card" | "detail" | "compare";
 }) => track("Explorer Event Page Opened", props);
+
+export const trackCourseModuleViewed = (props: {
+  slug: string;
+  provider: "plotaroute";
+}) => track("Course Module Viewed", props);
+
+export const trackCourseSourceOpened = (props: {
+  slug: string;
+  provider: "plotaroute";
+}) => track("Course Source Opened", props);
