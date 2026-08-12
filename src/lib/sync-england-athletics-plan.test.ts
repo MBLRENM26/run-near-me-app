@@ -109,4 +109,50 @@ describe("planEnglandAthleticsBatch", () => {
     expect(plan.rows).toHaveLength(0);
     expect(plan.skippedDupes).toBe(1);
   });
+
+  it("writes deterministic source taxonomy and parsed tags", () => {
+    const plan = planEnglandAthleticsBatch({
+      events: [event()],
+      existingRows: [],
+      todayISO: TODAY,
+    });
+    expect(plan.rows[0]).toMatchObject({
+      governance: "england_athletics",
+      race_profile: "road_race",
+      distance_tags: ["10k"],
+      terrain_tags: ["road"],
+    });
+  });
+
+  it("retains reviewed enrichment when the feed omits coordinates", () => {
+    const source = event({ address: null });
+    const normId = `ea-${source.id}`;
+    const plan = planEnglandAthleticsBatch({
+      events: [source],
+      existingRows: [
+        {
+          slug: "example-10k",
+          name: source.name,
+          date_from: "2026-09-10",
+          norm_id: normId,
+          source: "england-athletics",
+          lat: 53.48,
+          lng: -2.24,
+          is_curated_tags: true,
+          distance_tags: ["5-mile"],
+          terrain_tags: ["trail"],
+          governance: "england_athletics",
+          race_profile: "trail_race",
+        },
+      ],
+      todayISO: TODAY,
+    });
+    expect(plan.rows[0]).toMatchObject({
+      lat: 53.48,
+      lng: -2.24,
+      distance_tags: ["5-mile"],
+      terrain_tags: ["trail"],
+      race_profile: "trail_race",
+    });
+  });
 });

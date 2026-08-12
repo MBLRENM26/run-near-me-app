@@ -1,5 +1,6 @@
 import type { Database } from "@/integrations/supabase/types";
 import { normaliseRegion } from "@/lib/region-normalize";
+import { buildSourceEnrichment, type ExistingSourceEnrichment } from "@/lib/source-enrichment";
 
 export type EaRace = {
   name: string | null;
@@ -29,7 +30,7 @@ export type EaEvent = {
   discipline: { name: string | null } | null;
 };
 
-export type ExistingEaRow = {
+export type ExistingEaRow = ExistingSourceEnrichment & {
   slug: string | null;
   name: string | null;
   date_from: string | null;
@@ -112,6 +113,11 @@ export function planEnglandAthleticsBatch(input: {
 }): EnglandAthleticsPlan {
   const { events, existingRows, todayISO } = input;
   const slugByNormId = new Map(existingRows.map((row) => [row.norm_id, row.slug]));
+  const existingByNormId = new Map(
+    existingRows
+      .filter((row): row is ExistingEaRow & { norm_id: string } => !!row.norm_id)
+      .map((row) => [row.norm_id, row]),
+  );
   const slugOwners = new Map(existingRows.map((row) => [row.slug, row.norm_id]));
   const otherSourceNameDate = new Set(
     existingRows
@@ -165,6 +171,22 @@ export function planEnglandAthleticsBatch(input: {
     const latitude = event.address?.latitude ?? null;
     const longitude = event.address?.longitude ?? null;
     const county = event.address?.region?.trim() || null;
+    const distances = distancesFromRaces(event.races);
+    const incomingCoordinates =
+      typeof latitude === "number" &&
+      Number.isFinite(latitude) &&
+      typeof longitude === "number" &&
+      Number.isFinite(longitude)
+        ? { lat: latitude, lng: longitude }
+        : null;
+    const enrichment = buildSourceEnrichment({
+      name,
+      distances,
+      discipline: event.discipline?.name,
+      governance: "england_athletics",
+      coordinates: incomingCoordinates,
+      existing: existingByNormId.get(normId),
+    });
     rows.push({
       norm_id: normId,
       name,
@@ -177,14 +199,18 @@ export function planEnglandAthleticsBatch(input: {
       county,
       country: "England",
       region: normaliseRegion(null, county, latitude, longitude) ?? "England",
-      lat: typeof latitude === "number" && Number.isFinite(latitude) ? latitude : null,
-      lng: typeof longitude === "number" && Number.isFinite(longitude) ? longitude : null,
-      distances: distancesFromRaces(event.races),
+      lat: enrichment.lat,
+      lng: enrichment.lng,
+      distances,
+      distance_tags: enrichment.distance_tags,
+      terrain_tags: enrichment.terrain_tags,
       discipline: event.discipline?.name?.trim() || null,
       entry_url: event.registration_url || event.website_url || null,
       organiser_url: event.website_url || null,
       source: SOURCE,
       source_url: `https://www.englandathletics.org/runevents/search/?query=${encodeURIComponent(name)}`,
+      governance: enrichment.governance,
+      race_profile: enrichment.race_profile,
       status: "ACTIVE",
       sort_date: dateFrom,
       is_upcoming: dateFrom >= todayISO,

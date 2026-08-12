@@ -13,11 +13,13 @@ const REF_SHARED = "0A0A0A0A0A0A0A0A0A0A0A0A0A0A0A0A00001517";
 const REF_NEW_1 = "11110000000000000000000000000000FFFFFFFF";
 const REF_NEW_2 = "22220000000000000000000000000000FFFFFFFF";
 
-function mkEvent(overrides: Partial<JustGoEvent> & {
-  name: string;
-  date: string; // YYYY-MM-DD
-  ref?: string | null;
-}): JustGoEvent {
+function mkEvent(
+  overrides: Partial<JustGoEvent> & {
+    name: string;
+    date: string; // YYYY-MM-DD
+    ref?: string | null;
+  },
+): JustGoEvent {
   const [y, m, d] = overrides.date.split("-").map(Number);
   const directlink =
     overrides.ref === null
@@ -52,6 +54,51 @@ describe("parseJustGoRef", () => {
 });
 
 describe("planScottishAthleticsBatch", () => {
+  it("fills missing coordinates from the source postcode and parses taxonomy", () => {
+    const source = mkEvent({ name: "Paisley 10k and Fun Run", date: "2026-08-16", ref: REF_NEW_1 });
+    source.Address.Postcode = "PA1 3PD";
+    source.Latlng = { Lat: "", Lng: "" };
+    const p = planScottishAthleticsBatch({
+      records: [source],
+      existingRows: [],
+      globalSlugOwners: new Map(),
+      postcodeCoordinates: new Map([["PA1 3PD", { lat: 55.844, lng: -4.423 }]]),
+      todayISO: TODAY,
+    });
+    expect(p.rows[0]).toMatchObject({
+      lat: 55.844,
+      lng: -4.423,
+      governance: "scottish_athletics",
+      race_profile: "multi_terrain",
+      distance_tags: ["10k", "fun-run"],
+      terrain_tags: ["road", "multi-terrain"],
+    });
+  });
+
+  it("corrects a source-coordinate outlier using postcode evidence", () => {
+    const source = mkEvent({
+      name: "West District Cross Country Championships",
+      date: "2026-12-05",
+      ref: REF_NEW_1,
+    });
+    source.EventCategory = "Cross Country";
+    source.Address.Postcode = "KA1 3XF";
+    source.Latlng = { Lat: "55.9317211", Lng: "-3.1545964" };
+    const p = planScottishAthleticsBatch({
+      records: [source],
+      existingRows: [],
+      globalSlugOwners: new Map(),
+      postcodeCoordinates: new Map([["KA1 3XF", { lat: 55.600678, lng: -4.486062 }]]),
+      todayISO: TODAY,
+    });
+    expect(p.rows[0]).toMatchObject({
+      lat: 55.600678,
+      lng: -4.486062,
+      race_profile: "cross_country",
+      terrain_tags: ["cross-country"],
+    });
+  });
+
   it("preserves both records in a genuinely distinct collision pair (order independent)", () => {
     const existing: ExistingSaRow[] = [
       {
@@ -79,10 +126,16 @@ describe("planScottishAthleticsBatch", () => {
     const b = mkEvent({ name: "Whitetops Hill Race", date: "2026-06-26", ref: REF_B });
 
     const p1 = planScottishAthleticsBatch({
-      records: [a, b], existingRows: existing, globalSlugOwners, todayISO: TODAY,
+      records: [a, b],
+      existingRows: existing,
+      globalSlugOwners,
+      todayISO: TODAY,
     });
     const p2 = planScottishAthleticsBatch({
-      records: [b, a], existingRows: existing, globalSlugOwners, todayISO: TODAY,
+      records: [b, a],
+      existingRows: existing,
+      globalSlugOwners,
+      todayISO: TODAY,
     });
 
     const slugs1 = p1.rows.map((r) => r.slug).sort();
@@ -96,14 +149,20 @@ describe("planScottishAthleticsBatch", () => {
   it("handles brand-new collision-group member with ref-derived slug", () => {
     const existing: ExistingSaRow[] = [
       {
-        slug: "whitetops-hill-race", name: "Whitetops Hill Race", date_from: "2026-06-26",
+        slug: "whitetops-hill-race",
+        name: "Whitetops Hill Race",
+        date_from: "2026-06-26",
         norm_id: "scottishathletics-whitetops-hill-race",
-        source: "scottishathletics", source_url: `https://x?ref=${REF_A}`,
+        source: "scottishathletics",
+        source_url: `https://x?ref=${REF_A}`,
       },
       {
-        slug: "whitetops-hill-race-2026-06-26", name: "Whitetops Hill Race", date_from: "2026-06-26",
+        slug: "whitetops-hill-race-2026-06-26",
+        name: "Whitetops Hill Race",
+        date_from: "2026-06-26",
         norm_id: "scottishathletics-whitetops-hill-race-2026-06-26",
-        source: "scottishathletics", source_url: `https://x?ref=${REF_B}`,
+        source: "scottishathletics",
+        source_url: `https://x?ref=${REF_B}`,
       },
     ];
     const p = planScottishAthleticsBatch({
@@ -141,14 +200,20 @@ describe("planScottishAthleticsBatch", () => {
   it("skips records whose ref maps to a shared-legacy pair (2+ existing rows)", () => {
     const existing: ExistingSaRow[] = [
       {
-        slug: "3k-on-the-green", name: "3k on the Green", date_from: "2026-08-28",
+        slug: "3k-on-the-green",
+        name: "3k on the Green",
+        date_from: "2026-08-28",
         norm_id: "scottishathletics-3k-on-the-green",
-        source: "scottishathletics", source_url: `https://x?ref=${REF_SHARED}`,
+        source: "scottishathletics",
+        source_url: `https://x?ref=${REF_SHARED}`,
       },
       {
-        slug: "3k-on-the-green-2026-08-28", name: "3k on the Green", date_from: "2026-08-28",
+        slug: "3k-on-the-green-2026-08-28",
+        name: "3k on the Green",
+        date_from: "2026-08-28",
         norm_id: "scottishathletics-3k-on-the-green-2026-08-28",
-        source: "scottishathletics", source_url: `https://x?ref=${REF_SHARED}`,
+        source: "scottishathletics",
+        source_url: `https://x?ref=${REF_SHARED}`,
       },
     ];
     const p = planScottishAthleticsBatch({
@@ -180,15 +245,25 @@ describe("planScottishAthleticsBatch", () => {
       mkEvent({ name: "Race B", date: "2026-09-05", ref: REF_NEW_2 }),
     ];
     const p1 = planScottishAthleticsBatch({
-      records, existingRows: [], globalSlugOwners: new Map(), todayISO: TODAY,
+      records,
+      existingRows: [],
+      globalSlugOwners: new Map(),
+      todayISO: TODAY,
     });
     // Simulate second run: rows from p1 are now the existing state.
     const existing: ExistingSaRow[] = p1.rows.map((r) => ({
-      slug: r.slug!, name: r.name!, date_from: r.date_from!,
-      norm_id: r.norm_id!, source: "scottishathletics", source_url: r.source_url ?? null,
+      slug: r.slug!,
+      name: r.name!,
+      date_from: r.date_from!,
+      norm_id: r.norm_id!,
+      source: "scottishathletics",
+      source_url: r.source_url ?? null,
     }));
     const p2 = planScottishAthleticsBatch({
-      records, existingRows: existing, globalSlugOwners: new Map(), todayISO: TODAY,
+      records,
+      existingRows: existing,
+      globalSlugOwners: new Map(),
+      todayISO: TODAY,
     });
     expect(p2.rows.map((r) => r.slug).sort()).toEqual(p1.rows.map((r) => r.slug).sort());
     expect(p2.rows.map((r) => r.norm_id).sort()).toEqual(p1.rows.map((r) => r.norm_id).sort());
@@ -199,8 +274,11 @@ describe("planScottishAthleticsBatch", () => {
   it("skips records that collide by name+date with another source", () => {
     const existing: ExistingSaRow[] = [
       {
-        slug: "ea-owned", name: "Shared Race", date_from: "2026-10-10",
-        norm_id: "ea-shared-race", source: "englandathletics",
+        slug: "ea-owned",
+        name: "Shared Race",
+        date_from: "2026-10-10",
+        norm_id: "ea-shared-race",
+        source: "englandathletics",
         source_url: null,
       },
     ];
@@ -218,7 +296,10 @@ describe("planScottishAthleticsBatch", () => {
     const bad: JustGoEvent = mkEvent({ name: "No Date", date: "2026-05-01", ref: REF_NEW_1 });
     bad.Starts = { Date: null };
     const p = planScottishAthleticsBatch({
-      records: [bad], existingRows: [], globalSlugOwners: new Map(), todayISO: TODAY,
+      records: [bad],
+      existingRows: [],
+      globalSlugOwners: new Map(),
+      todayISO: TODAY,
     });
     expect(p.rows).toHaveLength(0);
     expect(p.stats.skippedNoDate).toBe(1);
@@ -241,11 +322,18 @@ describe("planScottishAthleticsBatch", () => {
     const p = planScottishAthleticsBatch({
       records: [
         mkEvent({ name: "Peterhead 3k Junior Mile Series 2026", date: "2026-09-26", ref: REF_A }),
-        mkEvent({ name: "Peterhead 3k Junior Mile Series 2026", date: "2026-10-24", ref: REF_NEW_1 }),
+        mkEvent({
+          name: "Peterhead 3k Junior Mile Series 2026",
+          date: "2026-10-24",
+          ref: REF_NEW_1,
+        }),
       ],
       existingRows: existing,
       globalSlugOwners: new Map([
-        ["peterhead-3k-junior-mile-series-2026", "scottishathletics-peterhead-3k-junior-mile-series-2026"],
+        [
+          "peterhead-3k-junior-mile-series-2026",
+          "scottishathletics-peterhead-3k-junior-mile-series-2026",
+        ],
       ]),
       todayISO: TODAY,
     });
@@ -272,13 +360,9 @@ describe("planScottishAthleticsBatch", () => {
       },
     ];
     const p = planScottishAthleticsBatch({
-      records: [
-        mkEvent({ name: "Foo Race", date: "2026-05-01", ref: REF_NEW_1 }),
-      ],
+      records: [mkEvent({ name: "Foo Race", date: "2026-05-01", ref: REF_NEW_1 })],
       existingRows: existing,
-      globalSlugOwners: new Map([
-        ["foo-race", "scottishathletics-foo-race"],
-      ]),
+      globalSlugOwners: new Map([["foo-race", "scottishathletics-foo-race"]]),
       todayISO: TODAY,
     });
     // Cross-source dedupe key is (name+date, source). Same source here, so
