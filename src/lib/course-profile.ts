@@ -19,6 +19,18 @@ export type CourseProfile = {
   routes: CourseRoute[];
 };
 
+export type StoredCourseSource = {
+  provider: string;
+  provider_route_id: string;
+  route_name: string;
+  distance_key: string;
+  distance_label: string;
+  distance_km: number | null;
+  ascent_m: number | null;
+  route_url: string;
+  embed_url: string;
+};
+
 const NORTH_DOWNS_RUN: CourseProfile = {
   eventSlug: "north-downs-run-2026",
   organiser: "Istead & Ifield Harriers",
@@ -93,4 +105,58 @@ const ALLOW_LISTED_COURSES: Record<string, CourseProfile> = {
  */
 export function courseProfileForEvent(eventSlug: string): CourseProfile | null {
   return ALLOW_LISTED_COURSES[eventSlug] ?? null;
+}
+
+function terrainLabel(raceProfile: string | null): string {
+  const labels: Record<string, string> = {
+    road: "Road",
+    trail: "Trail",
+    multi_terrain: "Multi-terrain",
+    fell: "Fell",
+    cross_country: "Cross-country",
+    track: "Track",
+  };
+  return (raceProfile && labels[raceProfile]) || "Course details";
+}
+
+/** Build the public course module from verified, server-loaded source rows. */
+export function courseProfileFromSources(input: {
+  eventSlug: string;
+  organiser: string | null;
+  raceProfile: string | null;
+  sources: StoredCourseSource[];
+}): CourseProfile | null {
+  if (!input.sources.length) return courseProfileForEvent(input.eventSlug);
+  const provider = input.sources[0].provider;
+  if (provider !== "strava" && provider !== "plotaroute") return null;
+  const organiser = input.organiser?.trim() || "The organiser";
+  const providerLabel = provider === "strava" ? "Strava" : "Plotaroute";
+  return {
+    eventSlug: input.eventSlug,
+    organiser,
+    provider,
+    providerLabel,
+    introduction: `${organiser} publish ${
+      input.sources.length === 1 ? "this official route" : "official routes"
+    } for the event. ${
+      input.sources.length === 1
+        ? "Explore its map and elevation profile below."
+        : "Choose a distance to explore its map and elevation profile."
+    }`,
+    elevationMetricLabel: provider === "strava" ? "Elevation gain" : "Total ascent",
+    terrainLabel: terrainLabel(input.raceProfile),
+    routes: input.sources.map((source) => ({
+      key:
+        input.sources.filter((item) => item.distance_key === source.distance_key).length === 1
+          ? source.distance_key
+          : `${source.distance_key}-${source.provider_route_id}`,
+      label: source.distance_label,
+      routeName: source.route_name,
+      routeUrl: source.route_url,
+      embedUrl: source.embed_url,
+      distanceLabel:
+        source.distance_km === null ? source.distance_label : `${source.distance_km} km`,
+      ascentLabel: source.ascent_m === null ? "Not published" : `${source.ascent_m} m`,
+    })),
+  };
 }

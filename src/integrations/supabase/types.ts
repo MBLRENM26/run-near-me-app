@@ -351,6 +351,124 @@ export type Database = {
         }
         Relationships: []
       }
+      course_source_reviews: {
+        Row: {
+          detail: string | null
+          event_id: string | null
+          first_seen_at: string
+          id: string
+          last_seen_at: string
+          provider: string | null
+          provider_route_id: string | null
+          reason: string
+          resolved_at: string | null
+          route_name: string | null
+          source_url: string | null
+        }
+        Insert: {
+          detail?: string | null
+          event_id?: string | null
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          provider?: string | null
+          provider_route_id?: string | null
+          reason: string
+          resolved_at?: string | null
+          route_name?: string | null
+          source_url?: string | null
+        }
+        Update: {
+          detail?: string | null
+          event_id?: string | null
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          provider?: string | null
+          provider_route_id?: string | null
+          reason?: string
+          resolved_at?: string | null
+          route_name?: string | null
+          source_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_source_reviews_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_course_sources: {
+        Row: {
+          ascent_m: number | null
+          created_at: string
+          distance_key: string
+          distance_km: number | null
+          distance_label: string
+          embed_url: string
+          event_id: string
+          id: string
+          organiser_source_url: string
+          provider: string
+          provider_route_id: string
+          review_reason: string | null
+          route_name: string
+          route_url: string
+          source_checked_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          ascent_m?: number | null
+          created_at?: string
+          distance_key: string
+          distance_km?: number | null
+          distance_label: string
+          embed_url: string
+          event_id: string
+          id?: string
+          organiser_source_url: string
+          provider: string
+          provider_route_id: string
+          review_reason?: string | null
+          route_name: string
+          route_url: string
+          source_checked_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          ascent_m?: number | null
+          created_at?: string
+          distance_key?: string
+          distance_km?: number | null
+          distance_label?: string
+          embed_url?: string
+          event_id?: string
+          id?: string
+          organiser_source_url?: string
+          provider?: string
+          provider_route_id?: string
+          review_reason?: string | null
+          route_name?: string
+          route_url?: string
+          source_checked_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_course_sources_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_edits: {
         Row: {
           changes: Json

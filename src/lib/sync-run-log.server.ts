@@ -26,7 +26,10 @@ export type SyncRunLogger = {
   finish: (patch: SyncRunPatch) => Promise<void>;
 };
 
-export async function startSyncRun(source: string): Promise<SyncRunLogger> {
+export async function startSyncRun(
+  source: string,
+  options: { notify?: boolean } = {},
+): Promise<SyncRunLogger> {
   const startedAt = new Date().toISOString();
   const t0 = Date.now();
   let id: string | null = null;
@@ -61,6 +64,7 @@ export async function startSyncRun(source: string): Promise<SyncRunLogger> {
 
       // Send admin summary email (best-effort).
       try {
+        if (options.notify === false) return;
         const status =
           (patch.status as "success" | "error" | "partial" | undefined) ??
           "success";
