@@ -1,7 +1,11 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ExternalLink, Mountain, Route } from "lucide-react";
 import type { CourseProfile } from "@/lib/course-profile";
-import { trackCourseModuleViewed, trackCourseSourceOpened } from "@/lib/analytics";
+import {
+  trackCourseDistanceSelected,
+  trackCourseModuleViewed,
+  trackCourseSourceOpened,
+} from "@/lib/analytics";
 
 type CourseIntelligenceProps = {
   course: CourseProfile;
@@ -9,6 +13,9 @@ type CourseIntelligenceProps = {
 
 export function CourseIntelligence({ course }: CourseIntelligenceProps) {
   const sectionRef = useRef<HTMLElement>(null);
+  const [selectedRouteKey, setSelectedRouteKey] = useState(course.routes[0].key);
+  const selectedRoute =
+    course.routes.find((route) => route.key === selectedRouteKey) ?? course.routes[0];
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -20,7 +27,7 @@ export function CourseIntelligence({ course }: CourseIntelligenceProps) {
       tracked = true;
       trackCourseModuleViewed({
         slug: course.eventSlug,
-        provider: "plotaroute",
+        provider: course.provider,
       });
     };
 
@@ -41,7 +48,16 @@ export function CourseIntelligence({ course }: CourseIntelligenceProps) {
 
     observer.observe(section);
     return () => observer.disconnect();
-  }, [course.eventSlug]);
+  }, [course.eventSlug, course.provider]);
+
+  const selectRoute = (routeKey: string) => {
+    setSelectedRouteKey(routeKey);
+    trackCourseDistanceSelected({
+      slug: course.eventSlug,
+      provider: course.provider,
+      distance: routeKey,
+    });
+  };
 
   return (
     <section
@@ -59,20 +75,42 @@ export function CourseIntelligence({ course }: CourseIntelligenceProps) {
               Course and elevation
             </h2>
             <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-              {course.organiser} publish this official course for the North Downs Run. Explore the
-              route and elevation profile below.
+              {course.introduction}
             </p>
           </div>
         </div>
 
+        {course.routes.length > 1 && (
+          <div className="mt-5 flex flex-wrap gap-2" role="group" aria-label="Choose race distance">
+            {course.routes.map((route) => {
+              const selected = route.key === selectedRoute.key;
+              return (
+                <button
+                  key={route.key}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => selectRoute(route.key)}
+                  className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+                    selected
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border bg-background text-foreground hover:border-primary/50 hover:text-primary"
+                  }`}
+                >
+                  {route.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         <dl className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
           <div className="rounded-xl bg-muted/50 px-3 py-3">
             <dt className="text-xs text-muted-foreground">Route distance</dt>
-            <dd className="mt-1 font-semibold text-foreground">{course.distanceLabel}</dd>
+            <dd className="mt-1 font-semibold text-foreground">{selectedRoute.distanceLabel}</dd>
           </div>
           <div className="rounded-xl bg-muted/50 px-3 py-3">
-            <dt className="text-xs text-muted-foreground">Total ascent</dt>
-            <dd className="mt-1 font-semibold text-foreground">{course.ascentLabel}</dd>
+            <dt className="text-xs text-muted-foreground">{course.elevationMetricLabel}</dt>
+            <dd className="mt-1 font-semibold text-foreground">{selectedRoute.ascentLabel}</dd>
           </div>
           <div className="rounded-xl bg-muted/50 px-3 py-3">
             <dt className="text-xs text-muted-foreground">Terrain</dt>
@@ -83,8 +121,9 @@ export function CourseIntelligence({ course }: CourseIntelligenceProps) {
 
       <div className="border-y border-border bg-muted/20">
         <iframe
-          src={course.embedUrl}
-          title={`${course.routeName} interactive map and elevation profile`}
+          key={selectedRoute.key}
+          src={selectedRoute.embedUrl}
+          title={`${selectedRoute.routeName} interactive map and elevation profile`}
           loading="lazy"
           referrerPolicy="strict-origin-when-cross-origin"
           allowFullScreen
@@ -95,16 +134,17 @@ export function CourseIntelligence({ course }: CourseIntelligenceProps) {
       <div className="flex flex-col gap-2 px-5 py-4 text-sm sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <p className="inline-flex items-center gap-1.5 text-muted-foreground">
           <Mountain className="h-4 w-4" aria-hidden="true" />
-          Route measurements and interactive profile by Plotaroute
+          Route measurements and interactive profile by {course.providerLabel}
         </p>
         <a
-          href={course.routeUrl}
+          href={selectedRoute.routeUrl}
           target="_blank"
           rel="noopener noreferrer"
           onClick={() =>
             trackCourseSourceOpened({
               slug: course.eventSlug,
-              provider: "plotaroute",
+              provider: course.provider,
+              distance: selectedRoute.key,
             })
           }
           className="inline-flex items-center gap-1.5 font-medium text-primary hover:underline"
