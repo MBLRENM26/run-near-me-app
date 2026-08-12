@@ -17,15 +17,15 @@ When instructions conflict, use:
 7. Dated audits and findings in `docs/current/`.
 8. Historic Bibles, archived prompts and earlier chat as supporting history only.
 
-Conflicts must be raised. Never silently combine a superseded fact with a current decision.
+Raise conflicts; never combine superseded facts with current decisions.
 
 ## Verified operating baseline
 
-- Verified merged app head: `3353497ae949fda8d48529319e3f2e910c835ac3`; local and origin `main` matched after the bounded Race Explorer merge and production publication.
+- Verified merged/published app head: `a1838de3f8e8dc31223eff4dc8afcb83cd6bd720`; local and origin `main` match.
 - Containment baseline: `c1cdc4a7e9ae4d16766125f7e56509affe6b79d4`; later acceptance is recorded below.
-- Full TypeScript check clean, 31 tests passing and production build passing at that baseline.
+- PX2B pre-merge checks passed: TypeScript, 88 tests, scoped lint and production build.
 - Reminder job 6 is inactive; HTTP fulfilment fails closed with `503` unless `REMINDER_SENDING_ENABLED=true`. No scheduled reminder was sent; first requests do receive an automatic transactional confirmation.
-- Twenty-five requests are stored; none is unseen or marked sent. The newest is the 2 August controlled test: demand evidence only, not fulfilment, entries or value.
+- Mike reported another subscriber on 12 August; no private-table audit was run. This is demand evidence, not fulfilment or value.
 - Confirmation-copy hotfix `92123320...` is live (38 tests/build passed). The form remains under approved record-level manual monitoring.
 
 ## Operating thesis and evidence window
@@ -34,32 +34,33 @@ Demonstrated journey: `Google/AI → RENM occurrence page → correct official/e
 
 RENM will run a 120–150 day trusted UK race-intelligence experiment. Rectify the existing catalogue first; then test an OpenRouter-style Explorer on the existing backend and one authorised course-rich event page. Broader canonical modelling follows only where those tests demonstrate need. Add authorised feeds and data-led distribution in separate packages; then continue, narrow or stop major investment from fixed signals.
 
-Preferred data order: governing/licensing bodies, registration providers, timing/results providers and organisers. Strava and Garmin are optional runner-authorised enrichment/course-delivery channels, not the canonical catalogue. Named results remain separately rights/privacy-gated. See [Interactive Race Explorer product reset](RENM-interactive-race-explorer-product-reset-2026-08-07.md).
+Preferred data order: governing/licensing bodies, registration providers, timing/results providers and organisers. Strava/Garmin are optional runner-authorised enrichment, not the canonical catalogue; named results remain separately rights/privacy-gated. See [product reset](RENM-interactive-race-explorer-product-reset-2026-08-07.md).
 
-Lovable is the validation/incubation platform for the evidence window. GitHub remains source of truth and implementation must remain portable. Do not migrate pre-emptively; assess deliberate layer-by-layer graduation only when product success or measured traffic, feed, background-work, SEO/performance, delivery, observability, security or cost constraints justify it.
+Lovable is the validation platform; GitHub is source of truth and the build remains portable. Migrate layers only when measured product, traffic, feed, performance, delivery, security or cost constraints justify it.
 
 ## Active non-negotiable boundaries
 
-- Do not activate, repair or test automated reminder sending against real subscribers.
+- Do not activate or test automated reminders against real subscribers.
 - Do not message historic subscribers or perform bulk/backfilled reminder messaging.
-- Do not import Kent, South London or other regional research into production before staging and reconciliation exist.
+- Keep Kent, South London and other regional research out of production pending staging/reconciliation.
 - Do not build an organiser portal or universal `update once, publish everywhere` system.
 - Do not expand SEO inventory, redesign every legacy page or start a repository-wide refactor before the bounded Explorer is evidenced.
 - Do not ingest a partner/platform feed without stable identity, update semantics, permitted use, provenance, corrections and reversible conflict handling.
-- Do not warehouse named runner results or repurpose Strava/Garmin activity without the separately approved agreement, privacy and consent contract.
+- No named-result warehouse or repurposed Strava/Garmin activity without separate agreement/privacy approval.
 - Do not delete history merely because an occurrence passed or disappeared from a source.
-- Do not expose personal contact data, private prospectability notes, raw provenance or moderation fields in public projections, strategy documents or Lovable context.
+- Do not expose personal contacts, private prospectability, raw provenance or moderation fields publicly or in Lovable context.
 - Do not claim that clicks equal entries, registrations, revenue or organiser value.
-- Every implementation package requires separate approval, migration, rollback, tests and production acceptance evidence.
+- Each implementation package needs separate approval, rollback, tests and production acceptance.
 
 ## Current work state
 
-- K1 knowledge control: complete. This kernel, hashed manifest and generated ledger govern the local canon; governed documents and deterministic Project Knowledge are mirrored to Lovable.
+- K1 knowledge control is complete; this kernel, manifest and ledger govern the canon and are mirrored to Lovable.
 - L1/L2 audits remain the correction baseline: public/base access is wider than intended, surface/date eligibility disagrees and the 5,368 headline is not a discovery count.
 - L3A/L3A-R safe public projection and invoker remediation are live. L3B region, homepage, county, city and distance-stabilisation packages are complete with their dated acceptance records; L3B-5B is paused.
 - PX0 operating reset is active. Strategy and documentation are approved; app, schema, production-data, integration and deployment mutations remain separately gated.
-- PX2A Race Explorer is live as an unlinked, `noindex` controlled product preview at `/explore`. Desktop/mobile, postcode/radius, inspection, comparison and console acceptance passed on 12 August 2026. It uses the existing public projection and adds no schema, PostGIS or `pg_trgm` dependency.
-- PX2B source enrichment is the active approved package. The verified 12 August baseline is 634 future EA rows and 84 future SA rows. All 84 SA rows pass the actual governance-aware discovery gate; the prior organiser-owned-link calculation was not the live gate. PX2B therefore leaves link trust unchanged and targets repeatable taxonomy/tag enrichment, Scottish postcode geocoding, coordinate-outlier correction and reversible hiding of two confirmed TRA test rows. See [PX2B source-enrichment package](RENM-PX2B-source-enrichment-package-2026-08-12.md).
+- PX2A Explorer is live as an unlinked, `noindex` preview at `/explore`; desktop/mobile, postcode/radius, inspection, comparison and console acceptance passed on 12 August.
+- PX2B source enrichment is accepted: EA/SA syncs, taxonomy/tags, Scottish geocoding, Kilmarnock correction and reversible hiding of two TRA test rows passed. Residuals are bounded legacy/source-data work. See [PX2B](RENM-PX2B-source-enrichment-package-2026-08-12.md).
+- PX2C's candidate is `North Downs Run 2026`. Its organiser publishes Plotaroute route `2277816`; attributed embed use is cleared, but custom GPX reuse requires permission and 2025-to-2026 edition confirmation. No asset or schema change is approved. See [PX2C](RENM-PX2C-course-rich-event-page-package-2026-08-12.md).
 - At `9558063`, event-detail analytics changed from `Entry Click` to `Outbound Click` with conservative analytics-only `destination_role`. Historical data stays separate; a click is only a hand-off. This is not public/data-layer L6 and changes no CTA, trust or discovery rule.
 - No L3C base-grant hardening or L4 eligibility implementation has been approved. Prior trust packages resume only for a named PX dependency.
 
@@ -67,12 +68,12 @@ Lovable is the validation/incubation platform for the evidence window. GitHub re
 
 1. PX0 reset/preflight: install canon; re-verify app head, production, analytics and worktree; inventory source/data defects; prepare the England Athletics and partner brief.
 2. PX1 bounded rectification: inventory and correct identity/source defects with the existing schema through reversible, separately approved packages.
-3. PX2 bounded tests: an Explorer on the existing backend, then one authorised course-rich page using toGeoJSON, Turf, Leaflet and Recharts; retain SEO entrances.
+3. PX2 bounded tests: keep the accepted Explorer on the existing backend; test the attributed North Downs Run course embed, then use toGeoJSON, Turf, Leaflet and Recharts only after custom route-file permission and edition confirmation; retain SEO entrances.
 4. PX3 evidence-led expansion: add PostGIS, `pg_trgm`, broader schema or integrations only for a need demonstrated by the prototypes or source pilots.
 5. PX4 tracked data-led search/social/video distribution and return behaviour.
 6. PX5 day-120–150 evidence gate: continue, narrow or stop major investment; if continuing, assess platform fit without assuming a full-stack migration.
 
-Kent and South London remain offline throughout these packages.
+Kent/South London remain offline.
 
 ## Evidence discipline
 
@@ -82,17 +83,17 @@ Label material statements as:
 - **Observed evidence:** directly observed in a defined period with method and limitations.
 - **Inference or hypothesis:** an interpretation to test, never restated as fact.
 
-Structural package acceptance is not production promotion. Stored, current/live, discoverable, countable, indexable and enterable-now remain different states.
+Acceptance is not promotion. Stored, live, discoverable, countable, indexable and enterable-now remain distinct.
 
 ## High-risk decision pointers
 
 - D28: compete first on trusted occurrence resolution and correct next action.
-- D31/D36: publicly contactable does not mean commercially prospectable; outreach research is private.
+- D31/D36: public contactability is not commercial prospectability; outreach research is private.
 - D33/D35: organiser control begins as a manual service test; outbound traffic is not organiser value.
 - D44 is superseded by D47: a sender and scheduled job existed despite earlier understanding.
-- D46: temporary manual monitoring only, with verified facts, purpose, unsubscribe and private logging.
+- D46: manual monitoring only, with verified facts, purpose, unsubscribe and private logging.
 - D48/D49: job 6 remains inactive and HTTP sending remains fail-closed.
-- D50 recorded 24 stored requests as behavioural evidence only; the current observed count is 25, with none unseen and none marked sent.
+- D50 recorded 24 requests; Mike reported another subscriber on 12 August without a fresh private-table audit.
 - D53: the containment release is the operating baseline.
 - D54–D56: pause the old sequence; retain SEO acquisition; start results with authoritative resolution rather than copied runner rows.
 - D57–D67: run the time-boxed race-intelligence experiment; prefer authorised direct sources; treat Strava/Garmin as enrichment; require field-level provenance; distribute measurable data-led content; preserve option value if the gate fails; keep the build portable and graduate platforms only from demonstrated need.

@@ -1,6 +1,6 @@
 # RENM — PX2B source-enrichment package
 
-Status: approved for implementation on 12 August 2026; production sync acceptance remains pending.
+Status: accepted complete in production on 12 August 2026.
 
 ## Purpose
 
@@ -8,57 +8,48 @@ Make the first Race Explorer product test representative enough to assess withou
 
 ## Verified baseline
 
-The England Athletics and Scottish Athletics sync runs completed successfully on 12 August 2026. Read-only production SQL and live Explorer acceptance then established:
-
 | Source             | Future active | Missing coordinates | Missing distance tags | Missing terrain/profile | Missing governance |
 | ------------------ | ------------: | ------------------: | --------------------: | ----------------------: | -----------------: |
 | England Athletics  |           634 |                   0 |                   197 |                     175 |                175 |
 | Scottish Athletics |            84 |                  67 |                    50 |                      27 |                  0 |
 
-The earlier claim that roughly 96% of Scottish events were invisible used the stricter organiser-owned-link calculation. The application’s actual `hasDiscoverableLink` gate also admits event-specific platform links when trusted governance is present. All 84 future Scottish Athletics rows were visible in the live governance-filtered Explorer. PX2B therefore makes no link-gate change.
+All 84 future Scottish Athletics rows passed the actual governance-aware discovery gate. PX2B made no link-gate change.
 
-The Scottish public feed contains a postcode for every currently fetched running-category record. For the 67 future database rows missing coordinates, 63 full postcodes resolve and the AB10 outward code supplies one bounded centroid; three rows remain unresolved rather than guessed. One supplied Kilmarnock coordinate is 56.6 miles from its source postcode and is a clear correction candidate.
+## Implementation accepted
 
-Two future TRA rows named `Test` and `TEST3` are confirmed source test records. Their approved correction is `ACTIVE → HIDDEN`; they are not deleted.
+- EA and SA sync planners now derive repeatable distance tags, terrain tags, governance and race profile from supported source evidence.
+- Human-curated tags, reviewed taxonomy and existing coordinates are preserved.
+- Scottish postcodes are batch-geocoded on a best-effort basis; postcode-service failure cannot fail the governing-body sync.
+- Supplied source coordinates remain preferred unless postcode evidence shows a discrepancy greater than five miles.
+- The JustGo adapter accepts either an array response or a JSON-encoded string response.
+- Two exact TRA test records were changed from `ACTIVE` to `HIDDEN`; both remain stored and the public view returns neither record.
 
-## Approved production correction completed
+## Production acceptance
 
-On 12 August 2026, the following exact rows were changed from `ACTIVE` to `HIDDEN`:
+The published app and merged `main` were verified at `a1838de3f8e8dc31223eff4dc8afcb83cd6bd720`.
 
-- `14836184-cc8d-4f8f-8671-c66b1c608bd8` — `Test` / `test-tra`;
-- `92ec1a51-b176-4ded-8a05-70599c28c7c1` — `TEST3` / `test3-tra`.
+| Source             | Run result | Future active | Missing coordinates | Missing distance tags | Missing terrain/profile | Missing governance |
+| ------------------ | ---------- | ------------: | ------------------: | --------------------: | ----------------------: | -----------------: |
+| England Athletics  | 4 successful chunks; 638 fetched; 435 written; 6 new; 429 updated; 0 failed pages | 641 | 0 | 78 | 37 | 37 |
+| Scottish Athletics | success; 131 fetched; 86 running-category; 75 written; 1 new; 74 updated; 11 protected duplicates skipped | 85 | 9 | 40 | 1 | 0 |
 
-A read-back confirmed both rows remain in `events` with status `HIDDEN`, while `events_public_v1` returns zero matching rows. The correction is reversible and no record was deleted.
+The Kilmarnock cross-country occurrence was corrected from the 56.6-mile source-coordinate outlier to the source-postcode location. The two TRA test rows remained `HIDDEN` after both syncs.
 
-## Approved implementation
+## Residual boundary
 
-1. Parse distance and terrain tags inside the EA and SA sync planners so enrichment survives later syncs.
-2. Set source-evidenced governance and derive a race profile only from supported discipline/tag evidence.
-3. Preserve human-curated tags and already reviewed governance/race-profile values.
-4. Preserve existing coordinates when a source or postcode result is unavailable.
-5. Batch-geocode Scottish source postcodes during sync. A postcode-service failure must not fail the governing-body sync.
-6. Prefer supplied source coordinates unless postcode evidence shows a discrepancy greater than five miles; use postcode coordinates for a clear outlier.
-7. Hide only the two exact approved TRA test IDs, with status history retained.
-8. Re-run both source syncs after deployment and reconcile the before/after counts.
+- The remaining 37 EA taxonomy/terrain gaps are legacy series/collision rows not rewritten by the conservative source batch. Rewritten EA rows received the new enrichment.
+- Six of the nine remaining Scottish coordinate gaps are three protected legacy duplicate pairs.
+- The other Scottish gaps are Gigha with no usable postcode and two Jedburgh occurrences carrying the invalid postcode `TD6 8QH`.
+- Unsupported distance values remain empty rather than coerced to meet a target.
 
-## Expected bounded impact
+These residuals are duplicate/source-data backlog, not evidence that either acceptance sync failed.
 
-- EA: fill 175 governance/profile/terrain gaps and recover distance tags where the current deterministic parser has evidence (180 of the 197 missing future-tag rows at audit time).
-- SA: recover 64 of 67 missing future coordinates, correct the Kilmarnock outlier, fill 27 terrain/profile gaps and recover distance tags where supported (16 of 50 missing future-tag rows at audit time).
-- Leave genuinely unsupported values empty/unknown.
+## Verification
 
-Counts are acceptance expectations, not permission to coerce the data until a target is reached. Feed changes between audit and rerun must be reported separately.
+- 14 test files / 88 tests passed before merge;
+- TypeScript, scoped lint, production build and `git diff --check` passed;
+- production sync logs contained no errors or failed EA pages;
+- post-sync SQL reconciled enrichment counts and exact test-row status; and
+- local and origin `main` were clean and synchronized after merge.
 
-## Explicit exclusions
-
-- no database schema migration;
-- no PostGIS, `pg_trgm` or map;
-- no weakening or source-specific bypass of the discovery link gate;
-- no duplicate merge, deletion or series remodelling;
-- no inferred coordinates for unresolved/invalid full postcodes;
-- no overwrite of curated tags or reviewed taxonomy; and
-- no course-rich event-page work in this package.
-
-## Acceptance
-
-Before merge: planner/helper regression tests, full tests, TypeScript, lint and production build must pass. After deployment: run EA and SA synchronisation, confirm clean run logs, reconcile future-active enrichment counts, inspect Scottish radius results and verify the two test rows remain hidden.
+No PostGIS, `pg_trgm`, broader schema, weakened link rule or record deletion was introduced.
