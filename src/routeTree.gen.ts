@@ -32,6 +32,7 @@ import { Route as ForRunnersRouteImport } from './routes/for-runners'
 import { Route as ForOrganisersRouteImport } from './routes/for-organisers'
 import { Route as ForClubsRouteImport } from './routes/for-clubs'
 import { Route as FellRacesRouteImport } from './routes/fell-races'
+import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as EnglandAthleticsPermittedRacesRouteImport } from './routes/england-athletics-permitted-races'
 import { Route as ClubOrganisedRacesRouteImport } from './routes/club-organised-races'
 import { Route as AthleticsNiPermittedRacesRouteImport } from './routes/athletics-ni-permitted-races'
@@ -213,6 +214,11 @@ const ForClubsRoute = ForClubsRouteImport.update({
 const FellRacesRoute = FellRacesRouteImport.update({
   id: '/fell-races',
   path: '/fell-races',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExploreRoute = ExploreRouteImport.update({
+  id: '/explore',
+  path: '/explore',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EnglandAthleticsPermittedRacesRoute =
@@ -567,6 +573,7 @@ export interface FileRoutesByFullPath {
   '/athletics-ni-permitted-races': typeof AthleticsNiPermittedRacesRoute
   '/club-organised-races': typeof ClubOrganisedRacesRoute
   '/england-athletics-permitted-races': typeof EnglandAthleticsPermittedRacesRoute
+  '/explore': typeof ExploreRoute
   '/fell-races': typeof FellRacesRoute
   '/for-clubs': typeof ForClubsRoute
   '/for-organisers': typeof ForOrganisersRoute
@@ -654,6 +661,7 @@ export interface FileRoutesByTo {
   '/athletics-ni-permitted-races': typeof AthleticsNiPermittedRacesRoute
   '/club-organised-races': typeof ClubOrganisedRacesRoute
   '/england-athletics-permitted-races': typeof EnglandAthleticsPermittedRacesRoute
+  '/explore': typeof ExploreRoute
   '/fell-races': typeof FellRacesRoute
   '/for-clubs': typeof ForClubsRoute
   '/for-organisers': typeof ForOrganisersRoute
@@ -743,6 +751,7 @@ export interface FileRoutesById {
   '/athletics-ni-permitted-races': typeof AthleticsNiPermittedRacesRoute
   '/club-organised-races': typeof ClubOrganisedRacesRoute
   '/england-athletics-permitted-races': typeof EnglandAthleticsPermittedRacesRoute
+  '/explore': typeof ExploreRoute
   '/fell-races': typeof FellRacesRoute
   '/for-clubs': typeof ForClubsRoute
   '/for-organisers': typeof ForOrganisersRoute
@@ -832,6 +841,7 @@ export interface FileRouteTypes {
     | '/athletics-ni-permitted-races'
     | '/club-organised-races'
     | '/england-athletics-permitted-races'
+    | '/explore'
     | '/fell-races'
     | '/for-clubs'
     | '/for-organisers'
@@ -919,6 +929,7 @@ export interface FileRouteTypes {
     | '/athletics-ni-permitted-races'
     | '/club-organised-races'
     | '/england-athletics-permitted-races'
+    | '/explore'
     | '/fell-races'
     | '/for-clubs'
     | '/for-organisers'
@@ -1007,6 +1018,7 @@ export interface FileRouteTypes {
     | '/athletics-ni-permitted-races'
     | '/club-organised-races'
     | '/england-athletics-permitted-races'
+    | '/explore'
     | '/fell-races'
     | '/for-clubs'
     | '/for-organisers'
@@ -1096,6 +1108,7 @@ export interface RootRouteChildren {
   AthleticsNiPermittedRacesRoute: typeof AthleticsNiPermittedRacesRoute
   ClubOrganisedRacesRoute: typeof ClubOrganisedRacesRoute
   EnglandAthleticsPermittedRacesRoute: typeof EnglandAthleticsPermittedRacesRoute
+  ExploreRoute: typeof ExploreRoute
   FellRacesRoute: typeof FellRacesRoute
   ForClubsRoute: typeof ForClubsRoute
   ForOrganisersRoute: typeof ForOrganisersRoute
@@ -1320,6 +1333,13 @@ declare module '@tanstack/react-router' {
       path: '/fell-races'
       fullPath: '/fell-races'
       preLoaderRoute: typeof FellRacesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/explore': {
+      id: '/explore'
+      path: '/explore'
+      fullPath: '/explore'
+      preLoaderRoute: typeof ExploreRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/england-athletics-permitted-races': {
@@ -1841,6 +1861,7 @@ const rootRouteChildren: RootRouteChildren = {
   AthleticsNiPermittedRacesRoute: AthleticsNiPermittedRacesRoute,
   ClubOrganisedRacesRoute: ClubOrganisedRacesRoute,
   EnglandAthleticsPermittedRacesRoute: EnglandAthleticsPermittedRacesRoute,
+  ExploreRoute: ExploreRoute,
   FellRacesRoute: FellRacesRoute,
   ForClubsRoute: ForClubsRoute,
   ForOrganisersRoute: ForOrganisersRoute,

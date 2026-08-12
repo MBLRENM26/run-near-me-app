@@ -8,8 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-
-export function Header() {
+export function Header({ compactOnMobile = false }: { compactOnMobile?: boolean }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   // The homepage owns its own search affordance (the hero LocationPrompt).
   // Show the compact header search on every other route.
@@ -34,7 +33,7 @@ export function Header() {
         <nav className="flex items-center gap-3">
           {showSearch && <HeaderSearch />}
           <DropdownMenu>
-            <DropdownMenuTrigger className="inline-flex items-center gap-1 text-sm font-medium text-foreground hover:text-primary transition-colors px-3 py-2 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <DropdownMenuTrigger className="inline-flex items-center gap-1 whitespace-nowrap text-sm font-medium text-foreground hover:text-primary transition-colors px-3 py-2 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               Why us
               <ChevronDown className="h-4 w-4" />
             </DropdownMenuTrigger>
@@ -52,13 +51,15 @@ export function Header() {
           </DropdownMenu>
           <Link
             to="/list-your-event"
-            className="text-sm font-medium text-foreground hover:text-primary transition-colors px-3 py-2 rounded-md"
+            className={[
+              compactOnMobile ? "hidden sm:inline-flex" : "inline-flex",
+              "whitespace-nowrap text-sm font-medium text-foreground hover:text-primary transition-colors px-3 py-2 rounded-md",
+            ].join(" ")}
             activeProps={{ className: "text-primary" }}
           >
             List your event
           </Link>
         </nav>
-
       </div>
     </header>
   );

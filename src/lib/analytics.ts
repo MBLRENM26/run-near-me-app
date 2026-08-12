@@ -88,13 +88,7 @@ export const trackLocationSet = (method: "device" | "postcode") =>
 
 export const trackFilter = (props: {
   page: string;
-  filter_type:
-    | "radius"
-    | "distance"
-    | "month"
-    | "region"
-    | "governance"
-    | "race_profile";
+  filter_type: "radius" | "distance" | "month" | "region" | "governance" | "race_profile";
   value: string | number;
 }) => track("Filter", props);
 
@@ -104,10 +98,8 @@ export const trackRegionView = (props: {
   total_events: number;
 }) => track("Region View", props);
 
-export const trackClaimInterest = (props: {
-  slug: string;
-  region?: string | null;
-}) => track("Claim Interest", props);
+export const trackClaimInterest = (props: { slug: string; region?: string | null }) =>
+  track("Claim Interest", props);
 
 export const trackClubPageView = (props: {
   slug: string;
@@ -115,3 +107,32 @@ export const trackClubPageView = (props: {
   is_claimed: boolean;
   governing_body: string;
 }) => track("Club Page View", props);
+
+export const trackExplorerOpened = (props: {
+  date_mode: "dated" | "recurring";
+  has_location: boolean;
+  results_count: number;
+}) => track("Explorer Opened", props);
+
+export const trackExplorerCriteria = (props: { criteria: string; value: string | number }) =>
+  track("Explorer Criteria Applied", props);
+
+export const trackExplorerResults = (props: {
+  results_count: number;
+  capped: boolean;
+  date_mode: "dated" | "recurring";
+}) => track("Explorer Results Shown", props);
+
+export const trackExplorerInspect = (props: { slug: string; position: number }) =>
+  track("Explorer Event Inspected", props);
+
+export const trackExplorerCompare = (props: {
+  action: "started" | "added" | "removed" | "cleared";
+  slug?: string;
+  selected_count: number;
+}) => track("Explorer Compare", props);
+
+export const trackExplorerEventOpen = (props: {
+  slug: string;
+  source: "card" | "detail" | "compare";
+}) => track("Explorer Event Page Opened", props);
