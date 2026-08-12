@@ -139,10 +139,17 @@ export const trackExplorerEventOpen = (props: {
 
 export const trackCourseModuleViewed = (props: {
   slug: string;
-  provider: "plotaroute";
+  provider: "plotaroute" | "strava";
 }) => track("Course Module Viewed", props);
 
 export const trackCourseSourceOpened = (props: {
   slug: string;
-  provider: "plotaroute";
+  provider: "plotaroute" | "strava";
+  distance?: string;
 }) => track("Course Source Opened", props);
+
+export const trackCourseDistanceSelected = (props: {
+  slug: string;
+  provider: "plotaroute" | "strava";
+  distance: string;
+}) => track("Course Distance Selected", props);
