@@ -1,18 +1,16 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { startSyncRun } from "@/lib/sync-run-log.server";
 import { loadScottishClubWebsiteMap } from "@/lib/sync-scottish-athletics-clubs.server";
-import {
-  planScottishAthleticsBatch,
-  type JustGoEvent,
-} from "@/lib/sync-scottish-athletics-plan";
+import { isUkOutwardCode, normalisePostcode } from "@/lib/postcode";
+import type { Coordinates } from "@/lib/source-enrichment";
+import { planScottishAthleticsBatch, type JustGoEvent } from "@/lib/sync-scottish-athletics-plan";
 
 // Syncs running events from the Scottish Athletics public event browser
 // (JustGo widget API) into the events table. Idempotent: upserts on norm_id.
 // Batch identity + slug resolution lives in sync-scottish-athletics-plan
 // so it can be unit tested without touching Supabase.
 
-const JUSTGO_URL =
-  "https://scottishathletics.justgo.com/WidgetService.mvc/ExecuteWidgetCommandAlt";
+const JUSTGO_URL = "https://scottishathletics.justgo.com/WidgetService.mvc/ExecuteWidgetCommandAlt";
 const WEBLET_ID = "64728f3b-1e94-44fc-8217-e70f15957999";
 const PAGE_SIZE = 50;
 const MAX_PAGES = 10;
@@ -77,13 +75,88 @@ async function fetchPage(pageNumber: number): Promise<JustGoEvent[]> {
     signal: AbortSignal.timeout(15000),
   });
   if (!res.ok) throw new Error(`JustGo API returned ${res.status}`);
-  const json = (await res.json()) as Array<{
+  const payload = await res.json();
+  const json = (typeof payload === "string" ? JSON.parse(payload) : payload) as Array<{
     IsSuccess: boolean;
     Result: { Result: { Data: JustGoEvent[] } };
   }>;
   return json[0]?.Result?.Result?.Data ?? [];
 }
 
+async function loadPostcodeCoordinates(records: JustGoEvent[]): Promise<Map<string, Coordinates>> {
+  const postcodes = [
+    ...new Set(
+      records
+        .map((event) => event.Address?.Postcode?.trim())
+        .filter((postcode): postcode is string => !!postcode)
+        .map(normalisePostcode),
+    ),
+  ];
+  const coordinates = new Map<string, Coordinates>();
+  if (!postcodes.length) return coordinates;
+
+  for (let offset = 0; offset < postcodes.length; offset += 100) {
+    const batch = postcodes.slice(offset, offset + 100);
+    try {
+      const response = await fetch("https://api.postcodes.io/postcodes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ postcodes: batch }),
+        signal: AbortSignal.timeout(15000),
+      });
+      if (response.ok) {
+        const json = (await response.json()) as {
+          result?: Array<{
+            query: string;
+            result: { latitude: number; longitude: number } | null;
+          }>;
+        };
+        for (const item of json.result ?? []) {
+          if (
+            item.result &&
+            Number.isFinite(item.result.latitude) &&
+            Number.isFinite(item.result.longitude)
+          ) {
+            coordinates.set(normalisePostcode(item.query), {
+              lat: item.result.latitude,
+              lng: item.result.longitude,
+            });
+          }
+        }
+      }
+    } catch {
+      // Best-effort enrichment: never fail a governing-body sync because the
+      // independent postcode service is unavailable.
+    }
+  }
+
+  for (const postcode of postcodes) {
+    if (coordinates.has(postcode) || !isUkOutwardCode(postcode)) continue;
+    try {
+      const response = await fetch(
+        `https://api.postcodes.io/outcodes/${encodeURIComponent(postcode)}`,
+        { signal: AbortSignal.timeout(10000) },
+      );
+      if (!response.ok) continue;
+      const json = (await response.json()) as {
+        result?: { latitude: number; longitude: number };
+      };
+      if (
+        json.result &&
+        Number.isFinite(json.result.latitude) &&
+        Number.isFinite(json.result.longitude)
+      ) {
+        coordinates.set(postcode, {
+          lat: json.result.latitude,
+          lng: json.result.longitude,
+        });
+      }
+    } catch {
+      // Leave unresolved; existing coordinates are retained by the planner.
+    }
+  }
+  return coordinates;
+}
 
 export async function runScottishAthleticsSync(): Promise<ScottishAthleticsSyncResult> {
   const run = await startSyncRun("scottish-athletics");
@@ -97,6 +170,7 @@ export async function runScottishAthleticsSync(): Promise<ScottishAthleticsSyncR
     }
 
     const running = all.filter((e) => INCLUDED_CATEGORIES.has(e.EventCategory));
+    const postcodeCoordinates = await loadPostcodeCoordinates(running);
 
     // Map of slugified organiser/club name → club website. Lets us
     // populate organiser_url for events whose only link is on the JustGo
@@ -109,7 +183,9 @@ export async function runScottishAthleticsSync(): Promise<ScottishAthleticsSyncR
     // NOTE: source_url is included so the planner can index by JustGo ref.
     const { data: existing, error: exErr } = await supabaseAdmin
       .from("events")
-      .select("slug, name, date_from, norm_id, source, source_url")
+      .select(
+        "slug, name, date_from, norm_id, source, source_url, lat, lng, distance_tags, terrain_tags, is_curated_tags, governance, race_profile",
+      )
       .eq("status", "ACTIVE")
       .or("region.eq.Scotland,country.eq.Scotland");
     if (exErr) {
@@ -142,7 +218,6 @@ export async function runScottishAthleticsSync(): Promise<ScottishAthleticsSyncR
         .map((r) => [r.slug, r.norm_id]),
     );
 
-
     const todayISO = new Date().toISOString().slice(0, 10);
 
     // Plan the batch: dedupe by ref, group by name+date, resolve slugs,
@@ -152,6 +227,7 @@ export async function runScottishAthleticsSync(): Promise<ScottishAthleticsSyncR
       existingRows: existing ?? [],
       globalSlugOwners,
       clubWebsiteMap,
+      postcodeCoordinates,
       todayISO,
     });
 
@@ -207,4 +283,3 @@ export async function runScottishAthleticsSync(): Promise<ScottishAthleticsSyncR
     throw err;
   }
 }
-

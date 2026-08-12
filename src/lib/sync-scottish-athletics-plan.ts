@@ -7,6 +7,13 @@
 // touching Supabase.
 
 import type { Database } from "@/integrations/supabase/types";
+import { normalisePostcode } from "@/lib/postcode";
+import {
+  buildSourceEnrichment,
+  resolveSourceCoordinates,
+  type Coordinates,
+  type ExistingSourceEnrichment,
+} from "@/lib/source-enrichment";
 
 export type JustGoEvent = {
   DocId: number;
@@ -26,7 +33,7 @@ export type JustGoEvent = {
   PriceSettings: { DisplayPrice: string | null };
 };
 
-export type ExistingSaRow = {
+export type ExistingSaRow = ExistingSourceEnrichment & {
   slug: string | null;
   name: string | null;
   date_from: string | null;
@@ -35,8 +42,7 @@ export type ExistingSaRow = {
   source_url: string | null;
 };
 
-export type EventInsert =
-  Database["public"]["Tables"]["events"]["Insert"];
+export type EventInsert = Database["public"]["Tables"]["events"]["Insert"];
 
 export type PlanStats = {
   skippedDupes: number;
@@ -54,8 +60,18 @@ export type PlanResult = {
 };
 
 const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 export function parseJustGoRef(url: string | null | undefined): string | null {
@@ -109,6 +125,8 @@ function buildRow(
   slug: string,
   normId: string,
   clubWebsiteMap: Map<string, string>,
+  postcodeCoordinates: Map<string, Coordinates>,
+  existingByNormId: Map<string, ExistingSaRow>,
   todayISO: string,
 ): EventInsert {
   const name = cleanName(e.EventName);
@@ -116,10 +134,38 @@ function buildRow(
   const dateTo = parseJustGoDate(e.Ends?.Date);
   const lat = e.Latlng?.Lat ? Number(e.Latlng.Lat) : null;
   const lng = e.Latlng?.Lng ? Number(e.Latlng.Lng) : null;
-  const organiser = e.EntityInfo?.Name?.trim() || null;
-  const organiserUrl = organiser
-    ? clubWebsiteMap.get(slugify(organiser)) ?? null
+  const sourceCoordinates =
+    lat !== null && Number.isFinite(lat) && lng !== null && Number.isFinite(lng)
+      ? { lat, lng }
+      : null;
+  const postcode = e.Address?.Postcode?.trim();
+  const postcodeCoordinate = postcode
+    ? (postcodeCoordinates.get(normalisePostcode(postcode)) ?? null)
     : null;
+  const existing = existingByNormId.get(normId);
+  const existingCoordinates =
+    typeof existing?.lat === "number" &&
+    Number.isFinite(existing.lat) &&
+    typeof existing.lng === "number" &&
+    Number.isFinite(existing.lng)
+      ? { lat: existing.lat, lng: existing.lng }
+      : null;
+  const coordinates = resolveSourceCoordinates({
+    source: sourceCoordinates,
+    postcode: postcodeCoordinate,
+    existing: existingCoordinates,
+  });
+  const organiser = e.EntityInfo?.Name?.trim() || null;
+  const organiserUrl = organiser ? (clubWebsiteMap.get(slugify(organiser)) ?? null) : null;
+  const distances = distancesFromName(name);
+  const enrichment = buildSourceEnrichment({
+    name,
+    distances,
+    discipline: e.EventCategory,
+    governance: "scottish_athletics",
+    coordinates,
+    existing,
+  });
   return {
     norm_id: normId,
     name,
@@ -132,9 +178,11 @@ function buildRow(
     county: e.Address?.County?.trim() || null,
     country: "Scotland",
     region: "Scotland",
-    lat: lat !== null && Number.isFinite(lat) ? lat : null,
-    lng: lng !== null && Number.isFinite(lng) ? lng : null,
-    distances: distancesFromName(name),
+    lat: enrichment.lat,
+    lng: enrichment.lng,
+    distances,
+    distance_tags: enrichment.distance_tags,
+    terrain_tags: enrichment.terrain_tags,
     discipline: e.EventCategory,
     entry_url: e.Directlink || null,
     organiser,
@@ -142,7 +190,8 @@ function buildRow(
     entry_fee: e.PriceSettings?.DisplayPrice?.trim() || null,
     source: "scottishathletics",
     source_url: e.Directlink || null,
-    governance: "scottish_athletics",
+    governance: enrichment.governance,
+    race_profile: enrichment.race_profile,
     status: "ACTIVE",
     sort_date: dateFrom,
     is_upcoming: dateFrom >= todayISO,
@@ -154,6 +203,7 @@ export function planScottishAthleticsBatch(input: {
   existingRows: ExistingSaRow[];
   globalSlugOwners: Map<string, string | null>;
   clubWebsiteMap?: Map<string, string>;
+  postcodeCoordinates?: Map<string, Coordinates>;
   todayISO: string;
 }): PlanResult {
   const {
@@ -161,15 +211,19 @@ export function planScottishAthleticsBatch(input: {
     existingRows,
     globalSlugOwners,
     clubWebsiteMap = new Map<string, string>(),
+    postcodeCoordinates = new Map<string, Coordinates>(),
     todayISO,
   } = input;
 
   const warnings: string[] = [];
+  const existingByNormId = new Map(
+    existingRows
+      .filter((row): row is ExistingSaRow & { norm_id: string } => !!row.norm_id)
+      .map((row) => [row.norm_id, row]),
+  );
 
   // --- Index existing Scotland rows ---------------------------------------
-  const existingNormIds = new Set(
-    existingRows.map((e) => e.norm_id).filter(Boolean) as string[],
-  );
+  const existingNormIds = new Set(existingRows.map((e) => e.norm_id).filter(Boolean) as string[]);
   // Name+date → source of the existing row. Cross-source dedupe only
   // kicks in when the collision is against a different source.
   const existingNameDateSource = new Map<string, string | null>(
@@ -199,10 +253,7 @@ export function planScottishAthleticsBatch(input: {
   );
   // ref → list of existing rows carrying that ref. Multi-valued because
   // known legacy duplicates have the same JustGo ref on two DB rows.
-  const existingByRef = new Map<
-    string,
-    Array<{ slug: string; norm_id: string }>
-  >();
+  const existingByRef = new Map<string, Array<{ slug: string; norm_id: string }>>();
   for (const e of existingRows) {
     const ref = parseJustGoRef(e.source_url);
     if (!ref || !e.slug || !e.norm_id) continue;
@@ -270,10 +321,7 @@ export function planScottishAthleticsBatch(input: {
   for (const [key, group] of groups) {
     // Cross-source dedupe: never overwrite a row owned by another source.
     const collidingSource = existingNameDateSource.get(key);
-    if (
-      collidingSource !== undefined &&
-      collidingSource !== "scottishathletics"
-    ) {
+    if (collidingSource !== undefined && collidingSource !== "scottishathletics") {
       stats.skippedDupes += group.length;
       continue;
     }
@@ -291,9 +339,7 @@ export function planScottishAthleticsBatch(input: {
 
       // Ref-sorted for deterministic output regardless of feed order.
       const sorted = [...group].sort((a, b) =>
-        parseJustGoRef(a.event.Directlink)!.localeCompare(
-          parseJustGoRef(b.event.Directlink)!,
-        ),
+        parseJustGoRef(a.event.Directlink)!.localeCompare(parseJustGoRef(b.event.Directlink)!),
       );
 
       for (const g of sorted) {
@@ -324,7 +370,15 @@ export function planScottishAthleticsBatch(input: {
           normId = `scottishathletics-${slug}`;
         }
         rows.push(
-          buildRow(g.event, slug, normId, clubWebsiteMap, todayISO),
+          buildRow(
+            g.event,
+            slug,
+            normId,
+            clubWebsiteMap,
+            postcodeCoordinates,
+            existingByNormId,
+            todayISO,
+          ),
         );
         if (existingNormIds.has(normId)) stats.updatedExisting++;
         else stats.newEvents++;
@@ -355,11 +409,7 @@ export function planScottishAthleticsBatch(input: {
     // Missing ref, different ref, or different date → fall through to the
     // deterministic slug-resolution path.
     const pin = existingPinByNormId.get(baseNormId);
-    const canReusePin =
-      !!pin &&
-      !!ref &&
-      pin.ref === ref &&
-      pin.dateFrom === g.dateFrom;
+    const canReusePin = !!pin && !!ref && pin.ref === ref && pin.dateFrom === g.dateFrom;
 
     let slug: string;
     if (canReusePin) {
@@ -385,8 +435,7 @@ export function planScottishAthleticsBatch(input: {
           !seenSlugsInBatch.has(slug) &&
           (!owner || owner === candidateNormId) &&
           // If the base pin exists, avoid landing back on the pinned slug/normId.
-          (!pinBlocksBase ||
-            (slug !== pin!.slug && candidateNormId !== baseNormId))
+          (!pinBlocksBase || (slug !== pin!.slug && candidateNormId !== baseNormId))
         ) {
           break;
         }
@@ -395,7 +444,17 @@ export function planScottishAthleticsBatch(input: {
       }
     }
     const finalNormId = `scottishathletics-${slug}`;
-    pushRow(buildRow(e, slug, finalNormId, clubWebsiteMap, todayISO));
+    pushRow(
+      buildRow(
+        e,
+        slug,
+        finalNormId,
+        clubWebsiteMap,
+        postcodeCoordinates,
+        existingByNormId,
+        todayISO,
+      ),
+    );
   }
 
   // --- 4) Loud pre-upsert assertions --------------------------------------
@@ -403,14 +462,8 @@ export function planScottishAthleticsBatch(input: {
   const slugCounts = new Map<string, number>();
   const normIdCounts = new Map<string, number>();
   for (const r of rows) {
-    slugCounts.set(
-      r.slug as string,
-      (slugCounts.get(r.slug as string) ?? 0) + 1,
-    );
-    normIdCounts.set(
-      r.norm_id as string,
-      (normIdCounts.get(r.norm_id as string) ?? 0) + 1,
-    );
+    slugCounts.set(r.slug as string, (slugCounts.get(r.slug as string) ?? 0) + 1);
+    normIdCounts.set(r.norm_id as string, (normIdCounts.get(r.norm_id as string) ?? 0) + 1);
   }
   for (const [slug, n] of slugCounts) {
     if (n > 1) {

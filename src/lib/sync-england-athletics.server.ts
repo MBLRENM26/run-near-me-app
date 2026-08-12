@@ -11,8 +11,7 @@ import {
 // norm_id `ea-<EA event UUID>` so existing records are updated in place,
 // never duplicated. Existing slugs are preserved so URLs don't change.
 
-const EA_URL =
-  "https://www.englandathletics.org/runevents/wp-admin/admin-ajax.php";
+const EA_URL = "https://www.englandathletics.org/runevents/wp-admin/admin-ajax.php";
 const MAX_PAGES = 120;
 
 export type EnglandAthleticsSyncResult = {
@@ -100,15 +99,15 @@ export async function runEnglandAthleticsSync(
       if (p >= lastPage) break;
     }
 
-    const active = all.filter(
-      (e) => e.type === "event" && e.status === "ACTIVE" && e.name,
-    );
+    const active = all.filter((e) => e.type === "event" && e.status === "ACTIVE" && e.name);
 
     const existing: ExistingEaRow[] = [];
     for (let offset = 0; ; offset += 1000) {
       const { data: chunk, error: exErr } = await supabaseAdmin
         .from("events")
-        .select("slug, name, date_from, norm_id, source")
+        .select(
+          "slug, name, date_from, norm_id, source, lat, lng, distance_tags, terrain_tags, is_curated_tags, governance, race_profile",
+        )
         .range(offset, offset + 999);
       if (exErr) {
         await run.finish({

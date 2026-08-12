@@ -2,7 +2,7 @@
 
 Status: canonical short-form context for Mike, Codex and Lovable. Linked contracts retain authority; Lovable context is generated from this file.
 
-Last reviewed: 8 August 2026
+Last reviewed: 12 August 2026
 
 ## Authority order
 
@@ -21,7 +21,7 @@ Conflicts must be raised. Never silently combine a superseded fact with a curren
 
 ## Verified operating baseline
 
-- Verified merged app head: `774116891c3bf0bc3b4afc87d952914ff2fe9b3e`; local and origin `main` matched after L3B-5A production acceptance.
+- Verified merged app head: `3353497ae949fda8d48529319e3f2e910c835ac3`; local and origin `main` matched after the bounded Race Explorer merge and production publication.
 - Containment baseline: `c1cdc4a7e9ae4d16766125f7e56509affe6b79d4`; later acceptance is recorded below.
 - Full TypeScript check clean, 31 tests passing and production build passing at that baseline.
 - Reminder job 6 is inactive; HTTP fulfilment fails closed with `503` unless `REMINDER_SENDING_ENABLED=true`. No scheduled reminder was sent; first requests do receive an automatic transactional confirmation.
@@ -58,6 +58,8 @@ Lovable is the validation/incubation platform for the evidence window. GitHub re
 - L1/L2 audits remain the correction baseline: public/base access is wider than intended, surface/date eligibility disagrees and the 5,368 headline is not a discovery count.
 - L3A/L3A-R safe public projection and invoker remediation are live. L3B region, homepage, county, city and distance-stabilisation packages are complete with their dated acceptance records; L3B-5B is paused.
 - PX0 operating reset is active. Strategy and documentation are approved; app, schema, production-data, integration and deployment mutations remain separately gated.
+- PX2A Race Explorer is live as an unlinked, `noindex` controlled product preview at `/explore`. Desktop/mobile, postcode/radius, inspection, comparison and console acceptance passed on 12 August 2026. It uses the existing public projection and adds no schema, PostGIS or `pg_trgm` dependency.
+- PX2B source enrichment is the active approved package. The verified 12 August baseline is 634 future EA rows and 84 future SA rows. All 84 SA rows pass the actual governance-aware discovery gate; the prior organiser-owned-link calculation was not the live gate. PX2B therefore leaves link trust unchanged and targets repeatable taxonomy/tag enrichment, Scottish postcode geocoding, coordinate-outlier correction and reversible hiding of two confirmed TRA test rows. See [PX2B source-enrichment package](RENM-PX2B-source-enrichment-package-2026-08-12.md).
 - At `9558063`, event-detail analytics changed from `Entry Click` to `Outbound Click` with conservative analytics-only `destination_role`. Historical data stays separate; a click is only a hand-off. This is not public/data-layer L6 and changes no CTA, trust or discovery rule.
 - No L3C base-grant hardening or L4 eligibility implementation has been approved. Prior trust packages resume only for a named PX dependency.
 
