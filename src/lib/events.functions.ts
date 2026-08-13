@@ -25,6 +25,11 @@ import {
 } from "@/lib/event-indexability";
 import { hasOrganiserOwnedLink, hasDiscoverableLink } from "@/lib/link-trust";
 import { DISCOVERY_EVENT_COLUMNS, UK_BOUNDS_OR_NULL } from "@/lib/events-query";
+import {
+  courseProfileFromSources,
+  type CourseProfile,
+  type StoredCourseSource,
+} from "@/lib/course-profile";
 
 /**
  * Run a Supabase select in 1000-row pages until exhausted, returning all
@@ -631,6 +636,8 @@ export type EventPageData = {
   matchingClub: OrganiserClub | null;
   /** Other upcoming races by the matched organiser club. */
   otherRacesByOrganiser: OtherRaceByOrganiserEvent[];
+  /** Organiser-published route/elevation evidence, loaded server-side. */
+  courseProfile: CourseProfile | null;
   /**
    * Search-index decision for this event page. Computed server-side
    * from past/slug-suffix/orphan/duplicate-sibling rules so the
@@ -745,6 +752,22 @@ export const getEventPageData = createServerFn({ method: "GET" })
     void _status;
     void _duplicate_of;
     const event = eventPublic as EventDetail;
+
+    const { data: courseRows, error: courseError } = await supabaseAdmin
+      .from("event_course_sources")
+      .select(
+        "provider, provider_route_id, route_name, distance_key, distance_label, distance_km, ascent_m, route_url, embed_url",
+      )
+      .eq("event_id", event.id)
+      .eq("status", "published")
+      .order("distance_km", { ascending: true, nullsFirst: false });
+    if (courseError) throw new Error(courseError.message);
+    const courseProfile = courseProfileFromSources({
+      eventSlug: event.slug,
+      organiser: event.organiser,
+      raceProfile: event.race_profile,
+      sources: (courseRows ?? []) as StoredCourseSource[],
+    });
 
 
     // Prefer tag-based primary distance; fall back to legacy substring for
@@ -1176,6 +1199,7 @@ export const getEventPageData = createServerFn({ method: "GET" })
       sameWeekendNearby,
       matchingClub,
       otherRacesByOrganiser,
+      courseProfile,
       indexability,
     };
   });

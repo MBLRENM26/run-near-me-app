@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { courseProfileForEvent } from "@/lib/course-profile";
+import { courseProfileForEvent, courseProfileFromSources } from "@/lib/course-profile";
 
 describe("courseProfileForEvent", () => {
   it("returns the organiser-published North Downs Run course", () => {
@@ -48,5 +48,35 @@ describe("courseProfileForEvent", () => {
   it("does not enrich any other event page", () => {
     expect(courseProfileForEvent("another-event")).toBeNull();
     expect(courseProfileForEvent("north-downs-run")).toBeNull();
+  });
+
+  it("builds a dynamic multi-route profile from verified source rows", () => {
+    const course = courseProfileFromSources({
+      eventSlug: "runthrough-example-2026",
+      organiser: "RunThrough",
+      raceProfile: "road",
+      sources: [
+        {
+          provider: "strava",
+          provider_route_id: "123",
+          route_name: "Example 10K",
+          distance_key: "10k",
+          distance_label: "10K",
+          distance_km: 10.1,
+          ascent_m: 84,
+          route_url: "https://www.strava.com/routes/123",
+          embed_url: "https://strava-embeds.com/route/123?style=standard",
+        },
+      ],
+    });
+
+    expect(course?.providerLabel).toBe("Strava");
+    expect(course?.terrainLabel).toBe("Road");
+    expect(course?.routes[0]).toMatchObject({
+      key: "10k",
+      label: "10K",
+      distanceLabel: "10.1 km",
+      ascentLabel: "84 m",
+    });
   });
 });

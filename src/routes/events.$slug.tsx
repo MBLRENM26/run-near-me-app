@@ -16,7 +16,6 @@ import { TrustProfileStrip } from "@/components/events/TrustProfileStrip";
 import { CourseIntelligence } from "@/components/events/CourseIntelligence";
 import { getEventPageData } from "@/lib/events.functions";
 import { setEventResponseHeaders } from "@/lib/event-response-headers";
-import { courseProfileForEvent } from "@/lib/course-profile";
 
 import {
   buildAboutParagraph,
@@ -359,6 +358,7 @@ function EventDetailPage() {
     sameWeekendNearby,
     matchingClub,
     otherRacesByOrganiser,
+    courseProfile,
   } = loaderData;
 
   // Site-wide link-trust policy: aggregator URLs are never rendered as
@@ -478,8 +478,6 @@ function EventDetailPage() {
     : null;
   const showCombo =
     !!regionSlug && !!comboSlug && related.totalCount >= 3;
-  const courseProfile = courseProfileForEvent(e.slug);
-
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />

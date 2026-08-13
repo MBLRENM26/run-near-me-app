@@ -19,6 +19,7 @@ export const SYNC_SOURCES = [
   "england-athletics",
   "scottish-athletics",
   "scottish-athletics-clubs",
+  "runthrough-courses",
 ] as const;
 export type SyncSource = (typeof SYNC_SOURCES)[number];
 
@@ -39,6 +40,66 @@ export type SyncRun = {
   failed_pages: number | null;
   error_message: string | null;
 };
+
+export type CourseSourceReview = {
+  id: string;
+  event_id: string | null;
+  source_url: string | null;
+  provider_route_id: string | null;
+  route_name: string | null;
+  reason: string;
+  detail: string | null;
+  last_seen_at: string;
+  event_name: string | null;
+  event_slug: string | null;
+};
+
+export const getCourseSourceReviews = createServerFn({ method: "GET" }).handler(
+  async (): Promise<CourseSourceReview[]> => {
+    if (!(await isAdminAuthenticated())) throw new Error("Unauthorized");
+    const { data, error } = await supabaseAdmin
+      .from("course_source_reviews")
+      .select(
+        "id, event_id, source_url, provider_route_id, route_name, reason, detail, last_seen_at, events(name, slug)",
+      )
+      .is("resolved_at", null)
+      .order("last_seen_at", { ascending: false })
+      .limit(100);
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((row) => {
+      const event = row.events as { name: string; slug: string | null } | null;
+      return {
+        id: row.id,
+        event_id: row.event_id,
+        source_url: row.source_url,
+        provider_route_id: row.provider_route_id,
+        route_name: row.route_name,
+        reason: row.reason,
+        detail: row.detail,
+        last_seen_at: row.last_seen_at,
+        event_name: event?.name ?? null,
+        event_slug: event?.slug ?? null,
+      };
+    });
+  },
+);
+
+export const resolveCourseSourceReview = createServerFn({ method: "POST" })
+  .inputValidator((input: { id: string }) => {
+    if (!/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(input.id)) {
+      throw new Error("Invalid review id");
+    }
+    return input;
+  })
+  .handler(async ({ data }): Promise<{ ok: true }> => {
+    await requireAdminMutation();
+    const { error } = await supabaseAdmin
+      .from("course_source_reviews")
+      .update({ resolved_at: new Date().toISOString() })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
 
 export const getSyncRuns = createServerFn({ method: "GET" }).handler(
   async (): Promise<SyncRun[]> => {
@@ -78,6 +139,9 @@ export const triggerSyncRun = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }): Promise<TriggerSyncResult> => {
     await requireAdminMutation();
+    if (data.source === "runthrough-courses") {
+      throw new Error("RunThrough courses must use the bounded chunk runner");
+    }
 
     const work: Promise<{
       newEvents: number;
@@ -196,6 +260,43 @@ export const triggerEnglandAthleticsChunk = createServerFn({ method: "POST" })
       fetched: r.fetched,
       failedPages: r.failedPages.length,
     };
+  });
+
+export type RunThroughCourseChunkResult = {
+  ok: true;
+  offset: number;
+  limit: number;
+  totalSources: number;
+  processedSources: number;
+  done: boolean;
+  matchedEvents: number;
+  publishedRoutes: number;
+  reviewItems: number;
+  failedSources: number;
+};
+
+// Run a bounded set of organiser pages synchronously. The browser drives
+// successive chunks so no single request puts unnecessary load on RunThrough
+// or approaches the hosting response timeout.
+export const triggerRunThroughCourseChunk = createServerFn({ method: "POST" })
+  .inputValidator((input: { offset: number; limit: number }) => {
+    const offset = Math.floor(input.offset);
+    const limit = Math.floor(input.limit);
+    if (!Number.isFinite(offset) || offset < 0) {
+      throw new Error("offset must be >= 0");
+    }
+    if (!Number.isFinite(limit) || limit < 1 || limit > 10) {
+      throw new Error("limit must be between 1 and 10");
+    }
+    return { offset, limit };
+  })
+  .handler(async ({ data }): Promise<RunThroughCourseChunkResult> => {
+    await requireAdminMutation();
+    const { runRunThroughCourseChunk } = await import(
+      "@/lib/sync-runthrough-courses.server"
+    );
+    const result = await runRunThroughCourseChunk(data);
+    return { ok: true, ...result };
   });
 
 // One-off bootstrap: copy the current IMPORT_SECRET env value into

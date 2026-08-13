@@ -8,6 +8,9 @@ import {
   getSyncRuns,
   triggerSyncRun,
   triggerEnglandAthleticsChunk,
+  triggerRunThroughCourseChunk,
+  getCourseSourceReviews,
+  resolveCourseSourceReview,
   seedImportSecretInVault,
   SYNC_SOURCES,
   type SyncRun,
@@ -23,6 +26,7 @@ const SOURCE_LABEL: Record<SyncSource, string> = {
   "england-athletics": "England Athletics",
   "scottish-athletics": "Scottish Athletics",
   "scottish-athletics-clubs": "Scottish Athletics clubs",
+  "runthrough-courses": "RunThrough courses",
 };
 
 const STALE_AFTER_MS = 10 * 60 * 1000; // 10 minutes
@@ -30,6 +34,8 @@ const STALE_AFTER_MS = 10 * 60 * 1000; // 10 minutes
 // EA driver settings (mirrors the Postgres driver run by the weekly cron).
 const EA_CHUNK_SIZE = 20;
 const EA_MAX_CHUNKS = 20; // safety cap; real exit is `done = true`
+const RUNTHROUGH_CHUNK_SIZE = 5;
+const RUNTHROUGH_MAX_CHUNKS = 100;
 
 function isStale(run: SyncRun): boolean {
   if (run.status !== "running") return false;
@@ -55,9 +61,25 @@ function AdminSyncRunsPage() {
       return live ? 3000 : false;
     },
   });
+  const { data: courseReviews } = useQuery({
+    queryKey: ["admin", "course-source-reviews"],
+    queryFn: () => getCourseSourceReviews(),
+  });
 
   const trigger = useServerFn(triggerSyncRun);
   const triggerEaChunk = useServerFn(triggerEnglandAthleticsChunk);
+  const triggerRunThroughChunk = useServerFn(triggerRunThroughCourseChunk);
+  const resolveCourseReview = useServerFn(resolveCourseSourceReview);
+  const resolveReviewMutation = useMutation({
+    mutationFn: (id: string) => resolveCourseReview({ data: { id } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "course-source-reviews"] });
+      toast.success("Review item marked resolved");
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Could not resolve review item");
+    },
+  });
 
   // Drives Scottish (still a one-shot — finishes in ~4s).
   const runMutation = useMutation({
@@ -70,9 +92,7 @@ function AdminSyncRunsPage() {
     },
     onSuccess: (res, source) => {
       if (res.started) {
-        toast.message(
-          `${SOURCE_LABEL[source]} sync started — table will update when it finishes`,
-        );
+        toast.message(`${SOURCE_LABEL[source]} sync started — table will update when it finishes`);
       } else {
         toast.success(
           `${SOURCE_LABEL[source]} sync finished: ${res.newEvents} new, ${res.updatedExisting} updated`,
@@ -87,13 +107,14 @@ function AdminSyncRunsPage() {
   // EA-specific: loop chunks of EA_CHUNK_SIZE pages until the API reports
   // we've reached the last page. Each chunk writes its own sync_runs row.
   const [eaRunning, setEaRunning] = useState(false);
+  const [runThroughRunning, setRunThroughRunning] = useState(false);
 
   async function runEnglandAthleticsChunked() {
     if (eaRunning) return;
     setEaRunning(true);
     let fromPage = 1;
     let chunkIndex = 0;
-    let totals = { newEvents: 0, updatedExisting: 0, written: 0 };
+    const totals = { newEvents: 0, updatedExisting: 0, written: 0 };
     try {
       while (chunkIndex < EA_MAX_CHUNKS) {
         chunkIndex += 1;
@@ -133,11 +154,50 @@ function AdminSyncRunsPage() {
     }
   }
 
+  async function runRunThroughCoursesChunked() {
+    if (runThroughRunning) return;
+    setRunThroughRunning(true);
+    let offset = 0;
+    let chunkIndex = 0;
+    const totals = { matchedEvents: 0, publishedRoutes: 0, reviewItems: 0 };
+    try {
+      while (chunkIndex < RUNTHROUGH_MAX_CHUNKS) {
+        chunkIndex += 1;
+        const res = await triggerRunThroughChunk({
+          data: { offset, limit: RUNTHROUGH_CHUNK_SIZE },
+        });
+        totals.matchedEvents += res.matchedEvents;
+        totals.publishedRoutes += res.publishedRoutes;
+        totals.reviewItems += res.reviewItems;
+        await qc.invalidateQueries({ queryKey: ["admin", "sync-runs"] });
+        await qc.invalidateQueries({ queryKey: ["admin", "course-source-reviews"] });
+        toast.message(
+          `RunThrough chunk ${chunkIndex}: ${res.matchedEvents} event(s), ${res.publishedRoutes} route(s), ${res.reviewItems} review item(s)`,
+        );
+        if (res.done) break;
+        offset += res.processedSources;
+        if (res.processedSources === 0) {
+          throw new Error("RunThrough course sync made no progress");
+        }
+      }
+      toast.success(
+        `RunThrough course sync complete — ${totals.matchedEvents} event(s), ${totals.publishedRoutes} route(s), ${totals.reviewItems} review item(s)`,
+      );
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "RunThrough course sync failed");
+    } finally {
+      setRunThroughRunning(false);
+      qc.invalidateQueries({ queryKey: ["admin", "sync-runs"] });
+    }
+  }
+
   // A source is "busy" if a mutation is in flight, OR its most recent row is
   // still actively running (not yet stale).
   function isSourceBusy(source: SyncSource): boolean {
     if (source === "england-athletics" && eaRunning) return true;
-    if (source !== "england-athletics" && runMutation.isPending) return true;
+    if (source === "runthrough-courses" && runThroughRunning) return true;
+    if (source !== "england-athletics" && source !== "runthrough-courses" && runMutation.isPending)
+      return true;
     const latest = data?.find((r) => r.source === source);
     if (!latest) return false;
     return latest.status === "running" && !isStale(latest);
@@ -158,15 +218,11 @@ function AdminSyncRunsPage() {
           const onClick =
             s === "england-athletics"
               ? () => runEnglandAthleticsChunked()
-              : () => runMutation.mutate(s);
+              : s === "runthrough-courses"
+                ? () => runRunThroughCoursesChunked()
+                : () => runMutation.mutate(s);
           return (
-            <Button
-              key={s}
-              size="sm"
-              variant="outline"
-              disabled={busy}
-              onClick={onClick}
-            >
+            <Button key={s} size="sm" variant="outline" disabled={busy} onClick={onClick}>
               {busy ? "Running…" : `Run ${SOURCE_LABEL[s]} now`}
             </Button>
           );
@@ -174,9 +230,6 @@ function AdminSyncRunsPage() {
         <SyncSecretButton />
         <ScottishBackfillButton />
       </div>
-
-
-
 
       {isLoading && <p className="mt-8 text-muted-foreground">Loading…</p>}
       {error && (
@@ -187,8 +240,8 @@ function AdminSyncRunsPage() {
 
       {data && data.length === 0 && (
         <p className="mt-8 text-muted-foreground">
-          No sync runs recorded yet. Trigger one above, or wait for the next
-          weekly cron (Mondays 03:00 UTC).
+          No sync runs recorded yet. Trigger one above, or wait for the next weekly cron (Mondays
+          03:00 UTC).
         </p>
       )}
 
@@ -217,6 +270,63 @@ function AdminSyncRunsPage() {
           </table>
         </div>
       )}
+
+      {courseReviews && courseReviews.length > 0 && (
+        <div className="mt-10">
+          <h2 className="text-lg font-semibold text-foreground">RunThrough course review queue</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Uncertain source matches are withheld from public event pages.
+          </p>
+          <div className="mt-3 overflow-x-auto rounded-lg border border-border">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50 text-left text-muted-foreground">
+                <tr>
+                  <th className="px-3 py-2 font-medium">Event</th>
+                  <th className="px-3 py-2 font-medium">Reason</th>
+                  <th className="px-3 py-2 font-medium">Detail</th>
+                  <th className="px-3 py-2 font-medium">Source</th>
+                  <th className="px-3 py-2 font-medium">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {courseReviews.map((review) => (
+                  <tr key={review.id}>
+                    <td className="px-3 py-2">{review.event_name ?? "Unassigned route"}</td>
+                    <td className="px-3 py-2 font-mono text-xs">{review.reason}</td>
+                    <td className="max-w-md px-3 py-2 text-muted-foreground">
+                      {review.detail ?? "—"}
+                    </td>
+                    <td className="px-3 py-2">
+                      {review.source_url ? (
+                        <a
+                          href={review.source_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-primary underline"
+                        >
+                          Open source
+                        </a>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td className="px-3 py-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={resolveReviewMutation.isPending}
+                        onClick={() => resolveReviewMutation.mutate(review.id)}
+                      >
+                        Mark resolved
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -226,8 +336,7 @@ function SyncSecretButton() {
   const m = useMutation({
     mutationFn: () => seed(),
     onSuccess: () => toast.success("Import secret copied to vault"),
-    onError: (e) =>
-      toast.error(e instanceof Error ? e.message : "Failed to seed vault"),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to seed vault"),
   });
   return (
     <Button
@@ -254,8 +363,7 @@ function ScottishBackfillButton() {
         console.info("[scottish-backfill] unmatched organisers:", r.unmatched);
       }
     },
-    onError: (e) =>
-      toast.error(e instanceof Error ? e.message : "Backfill failed"),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Backfill failed"),
   });
   return (
     <Button
@@ -304,9 +412,7 @@ function StatusPill({ status }: { status: string }) {
           ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
           : "bg-destructive/10 text-destructive";
   return (
-    <span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${cls}`}>
-      {status}
-    </span>
+    <span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${cls}`}>{status}</span>
   );
 }
 
