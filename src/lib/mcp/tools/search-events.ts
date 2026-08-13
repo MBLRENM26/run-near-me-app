@@ -1,5 +1,6 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
+import { withUsageLogging } from "../usage";
 import { createClient } from "@supabase/supabase-js";
 import { DISCOVERY_EVENT_COLUMNS, UK_BOUNDS_OR_NULL } from "@/lib/events-query";
 import { hasOrganiserOwnedLink } from "@/lib/link-trust";
@@ -39,7 +40,7 @@ export default defineTool({
     limit: z.number().int().min(1).max(50).optional().default(20),
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async (input) => {
+  handler: withUsageLogging("search_events", async (input) => {
     const supabase = createClient(
       process.env.SUPABASE_URL!,
       process.env.SUPABASE_PUBLISHABLE_KEY!,
@@ -90,5 +91,5 @@ export default defineTool({
       content: [{ type: "text", text: JSON.stringify({ count: rows.length, events: rows }, null, 2) }],
       structuredContent: { count: rows.length, events: rows },
     };
-  },
+  }),
 });
