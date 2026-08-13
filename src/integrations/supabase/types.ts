@@ -1760,6 +1760,7 @@ export type Database = {
           retry_after_s: number
         }[]
       }
+      count_active_events: { Args: never; Returns: number }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
