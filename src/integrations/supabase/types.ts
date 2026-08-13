@@ -757,6 +757,33 @@ export type Database = {
         }
         Relationships: []
       }
+      mcp_tool_calls: {
+        Row: {
+          client_hint: string | null
+          created_at: string
+          duration_ms: number | null
+          id: string
+          ok: boolean
+          tool_name: string
+        }
+        Insert: {
+          client_hint?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          id?: string
+          ok?: boolean
+          tool_name: string
+        }
+        Update: {
+          client_hint?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          id?: string
+          ok?: boolean
+          tool_name?: string
+        }
+        Relationships: []
+      }
       organisation_aliases: {
         Row: {
           alias_name: string
@@ -1767,6 +1794,15 @@ export type Database = {
           slug: string
           town: string
         }[]
+      }
+      log_mcp_tool_call: {
+        Args: {
+          _client_hint: string
+          _duration_ms: number
+          _ok: boolean
+          _tool_name: string
+        }
+        Returns: undefined
       }
       move_to_dlq: {
         Args: {
