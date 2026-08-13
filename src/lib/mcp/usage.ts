@@ -47,10 +47,11 @@ async function record(
  * Wrap an MCP tool handler so every invocation is logged. Any logging failure
  * is swallowed; the tool's own result is returned unchanged.
  */
-export function withUsageLogging<
-  THandler extends (input: any, ctx?: any) => Promise<any> | any,
->(toolName: string, handler: THandler): THandler {
-  const wrapped = async (input: any, ctx?: any) => {
+export function withUsageLogging(
+  toolName: string,
+  handler: (input: any, ctx?: any) => any,
+): any {
+  return async (input: any, ctx?: any) => {
     const started = Date.now();
     let ok = true;
     try {
@@ -69,5 +70,4 @@ export function withUsageLogging<
       await record(toolName, ok, Date.now() - started, hint);
     }
   };
-  return wrapped as unknown as THandler;
 }
