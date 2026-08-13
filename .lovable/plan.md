@@ -1,50 +1,45 @@
-# Search Console indexing read — August 2026
+# Search Console coverage read — 13 August 2026
 
-## What the two screenshots say
+## Verified facts from the export
 
-Coverage is healthy and improving, not deteriorating.
+The uploaded `Coverage-Validation` export is the Soft 404 issue list: 551 URLs, 550 of them `/events/{slug}` and one `/running-events/...`. Validation status in the file is `Pending` for 550 and `Failed` for 1, and the crawl dates are almost entirely June 2026 (547 of 551) — before the current remediation shipped. So the panel's "Failed" badge reflects the earlier validation cycle, not fresh breakage.
 
-- Indexed: 8.85k pages, rising in three visible steps (mid-May, mid-June, early July) from roughly 8k.
-- Not indexed: 1.63k across 9 reasons.
+I re-checked 80 randomly sampled URLs from that list against the live site:
 
-Not-indexed breakdown:
+| Live state now | Count of 80 | Read |
+| --- | --- | --- |
+| 200 with `noindex` | 43 | Correctly demoted by our own indexability rule |
+| 404 | 19 | Correctly removed |
+| 410 Gone | 7 | Correctly tombstoned |
+| 200, indexable, thin | 11 | The remaining real issue |
 
-| Reason | Pages | Source | Read |
-| --- | --- | --- | --- |
-| Excluded by 'noindex' | 632 | Website | Intentional — our own rule (past events, `-race-N` series copies, orphans, non-earliest duplicate siblings, admin, `/search`, `/explore`, report and claim pages) |
-| Soft 404 | 551 | Website | Needs investigation — the one genuinely open item |
-| Page with redirect | 64 | Website | Intentional — duplicate-slug 301s |
-| Alternative page with proper canonical | 51 | Website | Intentional — canonical consolidation working |
-| Not found (404) | 46 | Website | Intentional — hidden/removed events |
-| Server error (5xx) | 1 | Website | Single sample; worth confirming it is not recurring |
-| Crawled – currently not indexed | 60 | Google systems | Google's quality/priority call, not a defect |
-| Discovered – currently not indexed | 222 | Google systems | Crawl-budget queue; trending down after a June spike |
-| Duplicate, Google chose different canonical | 1 | Google systems | Was the headline problem earlier; now effectively resolved |
+Extrapolated, roughly 86% of the 551 (about 475 URLs) are already resolved and will clear the bucket on the next validation pass. About 14% (roughly 75 URLs) are live, upcoming, indexable event pages that Google still judges as soft 404.
 
-Two clarifications on what the panel does not mean:
+Cause of the residual group, confirmed by inspecting one (`/events/ten10ten-sheffield`): the page renders correctly but carries only ~2.2k characters of visible text, nearly all templated — one restated-fields paragraph, a reminder form, and two "more races" link blocks. Nothing distinctive to the race. That thinness, not a status-code or canonical error, is what Google is scoring.
 
-- "Validation: Failed" is about the validation attempts started earlier in the remediation cycle, not about new breakage. A validation fails if any sampled URL in the batch still shows the reason, even when the aggregate count has fallen.
-- Roughly 1.4k of the 1.63k not-indexed pages are the intended outcome of deliberate rules. Only Soft 404 (551) and the single 5xx are unexplained.
+## Recommended sequence
 
-## Recommended next step: bounded read-only soft-404 diagnosis
+### Step 1 — Re-request validation (no code change)
+In Search Console, click "Validate fix" on Soft 404 again. The June-crawled majority now returns 404/410/noindex, so the count should fall sharply on its own. This also gives a clean baseline before any content change.
 
-Do not change code, schema, data or publication state yet. Establish evidence first.
+### Step 2 — Classify the residual set (read-only)
+Run the same live check across all 551 URLs, not a sample, and record status code, robots directive, visible text length, and whether the event is upcoming. Output the exact residual list of live-indexable thin pages, grouped by what they are missing (no organiser-owned link, no course data, no distance tags, no organiser name, minimal geography). Produce a dated finding document in `docs/renm/`. No app or data changes.
 
-1. Export the Soft 404 URL sample from the Search Console UI (the page-list under that reason, up to 1,000 rows) and hand it over as a CSV.
-2. Classify every sampled URL against the current live app by route family: event detail, distance page, distance×month page, county, city, region, parkrun region, club, permitted-race list, other.
-3. For each URL, record the live response status, whether `meta robots` is noindex, whether it is present in `sitemap.xml`, and how many events the page actually renders.
-4. Identify the dominant pattern. The likely candidates, in order, are: thin discovery pages returning 200 with zero or near-zero qualifying events after the organiser-owned-link gate; noindexed event pages still listed in the sitemap; and legacy URL shapes that should be 410 rather than a live empty page.
-5. Confirm whether the single 5xx is reproducible on the current head.
+### Step 3 — Decide per group, then approve separately
+Two candidate treatments, chosen per group from the step-2 evidence:
 
-Output: a dated read-only finding document in `docs/renm/` with per-family counts, the named dominant cause, and a shortlist of candidate remediations — no implementation.
+- **Enrich** where real structured facts exist but are not surfaced — course/route data from `event_course_sources`, organiser identity from the ORL, distance tags, nearby-event context. This stays inside the RENM rule that generated copy may only restate stable structured fields and live DB counts.
+- **Demote** where no additional true fact exists. Extend the indexability rule with a content-sufficiency condition so a page with nothing beyond name/date/place is `noindex, follow` rather than an indexable thin page. It stays live for direct visitors.
 
-## Why not fix now
+Neither is implemented in this plan. Each becomes its own approved package with migration (if any), rollback, tests and production acceptance evidence.
 
-Soft 404 has a small number of possible causes with very different fixes (empty-state handling, sitemap eligibility, or 410 tombstones). Picking one before the URL sample is classified risks noindexing or tombstoning pages that should stay indexable — the exact failure mode that produced the earlier over-aggressive month-suffix rule. Each remediation package is then approved separately with its own migration, rollback, tests and production acceptance evidence.
+## The other buckets, for completeness
+
+Nothing else in the second screenshot is an open defect: `noindex` 632, redirect 64, alternate canonical 51, 404 46 are all intended outcomes of shipped rules. `Crawled – currently not indexed` 60 and `Discovered – currently not indexed` 222 are Google-side crawl/quality queues, with the discovered count trending down after the June spike. `Duplicate, Google chose different canonical` is down to 1 from the earlier problem state. The single 5xx is worth one reproduction check during step 2.
 
 ## Technical notes
 
-- Indexability logic lives in `src/lib/event-indexability.ts`; event-page headers and robots meta in `src/routes/events.$slug.tsx` plus `src/lib/event-response-headers.ts`.
-- Sitemap generation is `src/routes/sitemap[.]xml.tsx`, which already excludes noindexed URLs by intent — step 3 verifies that holds in production.
-- Discovery surfaces filter on `hasOrganiserOwnedLink` and `DISCOVERY_EVENT_COLUMNS`, so an empty-but-200 landing page is a plausible soft-404 source.
-- The diagnosis is SELECT-only queries plus live HTTP reads; no cron, sync, migration or deploy activity.
+- Indexability rule: `src/lib/event-indexability.ts`; robots meta and status overrides in `src/routes/events.$slug.tsx` with `src/lib/event-response-headers.ts`.
+- Sitemap: `src/routes/sitemap[.]xml.tsx`, which already excludes noindexed URLs — step 2 confirms that holds in production for the residual set.
+- Enrichment inputs already in the database: `event_course_sources`, `course_source_reviews`, ORL organisation tables, `distance_tags`.
+- Step 2 is SELECT-only queries plus live HTTP GETs; no cron, sync, migration or deploy activity.
