@@ -61,6 +61,7 @@ function significantNameTokens(value: string): Set<string> {
       .replace(/\b20\d{2}\b/g, " ")
       .replace(/[^a-z0-9]+/g, " ")
       .split(/\s+/)
+      .map((token) => (token === "regents" ? "regent" : token))
       .filter((token) => token.length >= 3 && !GENERIC_NAME_TOKENS.has(token)),
   );
 }
@@ -82,7 +83,13 @@ export function parseRunThroughPage(html: string): {
   eventName: string | null;
   routeIds: string[];
 } {
-  const heading = html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i)?.[1] ?? null;
+  const openGraphTag = html.match(/<meta\b[^>]*property=["']og:title["'][^>]*>/i)?.[0];
+  const openGraphTitle = openGraphTag?.match(/content=(["'])([\s\S]*?)\1/i)?.[2];
+  const heading =
+    html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i)?.[1] ??
+    openGraphTitle ??
+    html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1] ??
+    null;
   const routeIds = [...html.matchAll(/strava-embeds\.com\/route\/(\d+)/gi)].map(
     (match) => match[1],
   );
@@ -102,7 +109,9 @@ export function eventMatchesRunThroughPage(eventName: string, pageName: string):
 
 export function distanceKeyFromText(value: string): string | null {
   const text = value.toLowerCase().replace(/[\u2013\u2014]/g, "-");
-  if (/\bhalf[ -]?marathon\b|\b21(?:\.1)?\s*km\b/.test(text)) return "half-marathon";
+  if (/\bhalf[ -]?marathon\b|\b(?:half|h)[ .-]?m\b|\b21(?:\.1)?\s*km\b/.test(text)) {
+    return "half-marathon";
+  }
   if (/\bmarathon\b|\b42(?:\.2)?\s*km\b/.test(text)) return "marathon";
   if (/\b10\s*(?:mile|miles|mi)\b/.test(text)) return "10-mile";
   if (/\b5\s*(?:mile|miles|mi)\b/.test(text)) return "5-mile";
@@ -110,6 +119,20 @@ export function distanceKeyFromText(value: string): string | null {
   if (/\b5\s*k(?:m)?\b/.test(text)) return "5k";
   if (/\b1\s*(?:mile|miles|mi)\b/.test(text)) return "1-mile";
   return null;
+}
+
+export function distanceKeyFromKm(distanceKm: number): string | null {
+  const known: Array<[key: string, km: number, tolerance: number]> = [
+    ["1-mile", 1.609, 0.25],
+    ["5k", 5, 0.6],
+    ["5-mile", 8.047, 0.65],
+    ["10k", 10, 1],
+    ["10-mile", 16.093, 1.2],
+    ["half-marathon", 21.0975, 1.5],
+    ["marathon", 42.195, 2],
+  ];
+  const match = known.find(([, km, tolerance]) => Math.abs(distanceKm - km) <= tolerance);
+  return match?.[0] ?? null;
 }
 
 export function advertisedDistanceKeys(value: string | null): Set<string> {
@@ -156,14 +179,18 @@ export function parseStravaEmbed(html: string, providerRouteId: string): ParsedS
     routeName,
     distanceKm,
     ascentM,
-    distanceKey: distanceKeyFromText(routeName),
+    distanceKey: distanceKeyFromText(routeName) ?? distanceKeyFromKm(distanceKm),
   };
 }
 
 export function exactRoutesForEvent(
   event: Pick<RunThroughEventCandidate, "distances">,
   routes: ParsedStravaRoute[],
-): { publishable: ParsedStravaRoute[]; unresolved: ParsedStravaRoute[] } {
+): {
+  publishable: ParsedStravaRoute[];
+  unresolved: ParsedStravaRoute[];
+  missingDistanceKeys: string[];
+} {
   const advertised = advertisedDistanceKeys(event.distances);
   const eligible = routes.filter(
     (route) => !!route.distanceKey && advertised.has(route.distanceKey),
@@ -176,8 +203,10 @@ export function exactRoutesForEvent(
   // without more evidence (for example wave, junior or seasonal variants).
   const publishable = eligible.filter((route) => routeCounts.get(route.distanceKey!) === 1);
   const publishedIds = new Set(publishable.map((route) => route.providerRouteId));
+  const publishedKeys = new Set(publishable.map((route) => route.distanceKey!));
   return {
     publishable,
     unresolved: routes.filter((route) => !publishedIds.has(route.providerRouteId)),
+    missingDistanceKeys: [...advertised].filter((key) => !publishedKeys.has(key)),
   };
 }

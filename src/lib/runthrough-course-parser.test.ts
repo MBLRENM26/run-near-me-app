@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   advertisedDistanceKeys,
   canonicalRunThroughEventUrl,
+  distanceKeyFromKm,
   eventMatchesRunThroughPage,
   exactRoutesForEvent,
   parseRunThroughPage,
@@ -33,6 +34,14 @@ describe("RunThrough course parsing", () => {
     });
   });
 
+  it("falls back to organiser page metadata when an h1 is unavailable", () => {
+    expect(
+      parseRunThroughPage(
+        `<head><meta property="og:title" content="Regent's Park 5k &amp; 10k October 2026"></head>`,
+      ).eventName,
+    ).toBe("Regent's Park 5k & 10k October 2026");
+  });
+
   it("requires a shared event-specific name token", () => {
     expect(
       eventMatchesRunThroughPage(
@@ -41,6 +50,12 @@ describe("RunThrough course parsing", () => {
       ),
     ).toBe(true);
     expect(eventMatchesRunThroughPage("Cardiff 10k 2026", "Altrincham 10k 2026")).toBe(false);
+    expect(
+      eventMatchesRunThroughPage(
+        "RunThrough Regents park series 2",
+        "Regent's Park 5k & 10k October 2026",
+      ),
+    ).toBe(true);
   });
 
   it("parses Strava distance and elevation metadata", () => {
@@ -60,6 +75,19 @@ describe("RunThrough course parsing", () => {
     });
   });
 
+  it("recognises route abbreviations and safe measured-distance fallbacks", () => {
+    expect(
+      parseStravaEmbed(
+        `<h1 class="title">Battersea Park HM | RunThrough</h1>
+         <div class="stat-label">Distance</div><div class="stat-value">21.4 km</div>
+         <div class="stat-label">Elev Gain</div><div class="stat-value">0 m</div>`,
+        "3381238133288560552",
+      )?.distanceKey,
+    ).toBe("half-marathon");
+    expect(distanceKeyFromKm(10.2)).toBe("10k");
+    expect(distanceKeyFromKm(4.2)).toBeNull();
+  });
+
   it("publishes only exact distances advertised by the RENM occurrence", () => {
     const routes = [
       { providerRouteId: "1", routeName: "5K", distanceKm: 5.1, ascentM: 21, distanceKey: "5k" },
@@ -70,6 +98,7 @@ describe("RunThrough course parsing", () => {
     expect(exactRoutesForEvent({ distances: "5 km, 10 km" }, routes)).toEqual({
       publishable: routes.slice(0, 2),
       unresolved: routes.slice(2),
+      missingDistanceKeys: [],
     });
     expect(exactRoutesForEvent({ distances: "Various" }, routes).publishable).toEqual([]);
   });
@@ -94,6 +123,18 @@ describe("RunThrough course parsing", () => {
     expect(exactRoutesForEvent({ distances: "10K" }, routes)).toEqual({
       publishable: [],
       unresolved: routes,
+      missingDistanceKeys: ["10k"],
+    });
+  });
+
+  it("reports partial coverage without withholding valid routes", () => {
+    const routes = [
+      { providerRouteId: "1", routeName: "5K", distanceKm: 5.1, ascentM: 21, distanceKey: "5k" },
+    ];
+    expect(exactRoutesForEvent({ distances: "5K, 10K, Half Marathon" }, routes)).toEqual({
+      publishable: routes,
+      unresolved: [],
+      missingDistanceKeys: ["10k", "half-marathon"],
     });
   });
 });

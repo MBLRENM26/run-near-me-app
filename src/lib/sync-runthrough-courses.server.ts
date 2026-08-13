@@ -33,15 +33,30 @@ export type RunThroughCourseChunkResult = {
 };
 
 const FETCH_TIMEOUT_MS = 15_000;
+const FETCH_ATTEMPTS = 3;
 const USER_AGENT = "RunNearYou course-source verifier/1.0 (+https://runnearyou.co.uk)";
 
 async function fetchText(url: string): Promise<string> {
-  const response = await fetch(url, {
-    headers: { "user-agent": USER_AGENT, accept: "text/html" },
-    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-  });
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  return response.text();
+  for (let attempt = 1; attempt <= FETCH_ATTEMPTS; attempt += 1) {
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        headers: { "user-agent": USER_AGENT, accept: "text/html" },
+        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+      });
+    } catch (error) {
+      if (attempt === FETCH_ATTEMPTS) throw error;
+      await new Promise((resolve) => setTimeout(resolve, attempt * 400));
+      continue;
+    }
+    if (response.ok) return response.text();
+    if (response.status < 500 && response.status !== 429) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    if (attempt === FETCH_ATTEMPTS) throw new Error(`HTTP ${response.status}`);
+    await new Promise((resolve) => setTimeout(resolve, attempt * 400));
+  }
+  throw new Error("Fetch failed after retries");
 }
 
 async function fetchAllCandidateRows(today: string): Promise<SourceEventRow[]> {
@@ -95,12 +110,44 @@ async function recordReview(input: {
       reason: input.reason,
       detail: input.detail,
       last_seen_at: now,
+      resolved_at: null,
     },
     {
       onConflict: "event_id,source_url,provider,provider_route_id,reason",
     },
   );
   if (error) throw new Error(`Review queue: ${error.message}`);
+}
+
+async function resolveReviews(input: {
+  eventId?: string | null;
+  sourceUrl?: string | null;
+  providerRouteId?: string | null;
+  reasons: string[];
+}): Promise<void> {
+  let query = supabaseAdmin
+    .from("course_source_reviews")
+    .update({ resolved_at: new Date().toISOString() })
+    .in("reason", input.reasons)
+    .is("resolved_at", null);
+  if (input.eventId !== undefined) {
+    query =
+      input.eventId === null ? query.is("event_id", null) : query.eq("event_id", input.eventId);
+  }
+  if (input.sourceUrl !== undefined) {
+    query =
+      input.sourceUrl === null
+        ? query.is("source_url", null)
+        : query.eq("source_url", input.sourceUrl);
+  }
+  if (input.providerRouteId !== undefined) {
+    query =
+      input.providerRouteId === null
+        ? query.is("provider_route_id", null)
+        : query.eq("provider_route_id", input.providerRouteId);
+  }
+  const { error } = await query;
+  if (error) throw new Error(`Review resolution: ${error.message}`);
 }
 
 async function publishRoutes(
@@ -202,6 +249,9 @@ export async function runRunThroughCourseChunk(input: {
       const group = bySource.get(sourceUrl) ?? [];
       group.push(event);
       bySource.set(sourceUrl, group);
+      if (input.offset === 0) {
+        await resolveReviews({ eventId: event.id, reasons: ["no_specific_event_url"] });
+      }
     }
 
     const sourceUrls = [...bySource.keys()].sort();
@@ -212,6 +262,9 @@ export async function runRunThroughCourseChunk(input: {
       const events = bySource.get(sourceUrl) ?? [];
       try {
         const page = parseRunThroughPage(await fetchText(sourceUrl));
+        for (const event of events) {
+          await resolveReviews({ eventId: event.id, sourceUrl, reasons: ["source_fetch_failed"] });
+        }
         if (!page.eventName) {
           for (const event of events) {
             await recordReview({
@@ -223,6 +276,9 @@ export async function runRunThroughCourseChunk(input: {
             reviewItems += 1;
           }
           continue;
+        }
+        for (const event of events) {
+          await resolveReviews({ eventId: event.id, sourceUrl, reasons: ["source_name_missing"] });
         }
         if (!page.routeIds.length) {
           for (const event of events) {
@@ -236,6 +292,9 @@ export async function runRunThroughCourseChunk(input: {
           }
           continue;
         }
+        for (const event of events) {
+          await resolveReviews({ eventId: event.id, sourceUrl, reasons: ["no_strava_routes"] });
+        }
 
         const parsedRoutes: ParsedStravaRoute[] = [];
         let allRoutesParsed = true;
@@ -245,8 +304,15 @@ export async function runRunThroughCourseChunk(input: {
               await fetchText(`https://strava-embeds.com/route/${routeId}`),
               routeId,
             );
-            if (parsed) parsedRoutes.push(parsed);
-            else {
+            if (parsed) {
+              parsedRoutes.push(parsed);
+              await resolveReviews({
+                eventId: null,
+                sourceUrl,
+                providerRouteId: routeId,
+                reasons: ["strava_fetch_failed", "strava_metadata_unreadable"],
+              });
+            } else {
               allRoutesParsed = false;
               await recordReview({
                 eventId: null,
@@ -281,7 +347,8 @@ export async function runRunThroughCourseChunk(input: {
             reviewItems += 1;
             continue;
           }
-          const { publishable } = exactRoutesForEvent(event, parsedRoutes);
+          await resolveReviews({ eventId: event.id, sourceUrl, reasons: ["event_name_mismatch"] });
+          const { publishable, missingDistanceKeys } = exactRoutesForEvent(event, parsedRoutes);
           if (!publishable.length) {
             await recordReview({
               eventId: event.id,
@@ -291,6 +358,24 @@ export async function runRunThroughCourseChunk(input: {
             });
             reviewItems += 1;
             continue;
+          }
+          await resolveReviews({ eventId: event.id, sourceUrl, reasons: ["distance_mismatch"] });
+          if (missingDistanceKeys.length) {
+            await recordReview({
+              eventId: event.id,
+              sourceUrl,
+              reason: "partial_distance_coverage",
+              detail: `Published verified routes, but no unambiguous organiser route matched ${missingDistanceKeys
+                .map(routeLabel)
+                .join(", ")}.`,
+            });
+            reviewItems += 1;
+          } else {
+            await resolveReviews({
+              eventId: event.id,
+              sourceUrl,
+              reasons: ["partial_distance_coverage"],
+            });
           }
           publishedRoutes += await publishRoutes(event, publishable, allRoutesParsed);
           matchedEvents += 1;
