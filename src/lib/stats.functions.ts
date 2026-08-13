@@ -30,17 +30,16 @@ export const getLiveStats = createServerFn({ method: "GET" }).handler(
       },
     );
 
-    const { count, error } = await supabasePublic
-      .from("events")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "ACTIVE")
-      .is("duplicate_of", null);
+    // `duplicate_of` is not readable by anon (provenance hardening revoked all
+    // non-projection columns on public.events), so the count comes from a
+    // security-definer function that returns only the integer.
+    const { data, error } = await supabasePublic.rpc("count_active_events");
 
     if (error) {
       console.error("[getLiveStats] failed", error);
       return { activeEvents: 0, updatedAt: new Date().toISOString() };
     }
 
-    return { activeEvents: count ?? 0, updatedAt: new Date().toISOString() };
+    return { activeEvents: data ?? 0, updatedAt: new Date().toISOString() };
   },
 );
