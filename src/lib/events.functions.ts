@@ -761,12 +761,21 @@ export const getEventPageData = createServerFn({ method: "GET" })
       .eq("event_id", event.id)
       .eq("status", "published")
       .order("distance_km", { ascending: true, nullsFirst: false });
-    if (courseError) throw new Error(courseError.message);
+    // Course intelligence is optional enrichment. A newly deployed build can
+    // briefly precede its database migration (or PostgREST schema refresh),
+    // so this query must never take the underlying event page down.
+    if (courseError) {
+      console.warn("[event-course-sources] enrichment unavailable", {
+        eventId: event.id,
+        code: courseError.code,
+        message: courseError.message,
+      });
+    }
     const courseProfile = courseProfileFromSources({
       eventSlug: event.slug,
       organiser: event.organiser,
       raceProfile: event.race_profile,
-      sources: (courseRows ?? []) as StoredCourseSource[],
+      sources: (courseError ? [] : (courseRows ?? [])) as StoredCourseSource[],
     });
 
 
