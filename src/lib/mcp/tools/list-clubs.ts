@@ -1,5 +1,6 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
+import { withUsageLogging } from "../usage";
 import { createClient } from "@supabase/supabase-js";
 import { SITE_URL } from "@/lib/site";
 
@@ -15,7 +16,7 @@ export default defineTool({
     limit: z.number().int().min(1).max(100).optional().default(30),
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async (input) => {
+  handler: withUsageLogging("list_clubs", async (input) => {
     const supabase = createClient(
       process.env.SUPABASE_URL!,
       process.env.SUPABASE_PUBLISHABLE_KEY!,
@@ -45,5 +46,5 @@ export default defineTool({
       content: [{ type: "text", text: JSON.stringify({ count: clubs.length, clubs }, null, 2) }],
       structuredContent: { count: clubs.length, clubs },
     };
-  },
+  }),
 });
