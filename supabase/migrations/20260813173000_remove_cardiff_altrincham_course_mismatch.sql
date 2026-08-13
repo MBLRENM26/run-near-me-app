@@ -2,8 +2,7 @@
 -- Welsh Athletics entry URL remains intact; only the unrelated Altrincham
 -- organiser URL is cleared.
 UPDATE public.events
-SET organiser_url = NULL,
-    updated_at = now()
+SET organiser_url = NULL
 WHERE slug = 'cardiff-10k-2026'
   AND source = 'welsh-athletics'
   AND organiser_url = 'https://www.runthrough.co.uk/event/altrincham-10k-2026';
