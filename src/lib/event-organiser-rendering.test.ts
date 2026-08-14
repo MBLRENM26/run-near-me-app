@@ -4,10 +4,7 @@ import { resolve } from "node:path";
 import { buildEventCtas } from "@/lib/event-ctas";
 import { hasMeaningfulOrganiser } from "@/lib/event-indexability";
 
-const SOURCE = readFileSync(
-  resolve(process.cwd(), "src/routes/events.$slug.tsx"),
-  "utf8",
-);
+const SOURCE = readFileSync(resolve(process.cwd(), "src/routes/events.$slug.tsx"), "utf8");
 
 describe("organiser rendering without a trusted CTA", () => {
   it("has no trusted CTA when entry_url is an aggregator and organiser_url is null", () => {

@@ -87,12 +87,7 @@ export type SiblingEvent = IndexabilityInput;
 
 export type IndexabilityResult = {
   indexable: boolean;
-  reason:
-    | null
-    | "past"
-    | "slug-suffix-duplicate"
-    | "orphan"
-    | "duplicate-sibling";
+  reason: null | "past" | "slug-suffix-duplicate" | "orphan" | "duplicate-sibling";
 };
 
 /**
@@ -111,9 +106,7 @@ const PLACEHOLDER_ORGANISERS = new Set([
 ]);
 
 /** True when `organiser` is a real, displayable organiser name. */
-export function hasMeaningfulOrganiser(
-  organiser: string | null | undefined,
-): boolean {
+export function hasMeaningfulOrganiser(organiser: string | null | undefined): boolean {
   const trimmed = (organiser ?? "").trim();
   if (trimmed.length === 0) return false;
   return !PLACEHOLDER_ORGANISERS.has(trimmed.toLowerCase());
@@ -137,10 +130,7 @@ export function intrinsicNoindexReason(
 }
 
 /** A sibling may only compete for the canonical slot when it is itself eligible. */
-export function isEligibleSibling(
-  sibling: SiblingEvent,
-  todayIso: string,
-): boolean {
+export function isEligibleSibling(sibling: SiblingEvent, todayIso: string): boolean {
   return intrinsicNoindexReason(sibling, todayIso) === null;
 }
 
@@ -162,9 +152,7 @@ export function computeIndexability(
 
   // Only siblings that could themselves be canonical count. Placeholder-only
   // / orphan / past / slug-suffix-duplicate rows never shadow a real page.
-  const eligible = siblings.filter(
-    (s) => s.id === event.id || isEligibleSibling(s, todayIso),
-  );
+  const eligible = siblings.filter((s) => s.id === event.id || isEligibleSibling(s, todayIso));
   if (eligible.length >= 2) {
     const future = eligible
       .filter((s) => s.sort_date && s.sort_date >= todayIso)
@@ -176,4 +164,3 @@ export function computeIndexability(
   }
   return { indexable: true, reason: null };
 }
-

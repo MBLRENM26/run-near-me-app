@@ -64,9 +64,10 @@ describe("sibling eligibility", () => {
   });
 
   it("does not let an ineligible earlier sibling shadow an evidence-backed page", () => {
-    expect(
-      computeIndexability(november, [october, november], TODAY),
-    ).toEqual({ indexable: true, reason: null });
+    expect(computeIndexability(november, [october, november], TODAY)).toEqual({
+      indexable: true,
+      reason: null,
+    });
   });
 
   it("keeps earliest-upcoming among genuinely eligible siblings", () => {
@@ -75,24 +76,19 @@ describe("sibling eligibility", () => {
       organiser: "Phoenix Running",
       entry_url: "https://phoenixrunning.co.uk/regents-park-october",
     });
-    expect(
-      computeIndexability(november, [eligibleOctober, november], TODAY).reason,
-    ).toBe("duplicate-sibling");
-    expect(
-      computeIndexability(eligibleOctober, [eligibleOctober, november], TODAY)
-        .indexable,
-    ).toBe(true);
+    expect(computeIndexability(november, [eligibleOctober, november], TODAY).reason).toBe(
+      "duplicate-sibling",
+    );
+    expect(computeIndexability(eligibleOctober, [eligibleOctober, november], TODAY).indexable).toBe(
+      true,
+    );
   });
 
   it("still noindexes rows that are themselves orphans or past", () => {
     expect(computeIndexability(october, [october], TODAY).reason).toBe("orphan");
-    expect(
-      computeIndexability(
-        ev({ id: "past", sort_date: "2026-01-01" }),
-        [],
-        TODAY,
-      ).reason,
-    ).toBe("past");
+    expect(computeIndexability(ev({ id: "past", sort_date: "2026-01-01" }), [], TODAY).reason).toBe(
+      "past",
+    );
   });
 
   it("keeps an organiser-only row (no links) indexable", () => {
@@ -135,9 +131,7 @@ describe("per-page / sitemap parity", () => {
       byName.set(k, [...(byName.get(k) ?? []), r]);
     }
     return cohort.map(
-      (r) =>
-        computeIndexability(r, byName.get(normaliseEventName(r.name))!, TODAY)
-          .indexable,
+      (r) => computeIndexability(r, byName.get(normaliseEventName(r.name))!, TODAY).indexable,
     );
   }
 
