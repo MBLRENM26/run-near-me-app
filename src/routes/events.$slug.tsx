@@ -603,10 +603,19 @@ function EventDetailPage() {
             race_profile={e.race_profile}
           />
 
-
-
+          {/* Organiser identity is a supported fact and must render even when
+              there is no trusted outbound CTA (aggregator-only entry_url,
+              missing organiser_url). No external link is invented here. */}
+          {!primaryCta && (
+            <OrganiserLine
+              organiser={e.organiser}
+              matchingClub={matchingClub}
+              className="mt-6"
+            />
+          )}
 
           {primaryCta && (
+
             <div className="mt-8 rounded-2xl border border-primary/20 bg-primary/5 p-5 sm:p-6">
               <Button
                 asChild
