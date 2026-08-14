@@ -37,30 +37,37 @@ export const getUnseenCounts = createServerFn({ method: "GET" }).handler(
     if (!(await isAdminAuthenticated())) {
       return { submissions: 0, clubClaims: 0, emailSubscriptions: 0, total: 0 };
     }
-    const [{ count: subs }, { count: claims }, { count: emailSubs }] =
-      await Promise.all([
-        supabaseAdmin
-          .from("submissions")
-          .select("id", { count: "exact", head: true })
-          .is("seen_at", null),
-        supabaseAdmin
-          .from("club_claims")
-          .select("id", { count: "exact", head: true })
-          .is("seen_at", null),
-        supabaseAdmin
-          .from("email_subscriptions")
-          .select("id", { count: "exact", head: true })
-          .is("seen_at", null),
-      ]);
-    const s = subs ?? 0;
-    const c = claims ?? 0;
-    const e = emailSubs ?? 0;
-    return {
-      submissions: s,
-      clubClaims: c,
-      emailSubscriptions: e,
-      total: s + c + e,
-    };
+    try {
+      const [{ count: subs }, { count: claims }, { count: emailSubs }] =
+        await Promise.all([
+          supabaseAdmin
+            .from("submissions")
+            .select("id", { count: "exact", head: true })
+            .is("seen_at", null),
+          supabaseAdmin
+            .from("club_claims")
+            .select("id", { count: "exact", head: true })
+            .is("seen_at", null),
+          supabaseAdmin
+            .from("email_subscriptions")
+            .select("id", { count: "exact", head: true })
+            .is("seen_at", null),
+        ]);
+      const s = subs ?? 0;
+      const c = claims ?? 0;
+      const e = emailSubs ?? 0;
+      return {
+        submissions: s,
+        clubClaims: c,
+        emailSubscriptions: e,
+        total: s + c + e,
+      };
+    } catch {
+      // Badge-only poll: never fail the whole admin shell on a transient
+      // backend/count error.
+      return { submissions: 0, clubClaims: 0, emailSubscriptions: 0, total: 0 };
+    }
+
   },
 );
 
