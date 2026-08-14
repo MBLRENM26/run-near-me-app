@@ -14,19 +14,14 @@ export const Route = createFileRoute("/api/public/admin/indexability-stats")({
       GET: async ({ request }) => {
         const expected = process.env.IMPORT_SECRET;
         if (!expected) {
-          return Response.json(
-            { error: "Server not configured" },
-            { status: 500 },
-          );
+          return Response.json({ error: "Server not configured" }, { status: 500 });
         }
         const provided = request.headers.get("x-admin-secret");
         if (!provided || provided !== expected) {
           return Response.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const { supabaseAdmin } = await import(
-          "@/integrations/supabase/client.server"
-        );
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
         const today = new Date().toISOString().slice(0, 10);
 
@@ -38,34 +33,26 @@ export const Route = createFileRoute("/api/public/admin/indexability-stats")({
         for (let from = 0; ; from += pageSize) {
           const { data, error } = await supabaseAdmin
             .from("events")
-            .select(
-              "id, slug, name, sort_date, entry_url, organiser_url, organiser",
-            )
+            .select("id, slug, name, sort_date, entry_url, organiser_url, organiser")
             .eq("status", "ACTIVE")
             .not("slug", "is", null)
             .range(from, from + pageSize - 1);
           if (error) {
-            return Response.json(
-              { error: `Query failed: ${error.message}` },
-              { status: 500 },
-            );
+            return Response.json({ error: `Query failed: ${error.message}` }, { status: 500 });
           }
           const batch = (data ?? []) as Row[];
           rows.push(...batch);
           if (batch.length < pageSize) break;
         }
 
-        // Group siblings by normalised name (matches sitemap logic).
-        const siblingsByName = new Map<
-          string,
-          { id: string; sort_date: string | null }[]
-        >();
+        // Group siblings by normalised name (matches sitemap logic). Full
+        // rows so sibling eligibility is evaluated consistently.
+        const siblingsByName = new Map<string, Row[]>();
         for (const r of rows) {
           const key = normaliseEventName(r.name);
           const list = siblingsByName.get(key);
-          const entry = { id: r.id, sort_date: r.sort_date };
-          if (list) list.push(entry);
-          else siblingsByName.set(key, [entry]);
+          if (list) list.push(r);
+          else siblingsByName.set(key, [r]);
         }
 
         const noindex_by_reason: Record<string, number> = {
@@ -77,18 +64,12 @@ export const Route = createFileRoute("/api/public/admin/indexability-stats")({
         let indexable = 0;
 
         for (const r of rows) {
-          const siblings =
-            siblingsByName.get(normaliseEventName(r.name)) ?? [];
-          const result: IndexabilityResult = computeIndexability(
-            r,
-            siblings,
-            today,
-          );
+          const siblings = siblingsByName.get(normaliseEventName(r.name)) ?? [];
+          const result: IndexabilityResult = computeIndexability(r, siblings, today);
           if (result.indexable) {
             indexable++;
           } else if (result.reason) {
-            noindex_by_reason[result.reason] =
-              (noindex_by_reason[result.reason] ?? 0) + 1;
+            noindex_by_reason[result.reason] = (noindex_by_reason[result.reason] ?? 0) + 1;
           }
         }
 
