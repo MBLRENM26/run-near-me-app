@@ -223,4 +223,20 @@ Observed facts:
   Validate Fix action was taken.
 
 
+## GSC validation status observed (14 August 2026)
+
+Observed facts:
+
+- In the Google Search Console domain property for runningeventsnearme.com, the
+  Soft 404 validation status is `Started` and the displayed start date is
+  `14/08/2026`.
+- GSC displays the validation scope as "Sitemap: All known pages".
+- Validation details display 551 pending examples and 0 failed examples.
+- The Page indexing report displays "Last update: 07/08/2026", so its
+  affected-page count predates the final production closure.
+- No second Validate Fix action was submitted during this observation because a
+  validation run was already active.
+- This issue-level GSC run does not change the production-accepted 43-path
+  canonical set or make redirect aliases and retired Athens URLs submission
+  candidates.
 
