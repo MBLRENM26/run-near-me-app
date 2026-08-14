@@ -149,7 +149,56 @@ Observed evidence (local dev build at `http://localhost:8080`, not production):
   URLs, so every canonical row fails on host mismatch against a local server.
   Redirect (13/13) and retirement (2/2) cohorts still pass locally.
 
-No production acceptance is claimed. The two residual URLs remain outside the
-clean set until the corrected build is deployed and
-`npm run verify:soft404` passes against `https://runningeventsnearme.com`.
+No production acceptance is claimed in this section. The production result is
+recorded below.
+
+## Post-deployment production acceptance (14 August 2026, 15:39 UTC)
+
+Target: `https://runningeventsnearme.com`
+
+Deployment: `eb54d65b95f6830ef99f8737c06ce5b9ddd213d1d1ef58c20a3c5e3019046c8b`
+
+| Cohort                     | Passed | Total |
+| -------------------------- | -----: | ----: |
+| Canonical candidates       |     42 |    43 |
+| Direct duplicate redirects |     13 |    13 |
+| Retired Athens paths       |      2 |     2 |
+
+Observed evidence (`npm run verify:soft404 -- --base-url https://runningeventsnearme.com`):
+
+- `/events/regents-park-5k-10k-november` now passes in full, including exactly
+  one sitemap occurrence. The per-page/sitemap sibling-eligibility parity fix is
+  confirmed in production; the placeholder-only October sibling no longer
+  shadows it.
+- `/events/ytrrc-5k-spring-summer-series-september` no longer fails the
+  organiser check — the reviewed organiser `Yeovil Town RRC` is now visible in
+  server-rendered HTML independently of CTA availability.
+- The first probe at 15:34 UTC still returned the pre-correction deployment
+  `462ccf0f…` and both original failures; the 15:39 UTC probe returned the
+  corrected deployment above.
+
+### Remaining residual failure
+
+`/events/ytrrc-5k-spring-summer-series-september` still fails one assertion:
+
+```text
+no event-specific official or entry destination is rendered
+```
+
+This is a source-data gap, not a code defect. The record's only external URL is
+an aggregator, which the site-wide trust gate deliberately never renders, and
+`organiser_url` is null. Closing it requires evidence-backed organiser or
+event-specific official URL data for that occurrence. The harness was not
+weakened and no link was invented.
+
+### Clean canonical set
+
+The clean set is the manifest's 43 canonical candidates except
+`/events/ytrrc-5k-spring-summer-series-september`: **42 URLs** — the 41 listed
+above plus `/events/regents-park-5k-10k-november`.
+
+This remains an eligibility record only. No GSC validation was requested or
+performed; no database mutation, migration change or unrelated surface change
+accompanied this deployment.
+
 
