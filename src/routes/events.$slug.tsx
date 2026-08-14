@@ -16,6 +16,8 @@ import { TrustProfileStrip } from "@/components/events/TrustProfileStrip";
 import { CourseIntelligence } from "@/components/events/CourseIntelligence";
 import { getEventPageData } from "@/lib/events.functions";
 import { setEventResponseHeaders } from "@/lib/event-response-headers";
+import { hasMeaningfulOrganiser } from "@/lib/event-indexability";
+
 
 import {
   buildAboutParagraph,
