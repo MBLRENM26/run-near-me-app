@@ -125,6 +125,12 @@ rows.
 
 Nothing in this branch applies production data or publishes the site.
 
+On 14 August 2026 the first production apply stopped atomically on the Athens
+drift guard before writing any rows. The later EA/region normalisation had
+changed that record's pre-state region from `England` to `West Midlands`.
+The committed expected subset now reflects that verified production pre-state;
+the evidence-backed target and all other package rows are unchanged.
+
 After review and merge:
 
 1. apply `20260813201539_renm_soft404_residual.sql` through the Lovable

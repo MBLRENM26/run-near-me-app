@@ -91,9 +91,14 @@ describe("RENM soft-404 residual data package", () => {
   });
 
   it("retires Athens and merges Dartmoor onto one canonical occurrence", () => {
-    expect(
-      patches.find((patch) => patch.slug === "athens-authentic-marathon-2")?.target,
-    ).toMatchObject({ status: "HIDDEN", country: "Greece" });
+    const athens = patches.find((patch) => patch.slug === "athens-authentic-marathon-2");
+    expect(athens?.expected).toMatchObject({
+      status: "ACTIVE",
+      country: "England",
+      county: "International",
+      region: "West Midlands",
+    });
+    expect(athens?.target).toMatchObject({ status: "HIDDEN", country: "Greece" });
 
     const survivorId = "92a0b167-d208-4721-8c9f-b00a7b522f9c";
     expect(
