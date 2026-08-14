@@ -103,6 +103,42 @@ function hostnameOf(url: string | null | undefined): string | undefined {
   }
 }
 
+/**
+ * "Organised by: X" line. Rendered from the stored organiser fact only —
+ * never from an aggregator URL — and independently of CTA availability.
+ * Placeholder values ("TBC" etc) are suppressed.
+ */
+function OrganiserLine({
+  organiser,
+  matchingClub,
+  className,
+}: {
+  organiser: string | null | undefined;
+  matchingClub: { slug: string; name: string } | null | undefined;
+  className?: string;
+}) {
+  const organiserName = (organiser ?? "").trim();
+  if (!hasMeaningfulOrganiser(organiserName)) return null;
+  return (
+    <p className={`${className ?? ""} text-sm text-foreground`.trim()}>
+      Organised by:{" "}
+      {matchingClub ? (
+        <Link
+          to="/running-clubs/$slug"
+          params={{ slug: matchingClub.slug }}
+          className="font-medium text-primary hover:underline"
+        >
+          {matchingClub.name}
+        </Link>
+      ) : (
+        <span className="font-medium">{organiserName}</span>
+      )}
+    </p>
+  );
+}
+
+
+
 export const Route = createFileRoute("/events/$slug")({
   validateSearch: fromSearchValidator,
   beforeLoad: ({ params }) => {
