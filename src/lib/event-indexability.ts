@@ -79,10 +79,11 @@ export type IndexabilityInput = {
   organiser: string | null;
 };
 
-export type SiblingEvent = {
-  id: string;
-  sort_date: string | null;
-};
+/**
+ * Sibling rows must carry the same fields as the subject so eligibility can
+ * be evaluated consistently on both the per-page and sitemap surfaces.
+ */
+export type SiblingEvent = IndexabilityInput;
 
 export type IndexabilityResult = {
   indexable: boolean;
@@ -95,10 +96,59 @@ export type IndexabilityResult = {
 };
 
 /**
+ * Placeholder organiser values that carry no identity ("TBC", "tbc ",
+ * "T.B.C." etc). Treated as no organiser at all.
+ */
+const PLACEHOLDER_ORGANISERS = new Set([
+  "tbc",
+  "t.b.c.",
+  "tba",
+  "t.b.a.",
+  "n/a",
+  "na",
+  "unknown",
+  "-",
+]);
+
+/** True when `organiser` is a real, displayable organiser name. */
+export function hasMeaningfulOrganiser(
+  organiser: string | null | undefined,
+): boolean {
+  const trimmed = (organiser ?? "").trim();
+  if (trimmed.length === 0) return false;
+  return !PLACEHOLDER_ORGANISERS.has(trimmed.toLowerCase());
+}
+
+/**
+ * Intrinsic (sibling-independent) noindex reason for a row, or null when the
+ * row is a genuine candidate. Used both by `computeIndexability` and by the
+ * sibling-eligibility filter so a placeholder-only/orphan or intrinsically
+ * noindex row cannot suppress an evidence-backed occurrence.
+ */
+export function intrinsicNoindexReason(
+  event: IndexabilityInput,
+  todayIso: string,
+): Exclude<IndexabilityResult["reason"], null | "duplicate-sibling"> | null {
+  if (event.sort_date && event.sort_date < todayIso) return "past";
+  if (slugIsSuffixDuplicate(event.slug)) return "slug-suffix-duplicate";
+  const hasLink = !!(event.entry_url?.trim() || event.organiser_url?.trim());
+  if (!hasLink && !hasMeaningfulOrganiser(event.organiser)) return "orphan";
+  return null;
+}
+
+/** A sibling may only compete for the canonical slot when it is itself eligible. */
+export function isEligibleSibling(
+  sibling: SiblingEvent,
+  todayIso: string,
+): boolean {
+  return intrinsicNoindexReason(sibling, todayIso) === null;
+}
+
+/**
  * `siblings` should be ACTIVE events (including the current one) whose
  * normalised name equals the current event's normalised name. The
  * caller is responsible for the normalisation match — this function
- * only decides earliest-upcoming.
+ * only decides earliest-upcoming among *eligible* siblings.
  *
  * `todayIso` is YYYY-MM-DD UTC. Past = strictly before today.
  */
@@ -107,30 +157,23 @@ export function computeIndexability(
   siblings: SiblingEvent[],
   todayIso: string,
 ): IndexabilityResult {
-  if (event.sort_date && event.sort_date < todayIso) {
-    return { indexable: false, reason: "past" };
-  }
-  if (slugIsSuffixDuplicate(event.slug)) {
-    return { indexable: false, reason: "slug-suffix-duplicate" };
-  }
-  const hasLink = !!(event.entry_url?.trim() || event.organiser_url?.trim());
-  const hasOrganiser = !!event.organiser?.trim();
-  if (!hasLink && !hasOrganiser) {
-    return { indexable: false, reason: "orphan" };
-  }
-  // siblings includes the current event when caller queries by normalised
-  // name. Require ≥2 to consider this a series.
-  if (siblings.length >= 2) {
-    const future = siblings
+  const intrinsic = intrinsicNoindexReason(event, todayIso);
+  if (intrinsic) return { indexable: false, reason: intrinsic };
+
+  // Only siblings that could themselves be canonical count. Placeholder-only
+  // / orphan / past / slug-suffix-duplicate rows never shadow a real page.
+  const eligible = siblings.filter(
+    (s) => s.id === event.id || isEligibleSibling(s, todayIso),
+  );
+  if (eligible.length >= 2) {
+    const future = eligible
       .filter((s) => s.sort_date && s.sort_date >= todayIso)
       .sort((a, b) => (a.sort_date! < b.sort_date! ? -1 : 1));
     const earliest = future[0];
-    // If no future siblings (all past) we already returned via "past"
-    // above. If there are future siblings and this isn't the earliest,
-    // noindex this one.
     if (earliest && earliest.id !== event.id) {
       return { indexable: false, reason: "duplicate-sibling" };
     }
   }
   return { indexable: true, reason: null };
 }
+
