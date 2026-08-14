@@ -109,3 +109,47 @@ residual failures above: 41 URLs.
 ```
 
 This is an eligibility record only. No GSC validation was requested.
+
+## Residual-failure correction (pre-deployment, 14 August 2026)
+
+Package: `renm-soft404-residual-correction-2026-08-14` (code only; no database
+mutation, no migration change, no deployment, no GSC action).
+
+Changes:
+
+- `src/lib/event-indexability.ts` — added `hasMeaningfulOrganiser`
+  (placeholder-insensitive: `TBC`, `TBA`, `n/a`, `unknown`, `-`),
+  `intrinsicNoindexReason` and `isEligibleSibling`. `computeIndexability` now
+  competes only genuinely eligible siblings for the canonical slot; the
+  earliest-upcoming rule among eligible siblings is unchanged, and rows that
+  are themselves past, slug-suffix duplicates or placeholder-only orphans stay
+  noindex.
+- `src/lib/events.functions.ts` and
+  `src/routes/api/public/admin/indexability-stats.ts` — both surfaces now pass
+  full sibling rows, so per-page and sitemap eligibility use one rule.
+- `src/routes/events.$slug.tsx` — organiser identity moved into an
+  `OrganiserLine` component rendered in mutually exclusive branches, so a
+  supported organiser name appears with or without a trusted CTA. No external
+  link is derived from the organiser fact and aggregator URLs are still never
+  rendered.
+
+Observed evidence (local dev build at `http://localhost:8080`, not production):
+
+- `/events/ytrrc-5k-spring-summer-series-september` returns `200` and the
+  server-rendered HTML now contains `Organised by: Yeovil Town RRC`; the slug
+  appears once in a freshly requested sitemap.
+- `/events/regents-park-5k-10k-november` emits no `noindex` and appears once
+  in a freshly requested sitemap; the placeholder-only October sibling is
+  absent from the sitemap, as intended.
+- Full unit suite: 127 tests passing across 20 files, including the new
+  `event-indexability.sibling-eligibility` (9) and
+  `event-organiser-rendering` (5) regressions. Full TypeScript check clean.
+- `npm run verify:soft404 -- --base-url http://localhost:8080` is not a valid
+  local signal: the harness asserts absolute production canonical and sitemap
+  URLs, so every canonical row fails on host mismatch against a local server.
+  Redirect (13/13) and retirement (2/2) cohorts still pass locally.
+
+No production acceptance is claimed. The two residual URLs remain outside the
+clean set until the corrected build is deployed and
+`npm run verify:soft404` passes against `https://runningeventsnearme.com`.
+
