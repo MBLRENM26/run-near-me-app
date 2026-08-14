@@ -201,4 +201,26 @@ This remains an eligibility record only. No GSC validation was requested or
 performed; no database mutation, migration change or unrelated surface change
 accompanied this deployment.
 
+## Final production acceptance and GSC-ready set (14 August 2026, 15:47 UTC)
+
+Package: `renm-soft404-residual-source-close-2026-08-14`
+
+Observed facts:
+
+- Source-close package `renm-soft404-residual-source-close-2026-08-14` added the
+  current event-specific YTRRC organiser URL
+  `https://www.yeoviltownrrc.com/events/races/summer-5k-series-6-9th-sept-26.htm`
+  to event `5b429a1d-fe82-4a09-8ecb-628cb32b246b` with one private
+  `event_edits` audit row.
+- The existing aggregator `entry_url` was retained and remains unrendered.
+- Production verifier `checkedAt` `2026-08-14T15:47:07.426Z` on deployment
+  `eb54d65b95f6830ef99f8737c06ce5b9ddd213d1d1ef58c20a3c5e3019046c8b`.
+- Canonical 43/43, redirects 13/13, retired 2/2, failures 0, exit code 0.
+- The clean GSC canonical set is now the manifest's complete 43
+  `canonicalPaths`. Redirect aliases and retired Athens URLs must not be
+  submitted.
+- GSC validation is prepared but was not initiated; no URL inspection request or
+  Validate Fix action was taken.
+
+
 
