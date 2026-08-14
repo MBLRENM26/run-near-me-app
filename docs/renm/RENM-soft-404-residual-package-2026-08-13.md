@@ -6,7 +6,7 @@ Branch: `codex/renm-soft404-residual`
 
 Base: `origin/main@7fdb3126a8a3b6c4652638ce80c1a394cecb02e0`
 
-Status: draft data package only; not applied or deployed
+Status: production data applied 14 August 2026; HTTP/render acceptance in progress
 
 ## Outcome
 
@@ -121,9 +121,7 @@ equals the package's recorded `to` value, so a later edit causes an atomic
 abort instead of being overwritten. It then removes only this package's audit
 rows.
 
-## Production execution still required
-
-Nothing in this branch applies production data or publishes the site.
+## Production execution record
 
 On 14 August 2026 the first production apply stopped atomically on the Athens
 drift guard before writing any rows. The later EA/region normalisation had
@@ -131,15 +129,28 @@ changed that record's pre-state region from `England` to `West Midlands`.
 The committed expected subset now reflects that verified production pre-state;
 the evidence-backed target and all other package rows are unchanged.
 
-After review and merge:
+After that reconciliation merged, Lovable applied the package successfully on
+14 August 2026. Verification reported:
 
-1. apply `20260813201539_renm_soft404_residual.sql` through the Lovable
-   migration tool exactly as committed;
-2. report the migration result and stop on any drift or row-count exception;
-3. run the verification SELECTs below;
-4. publish only if the application source is behind the merged GitHub head;
-5. perform the HTTP/render acceptance pass;
-6. submit only the clean canonical set to GSC after acceptance.
+- 46 `event_edits` audit rows for `renm-soft404-residual-2026-08-13`;
+- Athens HIDDEN with country `Greece`, county `Attica` and region `NULL`;
+- both Granite aliases DUPLICATE directly to
+  `92a0b167-d208-4721-8c9f-b00a7b522f9c`;
+- the Dartmoor survivor carrying both race options and the 2-3 October span;
+- Run Exe and Power of 5K unchanged.
+
+Lovable recorded the applied migration on main as
+`20260814095558_c6b83752-64cd-447f-8d4b-01ace7f42b80.sql`. No application code
+changed and no site publish was required for the database mutation.
+
+Remaining steps:
+
+1. run the repository's read-only HTTP/render acceptance harness;
+2. inspect and correct only evidence-backed residual failures;
+3. submit only the clean canonical set to GSC after acceptance.
+
+The harness and operating instructions are documented in
+`docs/renm/RENM-soft-404-residual-acceptance-2026-08-14.md`.
 
 ## Post-apply verification and HTTP/render acceptance
 

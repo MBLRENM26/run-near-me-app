@@ -1,0 +1,87 @@
+{
+  "packageId": "renm-soft404-residual-2026-08-13",
+  "baseUrl": "https://runningeventsnearme.com",
+  "sourceMigration": "supabase/migrations/20260813201539_renm_soft404_residual.sql",
+  "canonicalPaths": [
+    "/events/dartmoor-way-100-full-circle",
+    "/events/the-cardiff-morun-cardiff-2026",
+    "/events/run-durham-hamsterley-remembrance-day-5-10-miler-2026",
+    "/events/ytrrc-5k-spring-summer-series-september",
+    "/events/gainsborough-morton-10k-half-marathon-2",
+    "/events/chepstow-running-festival-august-2",
+    "/events/borders-8-hour-challenge",
+    "/events/dunoon-ultra-marathon-relay",
+    "/events/middlesbrough-10k",
+    "/events/white-horse-gallop",
+    "/events/leeds-running-festival-august",
+    "/events/ponton-plod",
+    "/events/armada-athletics-network-5k-september",
+    "/events/othnesberys-revenge",
+    "/events/speyside-windfarm-challenge",
+    "/events/hertfordshire-half-marathon-10k-2",
+    "/events/highland-fling-race",
+    "/events/william-wallace-running-festival",
+    "/events/speyside-way-50k-100k",
+    "/events/scottish-half-marathon",
+    "/events/kirkcaldy-parks-running-festival-half-marathon",
+    "/events/chelmorton-chase",
+    "/events/killin-10k-5k-fun-run",
+    "/events/scottish-10k",
+    "/events/perth-10k-festival",
+    "/events/the-jon-ward-hereford-5k-2026",
+    "/events/thorpe-park-5k-10k-september",
+    "/events/littlehampton-10k",
+    "/events/flying-monk-malmesbury-10k",
+    "/events/running-grand-prix-oulton-park-august",
+    "/events/ten10ten-sheffield",
+    "/events/carsington-water-10k-half-marathon-august",
+    "/events/peterhead-3k-junior-mile-august",
+    "/events/kingston-half-marathon",
+    "/events/henley-river-half-marathon-10k-september",
+    "/events/dorney-lake-half-marathon-10k-5k-november",
+    "/events/wirral-10k",
+    "/events/windsor-womens-10k",
+    "/events/running-grand-prix-goodwood-october",
+    "/events/town-moor-exhibition-park-5k-10k-october",
+    "/events/regents-park-5k-10k-november",
+    "/events/run-heaton-5k-10k-half-marathon-october",
+    "/events/windsor-trail-run-half-marathon-10k-august"
+  ],
+  "redirects": [
+    { "from": "/events/dartmoor-way-granite-50", "to": "/events/dartmoor-way-100-full-circle" },
+    {
+      "from": "/events/dartmoor-way-granite-50-dartmoor-2026",
+      "to": "/events/dartmoor-way-100-full-circle"
+    },
+    {
+      "from": "/events/run-durham-hamsterley-remembrance-day-5-10-miler",
+      "to": "/events/run-durham-hamsterley-remembrance-day-5-10-miler-2026"
+    },
+    {
+      "from": "/events/gainsborough-morton-10k-half-marathon",
+      "to": "/events/gainsborough-morton-10k-half-marathon-2"
+    },
+    {
+      "from": "/events/chepstow-running-festival-august",
+      "to": "/events/chepstow-running-festival-august-2"
+    },
+    { "from": "/events/borders-8-hour-challenge-2", "to": "/events/borders-8-hour-challenge" },
+    {
+      "from": "/events/hertfordshire-half-marathon-10k",
+      "to": "/events/hertfordshire-half-marathon-10k-2"
+    },
+    {
+      "from": "/events/scottish-half-marathon-north-listing",
+      "to": "/events/scottish-half-marathon"
+    },
+    { "from": "/events/chelmorton-chase-2", "to": "/events/chelmorton-chase" },
+    { "from": "/events/jon-ward-hereford-5k", "to": "/events/the-jon-ward-hereford-5k-2026" },
+    { "from": "/events/littlehampton-10k-2", "to": "/events/littlehampton-10k" },
+    { "from": "/events/kingston-half-marathon-2", "to": "/events/kingston-half-marathon" },
+    {
+      "from": "/events/windsor-trail-run-half-marathon-10k-august-2",
+      "to": "/events/windsor-trail-run-half-marathon-10k-august"
+    }
+  ],
+  "retiredPaths": ["/events/athens-authentic-marathon", "/events/athens-authentic-marathon-2"]
+}
