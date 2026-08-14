@@ -55,18 +55,16 @@ export const Route = createFileRoute("/api/public/admin/indexability-stats")({
           if (batch.length < pageSize) break;
         }
 
-        // Group siblings by normalised name (matches sitemap logic).
-        const siblingsByName = new Map<
-          string,
-          { id: string; sort_date: string | null }[]
-        >();
+        // Group siblings by normalised name (matches sitemap logic). Full
+        // rows so sibling eligibility is evaluated consistently.
+        const siblingsByName = new Map<string, Row[]>();
         for (const r of rows) {
           const key = normaliseEventName(r.name);
           const list = siblingsByName.get(key);
-          const entry = { id: r.id, sort_date: r.sort_date };
-          if (list) list.push(entry);
-          else siblingsByName.set(key, [entry]);
+          if (list) list.push(r);
+          else siblingsByName.set(key, [r]);
         }
+
 
         const noindex_by_reason: Record<string, number> = {
           past: 0,

@@ -172,14 +172,14 @@ export const getIndexableEventSlugsForSitemap = createServerFn({ method: "GET" }
     );
 
     // Group siblings by normalised name so computeIndexability can decide
-    // duplicate-sibling status. Each event appears in its own group.
-    const siblingsByName = new Map<string, { id: string; sort_date: string | null }[]>();
+    // duplicate-sibling status. Each event appears in its own group. Full
+    // rows are passed so sibling eligibility matches the per-page rule.
+    const siblingsByName = new Map<string, Row[]>();
     for (const r of rows) {
       const key = normaliseEventName(r.name);
       const list = siblingsByName.get(key);
-      const entry = { id: r.id, sort_date: r.sort_date };
-      if (list) list.push(entry);
-      else siblingsByName.set(key, [entry]);
+      if (list) list.push(r);
+      else siblingsByName.set(key, [r]);
     }
 
     return rows
@@ -188,6 +188,7 @@ export const getIndexableEventSlugsForSitemap = createServerFn({ method: "GET" }
         const result = computeIndexability(r, siblings, today);
         return result.indexable;
       })
+
       .map((r) => ({ slug: r.slug, sort_date: r.sort_date }));
   });
 
