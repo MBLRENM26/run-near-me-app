@@ -13,7 +13,7 @@ describe("organiser rendering without a trusted CTA", () => {
   it("has no trusted CTA when entry_url is an aggregator and organiser_url is null", () => {
     const ctas = buildEventCtas(
       {
-        entry_url: "https://www.runbritain.com/some-listing",
+        entry_url: "https://www.runabc.co.uk/some-listing",
         organiser_url: null,
       },
       { isPast: false, proximity: null },
