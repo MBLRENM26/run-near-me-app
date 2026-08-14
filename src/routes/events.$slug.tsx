@@ -638,29 +638,12 @@ function EventDetailPage() {
                   <ExternalLink className="h-4 w-4" />
                 </a>
               </Button>
-              {(() => {
-                const organiserName = e.organiser?.trim() ?? "";
-                const showOrganiser =
-                  organiserName.length > 0 &&
-                  organiserName.toLowerCase() !== "tbc";
-                if (!showOrganiser) return null;
-                return (
-                  <p className="mt-3 text-sm text-foreground">
-                    Organised by:{" "}
-                    {matchingClub ? (
-                      <Link
-                        to="/running-clubs/$slug"
-                        params={{ slug: matchingClub.slug }}
-                        className="font-medium text-primary hover:underline"
-                      >
-                        {matchingClub.name}
-                      </Link>
-                    ) : (
-                      <span className="font-medium">{organiserName}</span>
-                    )}
-                  </p>
-                );
-              })()}
+              <OrganiserLine
+                organiser={e.organiser}
+                matchingClub={matchingClub}
+                className="mt-3"
+              />
+
               {secondaryCta && (
                 <p className="mt-2 text-sm">
                   <a
