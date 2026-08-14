@@ -22,6 +22,8 @@ import {
   normaliseEventName,
   slugStem,
   type IndexabilityResult,
+  type SiblingEvent,
+
 } from "@/lib/event-indexability";
 import { hasOrganiserOwnedLink, hasDiscoverableLink } from "@/lib/link-trust";
 import { DISCOVERY_EVENT_COLUMNS, UK_BOUNDS_OR_NULL } from "@/lib/events-query";
