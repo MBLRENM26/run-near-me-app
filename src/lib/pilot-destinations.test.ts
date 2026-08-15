@@ -308,7 +308,6 @@ describe("buildPilotDestinations — Sedgefield organiser-identity transition", 
   });
 });
 
-
 describe("buildPilotDestinations — Hertfordshire Half Marathon & 10K", () => {
   const d = buildPilotDestinations(HERTS_ROW);
 

@@ -127,7 +127,6 @@ interface PilotSpec {
   destinations: ReviewedCandidate[];
 }
 
-
 const SATURN_ID = "adb1a4f8-504d-44bd-99d0-94d8b6346542";
 const FNUL_ID = "2eda5231-ac29-4b4d-bebd-e4f98dd24bf6";
 const DUCKY_ID = "7a2160ea-3b20-431e-9a9c-69048237686f";
@@ -292,7 +291,6 @@ const PILOTS: Record<string, PilotSpec> = {
     // alternative in a separately verified cleanup after the production
     // mutation is stable.
     acceptedIdentityAlternatives: [{ organiser: "Sedgefield Harriers", organiser_type: "club" }],
-
 
     destinations: [
       {
