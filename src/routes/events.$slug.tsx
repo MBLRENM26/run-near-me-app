@@ -487,9 +487,10 @@ function EventDetailPage() {
     regionCount: related.totalCount,
   });
 
-  // Reviewed wayfinding pilot: the destination panel replaces the generic CTA
-  // block for matching future/today events only. Past events keep legacy UI.
-  const showPilotPanel = !isPast && (destinations?.length ?? 0) > 0;
+  // Reviewed wayfinding showcase: the destination panel replaces the generic
+  // CTA block for matching events. Past occurrences keep the panel but the
+  // panel itself suppresses the entry action (see resolvePanelLayout).
+  const showPilotPanel = (destinations?.length ?? 0) > 0;
 
   // No trustworthy official link → invite the organiser to claim the listing.
   const showClaim = !primaryCta && !isPast;
@@ -661,6 +662,7 @@ function EventDetailPage() {
           {showPilotPanel && (
             <DestinationPanel
               destinations={destinations}
+              isPast={isPast}
               onSelect={(d) =>
                 trackOutboundClick({
                   slug: e.slug,
@@ -797,7 +799,7 @@ function EventDetailPage() {
             </div>
           )}
 
-          {isPast && (
+          {isPast && !showPilotPanel && (
             <div className="mt-8 rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
               <p>This event has taken place.</p>
               {pastOrganiserLink?.href && (
