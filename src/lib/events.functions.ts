@@ -751,7 +751,21 @@ export const getEventPageData = createServerFn({ method: "GET" })
       organiser_club_id: string | null;
       status: string;
       duplicate_of: string | null;
+      source: string | null;
+      source_url: string | null;
     };
+    // Reviewed wayfinding pilot: derived here, where provenance is visible.
+    // `source` / `source_url` never leave this handler except as the single
+    // intentional public TRA licence destination.
+    const destinations = buildPilotDestinations({
+      id: eventRow.id,
+      organiser: eventRow.organiser,
+      organiser_url: eventRow.organiser_url,
+      entry_url: eventRow.entry_url,
+      source: eventRow.source,
+      source_url: eventRow.source_url,
+      governance: eventRow.governance,
+    });
     const {
       lat: eventLat,
       lng: eventLng,
@@ -760,8 +774,16 @@ export const getEventPageData = createServerFn({ method: "GET" })
       organiser_club_id: eventOrganiserClubId,
       status: _status,
       duplicate_of: _duplicate_of,
+      source: _source,
+      source_url: _source_url,
       ...eventPublic
     } = eventRow;
+    void _status;
+    void _duplicate_of;
+    void _source;
+    void _source_url;
+    const event = eventPublic as EventDetail;
+
     void _status;
     void _duplicate_of;
     const event = eventPublic as EventDetail;
