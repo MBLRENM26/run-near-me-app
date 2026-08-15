@@ -285,6 +285,14 @@ const PILOTS: Record<string, PilotSpec> = {
       source_url: SEDGEFIELD_EA_LISTING,
       governance: "england_athletics",
     },
+    // TRANSITION ONLY: pre-mutation identity state is the `accepted` pair above
+    // (organiser null + governing_body); the audited QL1 data update will move
+    // this row to Sedgefield Harriers + club. Both whole pairs are accepted so
+    // the reviewed signposts survive deploy-before-row-update. Remove this
+    // alternative in a separately verified cleanup after the production
+    // mutation is stable.
+    acceptedIdentityAlternatives: [{ organiser: "Sedgefield Harriers", organiser_type: "club" }],
+
     destinations: [
       {
         role: "entry",
