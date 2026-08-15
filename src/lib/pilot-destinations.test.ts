@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { buildPilotDestinations, resolvePilotCandidates } from "./pilot-destinations";
+import {
+  buildPilotDestinations,
+  resolvePanelLayout,
+  resolvePilotCandidates,
+  type PublicDestination,
+} from "./pilot-destinations";
 import { classifyEventLink, isEntryPlatformHost } from "./link-trust";
 
 const SATURN_ROW = {
@@ -27,7 +32,40 @@ const FNUL_ROW = {
   governance: "england_athletics",
 };
 
-describe("buildPilotDestinations — Saturn manifest", () => {
+const DUCKY_ROW = {
+  id: "7a2160ea-3b20-431e-9a9c-69048237686f",
+  organiser: null,
+  organiser_type: "unknown",
+  organiser_url: "https://races.tra-uk.org/race-directory/view/7709",
+  entry_url: "",
+  source: "tra",
+  source_url: "https://races.tra-uk.org/race-directory/view/7709",
+  governance: "tra",
+};
+
+const SEDGEFIELD_ROW = {
+  id: "c8eea9cc-0d2a-4db4-8bac-a7040b43dd59",
+  organiser: null,
+  organiser_type: "governing_body",
+  organiser_url: "https://sedgefieldharriers.co.uk/sedgefield-serpentine/",
+  entry_url: "https://englandathletics.sport80.com/public/wizard/e/30356",
+  source: "england-athletics",
+  source_url: "https://www.englandathletics.org/runevents/search/?query=Sedgefield%20Serpentine%202026",
+  governance: "england_athletics",
+};
+
+const HERTS_ROW = {
+  id: "ab287a93-9062-4d67-9ccf-eb489bcee7bb",
+  organiser: "RunThrough",
+  organiser_type: "commercial",
+  organiser_url: "https://www.hertshalf.com/",
+  entry_url: "https://www.runthrough.co.uk/event/hertfordshire-half-marathon-10k-november-2026",
+  source: "runabc",
+  source_url: "https://runabc.co.uk/hertfordshire-half-marathon",
+  governance: "unknown",
+};
+
+describe("buildPilotDestinations — retained Saturn pilot", () => {
   const d = buildPilotDestinations(SATURN_ROW);
 
   it("returns exactly two destinations in reviewed order", () => {
@@ -56,8 +94,6 @@ describe("buildPilotDestinations — Saturn manifest", () => {
   });
 
   it("dedupes the official-details candidate that shares the entry URL", () => {
-    // The Saturn manifest genuinely contains an official-details candidate on
-    // the same occurrence URL; entry > official_details must remove it.
     const raw = resolvePilotCandidates([
       {
         role: "entry",
@@ -77,7 +113,6 @@ describe("buildPilotDestinations — Saturn manifest", () => {
     expect(raw.map((x) => x.role)).toEqual(["entry"]);
 
     expect(d).toHaveLength(2);
-    expect(d.filter((x) => x.role === "official_details")).toHaveLength(0);
     expect(d.filter((x) => x.href === SATURN_ROW.entry_url)).toHaveLength(1);
   });
 });
@@ -106,23 +141,157 @@ describe("buildPilotDestinations — FNUL manifest", () => {
   });
 
   it("never exposes the England Athletics source URL", () => {
+    expect(JSON.stringify(d)).not.toContain("englandathletics.org");
+  });
+});
+
+describe("buildPilotDestinations — Rubber Ducky Waddle", () => {
+  const d = buildPilotDestinations(DUCKY_ROW);
+
+  it("returns entry, licence and course in reviewed order", () => {
+    expect(d.map((x) => x.role)).toEqual(["entry", "licence", "course"]);
+    expect(d[0]).toMatchObject({
+      provider: "Saturn Running",
+      action: "Enter event",
+      supportingText: "Entry powered by Eventrac",
+      href: "https://www.saturnrunning.co.uk/e/the-rubber-ducky-waddle-14932",
+      destinationRole: "booking_destination",
+      linkType: "entry",
+    });
+    expect(d[1]).toMatchObject({
+      provider: "Trail Running Association",
+      action: "View approved TRA permit 8571",
+      href: "https://races.tra-uk.org/race-directory/view/7709",
+      destinationRole: "licence_record",
+    });
+    expect(d[2]).toMatchObject({
+      roleLabel: "Course",
+      provider: "Saturn Running",
+      action: "View course map",
+      href: "https://www.saturnrunning.co.uk/e/the-rubber-ducky-waddle-14932/route-maps",
+      destinationRole: "official_information",
+      linkType: "organiser-other",
+    });
+  });
+
+  it("dedupes the official-details candidate behind entry", () => {
+    expect(d).toHaveLength(3);
+    expect(d.filter((x) => x.role === "official_details")).toHaveLength(0);
+  });
+
+  it("fails closed on drift", () => {
+    expect(buildPilotDestinations({ ...DUCKY_ROW, entry_url: null })).toEqual([]);
+    expect(buildPilotDestinations({ ...DUCKY_ROW, organiser: "Saturn Running" })).toEqual([]);
+    expect(buildPilotDestinations({ ...DUCKY_ROW, organiser_type: "commercial" })).toEqual([]);
+    expect(buildPilotDestinations({ ...DUCKY_ROW, governance: "unknown" })).toEqual([]);
+  });
+});
+
+describe("buildPilotDestinations — Sedgefield Serpentine 2026", () => {
+  const d = buildPilotDestinations(SEDGEFIELD_ROW);
+
+  it("returns the five reviewed destinations in order", () => {
+    expect(d.map((x) => x.role)).toEqual([
+      "entry",
+      "official_details",
+      "governing_listing",
+      "athlete_information",
+      "course",
+    ]);
+    expect(d[0]).toMatchObject({
+      provider: "Sport:80",
+      action: "Enter event",
+      href: SEDGEFIELD_ROW.entry_url,
+      destinationRole: "booking_destination",
+      linkType: "entry",
+    });
+    expect(d[1]).toMatchObject({
+      provider: "Sedgefield Harriers",
+      action: "Visit official race page",
+      href: SEDGEFIELD_ROW.organiser_url,
+    });
+    expect(d[2]).toMatchObject({
+      roleLabel: "Governing-body listing",
+      provider: "England Athletics",
+      action: "View England Athletics listing",
+      href: SEDGEFIELD_ROW.source_url,
+      destinationRole: "official_information",
+      linkType: "organiser-other",
+    });
+    expect(d[3]).toMatchObject({ action: "Read 2026 athlete information" });
+    expect(d[4]).toMatchObject({ roleLabel: "Course", action: "View 2026 course map" });
+  });
+
+  it("never labels the listing as a licence or approval and has no results destination", () => {
     const json = JSON.stringify(d);
-    expect(json).not.toContain("englandathletics.org");
+    expect(json).not.toContain("Licence");
+    expect(json).not.toContain("Approved");
+    expect(json).not.toContain("licence_record");
+    expect(d.filter((x) => x.role === "results")).toHaveLength(0);
+  });
+
+  it("fails closed on drift", () => {
+    expect(buildPilotDestinations({ ...SEDGEFIELD_ROW, organiser_type: "unknown" })).toEqual([]);
+    expect(
+      buildPilotDestinations({ ...SEDGEFIELD_ROW, organiser_url: "https://sedgefieldharriers.co.uk/" }),
+    ).toEqual([]);
+    expect(buildPilotDestinations({ ...SEDGEFIELD_ROW, source_url: "" })).toEqual([]);
+  });
+});
+
+describe("buildPilotDestinations — Hertfordshire Half Marathon & 10K", () => {
+  const d = buildPilotDestinations(HERTS_ROW);
+
+  it("returns entry, official details and both Strava courses", () => {
+    expect(d.map((x) => x.role)).toEqual(["entry", "official_details", "course", "course"]);
+    expect(d[0]).toMatchObject({
+      provider: "RunThrough",
+      action: "Enter event",
+      href: HERTS_ROW.entry_url,
+      destinationRole: "booking_destination",
+      linkType: "entry",
+    });
+    expect(d[1]).toMatchObject({
+      provider: "Hertfordshire Half Marathon",
+      action: "Visit official event website",
+      href: HERTS_ROW.organiser_url,
+    });
+    expect(d[2]).toMatchObject({
+      provider: "Strava",
+      action: "View Half Marathon course",
+      href: "https://www.strava.com/routes/3154410119536065762",
+      destinationRole: "official_information",
+    });
+    expect(d[3]).toMatchObject({
+      provider: "Strava",
+      action: "View 10K course",
+      href: "https://www.strava.com/routes/3154410864891912034",
+    });
+  });
+
+  it("never leaks the private runABC provenance and asserts no governance", () => {
+    const json = JSON.stringify(d);
+    expect(json).not.toContain("runabc");
+    expect(json).not.toContain("Licence");
+    expect(json).not.toContain("England Athletics");
+    expect(json).not.toContain("licence_record");
+  });
+
+  it("fails closed on drift", () => {
+    expect(buildPilotDestinations({ ...HERTS_ROW, source_url: "https://runabc.co.uk/other" })).toEqual(
+      [],
+    );
+    expect(buildPilotDestinations({ ...HERTS_ROW, governance: "england_athletics" })).toEqual([]);
+    expect(buildPilotDestinations({ ...HERTS_ROW, organiser: null })).toEqual([]);
   });
 });
 
 describe("buildPilotDestinations — fail-closed", () => {
-  it("returns empty for a non-pilot event", () => {
+  it("returns empty for a non-showcase event", () => {
     expect(
       buildPilotDestinations({
+        ...SATURN_ROW,
         id: "00000000-0000-0000-0000-000000000000",
-        organiser: "Saturn Running",
-        organiser_type: "unknown",
-        organiser_url: SATURN_ROW.organiser_url,
-        entry_url: SATURN_ROW.entry_url,
-        source: "tra",
-        source_url: SATURN_ROW.source_url,
-        governance: "tra",
       }),
     ).toEqual([]);
   });
@@ -177,6 +346,74 @@ describe("buildPilotDestinations — fail-closed", () => {
     expect(out.map((x) => x.role)).toEqual(["licence"]);
     expect(classifyEventLink("https://findarace.com/race/x").kind).toBe("untrusted");
     expect(classifyEventLink("not a url").kind).toBe("invalid");
+  });
+
+  it("only exempts a reviewed governing-body listing from the aggregator gate", () => {
+    expect(
+      resolvePilotCandidates([
+        {
+          role: "official_details",
+          provider: "England Athletics",
+          action: "Visit official race website",
+          href: "https://www.englandathletics.org/runevents/search/?query=x",
+          destinationRole: "official_information",
+          reviewedListingExempt: true,
+        },
+      ]),
+    ).toEqual([]);
+    expect(
+      resolvePilotCandidates([
+        {
+          role: "governing_listing",
+          provider: "England Athletics",
+          action: "View England Athletics listing",
+          href: "not a url",
+          destinationRole: "official_information",
+          reviewedListingExempt: true,
+        },
+      ]),
+    ).toEqual([]);
+  });
+});
+
+describe("resolvePanelLayout — post-race lifecycle", () => {
+  const ducky = buildPilotDestinations(DUCKY_ROW);
+
+  it("makes entry primary before the race", () => {
+    const { primary, secondary, awaitingResults } = resolvePanelLayout(ducky);
+    expect(primary?.role).toBe("entry");
+    expect(secondary.map((x) => x.role)).toEqual(["licence", "course"]);
+    expect(awaitingResults).toBe(false);
+  });
+
+  it("suppresses entry after the race and awaits results", () => {
+    const { primary, secondary, awaitingResults } = resolvePanelLayout(ducky, { isPast: true });
+    expect(primary).toBeNull();
+    expect(awaitingResults).toBe(true);
+    expect(secondary.map((x) => x.role)).toEqual(["licence", "course"]);
+  });
+
+  it("promotes an explicitly reviewed results destination after the race", () => {
+    const results: PublicDestination = {
+      role: "results",
+      roleLabel: "Results",
+      provider: "Saturn Running",
+      action: "View 2026 results",
+      href: "https://www.saturnrunning.co.uk/e/the-rubber-ducky-waddle-14932/results",
+      host: "saturnrunning.co.uk",
+      destinationRole: "official_information",
+      linkType: "organiser-other",
+    };
+    const withResults = resolvePilotCandidates([
+      ...ducky.map(({ roleLabel: _r, host: _h, linkType: _l, ...c }) => c),
+      { ...results },
+    ]);
+    const { primary, awaitingResults, secondary } = resolvePanelLayout(withResults, {
+      isPast: true,
+    });
+    expect(primary?.role).toBe("results");
+    expect(awaitingResults).toBe(false);
+    expect(secondary.some((x) => x.role === "entry")).toBe(false);
   });
 });
 
