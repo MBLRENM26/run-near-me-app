@@ -116,8 +116,17 @@ interface PilotSpec {
     source_url: string;
     governance: string;
   };
+  /**
+   * TRANSITION ONLY. Additional exact `(organiser, organiser_type)` pairs
+   * accepted as whole pairs — never cross-pairs, spelling variants or any
+   * third value. Retained so the reviewed signposts survive a deploy that
+   * precedes the audited organiser-identity row update. Remove in a
+   * separately verified cleanup once the production mutation is stable.
+   */
+  acceptedIdentityAlternatives?: Array<{ organiser: string | null; organiser_type: string }>;
   destinations: ReviewedCandidate[];
 }
+
 
 const SATURN_ID = "adb1a4f8-504d-44bd-99d0-94d8b6346542";
 const FNUL_ID = "2eda5231-ac29-4b4d-bebd-e4f98dd24bf6";
