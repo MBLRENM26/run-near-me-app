@@ -51,6 +51,7 @@ import {
   terrainHubFor,
 } from "@/lib/event-internal-links";
 import { buildEventCtas } from "@/lib/event-ctas";
+import { DestinationPanel } from "@/components/events/DestinationPanel";
 
 
 function regionSlugFromName(name: string | null | undefined): string | null {
@@ -397,6 +398,7 @@ function EventDetailPage() {
     matchingClub,
     otherRacesByOrganiser,
     courseProfile,
+    destinations,
   } = loaderData;
 
   // Site-wide link-trust policy: aggregator URLs are never rendered as
@@ -484,6 +486,10 @@ function EventDetailPage() {
     hasOfficialLink: !!primaryCta,
     regionCount: related.totalCount,
   });
+
+  // Reviewed wayfinding pilot: the destination panel replaces the generic CTA
+  // block for matching future/today events only. Past events keep legacy UI.
+  const showPilotPanel = !isPast && (destinations?.length ?? 0) > 0;
 
   // No trustworthy official link → invite the organiser to claim the listing.
   const showClaim = !primaryCta && !isPast;
