@@ -37,11 +37,17 @@ export type DestinationRoleKind =
 
 export interface PublicDestination {
   role: DestinationRoleKind;
-  /** Human-readable role label shown before the click. */
+  /** Human-readable role label — accessible text only, never a visible heading. */
   roleLabel: string;
   provider: string;
   action: string;
   supportingText?: string;
+  /**
+   * Optional reviewed presentation override for the short visible signpost
+   * label (e.g. Hertfordshire's two distinct reviewed course maps).
+   * Presentation only: never affects URL, role, provider or analytics.
+   */
+  shortLabel?: string;
   href: string;
   host: string;
   /** Analytics-only role for the `Outbound Click` event. */
@@ -333,6 +339,7 @@ const PILOTS: Record<string, PilotSpec> = {
         role: "course",
         provider: "Strava",
         action: "View Half Marathon course",
+        shortLabel: "Half marathon course",
         href: HERTS_HALF_COURSE,
         destinationRole: "official_information",
       },
@@ -340,6 +347,7 @@ const PILOTS: Record<string, PilotSpec> = {
         role: "course",
         provider: "Strava",
         action: "View 10K course",
+        shortLabel: "10K course",
         href: HERTS_10K_COURSE,
         destinationRole: "official_information",
       },
@@ -381,9 +389,7 @@ export function buildPilotDestinations(row: PilotEventRow | null | undefined): P
  * Exported for tests only — server-side, no runtime behaviour beyond what
  * `buildPilotDestinations` already does.
  */
-export function resolvePilotCandidates(
-  candidates: ReviewedCandidate[],
-): PublicDestination[] {
+export function resolvePilotCandidates(candidates: ReviewedCandidate[]): PublicDestination[] {
   const out: PublicDestination[] = [];
   const seen = new Set<string>();
 
@@ -444,4 +450,55 @@ export function resolvePanelLayout(
   const primary = isPast ? results : (results ?? usable.find((d) => d.role === "entry") ?? null);
   const secondary = usable.filter((d) => d !== primary);
   return { primary, secondary, awaitingResults: isPast && !results };
+}
+
+/**
+ * Short visible signpost label. Presentation only — it never changes the
+ * destination URL, reviewed role, provider or the analytics role.
+ */
+export function destinationLabel(d: PublicDestination): string {
+  if (d.shortLabel) return d.shortLabel;
+  switch (d.role) {
+    case "entry":
+      return "Enter race";
+    case "official_details":
+      return "Race website";
+    case "licence":
+      return d.provider === "Trail Running Association" ? "TRA permit" : "Permit";
+    case "governing_listing":
+      return d.provider === "England Athletics" ? "EA listing" : "Governing-body listing";
+    case "athlete_information":
+      return "Athlete info";
+    case "course":
+      return "Course map";
+    case "results":
+      return "Race results";
+  }
+}
+
+/**
+ * Accessible name: keeps role + provider context for screen readers while the
+ * visible surface stays a short signpost label.
+ */
+export function destinationAccessibleName(d: PublicDestination): string {
+  return `${destinationLabel(d)} — ${d.roleLabel}, ${d.provider} (${d.host}), opens in a new tab`;
+}
+
+/**
+ * Count-aware secondary geometry. Every secondary signpost is equal height and
+ * shape, and no layout ever leaves an empty placeholder cell.
+ */
+export function secondaryGridClass(count: number): string {
+  switch (count) {
+    case 1:
+      return "grid-cols-1";
+    case 2:
+      return "grid-cols-1 sm:grid-cols-2";
+    case 3:
+      return "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3";
+    case 4:
+      return "grid-cols-1 sm:grid-cols-2";
+    default:
+      return "grid-cols-1 sm:grid-cols-2";
+  }
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { DestinationPanel } from "./DestinationPanel";
-import { buildPilotDestinations } from "@/lib/pilot-destinations";
+import { buildPilotDestinations, type PublicDestination } from "@/lib/pilot-destinations";
 
 const SATURN_ROW = {
   id: "adb1a4f8-504d-44bd-99d0-94d8b6346542",
@@ -12,6 +12,18 @@ const SATURN_ROW = {
   source: "tra",
   source_url: "https://races.tra-uk.org/race-directory/view/7708",
   governance: "tra",
+};
+
+const FNUL_ROW = {
+  id: "2eda5231-ac29-4b4d-bebd-e4f98dd24bf6",
+  organiser: "Friday Night Under the Lights 5K",
+  organiser_type: "unknown",
+  organiser_url: "https://www.fridaynightunderthelights5k.co.uk/",
+  entry_url: "https://data.opentrack.run/en-gb/x/2026/GBR/fnulsept5k/",
+  source: "england-athletics",
+  source_url:
+    "https://www.englandathletics.org/runevents/search/?query=Friday%20Night%20Under%20the%20Lights%20Race%20Series%2026",
+  governance: "england_athletics",
 };
 
 const DUCKY_ROW = {
@@ -53,24 +65,24 @@ const render = (row: Parameters<typeof buildPilotDestinations>[0], isPast = fals
     <DestinationPanel destinations={buildPilotDestinations(row)} isPast={isPast} />,
   );
 
-describe("DestinationPanel static SSR markup", () => {
+/** Visible text only: strip attributes (aria-label, href) and sr-only spans. */
+const visibleText = (html: string) =>
+  html
+    .replace(/<[^>]*>/g, "\u0000")
+    .split("\u0000")
+    .filter(Boolean)
+    .join(" ");
+
+describe("DestinationPanel shell", () => {
   const html = render(SATURN_ROW);
 
-  it("renders the labelled section heading", () => {
-    expect(html).toContain('aria-labelledby="where-to-go-next"');
-    expect(html).toContain("Where to go next");
+  it("renders the quieter labelled heading", () => {
+    expect(html).toContain('aria-labelledby="race-links"');
+    expect(visibleText(html)).toContain("Race links");
+    expect(html).not.toContain("Where to go next");
   });
 
-  it("shows role and provider before the click", () => {
-    expect(html).toContain("Entry");
-    expect(html).toContain("Saturn Running");
-    expect(html).toContain("Licence");
-    expect(html).toContain("Trail Running Association");
-  });
-
-  it("renders the approved actions and external-link semantics", () => {
-    expect(html).toContain("View entry options");
-    expect(html).toContain("View TRA permit 8570");
+  it("keeps external-link semantics", () => {
     expect(html).toContain('target="_blank"');
     expect(html).toContain('rel="noopener noreferrer"');
   });
@@ -85,38 +97,104 @@ describe("DestinationPanel static SSR markup", () => {
   });
 });
 
-describe("DestinationPanel layouts", () => {
-  it("renders the 2-destination layout with one primary and one secondary tile", () => {
-    const html = render(SATURN_ROW);
-    expect(html.split("<li").length - 1).toBe(1);
-    expect(html).toContain("lg:w-[30%]");
-    expect(html).toContain("sm:grid-cols-2");
+describe("DestinationPanel concise visible labels", () => {
+  it("FNUL (2 links)", () => {
+    const text = visibleText(render(FNUL_ROW));
+    expect(text).toContain("Enter race");
+    expect(text).toContain("Race website");
   });
 
-  it("renders the 3-destination layout (Rubber Ducky)", () => {
-    const html = render(DUCKY_ROW);
-    expect(html.split("<li").length - 1).toBe(2);
-    expect(html).toContain("Enter event");
-    expect(html).toContain("View approved TRA permit 8571");
-    expect(html).toContain("View course map");
+  it("Rubber Ducky (3 links)", () => {
+    const text = visibleText(render(DUCKY_ROW));
+    expect(text).toContain("Enter race");
+    expect(text).toContain("TRA permit");
+    expect(text).toContain("Course map");
   });
 
-  it("renders the 5-destination layout (Sedgefield) without licence wording", () => {
+  it("Hertfordshire (4 links) keeps the two distinct reviewed course labels", () => {
+    const text = visibleText(render(HERTS_ROW));
+    expect(text).toContain("Enter race");
+    expect(text).toContain("Race website");
+    expect(text).toContain("Half marathon course");
+    expect(text).toContain("10K course");
+  });
+
+  it("Sedgefield (5 links)", () => {
+    const text = visibleText(render(SEDGEFIELD_ROW));
+    expect(text).toContain("Enter race");
+    expect(text).toContain("Race website");
+    expect(text).toContain("EA listing");
+    expect(text).toContain("Athlete info");
+    expect(text).toContain("Course map");
+  });
+});
+
+describe("DestinationPanel visual declutter", () => {
+  it("shows no visible role headings, provider lines, hosts or supporting copy", () => {
+    for (const row of [SATURN_ROW, FNUL_ROW, DUCKY_ROW, SEDGEFIELD_ROW, HERTS_ROW]) {
+      const text = visibleText(render(row));
+      expect(text).not.toContain("Entry powered by Eventrac");
+      expect(text).not.toContain("Governing-body listing");
+      expect(text).not.toContain("Official details");
+      expect(text).not.toContain("saturnrunning.co.uk");
+      expect(text).not.toContain("strava.com");
+      expect(text).not.toContain("Trail Running Association");
+      expect(text).not.toContain("England Athletics");
+      expect(text).not.toContain("underline");
+    }
+  });
+
+  it("retains role and provider context in accessible names", () => {
     const html = render(SEDGEFIELD_ROW);
-    expect(html.split("<li").length - 1).toBe(4);
-    expect(html).toContain("Governing-body listing");
-    expect(html).toContain("Read 2026 athlete information");
-    expect(html).toContain("View 2026 course map");
-    expect(html).not.toContain("Licence");
-    expect(html).not.toContain("Approved");
+    expect(html).toContain("England Athletics");
+    expect(html).toContain("opens in a new tab");
   });
 
-  it("renders the 4-destination Hertfordshire layout without private provenance", () => {
-    const html = render(HERTS_ROW);
-    expect(html.split("<li").length - 1).toBe(3);
-    expect(html).toContain("View Half Marathon course");
-    expect(html).toContain("View 10K course");
-    expect(html).not.toContain("runabc");
+  it("never leaks private provenance", () => {
+    expect(render(HERTS_ROW)).not.toContain("runabc");
+    expect(render(FNUL_ROW)).not.toContain("englandathletics.org");
+  });
+});
+
+describe("DestinationPanel count-aware geometry", () => {
+  const counts = (row: Parameters<typeof buildPilotDestinations>[0]) => {
+    const html = render(row);
+    return { html, items: html.split("<li").length - 1 };
+  };
+
+  it("2 total: one primary + one secondary, no third slot", () => {
+    const { html, items } = counts(FNUL_ROW);
+    expect(items).toBe(1);
+    expect(html).toContain('data-secondary-count="1"');
+    expect(html).toContain("grid-cols-1");
+  });
+
+  it("3 total: two balanced secondary signposts in one row", () => {
+    const { html, items } = counts(DUCKY_ROW);
+    expect(items).toBe(2);
+    expect(html).toContain('data-secondary-count="2"');
+    expect(html).toContain("grid-cols-2");
+  });
+
+  it("4 total: three balanced secondary signposts, reflowing narrower", () => {
+    const { html, items } = counts(HERTS_ROW);
+    expect(items).toBe(3);
+    expect(html).toContain('data-secondary-count="3"');
+    expect(html).toContain("lg:grid-cols-3");
+  });
+
+  it("5 total: exactly four secondary signposts as a 2x2 grid", () => {
+    const { html, items } = counts(SEDGEFIELD_ROW);
+    expect(items).toBe(4);
+    expect(html).toContain('data-secondary-count="4"');
+    expect(html).toContain("grid-cols-2");
+    expect(html).not.toContain("lg:grid-cols-3");
+  });
+
+  it("gives every secondary signpost identical height and shape", () => {
+    const html = render(SEDGEFIELD_ROW);
+    const shape = "flex h-11 w-full items-center justify-center gap-1.5 rounded-lg border";
+    expect(html.split(shape).length - 1).toBe(4);
   });
 });
 
@@ -124,19 +202,53 @@ describe("DestinationPanel post-race state", () => {
   const html = render(DUCKY_ROW, true);
 
   it("suppresses the entry anchor", () => {
-    expect(html).not.toContain("https://www.saturnrunning.co.uk/e/the-rubber-ducky-waddle-14932\"");
-    expect(html).not.toContain("Enter event");
+    expect(html).not.toContain('https://www.saturnrunning.co.uk/e/the-rubber-ducky-waddle-14932"');
+    expect(visibleText(html)).not.toContain("Enter race");
   });
 
-  it("renders a non-clickable completed status", () => {
-    expect(html).toContain("Race completed");
-    expect(html).toContain("Results coming soon");
+  it("renders a compact non-clickable completed status", () => {
+    const text = visibleText(html);
+    expect(text).toContain("Race completed");
+    expect(text).toContain("Results coming soon");
     const statusIndex = html.indexOf("Race completed");
     expect(html.slice(statusIndex - 200, statusIndex)).not.toContain("<a ");
   });
 
-  it("keeps the reviewed secondary destinations", () => {
-    expect(html).toContain("View approved TRA permit 8571");
-    expect(html).toContain("View course map");
+  it("keeps the reviewed secondary signposts", () => {
+    const text = visibleText(html);
+    expect(text).toContain("TRA permit");
+    expect(text).toContain("Course map");
+  });
+
+  it("promotes a reviewed results destination when present", () => {
+    const results: PublicDestination = {
+      role: "results",
+      roleLabel: "Results",
+      provider: "Saturn Running",
+      action: "View results",
+      href: "https://www.saturnrunning.co.uk/e/the-rubber-ducky-waddle-14932/results",
+      host: "saturnrunning.co.uk",
+      destinationRole: "official_information",
+      linkType: "organiser-other",
+    };
+    const out = renderToStaticMarkup(
+      <DestinationPanel destinations={[...buildPilotDestinations(DUCKY_ROW), results]} isPast />,
+    );
+    expect(visibleText(out)).toContain("Race results");
+    expect(out).toContain(results.href);
+    expect(visibleText(out)).not.toContain("Results coming soon");
+  });
+});
+
+describe("DestinationPanel analytics callback", () => {
+  it("passes the unchanged reviewed destinations to onSelect targets", () => {
+    const destinations = buildPilotDestinations(SEDGEFIELD_ROW);
+    expect(destinations.map((d) => [d.role, d.destinationRole, d.linkType])).toEqual([
+      ["entry", "booking_destination", "entry"],
+      ["official_details", "official_information", "organiser-other"],
+      ["governing_listing", "official_information", "organiser-other"],
+      ["athlete_information", "official_information", "organiser-other"],
+      ["course", "official_information", "organiser-other"],
+    ]);
   });
 });
