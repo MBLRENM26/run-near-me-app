@@ -642,6 +642,13 @@ export type EventPageData = {
   /** Organiser-published route/elevation evidence, loaded server-side. */
   courseProfile: CourseProfile | null;
   /**
+   * Reviewed public "Where to go next" destinations (RENM wayfinding pilot).
+   * Empty for every non-pilot or drifted row. Derived server-side; the
+   * underlying `source` / `source_url` fields are never returned.
+   */
+  destinations: import("@/lib/pilot-destinations").PublicDestination[];
+
+  /**
    * Search-index decision for this event page. Computed server-side
    * from past/slug-suffix/orphan/duplicate-sibling rules so the
    * `head()` function (which has no DB access) can wire up the
