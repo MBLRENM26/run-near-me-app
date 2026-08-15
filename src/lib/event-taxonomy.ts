@@ -155,7 +155,13 @@ export function raceProfileLabel(value: string | null | undefined): string | nul
  * nation permit or a TRA/ARC/FRA sanction implies the event is real and
  * organised to a known standard, even when the only entry link is on an
  * entry platform.
+ *
+ * QL1 scope note: discovery gating is intentionally NOT state-aware. This
+ * list and `hasTrustedGovernance` are deliberately unchanged by the licence
+ * display work — changing which events are discoverable is a separate,
+ * separately approved package.
  */
+
 export const TRUSTED_GOVERNANCE: readonly Governance[] = [
   "england_athletics",
   "scottish_athletics",
