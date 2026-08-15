@@ -147,8 +147,6 @@ const SEDGEFIELD_COURSE =
 const HERTS_OFFICIAL = "https://www.hertshalf.com/";
 const HERTS_ENTRY =
   "https://www.runthrough.co.uk/event/hertfordshire-half-marathon-10k-november-2026";
-const HERTS_HALF_COURSE = "https://www.strava.com/routes/3154410119536065762";
-const HERTS_10K_COURSE = "https://www.strava.com/routes/3154410864891912034";
 
 const PILOTS: Record<string, PilotSpec> = {
   [SATURN_ID]: {
@@ -167,6 +165,7 @@ const PILOTS: Record<string, PilotSpec> = {
         provider: "Saturn Running",
         action: "View entry options",
         supportingText: "Entry powered by Eventrac",
+        shortLabel: "Enter with Saturn Running",
         href: SATURN_OCCURRENCE,
         destinationRole: "booking_destination",
       },
@@ -174,6 +173,7 @@ const PILOTS: Record<string, PilotSpec> = {
         role: "licence",
         provider: "Trail Running Association",
         action: "View TRA permit 8570",
+        shortLabel: "View TRA permit 8570",
         href: TRA_LICENCE_RECORD,
         destinationRole: "licence_record",
       },
@@ -206,6 +206,7 @@ const PILOTS: Record<string, PilotSpec> = {
         provider: "OpenTrack",
         action: "View entry status on OpenTrack",
         supportingText: "Specific 11 September 2026 occurrence",
+        shortLabel: "Enter via OpenTrack",
         href: FNUL_OPENTRACK,
         destinationRole: "booking_destination",
       },
@@ -213,6 +214,7 @@ const PILOTS: Record<string, PilotSpec> = {
         role: "official_details",
         provider: "Friday Night Under the Lights 5K",
         action: "Visit official race website",
+        shortLabel: "FNUL race website",
         href: FNUL_HOMEPAGE,
         destinationRole: "official_information",
       },
@@ -234,6 +236,7 @@ const PILOTS: Record<string, PilotSpec> = {
         provider: "Saturn Running",
         action: "Enter event",
         supportingText: "Entry powered by Eventrac",
+        shortLabel: "Enter with Saturn Running",
         href: DUCKY_OCCURRENCE,
         destinationRole: "booking_destination",
       },
@@ -241,6 +244,7 @@ const PILOTS: Record<string, PilotSpec> = {
         role: "licence",
         provider: "Trail Running Association",
         action: "View approved TRA permit 8571",
+        shortLabel: "View TRA permit 8571",
         href: DUCKY_TRA_RECORD,
         destinationRole: "licence_record",
       },
@@ -248,6 +252,7 @@ const PILOTS: Record<string, PilotSpec> = {
         role: "course",
         provider: "Saturn Running",
         action: "View course map",
+        shortLabel: "Course map",
         href: DUCKY_COURSE,
         destinationRole: "official_information",
       },
@@ -276,6 +281,7 @@ const PILOTS: Record<string, PilotSpec> = {
         role: "entry",
         provider: "Sport:80",
         action: "Enter event",
+        shortLabel: "Enter via Sport:80",
         href: SEDGEFIELD_ENTRY,
         destinationRole: "booking_destination",
       },
@@ -283,6 +289,7 @@ const PILOTS: Record<string, PilotSpec> = {
         role: "official_details",
         provider: "Sedgefield Harriers",
         action: "Visit official race page",
+        shortLabel: "Sedgefield Harriers website",
         href: SEDGEFIELD_OFFICIAL,
         destinationRole: "official_information",
       },
@@ -290,6 +297,7 @@ const PILOTS: Record<string, PilotSpec> = {
         role: "governing_listing",
         provider: "England Athletics",
         action: "View England Athletics listing",
+        shortLabel: "England Athletics listing",
         href: SEDGEFIELD_EA_LISTING,
         destinationRole: "official_information",
         reviewedListingExempt: true,
@@ -298,6 +306,7 @@ const PILOTS: Record<string, PilotSpec> = {
         role: "athlete_information",
         provider: "Sedgefield Harriers",
         action: "Read 2026 athlete information",
+        shortLabel: "Athlete information",
         href: SEDGEFIELD_ATHLETE_INFO,
         destinationRole: "official_information",
       },
@@ -305,6 +314,7 @@ const PILOTS: Record<string, PilotSpec> = {
         role: "course",
         provider: "Sedgefield Harriers",
         action: "View 2026 course map",
+        shortLabel: "Course map",
         href: SEDGEFIELD_COURSE,
         destinationRole: "official_information",
       },
@@ -320,11 +330,15 @@ const PILOTS: Record<string, PilotSpec> = {
       source_url: "https://runabc.co.uk/hertfordshire-half-marathon",
       governance: "unknown",
     },
+    // Reviewed correction: the Strava route destinations were removed. The
+    // 10K / Half Marathon courses are served on-page by the embedded
+    // "Course and elevation" component, which stays unchanged.
     destinations: [
       {
         role: "entry",
         provider: "RunThrough",
         action: "Enter event",
+        shortLabel: "Enter with RunThrough",
         href: HERTS_ENTRY,
         destinationRole: "booking_destination",
       },
@@ -332,28 +346,14 @@ const PILOTS: Record<string, PilotSpec> = {
         role: "official_details",
         provider: "Hertfordshire Half Marathon",
         action: "Visit official event website",
+        shortLabel: "Herts Half website",
         href: HERTS_OFFICIAL,
-        destinationRole: "official_information",
-      },
-      {
-        role: "course",
-        provider: "Strava",
-        action: "View Half Marathon course",
-        shortLabel: "Half marathon course",
-        href: HERTS_HALF_COURSE,
-        destinationRole: "official_information",
-      },
-      {
-        role: "course",
-        provider: "Strava",
-        action: "View 10K course",
-        shortLabel: "10K course",
-        href: HERTS_10K_COURSE,
         destinationRole: "official_information",
       },
     ],
   },
 };
+
 
 function normalizeForDedupe(href: string): string {
   return href.trim().toLowerCase().replace(/\/+$/, "");
