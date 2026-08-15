@@ -40,6 +40,7 @@ export interface PublicDestination {
 export interface PilotEventRow {
   id: string;
   organiser?: string | null;
+  organiser_type?: string | null;
   organiser_url?: string | null;
   entry_url?: string | null;
   source?: string | null;
@@ -70,6 +71,7 @@ type Candidate = Omit<PublicDestination, "roleLabel" | "host" | "linkType">;
 interface PilotSpec {
   accepted: {
     organiser: string;
+    organiser_type: string;
     organiser_url: string;
     entry_url: string;
     source: string;
@@ -92,6 +94,7 @@ const PILOTS: Record<string, PilotSpec> = {
   [SATURN_ID]: {
     accepted: {
       organiser: "Saturn Running",
+      organiser_type: "unknown",
       organiser_url: SATURN_OCCURRENCE,
       entry_url: SATURN_OCCURRENCE,
       source: "tra",
@@ -114,11 +117,22 @@ const PILOTS: Record<string, PilotSpec> = {
         href: TRA_LICENCE_RECORD,
         destinationRole: "licence_record",
       },
+      // Conservative official-details candidate. `organiser_url` is the same
+      // occurrence URL as `entry_url`, so entry > official_details dedupe
+      // removes this candidate and the public output keeps two destinations.
+      {
+        role: "official_details",
+        provider: "Saturn Running",
+        action: "View official race details",
+        href: SATURN_OCCURRENCE,
+        destinationRole: "official_information",
+      },
     ],
   },
   [FNUL_ID]: {
     accepted: {
       organiser: "Friday Night Under the Lights 5K",
+      organiser_type: "unknown",
       organiser_url: FNUL_HOMEPAGE,
       entry_url: FNUL_OPENTRACK,
       source: "england-athletics",
@@ -162,6 +176,7 @@ export function buildPilotDestinations(row: PilotEventRow | null | undefined): P
   const a = spec.accepted;
   const matches =
     (row.organiser ?? null) === a.organiser &&
+    (row.organiser_type ?? null) === a.organiser_type &&
     (row.organiser_url ?? null) === a.organiser_url &&
     (row.entry_url ?? null) === a.entry_url &&
     (row.source ?? null) === a.source &&
@@ -169,10 +184,21 @@ export function buildPilotDestinations(row: PilotEventRow | null | undefined): P
     (row.governance ?? null) === a.governance;
   if (!matches) return [];
 
-  const out: PublicDestination[] = [];
-  const seen = new Map<string, DestinationRoleKind>();
+  return resolvePilotCandidates(spec.destinations);
+}
 
-  const ordered = [...spec.destinations].sort(
+/**
+ * Apply role precedence (entry > official_details > licence), the shared trust
+ * gate and URL dedupe to reviewed candidates.
+ *
+ * Exported for tests only — server-side, no runtime behaviour beyond what
+ * `buildPilotDestinations` already does.
+ */
+export function resolvePilotCandidates(candidates: Candidate[]): PublicDestination[] {
+  const out: PublicDestination[] = [];
+  const seen = new Set<string>();
+
+  const ordered = [...candidates].sort(
     (x, y) => ROLE_PRECEDENCE[x.role] - ROLE_PRECEDENCE[y.role],
   );
 
@@ -181,7 +207,7 @@ export function buildPilotDestinations(row: PilotEventRow | null | undefined): P
     if (!isTrustedLink(link) || !link.href || !link.host) continue;
     const key = normalizeForDedupe(link.href);
     if (seen.has(key)) continue;
-    seen.set(key, candidate.role);
+    seen.add(key);
     out.push({
       ...candidate,
       roleLabel: ROLE_LABELS[candidate.role],
