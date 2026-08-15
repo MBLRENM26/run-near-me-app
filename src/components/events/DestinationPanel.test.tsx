@@ -202,7 +202,7 @@ describe("DestinationPanel post-race state", () => {
   const html = render(DUCKY_ROW, true);
 
   it("suppresses the entry anchor", () => {
-    expect(html).not.toContain("https://www.saturnrunning.co.uk/e/the-rubber-ducky-waddle-14932\"");
+    expect(html).not.toContain('https://www.saturnrunning.co.uk/e/the-rubber-ducky-waddle-14932"');
     expect(visibleText(html)).not.toContain("Enter race");
   });
 
@@ -232,10 +232,7 @@ describe("DestinationPanel post-race state", () => {
       linkType: "organiser-other",
     };
     const out = renderToStaticMarkup(
-      <DestinationPanel
-        destinations={[...buildPilotDestinations(DUCKY_ROW), results]}
-        isPast
-      />,
+      <DestinationPanel destinations={[...buildPilotDestinations(DUCKY_ROW), results]} isPast />,
     );
     expect(visibleText(out)).toContain("Race results");
     expect(out).toContain(results.href);

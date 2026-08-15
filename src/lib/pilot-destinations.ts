@@ -389,9 +389,7 @@ export function buildPilotDestinations(row: PilotEventRow | null | undefined): P
  * Exported for tests only — server-side, no runtime behaviour beyond what
  * `buildPilotDestinations` already does.
  */
-export function resolvePilotCandidates(
-  candidates: ReviewedCandidate[],
-): PublicDestination[] {
+export function resolvePilotCandidates(candidates: ReviewedCandidate[]): PublicDestination[] {
   const out: PublicDestination[] = [];
   const seen = new Set<string>();
 
