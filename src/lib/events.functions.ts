@@ -26,6 +26,7 @@ import {
 
 } from "@/lib/event-indexability";
 import { hasOrganiserOwnedLink, hasDiscoverableLink } from "@/lib/link-trust";
+import { buildPilotDestinations } from "@/lib/pilot-destinations";
 import { DISCOVERY_EVENT_COLUMNS, UK_BOUNDS_OR_NULL } from "@/lib/events-query";
 import {
   courseProfileFromSources,
@@ -1265,6 +1266,7 @@ export const getEventPageData = createServerFn({ method: "GET" })
       matchingClub,
       otherRacesByOrganiser,
       courseProfile,
+      destinations,
       indexability,
     };
   });
