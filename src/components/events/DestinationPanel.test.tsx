@@ -180,7 +180,7 @@ describe("DestinationPanel count-aware geometry", () => {
     const { html, items } = counts(HERTS_ROW);
     expect(items).toBe(3);
     expect(html).toContain('data-secondary-count="3"');
-    expect(html).toContain("sm:grid-cols-3");
+    expect(html).toContain("lg:grid-cols-3");
   });
 
   it("5 total: exactly four secondary signposts as a 2x2 grid", () => {
@@ -188,7 +188,7 @@ describe("DestinationPanel count-aware geometry", () => {
     expect(items).toBe(4);
     expect(html).toContain('data-secondary-count="4"');
     expect(html).toContain("grid-cols-2");
-    expect(html).not.toContain("sm:grid-cols-3");
+    expect(html).not.toContain("lg:grid-cols-3");
   });
 
   it("gives every secondary signpost identical height and shape", () => {

@@ -62,14 +62,14 @@ export function DestinationPanel({
                 rel="noopener noreferrer"
                 onClick={() => onSelect?.(primary)}
                 aria-label={destinationAccessibleName(primary)}
-                className="flex h-11 w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                className="flex h-full min-h-11 w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
               >
                 <span>{destinationLabel(primary)}</span>
                 <ArrowUpRight className="h-4 w-4 shrink-0" aria-hidden="true" />
               </a>
             ) : (
               <div
-                className="flex h-11 w-full flex-col items-center justify-center rounded-lg border border-border bg-muted/50 px-3 text-center"
+                className="flex h-full min-h-11 w-full flex-col items-center justify-center rounded-lg border border-border bg-muted/50 px-3 text-center"
                 role="status"
               >
                 <span className="text-sm font-semibold text-foreground">Race completed</span>
