@@ -76,9 +76,9 @@ const visibleText = (html: string) =>
 describe("DestinationPanel shell", () => {
   const html = render(SATURN_ROW);
 
-  it("renders the quieter labelled heading", () => {
+  it("keeps the heading accessible but screen-reader-only", () => {
     expect(html).toContain('aria-labelledby="race-links"');
-    expect(visibleText(html)).toContain("Race links");
+    expect(html).toContain('id="race-links" class="sr-only"');
     expect(html).not.toContain("Where to go next");
   });
 
@@ -162,11 +162,14 @@ describe("DestinationPanel count-aware geometry", () => {
     return { html, items: html.split("<li").length - 1 };
   };
 
-  it("2 total: one primary + one secondary, no third slot", () => {
+  it("2 total: one compact pair that does not grow across the strip", () => {
     const { html, items } = counts(FNUL_ROW);
     expect(items).toBe(1);
     expect(html).toContain('data-secondary-count="1"');
     expect(html).toContain("grid-cols-1");
+    expect(html).not.toContain("flex-1");
+    expect(html).toContain("sm:w-auto");
+    expect(html).toContain("sm:w-[170px]");
   });
 
   it("3 total: two balanced secondary signposts in one row", () => {
@@ -191,9 +194,21 @@ describe("DestinationPanel count-aware geometry", () => {
     expect(html).not.toContain("lg:grid-cols-3");
   });
 
+  it("keeps the primary a fixed, vertically centred signpost", () => {
+    for (const row of [FNUL_ROW, SEDGEFIELD_ROW]) {
+      const html = render(row);
+      expect(html).toContain("sm:items-center");
+      expect(html).toContain("sm:w-[200px]");
+      expect(html).toContain("h-[54px]");
+      expect(html).not.toContain("h-full");
+      expect(html).not.toContain("items-stretch");
+      expect(html).not.toContain("row-span");
+    }
+  });
+
   it("gives every secondary signpost identical height and shape", () => {
     const html = render(SEDGEFIELD_ROW);
-    const shape = "flex h-11 w-full items-center justify-center gap-1.5 rounded-lg border";
+    const shape = "flex h-[46px] w-full items-center justify-center gap-1.5 rounded-lg border";
     expect(html.split(shape).length - 1).toBe(4);
   });
 });
