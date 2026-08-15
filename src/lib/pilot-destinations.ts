@@ -453,3 +453,54 @@ export function resolvePanelLayout(
   const secondary = usable.filter((d) => d !== primary);
   return { primary, secondary, awaitingResults: isPast && !results };
 }
+
+/**
+ * Short visible signpost label. Presentation only — it never changes the
+ * destination URL, reviewed role, provider or the analytics role.
+ */
+export function destinationLabel(d: PublicDestination): string {
+  if (d.shortLabel) return d.shortLabel;
+  switch (d.role) {
+    case "entry":
+      return "Enter race";
+    case "official_details":
+      return "Race website";
+    case "licence":
+      return d.provider === "Trail Running Association" ? "TRA permit" : "Permit";
+    case "governing_listing":
+      return d.provider === "England Athletics" ? "EA listing" : "Governing-body listing";
+    case "athlete_information":
+      return "Athlete info";
+    case "course":
+      return "Course map";
+    case "results":
+      return "Race results";
+  }
+}
+
+/**
+ * Accessible name: keeps role + provider context for screen readers while the
+ * visible surface stays a short signpost label.
+ */
+export function destinationAccessibleName(d: PublicDestination): string {
+  return `${destinationLabel(d)} — ${d.roleLabel}, ${d.provider} (${d.host}), opens in a new tab`;
+}
+
+/**
+ * Count-aware secondary geometry. Every secondary signpost is equal height and
+ * shape, and no layout ever leaves an empty placeholder cell.
+ */
+export function secondaryGridClass(count: number): string {
+  switch (count) {
+    case 1:
+      return "grid-cols-1";
+    case 2:
+      return "grid-cols-2";
+    case 3:
+      return "grid-cols-2 sm:grid-cols-3";
+    case 4:
+      return "grid-cols-2";
+    default:
+      return "grid-cols-2 sm:grid-cols-3";
+  }
+}
