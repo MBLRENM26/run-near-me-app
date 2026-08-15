@@ -93,6 +93,13 @@ const LINK_TYPES: Record<DestinationRoleKind, EventCtaLinkType> = {
 
 export type Candidate = Omit<PublicDestination, "roleLabel" | "host" | "linkType">;
 
+/**
+ * A reviewed candidate. `reviewedListingExempt` may only be set on a
+ * `governing_listing` candidate: a human-reviewed public governing-body
+ * listing on a host the generic link-trust policy treats as an aggregator.
+ */
+export type ReviewedCandidate = Candidate & { reviewedListingExempt?: boolean };
+
 interface PilotSpec {
   accepted: {
     organiser: string | null;
@@ -103,7 +110,7 @@ interface PilotSpec {
     source_url: string;
     governance: string;
   };
-  destinations: Candidate[];
+  destinations: ReviewedCandidate[];
 }
 
 const SATURN_ID = "adb1a4f8-504d-44bd-99d0-94d8b6346542";
@@ -375,7 +382,7 @@ export function buildPilotDestinations(row: PilotEventRow | null | undefined): P
  * `buildPilotDestinations` already does.
  */
 export function resolvePilotCandidates(
-  candidates: (Candidate & { reviewedListingExempt?: boolean })[],
+  candidates: ReviewedCandidate[],
 ): PublicDestination[] {
   const out: PublicDestination[] = [];
   const seen = new Set<string>();
