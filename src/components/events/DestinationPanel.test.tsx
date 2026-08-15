@@ -6,10 +6,8 @@ import { buildPilotDestinations } from "@/lib/pilot-destinations";
 const SATURN_ROW = {
   id: "adb1a4f8-504d-44bd-99d0-94d8b6346542",
   organiser: "Saturn Running",
-  organiser_url:
-    "https://www.saturnrunning.co.uk/e/im-not-throwing-away-my-shot-run-14793",
-  entry_url:
-    "https://www.saturnrunning.co.uk/e/im-not-throwing-away-my-shot-run-14793",
+  organiser_url: "https://www.saturnrunning.co.uk/e/im-not-throwing-away-my-shot-run-14793",
+  entry_url: "https://www.saturnrunning.co.uk/e/im-not-throwing-away-my-shot-run-14793",
   source: "tra",
   source_url: "https://races.tra-uk.org/race-directory/view/7708",
   governance: "tra",

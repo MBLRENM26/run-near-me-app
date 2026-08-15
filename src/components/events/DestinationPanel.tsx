@@ -23,10 +23,7 @@ export function DestinationPanel({
       aria-labelledby="where-to-go-next"
       className="mt-8 rounded-2xl border border-primary/20 bg-primary/5 p-5 sm:p-6"
     >
-      <h2
-        id="where-to-go-next"
-        className="text-base font-semibold text-foreground sm:text-lg"
-      >
+      <h2 id="where-to-go-next" className="text-base font-semibold text-foreground sm:text-lg">
         Where to go next
       </h2>
       <ul className="mt-4 space-y-3">
@@ -39,9 +36,7 @@ export function DestinationPanel({
               {d.roleLabel}
               <span className="sr-only"> destination</span>
             </p>
-            <p className="mt-1 text-sm font-medium text-foreground">
-              {d.provider}
-            </p>
+            <p className="mt-1 text-sm font-medium text-foreground">{d.provider}</p>
             <a
               href={d.href}
               target="_blank"
@@ -54,9 +49,7 @@ export function DestinationPanel({
               <span className="sr-only">(opens in a new tab)</span>
             </a>
             {d.supportingText && (
-              <p className="mt-2 text-sm text-muted-foreground">
-                {d.supportingText}
-              </p>
+              <p className="mt-2 text-sm text-muted-foreground">{d.supportingText}</p>
             )}
             <p className="mt-1 text-xs text-muted-foreground">{d.host}</p>
           </li>

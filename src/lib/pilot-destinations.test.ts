@@ -7,10 +7,8 @@ import { classifyEventLink, isEntryPlatformHost } from "./link-trust";
 const SATURN_ROW = {
   id: "adb1a4f8-504d-44bd-99d0-94d8b6346542",
   organiser: "Saturn Running",
-  organiser_url:
-    "https://www.saturnrunning.co.uk/e/im-not-throwing-away-my-shot-run-14793",
-  entry_url:
-    "https://www.saturnrunning.co.uk/e/im-not-throwing-away-my-shot-run-14793",
+  organiser_url: "https://www.saturnrunning.co.uk/e/im-not-throwing-away-my-shot-run-14793",
+  entry_url: "https://www.saturnrunning.co.uk/e/im-not-throwing-away-my-shot-run-14793",
   source: "tra",
   source_url: "https://races.tra-uk.org/race-directory/view/7708",
   governance: "tra",
@@ -107,9 +105,7 @@ describe("buildPilotDestinations — fail-closed", () => {
   });
 
   it("returns empty on any field drift", () => {
-    expect(
-      buildPilotDestinations({ ...SATURN_ROW, organiser: "Saturn Running Ltd" }),
-    ).toEqual([]);
+    expect(buildPilotDestinations({ ...SATURN_ROW, organiser: "Saturn Running Ltd" })).toEqual([]);
     expect(
       buildPilotDestinations({
         ...SATURN_ROW,
@@ -129,9 +125,7 @@ describe("buildPilotDestinations — fail-closed", () => {
   it("drops untrusted/invalid destination URLs before rendering", () => {
     // Trust gate proof: an aggregator or malformed URL is never trusted, so
     // the same gate the manifest uses would drop it.
-    expect(classifyEventLink("https://findarace.com/race/x").kind).toBe(
-      "untrusted",
-    );
+    expect(classifyEventLink("https://findarace.com/race/x").kind).toBe("untrusted");
     expect(classifyEventLink("not a url").kind).toBe("invalid");
   });
 });
@@ -143,19 +137,14 @@ describe("OpenTrack provider classification", () => {
   });
 
   it("classifies the exact OpenTrack occurrence URL as an entry page", () => {
-    const link = classifyEventLink(
-      "https://data.opentrack.run/en-gb/x/2026/GBR/fnulsept5k/",
-    );
+    const link = classifyEventLink("https://data.opentrack.run/en-gb/x/2026/GBR/fnulsept5k/");
     expect(link.kind).toBe("entry");
     expect(link.host).toBe("data.opentrack.run");
   });
 });
 
 describe("source provenance boundary in getEventPageData", () => {
-  const SOURCE = readFileSync(
-    resolve(process.cwd(), "src/lib/events.functions.ts"),
-    "utf8",
-  );
+  const SOURCE = readFileSync(resolve(process.cwd(), "src/lib/events.functions.ts"), "utf8");
 
   it("strips source and source_url from the public event object", () => {
     expect(SOURCE).toContain("source: _source,");

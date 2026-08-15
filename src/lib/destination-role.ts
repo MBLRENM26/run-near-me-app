@@ -34,7 +34,6 @@ export type DestinationRole =
   | "licence_record"
   | "unknown";
 
-
 /** Explicit ballot / waitlist / lottery evidence tokens. */
 const BALLOT_PATTERNS = [
   "ballot",

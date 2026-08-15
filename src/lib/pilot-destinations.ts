@@ -86,8 +86,7 @@ const SATURN_OCCURRENCE =
   "https://www.saturnrunning.co.uk/e/im-not-throwing-away-my-shot-run-14793";
 const TRA_LICENCE_RECORD = "https://races.tra-uk.org/race-directory/view/7708";
 const FNUL_HOMEPAGE = "https://www.fridaynightunderthelights5k.co.uk/";
-const FNUL_OPENTRACK =
-  "https://data.opentrack.run/en-gb/x/2026/GBR/fnulsept5k/";
+const FNUL_OPENTRACK = "https://data.opentrack.run/en-gb/x/2026/GBR/fnulsept5k/";
 
 const PILOTS: Record<string, PilotSpec> = {
   [SATURN_ID]: {
@@ -155,9 +154,7 @@ function normalizeForDedupe(href: string): string {
  * Build the reviewed public destination manifest for a pilot event.
  * Returns `[]` for any non-pilot or drifted row.
  */
-export function buildPilotDestinations(
-  row: PilotEventRow | null | undefined,
-): PublicDestination[] {
+export function buildPilotDestinations(row: PilotEventRow | null | undefined): PublicDestination[] {
   if (!row?.id) return [];
   const spec = PILOTS[row.id];
   if (!spec) return [];
