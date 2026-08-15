@@ -43,7 +43,7 @@ export function DestinationPanel({
   return (
     <section
       aria-labelledby="race-links"
-      className="mt-8 rounded-xl border border-primary/15 bg-primary/[0.04] px-4 py-3 sm:px-5 sm:py-4"
+      className="mt-8 w-full rounded-xl border border-primary/15 bg-primary/[0.04] px-4 py-3 sm:w-fit sm:max-w-full sm:px-5 sm:py-4"
     >
       <h2 id="race-links" className="sr-only">
         Race links
@@ -59,7 +59,7 @@ export function DestinationPanel({
                 rel="noopener noreferrer"
                 onClick={() => onSelect?.(primary)}
                 aria-label={destinationAccessibleName(primary)}
-                className="flex h-[54px] w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                className="flex h-[54px] w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-3 text-center text-[13px] font-semibold leading-tight text-primary-foreground hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:text-sm"
               >
                 <span>{destinationLabel(primary)}</span>
                 <ArrowUpRight className="h-4 w-4 shrink-0" aria-hidden="true" />
@@ -89,15 +89,16 @@ export function DestinationPanel({
                   rel="noopener noreferrer"
                   onClick={() => onSelect?.(d)}
                   aria-label={destinationAccessibleName(d)}
-                  className="flex h-[46px] w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-2.5 text-center text-[13px] font-medium leading-tight text-foreground hover:border-primary/40 hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:text-sm"
+                  className="flex h-[46px] w-full items-center justify-center gap-1.5 rounded-lg border border-primary/30 bg-card px-2.5 text-center text-[13px] font-semibold leading-tight text-foreground transition-colors hover:border-primary hover:bg-primary/5 hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 >
                   <span>{destinationLabel(d)}</span>
-                  <ArrowUpRight className="h-3.5 w-3.5 shrink-0 opacity-60" aria-hidden="true" />
+                  <ArrowUpRight className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                 </a>
               </li>
             ))}
           </ul>
         )}
+
       </div>
     </section>
   );
