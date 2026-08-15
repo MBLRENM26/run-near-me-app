@@ -293,6 +293,7 @@ const PILOTS: Record<string, PilotSpec> = {
     // mutation is stable.
     acceptedIdentityAlternatives: [{ organiser: "Sedgefield Harriers", organiser_type: "club" }],
 
+
     destinations: [
       {
         role: "entry",
