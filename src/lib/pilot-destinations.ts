@@ -37,11 +37,17 @@ export type DestinationRoleKind =
 
 export interface PublicDestination {
   role: DestinationRoleKind;
-  /** Human-readable role label shown before the click. */
+  /** Human-readable role label — accessible text only, never a visible heading. */
   roleLabel: string;
   provider: string;
   action: string;
   supportingText?: string;
+  /**
+   * Optional reviewed presentation override for the short visible signpost
+   * label (e.g. Hertfordshire's two distinct reviewed course maps).
+   * Presentation only: never affects URL, role, provider or analytics.
+   */
+  shortLabel?: string;
   href: string;
   host: string;
   /** Analytics-only role for the `Outbound Click` event. */
