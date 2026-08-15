@@ -290,6 +290,7 @@ const PILOTS: Record<string, PilotSpec> = {
     // the reviewed signposts survive deploy-before-row-update. Remove this
     // alternative in a separately verified cleanup after the production
     // mutation is stable.
+    // QL1_DEPLOYMENT_ANCHOR: approved transition verified 2026-08-15.
     acceptedIdentityAlternatives: [{ organiser: "Sedgefield Harriers", organiser_type: "club" }],
 
     destinations: [
