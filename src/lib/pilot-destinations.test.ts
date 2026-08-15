@@ -50,7 +50,8 @@ const SEDGEFIELD_ROW = {
   organiser_url: "https://sedgefieldharriers.co.uk/sedgefield-serpentine/",
   entry_url: "https://englandathletics.sport80.com/public/wizard/e/30356",
   source: "england-athletics",
-  source_url: "https://www.englandathletics.org/runevents/search/?query=Sedgefield%20Serpentine%202026",
+  source_url:
+    "https://www.englandathletics.org/runevents/search/?query=Sedgefield%20Serpentine%202026",
   governance: "england_athletics",
 };
 
@@ -249,7 +250,10 @@ describe("buildPilotDestinations — Sedgefield Serpentine 2026", () => {
   it("fails closed on drift", () => {
     expect(buildPilotDestinations({ ...SEDGEFIELD_ROW, organiser_type: "unknown" })).toEqual([]);
     expect(
-      buildPilotDestinations({ ...SEDGEFIELD_ROW, organiser_url: "https://sedgefieldharriers.co.uk/" }),
+      buildPilotDestinations({
+        ...SEDGEFIELD_ROW,
+        organiser_url: "https://sedgefieldharriers.co.uk/",
+      }),
     ).toEqual([]);
     expect(buildPilotDestinations({ ...SEDGEFIELD_ROW, source_url: "" })).toEqual([]);
   });
@@ -294,9 +298,9 @@ describe("buildPilotDestinations — Hertfordshire Half Marathon & 10K", () => {
   });
 
   it("fails closed on drift", () => {
-    expect(buildPilotDestinations({ ...HERTS_ROW, source_url: "https://runabc.co.uk/other" })).toEqual(
-      [],
-    );
+    expect(
+      buildPilotDestinations({ ...HERTS_ROW, source_url: "https://runabc.co.uk/other" }),
+    ).toEqual([]);
     expect(buildPilotDestinations({ ...HERTS_ROW, governance: "england_athletics" })).toEqual([]);
     expect(buildPilotDestinations({ ...HERTS_ROW, organiser: null })).toEqual([]);
   });

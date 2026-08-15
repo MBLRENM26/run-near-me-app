@@ -98,7 +98,6 @@ export function DestinationPanel({
             ))}
           </ul>
         )}
-
       </div>
     </section>
   );
