@@ -386,14 +386,25 @@ export function buildPilotDestinations(row: PilotEventRow | null | undefined): P
   if (!spec) return [];
 
   const a = spec.accepted;
+  // Identity is matched as a whole pair: either the `accepted` pair or one of
+  // the transition alternatives. Cross-pairs are never accepted.
+  const identityPairs = [
+    { organiser: a.organiser, organiser_type: a.organiser_type },
+    ...(spec.acceptedIdentityAlternatives ?? []),
+  ];
+  const rowOrganiser = row.organiser ?? null;
+  const rowOrganiserType = row.organiser_type ?? null;
+  const identityMatches = identityPairs.some(
+    (pair) => rowOrganiser === pair.organiser && rowOrganiserType === pair.organiser_type,
+  );
   const matches =
-    (row.organiser ?? null) === a.organiser &&
-    (row.organiser_type ?? null) === a.organiser_type &&
+    identityMatches &&
     (row.organiser_url ?? null) === a.organiser_url &&
     (row.entry_url ?? null) === a.entry_url &&
     (row.source ?? null) === a.source &&
     (row.source_url ?? null) === a.source_url &&
     (row.governance ?? null) === a.governance;
+
   if (!matches) return [];
 
   return resolvePilotCandidates(spec.destinations);
