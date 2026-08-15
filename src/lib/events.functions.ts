@@ -784,9 +784,7 @@ export const getEventPageData = createServerFn({ method: "GET" })
     void _source_url;
     const event = eventPublic as EventDetail;
 
-    void _status;
-    void _duplicate_of;
-    const event = eventPublic as EventDetail;
+
 
     const { data: courseRows, error: courseError } = await supabaseAdmin
       .from("event_course_sources")
