@@ -644,7 +644,7 @@ function EventDetailPage() {
           {/* Organiser identity is a supported fact and must render even when
               there is no trusted outbound CTA (aggregator-only entry_url,
               missing organiser_url). No external link is invented here. */}
-          {!primaryCta && (
+          {(!primaryCta || showPilotPanel) && (
             <OrganiserLine
               organiser={e.organiser}
               matchingClub={matchingClub}
@@ -652,7 +652,27 @@ function EventDetailPage() {
             />
           )}
 
-          {primaryCta && (
+          {showPilotPanel && (
+            <DestinationPanel
+              destinations={destinations}
+              onSelect={(d) =>
+                trackOutboundClick({
+                  slug: e.slug,
+                  region: e.region,
+                  link_type: d.linkType,
+                  proximity,
+                  event_name: e.name,
+                  distance: e.distances ?? "unknown",
+                  discipline: e.discipline ?? "road",
+                  entry_domain: hostnameOf(d.href),
+                  destination_role: d.destinationRole,
+                })
+              }
+            />
+          )}
+
+          {primaryCta && !showPilotPanel && (
+
 
             <div className="mt-8 rounded-2xl border border-primary/20 bg-primary/5 p-5 sm:p-6">
               <Button
