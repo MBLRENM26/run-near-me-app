@@ -82,7 +82,6 @@ describe("DestinationPanel shell", () => {
     expect(html).not.toContain("Where to go next");
   });
 
-
   it("keeps external-link semantics", () => {
     expect(html).toContain('target="_blank"');
     expect(html).toContain('rel="noopener noreferrer"');
@@ -213,7 +212,6 @@ describe("DestinationPanel count-aware geometry", () => {
     expect(html.split(shape).length - 1).toBe(4);
   });
 });
-
 
 describe("DestinationPanel post-race state", () => {
   const html = render(DUCKY_ROW, true);
