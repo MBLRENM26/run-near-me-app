@@ -78,6 +78,7 @@ describe("buildPilotDestinations — retained Saturn pilot", () => {
       provider: "Saturn Running",
       action: "View entry options",
       supportingText: "Entry powered by Eventrac",
+      shortLabel: "Enter with Saturn Running",
       href: SATURN_ROW.entry_url,
       destinationRole: "booking_destination",
       linkType: "entry",
@@ -86,6 +87,7 @@ describe("buildPilotDestinations — retained Saturn pilot", () => {
       roleLabel: "Licence",
       provider: "Trail Running Association",
       action: "View TRA permit 8570",
+      shortLabel: "View TRA permit 8570",
       href: "https://races.tra-uk.org/race-directory/view/7708",
       destinationRole: "licence_record",
       linkType: "organiser-other",
@@ -126,6 +128,7 @@ describe("buildPilotDestinations — FNUL manifest", () => {
       provider: "OpenTrack",
       action: "View entry status on OpenTrack",
       supportingText: "Specific 11 September 2026 occurrence",
+      shortLabel: "Enter via OpenTrack",
       href: "https://data.opentrack.run/en-gb/x/2026/GBR/fnulsept5k/",
       destinationRole: "booking_destination",
       linkType: "entry",
@@ -134,6 +137,7 @@ describe("buildPilotDestinations — FNUL manifest", () => {
       roleLabel: "Official details",
       provider: "Friday Night Under the Lights 5K",
       action: "Visit official race website",
+      shortLabel: "FNUL race website",
       href: "https://www.fridaynightunderthelights5k.co.uk/",
       destinationRole: "official_information",
       linkType: "organiser-other",
@@ -161,6 +165,7 @@ describe("buildPilotDestinations — Rubber Ducky Waddle", () => {
     expect(d[1]).toMatchObject({
       provider: "Trail Running Association",
       action: "View approved TRA permit 8571",
+      shortLabel: "View TRA permit 8571",
       href: "https://races.tra-uk.org/race-directory/view/7709",
       destinationRole: "licence_record",
     });
@@ -168,6 +173,7 @@ describe("buildPilotDestinations — Rubber Ducky Waddle", () => {
       roleLabel: "Course",
       provider: "Saturn Running",
       action: "View course map",
+      shortLabel: "Course map",
       href: "https://www.saturnrunning.co.uk/e/the-rubber-ducky-waddle-14932/route-maps",
       destinationRole: "official_information",
       linkType: "organiser-other",
@@ -201,6 +207,7 @@ describe("buildPilotDestinations — Sedgefield Serpentine 2026", () => {
     expect(d[0]).toMatchObject({
       provider: "Sport:80",
       action: "Enter event",
+      shortLabel: "Enter via Sport:80",
       href: SEDGEFIELD_ROW.entry_url,
       destinationRole: "booking_destination",
       linkType: "entry",
@@ -208,18 +215,27 @@ describe("buildPilotDestinations — Sedgefield Serpentine 2026", () => {
     expect(d[1]).toMatchObject({
       provider: "Sedgefield Harriers",
       action: "Visit official race page",
+      shortLabel: "Sedgefield Harriers website",
       href: SEDGEFIELD_ROW.organiser_url,
     });
     expect(d[2]).toMatchObject({
       roleLabel: "Governing-body listing",
       provider: "England Athletics",
       action: "View England Athletics listing",
+      shortLabel: "England Athletics listing",
       href: SEDGEFIELD_ROW.source_url,
       destinationRole: "official_information",
       linkType: "organiser-other",
     });
-    expect(d[3]).toMatchObject({ action: "Read 2026 athlete information" });
-    expect(d[4]).toMatchObject({ roleLabel: "Course", action: "View 2026 course map" });
+    expect(d[3]).toMatchObject({
+      action: "Read 2026 athlete information",
+      shortLabel: "Athlete information",
+    });
+    expect(d[4]).toMatchObject({
+      roleLabel: "Course",
+      action: "View 2026 course map",
+      shortLabel: "Course map",
+    });
   });
 
   it("never labels the listing as a licence or approval and has no results destination", () => {
@@ -242,11 +258,13 @@ describe("buildPilotDestinations — Sedgefield Serpentine 2026", () => {
 describe("buildPilotDestinations — Hertfordshire Half Marathon & 10K", () => {
   const d = buildPilotDestinations(HERTS_ROW);
 
-  it("returns entry, official details and both Strava courses", () => {
-    expect(d.map((x) => x.role)).toEqual(["entry", "official_details", "course", "course"]);
+  it("returns exactly the two reviewed outbound destinations", () => {
+    expect(d.map((x) => x.role)).toEqual(["entry", "official_details"]);
+    expect(d).toHaveLength(2);
     expect(d[0]).toMatchObject({
       provider: "RunThrough",
       action: "Enter event",
+      shortLabel: "Enter with RunThrough",
       href: HERTS_ROW.entry_url,
       destinationRole: "booking_destination",
       linkType: "entry",
@@ -254,19 +272,17 @@ describe("buildPilotDestinations — Hertfordshire Half Marathon & 10K", () => {
     expect(d[1]).toMatchObject({
       provider: "Hertfordshire Half Marathon",
       action: "Visit official event website",
+      shortLabel: "Herts Half website",
       href: HERTS_ROW.organiser_url,
     });
-    expect(d[2]).toMatchObject({
-      provider: "Strava",
-      action: "View Half Marathon course",
-      href: "https://www.strava.com/routes/3154410119536065762",
-      destinationRole: "official_information",
-    });
-    expect(d[3]).toMatchObject({
-      provider: "Strava",
-      action: "View 10K course",
-      href: "https://www.strava.com/routes/3154410864891912034",
-    });
+  });
+
+  it("contains no Strava course destinations", () => {
+    const json = JSON.stringify(d);
+    expect(json).not.toContain("strava.com");
+    expect(json).not.toContain("3154410119536065762");
+    expect(json).not.toContain("3154410864891912034");
+    expect(d.filter((x) => x.role === "course")).toHaveLength(0);
   });
 
   it("never leaks the private runABC provenance and asserts no governance", () => {
