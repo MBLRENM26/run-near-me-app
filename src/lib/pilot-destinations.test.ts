@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { buildPilotDestinations } from "./pilot-destinations";
+import { buildPilotDestinations, resolvePilotCandidates } from "./pilot-destinations";
 import { classifyEventLink, isEntryPlatformHost } from "./link-trust";
 
 const SATURN_ROW = {
   id: "adb1a4f8-504d-44bd-99d0-94d8b6346542",
   organiser: "Saturn Running",
+  organiser_type: "unknown",
   organiser_url: "https://www.saturnrunning.co.uk/e/im-not-throwing-away-my-shot-run-14793",
   entry_url: "https://www.saturnrunning.co.uk/e/im-not-throwing-away-my-shot-run-14793",
   source: "tra",
@@ -17,6 +18,7 @@ const SATURN_ROW = {
 const FNUL_ROW = {
   id: "2eda5231-ac29-4b4d-bebd-e4f98dd24bf6",
   organiser: "Friday Night Under the Lights 5K",
+  organiser_type: "unknown",
   organiser_url: "https://www.fridaynightunderthelights5k.co.uk/",
   entry_url: "https://data.opentrack.run/en-gb/x/2026/GBR/fnulsept5k/",
   source: "england-athletics",
@@ -53,10 +55,30 @@ describe("buildPilotDestinations — Saturn manifest", () => {
     expect(d[1].supportingText).toBeUndefined();
   });
 
-  it("does not render a separate official-details link (identical URL)", () => {
+  it("dedupes the official-details candidate that shares the entry URL", () => {
+    // The Saturn manifest genuinely contains an official-details candidate on
+    // the same occurrence URL; entry > official_details must remove it.
+    const raw = resolvePilotCandidates([
+      {
+        role: "entry",
+        provider: "Saturn Running",
+        action: "View entry options",
+        href: SATURN_ROW.entry_url,
+        destinationRole: "booking_destination",
+      },
+      {
+        role: "official_details",
+        provider: "Saturn Running",
+        action: "View official race details",
+        href: SATURN_ROW.entry_url,
+        destinationRole: "official_information",
+      },
+    ]);
+    expect(raw.map((x) => x.role)).toEqual(["entry"]);
+
+    expect(d).toHaveLength(2);
     expect(d.filter((x) => x.role === "official_details")).toHaveLength(0);
-    const occurrences = d.filter((x) => x.href === SATURN_ROW.entry_url);
-    expect(occurrences).toHaveLength(1);
+    expect(d.filter((x) => x.href === SATURN_ROW.entry_url)).toHaveLength(1);
   });
 });
 
@@ -95,6 +117,7 @@ describe("buildPilotDestinations — fail-closed", () => {
       buildPilotDestinations({
         id: "00000000-0000-0000-0000-000000000000",
         organiser: "Saturn Running",
+        organiser_type: "unknown",
         organiser_url: SATURN_ROW.organiser_url,
         entry_url: SATURN_ROW.entry_url,
         source: "tra",
@@ -122,9 +145,36 @@ describe("buildPilotDestinations — fail-closed", () => {
     expect(buildPilotDestinations(null)).toEqual([]);
   });
 
-  it("drops untrusted/invalid destination URLs before rendering", () => {
-    // Trust gate proof: an aggregator or malformed URL is never trusted, so
-    // the same gate the manifest uses would drop it.
+  it("returns empty when organiser_type drifts", () => {
+    expect(buildPilotDestinations({ ...SATURN_ROW, organiser_type: "club" })).toEqual([]);
+    expect(buildPilotDestinations({ ...FNUL_ROW, organiser_type: null })).toEqual([]);
+  });
+
+  it("drops untrusted/invalid destination URLs in the candidate resolver", () => {
+    const out = resolvePilotCandidates([
+      {
+        role: "entry",
+        provider: "Aggregator",
+        action: "View entry options",
+        href: "https://findarace.com/race/x",
+        destinationRole: "booking_destination",
+      },
+      {
+        role: "official_details",
+        provider: "Broken",
+        action: "Visit official race website",
+        href: "not a url",
+        destinationRole: "official_information",
+      },
+      {
+        role: "licence",
+        provider: "Trail Running Association",
+        action: "View TRA permit 8570",
+        href: "https://races.tra-uk.org/race-directory/view/7708",
+        destinationRole: "licence_record",
+      },
+    ]);
+    expect(out.map((x) => x.role)).toEqual(["licence"]);
     expect(classifyEventLink("https://findarace.com/race/x").kind).toBe("untrusted");
     expect(classifyEventLink("not a url").kind).toBe("invalid");
   });

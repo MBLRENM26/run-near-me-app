@@ -23,7 +23,6 @@ import {
   slugStem,
   type IndexabilityResult,
   type SiblingEvent,
-
 } from "@/lib/event-indexability";
 import { hasOrganiserOwnedLink, hasDiscoverableLink } from "@/lib/link-trust";
 import { buildPilotDestinations } from "@/lib/pilot-destinations";
@@ -194,7 +193,6 @@ export const getIndexableEventSlugsForSitemap = createServerFn({ method: "GET" }
 
       .map((r) => ({ slug: r.slug, sort_date: r.sort_date }));
   });
-
 
 export const lookupEventSlug = createServerFn({ method: "GET" })
   .inputValidator((input: unknown) => slugSchema.parse(input))
@@ -497,7 +495,6 @@ export const getEventsByRegionAndDistance = createServerFn({ method: "GET" })
     };
   });
 
-
 export type RegionDistanceMatrixRow = {
   regionSlug: string;
   regionName: string;
@@ -688,7 +685,6 @@ export const getEventPageData = createServerFn({ method: "GET" })
       .in("status", ["ACTIVE", "DUPLICATE", "HIDDEN"])
       .maybeSingle();
 
-
     if (error) throw new Error(error.message);
     if (!row) {
       throw notFound();
@@ -761,6 +757,7 @@ export const getEventPageData = createServerFn({ method: "GET" })
     const destinations = buildPilotDestinations({
       id: eventRow.id,
       organiser: eventRow.organiser,
+      organiser_type: eventRow.organiser_type,
       organiser_url: eventRow.organiser_url,
       entry_url: eventRow.entry_url,
       source: eventRow.source,
@@ -784,8 +781,6 @@ export const getEventPageData = createServerFn({ method: "GET" })
     void _source;
     void _source_url;
     const event = eventPublic as EventDetail;
-
-
 
     const { data: courseRows, error: courseError } = await supabaseAdmin
       .from("event_course_sources")
@@ -811,7 +806,6 @@ export const getEventPageData = createServerFn({ method: "GET" })
       raceProfile: event.race_profile,
       sources: (courseError ? [] : (courseRows ?? [])) as StoredCourseSource[],
     });
-
 
     // Prefer tag-based primary distance; fall back to legacy substring for
     // rows that haven't been backfilled yet.
@@ -1062,7 +1056,6 @@ export const getEventPageData = createServerFn({ method: "GET" })
       }
     }
 
-
     // ----- Same weekend nearby -----
     // County-first, region fallback fill up to 6. Rows without county AND
     // region (TRA, some parkrun) still can't render — that's fine.
@@ -1168,7 +1161,6 @@ export const getEventPageData = createServerFn({ method: "GET" })
       }
     }
 
-
     // ----- Indexability decision -----
     // Find sibling instances by TWO signals, unioned by id:
     //  (a) Normalised name match — catches "Trunce Series Race N",
@@ -1244,7 +1236,6 @@ export const getEventPageData = createServerFn({ method: "GET" })
       Array.from(sibMap.values()),
       todayIso,
     );
-
 
     // P3: emit real HTTP X-Robots-Tag header for non-indexable events
     // (slug-suffix dupes, orphan series-instances, past-but-within-90d).
@@ -1359,6 +1350,4 @@ export const getEventsByTaxonomy = createServerFn({ method: "GET" })
       total: trusted.length,
     };
   });
-
-
 
