@@ -53,7 +53,17 @@ describe("governanceDisplay state awareness", () => {
   it("accepts only a trimmed, case-insensitive exact 'true'", () => {
     expect(isLicensedTrue(" TRUE ")).toBe(true);
     expect(governanceDisplay("tra", " True ").permitted).toBe(true);
-    for (const value of [null, undefined, "", "false", "FALSE", "unknown", "true-ish", "1", "yes"]) {
+    for (const value of [
+      null,
+      undefined,
+      "",
+      "false",
+      "FALSE",
+      "unknown",
+      "true-ish",
+      "1",
+      "yes",
+    ]) {
       expect(governanceDisplay("tra", value).permitted).toBe(false);
       expect(governanceDisplay("tra", value).label).toBe("Trail Running Association");
     }

@@ -104,13 +104,11 @@ export function governanceDisplay(
   const neutral = governanceLabel(governance);
   if (!neutral) return { label: null, permitted: false };
   if (!isLicensedTrue(licensed)) return { label: neutral, permitted: false };
-  const permittedLabel =
-    GOVERNANCE_PERMITTED_LABELS[governance as Governance] ?? null;
+  const permittedLabel = GOVERNANCE_PERMITTED_LABELS[governance as Governance] ?? null;
   return permittedLabel
     ? { label: permittedLabel, permitted: true }
     : { label: neutral, permitted: false };
 }
-
 
 const ORGANISER_TYPE_LABELS: Record<OrganiserType, string | null> = {
   club: "Club-organised",

@@ -1,20 +1,13 @@
 import { ShieldCheck, Users, Flag } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  governanceDisplay,
-  organiserTypeLabel,
-  raceProfileLabel,
-} from "@/lib/event-taxonomy";
+import { governanceDisplay, organiserTypeLabel, raceProfileLabel } from "@/lib/event-taxonomy";
 
 type Tone = "trust" | "neutral" | "accent";
 
 const toneClass: Record<Tone, string> = {
-  trust:
-    "border-primary/30 bg-primary/10 text-primary",
-  neutral:
-    "border-border bg-muted/60 text-foreground",
-  accent:
-    "border-accent/40 bg-accent/10 text-foreground",
+  trust: "border-primary/30 bg-primary/10 text-primary",
+  neutral: "border-border bg-muted/60 text-foreground",
+  accent: "border-accent/40 bg-accent/10 text-foreground",
 };
 
 function Badge({
@@ -56,12 +49,7 @@ interface Props {
  * `licensed` is an evidenced exact "true"; otherwise it is neutral
  * association context, never a permit claim.
  */
-export function TrustProfileStrip({
-  governance,
-  licensed,
-  organiser_type,
-  race_profile,
-}: Props) {
+export function TrustProfileStrip({ governance, licensed, organiser_type, race_profile }: Props) {
   const gov = governanceDisplay(governance, licensed);
   const org = organiserTypeLabel(organiser_type);
   const profile = raceProfileLabel(race_profile);
@@ -71,11 +59,7 @@ export function TrustProfileStrip({
   return (
     <div className="mt-4 flex flex-wrap gap-2" aria-label="Event profile">
       {gov.label && (
-        <Badge
-          icon={ShieldCheck}
-          label={gov.label}
-          tone={gov.permitted ? "trust" : "neutral"}
-        />
+        <Badge icon={ShieldCheck} label={gov.label} tone={gov.permitted ? "trust" : "neutral"} />
       )}
       {org && <Badge icon={Users} label={org} tone="neutral" />}
       {profile && <Badge icon={Flag} label={profile} tone="accent" />}
