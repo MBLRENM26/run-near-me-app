@@ -45,16 +45,13 @@ export function DestinationPanel({
       aria-labelledby="race-links"
       className="mt-8 rounded-xl border border-primary/15 bg-primary/[0.04] px-4 py-3 sm:px-5 sm:py-4"
     >
-      <h2
-        id="race-links"
-        className="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
-      >
+      <h2 id="race-links" className="sr-only">
         Race links
       </h2>
 
-      <div className="mt-2.5 flex flex-col gap-2.5 sm:flex-row sm:items-stretch">
+      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-start">
         {(primary || awaitingResults) && (
-          <div className="sm:w-[34%] lg:w-[20%] sm:shrink-0">
+          <div className="w-full sm:w-[200px] sm:shrink-0">
             {primary ? (
               <a
                 href={primary.href}
@@ -62,14 +59,14 @@ export function DestinationPanel({
                 rel="noopener noreferrer"
                 onClick={() => onSelect?.(primary)}
                 aria-label={destinationAccessibleName(primary)}
-                className="flex h-full min-h-11 w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                className="flex h-[54px] w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
               >
                 <span>{destinationLabel(primary)}</span>
                 <ArrowUpRight className="h-4 w-4 shrink-0" aria-hidden="true" />
               </a>
             ) : (
               <div
-                className="flex h-full min-h-11 w-full flex-col items-center justify-center rounded-lg border border-border bg-muted/50 px-3 text-center"
+                className="flex h-[54px] w-full flex-col items-center justify-center rounded-lg border border-border bg-muted/50 px-3 text-center"
                 role="status"
               >
                 <span className="text-sm font-semibold text-foreground">Race completed</span>
@@ -81,18 +78,18 @@ export function DestinationPanel({
 
         {secondary.length > 0 && (
           <ul
-            className={`grid flex-1 gap-2.5 ${secondaryGridClass(secondary.length)}`}
+            className={`grid w-full gap-2.5 sm:w-auto ${secondaryGridClass(secondary.length)}`}
             data-secondary-count={secondary.length}
           >
             {secondary.map((d) => (
-              <li key={`${d.role}-${d.href}`} className="min-w-0">
+              <li key={`${d.role}-${d.href}`} className="w-full sm:w-[170px]">
                 <a
                   href={d.href}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => onSelect?.(d)}
                   aria-label={destinationAccessibleName(d)}
-                  className="flex h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-2.5 text-center text-[13px] font-medium leading-tight sm:text-sm text-foreground hover:border-primary/40 hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  className="flex h-[46px] w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-2.5 text-center text-[13px] font-medium leading-tight text-foreground hover:border-primary/40 hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:text-sm"
                 >
                   <span>{destinationLabel(d)}</span>
                   <ArrowUpRight className="h-3.5 w-3.5 shrink-0 opacity-60" aria-hidden="true" />
@@ -105,3 +102,4 @@ export function DestinationPanel({
     </section>
   );
 }
+
