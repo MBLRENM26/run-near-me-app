@@ -11,6 +11,24 @@ describe("classifyDestinationRole", () => {
     ).toBe("booking_destination");
   });
 
+  it("classifies the OpenTrack occurrence URL as booking_destination", () => {
+    expect(
+      classifyDestinationRole("https://data.opentrack.run/en-gb/x/2026/GBR/fnulsept5k/"),
+    ).toBe("booking_destination");
+  });
+
+  it("stays conservative for a bare OpenTrack homepage", () => {
+    expect(classifyDestinationRole("https://data.opentrack.run/")).toBe(
+      "official_information",
+    );
+  });
+
+  it("never infers licence_record", () => {
+    expect(
+      classifyDestinationRole("https://races.tra-uk.org/race-directory/view/7708"),
+    ).toBe("official_information");
+  });
+
   it("does not claim booking for a bare registration-provider homepage", () => {
     expect(classifyDestinationRole("https://www.sientries.co.uk/")).toBe(
       "official_information",
