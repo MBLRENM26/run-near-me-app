@@ -198,9 +198,7 @@ export function resolvePilotCandidates(candidates: Candidate[]): PublicDestinati
   const out: PublicDestination[] = [];
   const seen = new Set<string>();
 
-  const ordered = [...candidates].sort(
-    (x, y) => ROLE_PRECEDENCE[x.role] - ROLE_PRECEDENCE[y.role],
-  );
+  const ordered = [...candidates].sort((x, y) => ROLE_PRECEDENCE[x.role] - ROLE_PRECEDENCE[y.role]);
 
   for (const candidate of ordered) {
     const link = classifyEventLink(candidate.href);

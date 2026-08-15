@@ -90,9 +90,7 @@ export function isEntryPlatformHost(host: string | null | undefined): boolean {
 export function normalizeUrl(raw: string | null | undefined): URL | null {
   const trimmed = raw?.trim();
   if (!trimmed) return null;
-  const withProtocol = /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed)
-    ? trimmed
-    : `https://${trimmed}`;
+  const withProtocol = /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
   try {
     const u = new URL(withProtocol);
     if (u.protocol !== "http:" && u.protocol !== "https:") return null;
