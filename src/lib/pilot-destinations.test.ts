@@ -259,6 +259,55 @@ describe("buildPilotDestinations — Sedgefield Serpentine 2026", () => {
   });
 });
 
+describe("buildPilotDestinations — Sedgefield organiser-identity transition", () => {
+  const POST = { ...SEDGEFIELD_ROW, organiser: "Sedgefield Harriers", organiser_type: "club" };
+
+  it("emits identical destinations for the pre- and post-mutation identity pairs", () => {
+    const pre = buildPilotDestinations(SEDGEFIELD_ROW);
+    const post = buildPilotDestinations(POST);
+    expect(pre).toHaveLength(5);
+    expect(post).toHaveLength(5);
+    expect(post).toEqual(pre);
+    expect(post.map((x) => [x.role, x.href, x.shortLabel ?? null, x.destinationRole])).toEqual(
+      pre.map((x) => [x.role, x.href, x.shortLabel ?? null, x.destinationRole]),
+    );
+  });
+
+  it("never accepts cross-pairs, variants or third values", () => {
+    const rejected = [
+      { organiser: null, organiser_type: "club" },
+      { organiser: "Sedgefield Harriers", organiser_type: "governing_body" },
+      { organiser: "sedgefield harriers", organiser_type: "club" },
+      { organiser: "Sedgefield Harriers ", organiser_type: "club" },
+      { organiser: "Sedgefield Harriers AC", organiser_type: "club" },
+      { organiser: "Sedgefield Harriers", organiser_type: "unknown" },
+      { organiser: "RunThrough", organiser_type: "club" },
+    ];
+    for (const identity of rejected) {
+      expect(buildPilotDestinations({ ...SEDGEFIELD_ROW, ...identity })).toEqual([]);
+    }
+  });
+
+  it("still fails closed on non-identity drift in the post-mutation state", () => {
+    expect(buildPilotDestinations({ ...POST, source_url: "" })).toEqual([]);
+    expect(
+      buildPilotDestinations({ ...POST, organiser_url: "https://sedgefieldharriers.co.uk/" }),
+    ).toEqual([]);
+    expect(buildPilotDestinations({ ...POST, governance: "tra" })).toEqual([]);
+  });
+
+  it("does not widen identity acceptance for any other pilot", () => {
+    expect(
+      buildPilotDestinations({
+        ...HERTS_ROW,
+        organiser: "Sedgefield Harriers",
+        organiser_type: "club",
+      }),
+    ).toEqual([]);
+    expect(buildPilotDestinations({ ...HERTS_ROW, organiser_type: "club" })).toEqual([]);
+  });
+});
+
 describe("buildPilotDestinations — Hertfordshire Half Marathon & 10K", () => {
   const d = buildPilotDestinations(HERTS_ROW);
 

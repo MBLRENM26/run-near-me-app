@@ -116,6 +116,14 @@ interface PilotSpec {
     source_url: string;
     governance: string;
   };
+  /**
+   * TRANSITION ONLY. Additional exact `(organiser, organiser_type)` pairs
+   * accepted as whole pairs — never cross-pairs, spelling variants or any
+   * third value. Retained so the reviewed signposts survive a deploy that
+   * precedes the audited organiser-identity row update. Remove in a
+   * separately verified cleanup once the production mutation is stable.
+   */
+  acceptedIdentityAlternatives?: Array<{ organiser: string | null; organiser_type: string }>;
   destinations: ReviewedCandidate[];
 }
 
@@ -276,6 +284,14 @@ const PILOTS: Record<string, PilotSpec> = {
       source_url: SEDGEFIELD_EA_LISTING,
       governance: "england_athletics",
     },
+    // TRANSITION ONLY: pre-mutation identity state is the `accepted` pair above
+    // (organiser null + governing_body); the audited QL1 data update will move
+    // this row to Sedgefield Harriers + club. Both whole pairs are accepted so
+    // the reviewed signposts survive deploy-before-row-update. Remove this
+    // alternative in a separately verified cleanup after the production
+    // mutation is stable.
+    acceptedIdentityAlternatives: [{ organiser: "Sedgefield Harriers", organiser_type: "club" }],
+
     destinations: [
       {
         role: "entry",
@@ -368,14 +384,25 @@ export function buildPilotDestinations(row: PilotEventRow | null | undefined): P
   if (!spec) return [];
 
   const a = spec.accepted;
+  // Identity is matched as a whole pair: either the `accepted` pair or one of
+  // the transition alternatives. Cross-pairs are never accepted.
+  const identityPairs = [
+    { organiser: a.organiser, organiser_type: a.organiser_type },
+    ...(spec.acceptedIdentityAlternatives ?? []),
+  ];
+  const rowOrganiser = row.organiser ?? null;
+  const rowOrganiserType = row.organiser_type ?? null;
+  const identityMatches = identityPairs.some(
+    (pair) => rowOrganiser === pair.organiser && rowOrganiserType === pair.organiser_type,
+  );
   const matches =
-    (row.organiser ?? null) === a.organiser &&
-    (row.organiser_type ?? null) === a.organiser_type &&
+    identityMatches &&
     (row.organiser_url ?? null) === a.organiser_url &&
     (row.entry_url ?? null) === a.entry_url &&
     (row.source ?? null) === a.source &&
     (row.source_url ?? null) === a.source_url &&
     (row.governance ?? null) === a.governance;
+
   if (!matches) return [];
 
   return resolvePilotCandidates(spec.destinations);
