@@ -193,9 +193,8 @@ describe("DestinationPanel count-aware geometry", () => {
 
   it("gives every secondary signpost identical height and shape", () => {
     const html = render(SEDGEFIELD_ROW);
-    expect(html.split("h-11 w-full items-center justify-center rounded-lg border").length - 1).toBe(
-      4,
-    );
+    const shape = "flex h-11 w-full items-center justify-center gap-1.5 rounded-lg border";
+    expect(html.split(shape).length - 1).toBe(4);
   });
 });
 
