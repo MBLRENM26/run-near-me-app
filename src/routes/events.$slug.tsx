@@ -51,6 +51,7 @@ import {
   terrainHubFor,
 } from "@/lib/event-internal-links";
 import { buildEventCtas } from "@/lib/event-ctas";
+import { DestinationPanel } from "@/components/events/DestinationPanel";
 
 
 function regionSlugFromName(name: string | null | undefined): string | null {
@@ -397,6 +398,7 @@ function EventDetailPage() {
     matchingClub,
     otherRacesByOrganiser,
     courseProfile,
+    destinations,
   } = loaderData;
 
   // Site-wide link-trust policy: aggregator URLs are never rendered as
@@ -484,6 +486,10 @@ function EventDetailPage() {
     hasOfficialLink: !!primaryCta,
     regionCount: related.totalCount,
   });
+
+  // Reviewed wayfinding pilot: the destination panel replaces the generic CTA
+  // block for matching future/today events only. Past events keep legacy UI.
+  const showPilotPanel = !isPast && (destinations?.length ?? 0) > 0;
 
   // No trustworthy official link → invite the organiser to claim the listing.
   const showClaim = !primaryCta && !isPast;
@@ -644,7 +650,7 @@ function EventDetailPage() {
           {/* Organiser identity is a supported fact and must render even when
               there is no trusted outbound CTA (aggregator-only entry_url,
               missing organiser_url). No external link is invented here. */}
-          {!primaryCta && (
+          {(!primaryCta || showPilotPanel) && (
             <OrganiserLine
               organiser={e.organiser}
               matchingClub={matchingClub}
@@ -652,7 +658,27 @@ function EventDetailPage() {
             />
           )}
 
-          {primaryCta && (
+          {showPilotPanel && (
+            <DestinationPanel
+              destinations={destinations}
+              onSelect={(d) =>
+                trackOutboundClick({
+                  slug: e.slug,
+                  region: e.region,
+                  link_type: d.linkType,
+                  proximity,
+                  event_name: e.name,
+                  distance: e.distances ?? "unknown",
+                  discipline: e.discipline ?? "road",
+                  entry_domain: hostnameOf(d.href),
+                  destination_role: d.destinationRole,
+                })
+              }
+            />
+          )}
+
+          {primaryCta && !showPilotPanel && (
+
 
             <div className="mt-8 rounded-2xl border border-primary/20 bg-primary/5 p-5 sm:p-6">
               <Button

@@ -66,6 +66,9 @@ const ENTRY_PLATFORM_HOSTS = [
   "ukrunningevents.co.uk",
   "nice-work.org.uk",
   "raceforlife.cancerresearchuk.org",
+  // Entry / results platform used by athletics events (data.opentrack.run).
+  "opentrack.run",
+
   // Governing-body multi-tenant entry platforms (covers e.g.
   // scottishathletics.justgo.com, englandathletics.sport80.com, plus any
   // other club/federation tenants on the same platform).

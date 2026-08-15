@@ -26,6 +26,7 @@ import {
 
 } from "@/lib/event-indexability";
 import { hasOrganiserOwnedLink, hasDiscoverableLink } from "@/lib/link-trust";
+import { buildPilotDestinations } from "@/lib/pilot-destinations";
 import { DISCOVERY_EVENT_COLUMNS, UK_BOUNDS_OR_NULL } from "@/lib/events-query";
 import {
   courseProfileFromSources,
@@ -642,6 +643,13 @@ export type EventPageData = {
   /** Organiser-published route/elevation evidence, loaded server-side. */
   courseProfile: CourseProfile | null;
   /**
+   * Reviewed public "Where to go next" destinations (RENM wayfinding pilot).
+   * Empty for every non-pilot or drifted row. Derived server-side; the
+   * underlying `source` / `source_url` fields are never returned.
+   */
+  destinations: import("@/lib/pilot-destinations").PublicDestination[];
+
+  /**
    * Search-index decision for this event page. Computed server-side
    * from past/slug-suffix/orphan/duplicate-sibling rules so the
    * `head()` function (which has no DB access) can wire up the
@@ -671,7 +679,10 @@ export const getEventPageData = createServerFn({ method: "GET" })
     const { data: row, error } = await supabaseAdmin
       .from("events")
       .select(
-        "id, slug, name, date_raw, date_from, date_to, sort_date, town, county, region, distances, discipline, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, organiser, organiser_club_id, is_featured, date_is_estimated, governance, organiser_type, race_profile, created_at, norm_created_at, lat, lng, status, duplicate_of",
+        // `source` / `source_url` are read for pilot verification only and are
+        // stripped from the returned public event object below.
+        "id, slug, name, date_raw, date_from, date_to, sort_date, town, county, region, distances, discipline, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, organiser, organiser_club_id, is_featured, date_is_estimated, governance, organiser_type, race_profile, created_at, norm_created_at, lat, lng, status, duplicate_of, source, source_url",
+
       )
       .eq("slug", data.slug)
       .in("status", ["ACTIVE", "DUPLICATE", "HIDDEN"])
@@ -741,7 +752,21 @@ export const getEventPageData = createServerFn({ method: "GET" })
       organiser_club_id: string | null;
       status: string;
       duplicate_of: string | null;
+      source: string | null;
+      source_url: string | null;
     };
+    // Reviewed wayfinding pilot: derived here, where provenance is visible.
+    // `source` / `source_url` never leave this handler except as the single
+    // intentional public TRA licence destination.
+    const destinations = buildPilotDestinations({
+      id: eventRow.id,
+      organiser: eventRow.organiser,
+      organiser_url: eventRow.organiser_url,
+      entry_url: eventRow.entry_url,
+      source: eventRow.source,
+      source_url: eventRow.source_url,
+      governance: eventRow.governance,
+    });
     const {
       lat: eventLat,
       lng: eventLng,
@@ -750,11 +775,17 @@ export const getEventPageData = createServerFn({ method: "GET" })
       organiser_club_id: eventOrganiserClubId,
       status: _status,
       duplicate_of: _duplicate_of,
+      source: _source,
+      source_url: _source_url,
       ...eventPublic
     } = eventRow;
     void _status;
     void _duplicate_of;
+    void _source;
+    void _source_url;
     const event = eventPublic as EventDetail;
+
+
 
     const { data: courseRows, error: courseError } = await supabaseAdmin
       .from("event_course_sources")
@@ -1235,6 +1266,7 @@ export const getEventPageData = createServerFn({ method: "GET" })
       matchingClub,
       otherRacesByOrganiser,
       courseProfile,
+      destinations,
       indexability,
     };
   });

@@ -26,6 +26,12 @@ export type DestinationRole =
   | "booking_destination"
   | "ballot_waitlist"
   | "official_information"
+  /**
+   * Reviewed governing-body licence / permit record. Only ever supplied
+   * explicitly by a reviewed destination manifest — `classifyDestinationRole`
+   * never infers it.
+   */
+  | "licence_record"
   | "unknown";
 
 /** Explicit ballot / waitlist / lottery evidence tokens. */

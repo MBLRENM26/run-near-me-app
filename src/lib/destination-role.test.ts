@@ -3,36 +3,50 @@ import { classifyDestinationRole } from "./destination-role";
 
 describe("classifyDestinationRole", () => {
   it("classifies event-specific registration-provider URLs as booking_destination", () => {
-    expect(
-      classifyDestinationRole("https://www.sientries.co.uk/event.php?elid=12345"),
-    ).toBe("booking_destination");
-    expect(
-      classifyDestinationRole("https://scottishathletics.justgo.com/events/abc"),
-    ).toBe("booking_destination");
+    expect(classifyDestinationRole("https://www.sientries.co.uk/event.php?elid=12345")).toBe(
+      "booking_destination",
+    );
+    expect(classifyDestinationRole("https://scottishathletics.justgo.com/events/abc")).toBe(
+      "booking_destination",
+    );
+  });
+
+  it("classifies the OpenTrack occurrence URL as booking_destination", () => {
+    expect(classifyDestinationRole("https://data.opentrack.run/en-gb/x/2026/GBR/fnulsept5k/")).toBe(
+      "booking_destination",
+    );
+  });
+
+  it("stays conservative for a bare OpenTrack homepage", () => {
+    expect(classifyDestinationRole("https://data.opentrack.run/")).toBe("official_information");
+  });
+
+  it("never infers licence_record", () => {
+    expect(classifyDestinationRole("https://races.tra-uk.org/race-directory/view/7708")).toBe(
+      "official_information",
+    );
   });
 
   it("does not claim booking for a bare registration-provider homepage", () => {
-    expect(classifyDestinationRole("https://www.sientries.co.uk/")).toBe(
-      "official_information",
-    );
+    expect(classifyDestinationRole("https://www.sientries.co.uk/")).toBe("official_information");
   });
 
   it("classifies trusted non-booking destinations as official_information", () => {
     expect(classifyDestinationRole("https://www.londonmarathon.co.uk/")).toBe(
       "official_information",
     );
-    expect(
-      classifyDestinationRole("https://www.runbournemouth.com/races/10k"),
-    ).toBe("official_information");
+    expect(classifyDestinationRole("https://www.runbournemouth.com/races/10k")).toBe(
+      "official_information",
+    );
   });
 
   it("uses explicit URL evidence for ballot_waitlist", () => {
-    expect(
-      classifyDestinationRole("https://www.londonmarathon.co.uk/enter/ballot"),
-    ).toBe("ballot_waitlist");
-    expect(
-      classifyDestinationRole("https://entrycentral.com/race?mode=waitlist"),
-    ).toBe("ballot_waitlist");
+    expect(classifyDestinationRole("https://www.londonmarathon.co.uk/enter/ballot")).toBe(
+      "ballot_waitlist",
+    );
+    expect(classifyDestinationRole("https://entrycentral.com/race?mode=waitlist")).toBe(
+      "ballot_waitlist",
+    );
   });
 
   it("uses explicit CTA evidence for ballot_waitlist", () => {
@@ -42,9 +56,9 @@ describe("classifyDestinationRole", () => {
         "Join the waiting list",
       ),
     ).toBe("ballot_waitlist");
-    expect(
-      classifyDestinationRole("https://example-race.co.uk/entries", "Enter ballot"),
-    ).toBe("ballot_waitlist");
+    expect(classifyDestinationRole("https://example-race.co.uk/entries", "Enter ballot")).toBe(
+      "ballot_waitlist",
+    );
   });
 
   it("returns unknown for aggregator, missing or unparseable URLs", () => {
@@ -55,8 +69,8 @@ describe("classifyDestinationRole", () => {
   });
 
   it("does not infer ballot from unrelated CTA labels", () => {
-    expect(
-      classifyDestinationRole("https://example-race.co.uk/entries", "Enter now"),
-    ).toBe("official_information");
+    expect(classifyDestinationRole("https://example-race.co.uk/entries", "Enter now")).toBe(
+      "official_information",
+    );
   });
 });
