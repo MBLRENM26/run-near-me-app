@@ -761,6 +761,7 @@ export const getEventPageData = createServerFn({ method: "GET" })
     const destinations = buildPilotDestinations({
       id: eventRow.id,
       organiser: eventRow.organiser,
+      organiser_type: eventRow.organiser_type,
       organiser_url: eventRow.organiser_url,
       entry_url: eventRow.entry_url,
       source: eventRow.source,
@@ -784,8 +785,6 @@ export const getEventPageData = createServerFn({ method: "GET" })
     void _source;
     void _source_url;
     const event = eventPublic as EventDetail;
-
-
 
     const { data: courseRows, error: courseError } = await supabaseAdmin
       .from("event_course_sources")

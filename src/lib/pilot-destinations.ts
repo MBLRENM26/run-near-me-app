@@ -66,7 +66,7 @@ const LINK_TYPES: Record<DestinationRoleKind, EventCtaLinkType> = {
   licence: "organiser-other",
 };
 
-type Candidate = Omit<PublicDestination, "roleLabel" | "host" | "linkType">;
+export type Candidate = Omit<PublicDestination, "roleLabel" | "host" | "linkType">;
 
 interface PilotSpec {
   accepted: {
