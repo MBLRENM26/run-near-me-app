@@ -23,7 +23,7 @@ describe("organiser rendering without a trusted CTA", () => {
   });
 
   it("renders <OrganiserLine> outside the primary-CTA block", () => {
-    const ctaIndex = SOURCE.indexOf("{primaryCta && (");
+    const ctaIndex = SOURCE.indexOf("{primaryCta && !showPilotPanel && (");
     const noCtaIndex = SOURCE.indexOf("{(!primaryCta || showPilotPanel) && (");
     expect(noCtaIndex).toBeGreaterThan(-1);
     expect(ctaIndex).toBeGreaterThan(-1);
