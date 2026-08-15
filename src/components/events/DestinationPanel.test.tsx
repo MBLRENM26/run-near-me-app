@@ -76,11 +76,12 @@ const visibleText = (html: string) =>
 describe("DestinationPanel shell", () => {
   const html = render(SATURN_ROW);
 
-  it("renders the quieter labelled heading", () => {
+  it("keeps the heading accessible but screen-reader-only", () => {
     expect(html).toContain('aria-labelledby="race-links"');
-    expect(visibleText(html)).toContain("Race links");
+    expect(html).toContain('id="race-links" class="sr-only"');
     expect(html).not.toContain("Where to go next");
   });
+
 
   it("keeps external-link semantics", () => {
     expect(html).toContain('target="_blank"');
