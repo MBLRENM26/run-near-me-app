@@ -105,6 +105,12 @@ export type EventDetail = {
   is_featured: boolean;
   date_is_estimated: boolean;
   governance: string | null;
+  /**
+   * Canonical public licence state. Safe public metadata: free-text/legacy
+   * values are never rendered raw — see governanceDisplay() in
+   * src/lib/event-taxonomy.ts.
+   */
+  licensed: string | null;
   organiser_type: string | null;
   race_profile: string | null;
   created_at: string | null;
@@ -117,7 +123,7 @@ export const getEventBySlug = createServerFn({ method: "GET" })
     const { data: row, error } = await supabaseAdmin
       .from("events")
       .select(
-        "id, slug, name, date_raw, date_from, date_to, sort_date, town, county, region, distances, discipline, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, organiser, is_featured, date_is_estimated, governance, organiser_type, race_profile",
+        "id, slug, name, date_raw, date_from, date_to, sort_date, town, county, region, distances, discipline, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, organiser, is_featured, date_is_estimated, governance, licensed, organiser_type, race_profile",
       )
       .eq("slug", data.slug)
       .eq("status", "ACTIVE")
@@ -678,7 +684,7 @@ export const getEventPageData = createServerFn({ method: "GET" })
       .select(
         // `source` / `source_url` are read for pilot verification only and are
         // stripped from the returned public event object below.
-        "id, slug, name, date_raw, date_from, date_to, sort_date, town, county, region, distances, discipline, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, organiser, organiser_club_id, is_featured, date_is_estimated, governance, organiser_type, race_profile, created_at, norm_created_at, lat, lng, status, duplicate_of, source, source_url",
+        "id, slug, name, date_raw, date_from, date_to, sort_date, town, county, region, distances, discipline, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, organiser, organiser_club_id, is_featured, date_is_estimated, governance, licensed, organiser_type, race_profile, created_at, norm_created_at, lat, lng, status, duplicate_of, source, source_url",
 
       )
       .eq("slug", data.slug)

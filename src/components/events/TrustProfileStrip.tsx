@@ -1,20 +1,13 @@
 import { ShieldCheck, Users, Flag } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  governanceLabel,
-  organiserTypeLabel,
-  raceProfileLabel,
-} from "@/lib/event-taxonomy";
+import { governanceDisplay, organiserTypeLabel, raceProfileLabel } from "@/lib/event-taxonomy";
 
 type Tone = "trust" | "neutral" | "accent";
 
 const toneClass: Record<Tone, string> = {
-  trust:
-    "border-primary/30 bg-primary/10 text-primary",
-  neutral:
-    "border-border bg-muted/60 text-foreground",
-  accent:
-    "border-accent/40 bg-accent/10 text-foreground",
+  trust: "border-primary/30 bg-primary/10 text-primary",
+  neutral: "border-border bg-muted/60 text-foreground",
+  accent: "border-accent/40 bg-accent/10 text-foreground",
 };
 
 function Badge({
@@ -41,6 +34,8 @@ function Badge({
 
 interface Props {
   governance: string | null;
+  /** Canonical public licence state. Raw value is never rendered. */
+  licensed?: string | null;
   organiser_type: string | null;
   race_profile: string | null;
 }
@@ -49,17 +44,23 @@ interface Props {
  * Compact strip of trust/context badges on the event detail page.
  * Renders nothing when no field has a display value — no "Unknown"
  * placeholders and no scraped free-text ever appears here.
+ *
+ * The governance badge only earns the trust (green) tone when
+ * `licensed` is an evidenced exact "true"; otherwise it is neutral
+ * association context, never a permit claim.
  */
-export function TrustProfileStrip({ governance, organiser_type, race_profile }: Props) {
-  const gov = governanceLabel(governance);
+export function TrustProfileStrip({ governance, licensed, organiser_type, race_profile }: Props) {
+  const gov = governanceDisplay(governance, licensed);
   const org = organiserTypeLabel(organiser_type);
   const profile = raceProfileLabel(race_profile);
 
-  if (!gov && !org && !profile) return null;
+  if (!gov.label && !org && !profile) return null;
 
   return (
     <div className="mt-4 flex flex-wrap gap-2" aria-label="Event profile">
-      {gov && <Badge icon={ShieldCheck} label={gov} tone="trust" />}
+      {gov.label && (
+        <Badge icon={ShieldCheck} label={gov.label} tone={gov.permitted ? "trust" : "neutral"} />
+      )}
       {org && <Badge icon={Users} label={org} tone="neutral" />}
       {profile && <Badge icon={Flag} label={profile} tone="accent" />}
     </div>

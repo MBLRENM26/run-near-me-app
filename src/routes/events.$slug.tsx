@@ -644,9 +644,11 @@ function EventDetailPage() {
 
           <TrustProfileStrip
             governance={e.governance}
+            licensed={e.licensed}
             organiser_type={e.organiser_type}
             race_profile={e.race_profile}
           />
+
 
           {/* Organiser identity is a supported fact and must render even when
               there is no trusted outbound CTA (aggregator-only entry_url,
