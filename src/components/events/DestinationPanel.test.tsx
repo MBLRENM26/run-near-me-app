@@ -98,39 +98,48 @@ describe("DestinationPanel shell", () => {
 });
 
 describe("DestinationPanel concise visible labels", () => {
+  it("Saturn (2 links)", () => {
+    const text = visibleText(render(SATURN_ROW));
+    expect(text).toContain("Enter with Saturn Running");
+    expect(text).toContain("View TRA permit 8570");
+  });
+
   it("FNUL (2 links)", () => {
     const text = visibleText(render(FNUL_ROW));
-    expect(text).toContain("Enter race");
-    expect(text).toContain("Race website");
+    expect(text).toContain("Enter via OpenTrack");
+    expect(text).toContain("FNUL race website");
   });
 
   it("Rubber Ducky (3 links)", () => {
     const text = visibleText(render(DUCKY_ROW));
-    expect(text).toContain("Enter race");
-    expect(text).toContain("TRA permit");
+    expect(text).toContain("Enter with Saturn Running");
+    expect(text).toContain("View TRA permit 8571");
     expect(text).toContain("Course map");
   });
 
-  it("Hertfordshire (4 links) keeps the two distinct reviewed course labels", () => {
-    const text = visibleText(render(HERTS_ROW));
-    expect(text).toContain("Enter race");
-    expect(text).toContain("Race website");
-    expect(text).toContain("Half marathon course");
-    expect(text).toContain("10K course");
+  it("Hertfordshire (2 links, no Strava courses)", () => {
+    const html = render(HERTS_ROW);
+    const text = visibleText(html);
+    expect(text).toContain("Enter with RunThrough");
+    expect(text).toContain("Herts Half website");
+    expect(html).not.toContain("strava.com");
+    expect(html).not.toContain("3154410119536065762");
+    expect(html).not.toContain("3154410864891912034");
+    expect(html.split("<li").length - 1).toBe(1);
   });
 
   it("Sedgefield (5 links)", () => {
     const text = visibleText(render(SEDGEFIELD_ROW));
-    expect(text).toContain("Enter race");
-    expect(text).toContain("Race website");
-    expect(text).toContain("EA listing");
-    expect(text).toContain("Athlete info");
+    expect(text).toContain("Enter via Sport:80");
+    expect(text).toContain("Sedgefield Harriers website");
+    expect(text).toContain("England Athletics listing");
+    expect(text).toContain("Athlete information");
     expect(text).toContain("Course map");
   });
 });
 
 describe("DestinationPanel visual declutter", () => {
-  it("shows no visible role headings, provider lines, hosts or supporting copy", () => {
+  it("shows no visible provider lines, hosts or supporting copy", () => {
     for (const row of [SATURN_ROW, FNUL_ROW, DUCKY_ROW, SEDGEFIELD_ROW, HERTS_ROW]) {
       const text = visibleText(render(row));
       expect(text).not.toContain("Entry powered by Eventrac");
@@ -138,21 +147,37 @@ describe("DestinationPanel visual declutter", () => {
       expect(text).not.toContain("Official details");
       expect(text).not.toContain("saturnrunning.co.uk");
       expect(text).not.toContain("strava.com");
-      expect(text).not.toContain("Trail Running Association");
-      expect(text).not.toContain("England Athletics");
       expect(text).not.toContain("underline");
     }
   });
 
   it("retains role and provider context in accessible names", () => {
     const html = render(SEDGEFIELD_ROW);
-    expect(html).toContain("England Athletics");
+    expect(html).toContain("Governing-body listing, England Athletics");
     expect(html).toContain("opens in a new tab");
   });
 
   it("never leaks private provenance", () => {
     expect(render(HERTS_ROW)).not.toContain("runabc");
     expect(render(FNUL_ROW)).not.toContain("englandathletics.org");
+  });
+});
+
+describe("DestinationPanel rail and affordance", () => {
+  it("shrink-wraps the pale rail on desktop and fills width on mobile", () => {
+    const html = render(SEDGEFIELD_ROW);
+    expect(html).toContain("w-full rounded-xl");
+    expect(html).toContain("sm:w-fit");
+    expect(html).toContain("sm:max-w-full");
+  });
+
+  it("makes secondary signposts obviously clickable", () => {
+    const html = render(SEDGEFIELD_ROW);
+    expect(html).toContain("border-primary/30");
+    expect(html).toContain("font-semibold");
+    expect(html).toContain("hover:border-primary");
+    expect(html).toContain("focus-visible:outline");
+    expect(html).toContain("<svg");
   });
 });
 
@@ -177,13 +202,6 @@ describe("DestinationPanel count-aware geometry", () => {
     expect(items).toBe(2);
     expect(html).toContain('data-secondary-count="2"');
     expect(html).toContain("grid-cols-2");
-  });
-
-  it("4 total: three balanced secondary signposts, reflowing narrower", () => {
-    const { html, items } = counts(HERTS_ROW);
-    expect(items).toBe(3);
-    expect(html).toContain('data-secondary-count="3"');
-    expect(html).toContain("lg:grid-cols-3");
   });
 
   it("5 total: exactly four secondary signposts as a 2x2 grid", () => {
@@ -218,7 +236,7 @@ describe("DestinationPanel post-race state", () => {
 
   it("suppresses the entry anchor", () => {
     expect(html).not.toContain('https://www.saturnrunning.co.uk/e/the-rubber-ducky-waddle-14932"');
-    expect(visibleText(html)).not.toContain("Enter race");
+    expect(visibleText(html)).not.toContain("Enter with Saturn Running");
   });
 
   it("renders a compact non-clickable completed status", () => {
@@ -231,7 +249,7 @@ describe("DestinationPanel post-race state", () => {
 
   it("keeps the reviewed secondary signposts", () => {
     const text = visibleText(html);
-    expect(text).toContain("TRA permit");
+    expect(text).toContain("View TRA permit 8571");
     expect(text).toContain("Course map");
   });
 
