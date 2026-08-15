@@ -69,18 +69,14 @@ function rowMatchesDistanceKey(
   },
   key: DistanceKey,
 ): boolean {
-  const hasTags = (row.distance_tags?.length ?? 0) + (row.terrain_tags?.length ?? 0) > 0;
+  const hasTags =
+    (row.distance_tags?.length ?? 0) + (row.terrain_tags?.length ?? 0) > 0;
   if (hasTags) return eventMatchesDistanceKey(row, key);
   return matchesDistance(row.distances, DISTANCE_PAGES[key]);
 }
 
 const slugSchema = z.object({
-  slug: z
-    .string()
-    .trim()
-    .min(1)
-    .max(255)
-    .regex(/^[a-z0-9-]+$/),
+  slug: z.string().trim().min(1).max(255).regex(/^[a-z0-9-]+$/),
 });
 
 export type EventDetail = {
@@ -132,8 +128,8 @@ export const getEventBySlug = createServerFn({ method: "GET" })
     return row as EventDetail;
   });
 
-export const getAllActiveSlugs = createServerFn({ method: "GET" }).handler(
-  async (): Promise<{ slug: string; sort_date: string | null }[]> => {
+export const getAllActiveSlugs = createServerFn({ method: "GET" })
+  .handler(async (): Promise<{ slug: string; sort_date: string | null }[]> => {
     return fetchAllRows<{ slug: string; sort_date: string | null }>((from, to) =>
       supabaseAdmin
         .from("events")
@@ -142,8 +138,7 @@ export const getAllActiveSlugs = createServerFn({ method: "GET" }).handler(
         .not("slug", "is", null)
         .range(from, to),
     );
-  },
-);
+  });
 
 /**
  * Returns ACTIVE event slugs that pass the same indexability rules used
@@ -154,8 +149,8 @@ export const getAllActiveSlugs = createServerFn({ method: "GET" }).handler(
  * -{month}, dated suffixes), orphans (no link AND no organiser), and
  * series duplicates that aren't the earliest upcoming sibling.
  */
-export const getIndexableEventSlugsForSitemap = createServerFn({ method: "GET" }).handler(
-  async (): Promise<{ slug: string; sort_date: string | null }[]> => {
+export const getIndexableEventSlugsForSitemap = createServerFn({ method: "GET" })
+  .handler(async (): Promise<{ slug: string; sort_date: string | null }[]> => {
     const today = new Date().toISOString().slice(0, 10);
 
     type Row = {
@@ -197,8 +192,7 @@ export const getIndexableEventSlugsForSitemap = createServerFn({ method: "GET" }
       })
 
       .map((r) => ({ slug: r.slug, sort_date: r.sort_date }));
-  },
-);
+  });
 
 export const lookupEventSlug = createServerFn({ method: "GET" })
   .inputValidator((input: unknown) => slugSchema.parse(input))
@@ -223,7 +217,14 @@ export const lookupEventSlug = createServerFn({ method: "GET" })
 // ----- Distance landing pages -----
 
 const distanceKeySchema = z.object({
-  distanceKey: z.enum(["5k", "10k", "half-marathon", "marathon", "trail", "ultra"]),
+  distanceKey: z.enum([
+    "5k",
+    "10k",
+    "half-marathon",
+    "marathon",
+    "trail",
+    "ultra",
+  ]),
 });
 
 export type DistanceEvent = {
@@ -356,13 +357,15 @@ export const getEventsByDistance = createServerFn({ method: "GET" })
 // ----- Region × distance combo pages -----
 
 const regionDistanceSchema = z.object({
-  regionSlug: z
-    .string()
-    .trim()
-    .min(1)
-    .max(64)
-    .regex(/^[a-z0-9-]+$/),
-  distanceKey: z.enum(["5k", "10k", "half-marathon", "marathon", "trail", "ultra"]),
+  regionSlug: z.string().trim().min(1).max(64).regex(/^[a-z0-9-]+$/),
+  distanceKey: z.enum([
+    "5k",
+    "10k",
+    "half-marathon",
+    "marathon",
+    "trail",
+    "ultra",
+  ]),
 });
 
 export type RegionDistancePageData = {
@@ -473,7 +476,9 @@ export const getEventsByRegionAndDistance = createServerFn({ method: "GET" })
       }
     }
 
-    const matched = sortEstimatedLastWithinMonth(trusted.filter((e) => rowMatches(e, cfg.key)));
+    const matched = sortEstimatedLastWithinMonth(
+      trusted.filter((e) => rowMatches(e, cfg.key)),
+    );
 
     // Drop the private tag fields before returning.
     const events = matched.slice(0, DISPLAY_LIMIT).map((e) => {
@@ -498,8 +503,8 @@ export type RegionDistanceMatrixRow = {
   total: number;
 };
 
-export const getRegionDistanceMatrix = createServerFn({ method: "GET" }).handler(
-  async (): Promise<RegionDistanceMatrixRow[]> => {
+export const getRegionDistanceMatrix = createServerFn({ method: "GET" })
+  .handler(async (): Promise<RegionDistanceMatrixRow[]> => {
     const today = new Date().toISOString().slice(0, 10);
 
     // Pull every active future event with a region + distances/tags in one pass.
@@ -524,7 +529,9 @@ export const getRegionDistanceMatrix = createServerFn({ method: "GET" }).handler
         .or(UK_BOUNDS_OR_NULL)
         .range(from, to),
     );
-    const rows = raw.filter((r): r is MatrixRow & { region: string } => !!r.region);
+    const rows = raw.filter(
+      (r): r is MatrixRow & { region: string } => !!r.region,
+    );
 
     const counts = new Map<string, number>();
     for (const r of rows) {
@@ -552,8 +559,7 @@ export const getRegionDistanceMatrix = createServerFn({ method: "GET" }).handler
       }
     }
     return out;
-  },
-);
+  });
 
 // ----- Event detail page (event + related events in one call) -----
 
@@ -673,6 +679,7 @@ export const getEventPageData = createServerFn({ method: "GET" })
         // `source` / `source_url` are read for pilot verification only and are
         // stripped from the returned public event object below.
         "id, slug, name, date_raw, date_from, date_to, sort_date, town, county, region, distances, discipline, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, organiser, organiser_club_id, is_featured, date_is_estimated, governance, organiser_type, race_profile, created_at, norm_created_at, lat, lng, status, duplicate_of, source, source_url",
+
       )
       .eq("slug", data.slug)
       .in("status", ["ACTIVE", "DUPLICATE", "HIDDEN"])
@@ -876,7 +883,9 @@ export const getEventPageData = createServerFn({ method: "GET" })
       // event itself is exempt (it's not being recommended). See
       // mem://constraints/scraped-data-trust.
       const trusted = all.filter(
-        (r) => r.id === event.id || hasDiscoverableLink(r.entry_url, r.organiser_url, r.governance),
+        (r) =>
+          r.id === event.id ||
+          hasDiscoverableLink(r.entry_url, r.organiser_url, r.governance),
       );
 
       const matched = related.distanceKey
@@ -889,38 +898,33 @@ export const getEventPageData = createServerFn({ method: "GET" })
       related.events = matched
         .filter((r) => r.id !== event.id)
         .slice(0, 6)
-        .map(
-          ({
-            distances: _d,
-            distance_tags: _dt,
-            terrain_tags: _tt,
-            entry_url: _eu,
-            organiser_url: _ou,
-            governance: _g,
-            ...rest
-          }) => {
-            void _d;
-            void _dt;
-            void _tt;
-            void _eu;
-            void _ou;
-            void _g;
-            return rest;
-          },
-        );
+        .map(({ distances: _d, distance_tags: _dt, terrain_tags: _tt, entry_url: _eu, organiser_url: _ou, governance: _g, ...rest }) => {
+          void _d;
+          void _dt;
+          void _tt;
+          void _eu;
+          void _ou;
+          void _g;
+          return rest;
+        });
     }
 
     // Prefer nearest-by-radius for the displayed 6 when we have coordinates.
     // totalCount stays region+distance scoped (that's what the prose says).
     if (eventLat != null && eventLng != null) {
-      const cfg = related.distanceKey ? DISTANCE_PAGES[related.distanceKey] : null;
+      const cfg = related.distanceKey
+        ? DISTANCE_PAGES[related.distanceKey]
+        : null;
       for (const radius of [25, 75, 200]) {
-        const { data: nearRows, error: nearErr } = await supabaseAdmin.rpc("events_within_radius", {
-          p_lat: eventLat,
-          p_lng: eventLng,
-          p_radius_miles: radius,
-          p_max_results: 100,
-        });
+        const { data: nearRows, error: nearErr } = await supabaseAdmin.rpc(
+          "events_within_radius",
+          {
+            p_lat: eventLat,
+            p_lng: eventLng,
+            p_radius_miles: radius,
+            p_max_results: 100,
+          },
+        );
         if (nearErr) break; // fall back to region list silently
         if (!nearRows) continue;
         const picked: RelatedEvent[] = [];
@@ -1031,7 +1035,9 @@ export const getEventPageData = createServerFn({ method: "GET" })
     const orgTrim = event.organiser?.trim();
     if (!matchingClub && orgTrim && orgTrim.toLowerCase() !== "tbc") {
       const orgLower = orgTrim.toLowerCase();
-      const normSlug = orgLower.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+      const normSlug = orgLower
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
       const { data: clubRows } = await supabaseAdmin
         .from("public_clubs")
         .select("slug, name")
@@ -1122,7 +1128,9 @@ export const getEventPageData = createServerFn({ method: "GET" })
       const today = new Date().toISOString().slice(0, 10);
       let q = supabaseAdmin
         .from("events")
-        .select("id, slug, name, date_raw, sort_date, date_is_estimated, town, county, organiser")
+        .select(
+          "id, slug, name, date_raw, sort_date, date_is_estimated, town, county, organiser",
+        )
         .eq("status", "ACTIVE")
         .neq("id", event.id)
         .not("slug", "is", null)
@@ -1164,7 +1172,8 @@ export const getEventPageData = createServerFn({ method: "GET" })
     // Earliest upcoming instance in the union stays indexable; the
     // rest get noindex. See computeIndexability for the rule.
     const todayIso = new Date().toISOString().slice(0, 10);
-    const SIBLING_COLUMNS = "id, slug, name, sort_date, entry_url, organiser_url, organiser";
+    const SIBLING_COLUMNS =
+      "id, slug, name, sort_date, entry_url, organiser_url, organiser";
     type SiblingRow = {
       id: string;
       slug: string | null;
@@ -1257,96 +1266,88 @@ export const getEventPageData = createServerFn({ method: "GET" })
 
 const taxonomySchema = z.object({
   field: z.enum(["governance", "organiser_type"]),
-  value: z
-    .string()
-    .trim()
-    .min(1)
-    .max(64)
-    .regex(/^[a-z_]+$/),
+  value: z.string().trim().min(1).max(64).regex(/^[a-z_]+$/),
 });
 
 export const getEventsByTaxonomy = createServerFn({ method: "GET" })
   .inputValidator((input: unknown) => taxonomySchema.parse(input))
-  .handler(
-    async ({
-      data,
-    }): Promise<{
-      events: DistanceEvent[];
-      regionCounts: { region: string; count: number }[];
-      total: number;
-    }> => {
-      const today = new Date().toISOString().slice(0, 10);
+  .handler(async ({ data }): Promise<{
+    events: DistanceEvent[];
+    regionCounts: { region: string; count: number }[];
+    total: number;
+  }> => {
+    const today = new Date().toISOString().slice(0, 10);
 
-      type Row = {
-        id: string;
-        slug: string | null;
-        name: string;
-        date_raw: string | null;
-        sort_date: string | null;
-        town: string | null;
-        county: string | null;
-        region: string | null;
-        distances: string | null;
-        entry_fee: string | null;
-        entry_url: string | null;
-        organiser_url: string | null;
-        is_featured: boolean | null;
-        date_is_estimated: boolean | null;
-        is_recurring: boolean | null;
-      };
-      const rows = await fetchAllRows<Row>((from, to) =>
-        supabaseAdmin
-          .from("events")
-          .select(DISCOVERY_EVENT_COLUMNS)
-          .eq("status", "ACTIVE")
-          .eq(data.field, data.value as never)
-          .or(`sort_date.gte.${today},sort_date.is.null`)
-          .or(UK_BOUNDS_OR_NULL)
-          .order("sort_date", { ascending: true, nullsFirst: false })
-          .range(from, to),
-      );
+    type Row = {
+      id: string;
+      slug: string | null;
+      name: string;
+      date_raw: string | null;
+      sort_date: string | null;
+      town: string | null;
+      county: string | null;
+      region: string | null;
+      distances: string | null;
+      entry_fee: string | null;
+      entry_url: string | null;
+      organiser_url: string | null;
+      is_featured: boolean | null;
+      date_is_estimated: boolean | null;
+      is_recurring: boolean | null;
+    };
+    const rows = await fetchAllRows<Row>((from, to) =>
+      supabaseAdmin
+        .from("events")
+        .select(DISCOVERY_EVENT_COLUMNS)
+        .eq("status", "ACTIVE")
+        .eq(data.field, data.value as never)
+        .or(`sort_date.gte.${today},sort_date.is.null`)
+        .or(UK_BOUNDS_OR_NULL)
+        .order("sort_date", { ascending: true, nullsFirst: false })
+        .range(from, to),
+    );
 
-      const all: DistanceEvent[] = rows.map((r) => ({
-        id: r.id,
-        slug: r.slug,
-        name: r.name,
-        date_raw: r.date_raw,
-        sort_date: r.sort_date,
-        town: r.town,
-        county: r.county,
-        region: r.region,
-        distance_type: r.distances,
-        entry_fee: r.entry_fee,
-        entry_url: r.entry_url,
-        organiser_url: r.organiser_url,
-        is_featured: !!r.is_featured,
-        date_is_estimated: !!r.date_is_estimated,
-        is_recurring: !!r.is_recurring,
-      }));
+    const all: DistanceEvent[] = rows.map((r) => ({
+      id: r.id,
+      slug: r.slug,
+      name: r.name,
+      date_raw: r.date_raw,
+      sort_date: r.sort_date,
+      town: r.town,
+      county: r.county,
+      region: r.region,
+      distance_type: r.distances,
+      entry_fee: r.entry_fee,
+      entry_url: r.entry_url,
+      organiser_url: r.organiser_url,
+      is_featured: !!r.is_featured,
+      date_is_estimated: !!r.date_is_estimated,
+      is_recurring: !!r.is_recurring,
+    }));
 
-      // Governance-permitted races are inherently trusted (permit implies a
-      // real, sanctioned event), so we admit entry-platform-only links too.
-      // Non-governance surfaces (e.g. organiser_type=club) still require an
-      // organiser-owned link.
-      const trusted =
-        data.field === "governance"
-          ? all
-          : all.filter((e) => hasOrganiserOwnedLink(e.entry_url, e.organiser_url));
+    // Governance-permitted races are inherently trusted (permit implies a
+    // real, sanctioned event), so we admit entry-platform-only links too.
+    // Non-governance surfaces (e.g. organiser_type=club) still require an
+    // organiser-owned link.
+    const trusted =
+      data.field === "governance"
+        ? all
+        : all.filter((e) => hasOrganiserOwnedLink(e.entry_url, e.organiser_url));
 
-      const counts = new Map<string, number>();
-      for (const e of trusted) {
-        if (e.region) counts.set(e.region, (counts.get(e.region) ?? 0) + 1);
-      }
-      const regionCounts = Array.from(counts.entries())
-        .map(([region, count]) => ({ region, count }))
-        .sort((a, b) => b.count - a.count);
+    const counts = new Map<string, number>();
+    for (const e of trusted) {
+      if (e.region) counts.set(e.region, (counts.get(e.region) ?? 0) + 1);
+    }
+    const regionCounts = Array.from(counts.entries())
+      .map(([region, count]) => ({ region, count }))
+      .sort((a, b) => b.count - a.count);
 
-      const sorted = sortEstimatedLastWithinMonth(trusted);
+    const sorted = sortEstimatedLastWithinMonth(trusted);
 
-      return {
-        events: sorted.slice(0, DISPLAY_LIMIT),
-        regionCounts,
-        total: trusted.length,
-      };
-    },
-  );
+    return {
+      events: sorted.slice(0, DISPLAY_LIMIT),
+      regionCounts,
+      total: trusted.length,
+    };
+  });
+
