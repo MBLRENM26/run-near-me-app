@@ -92,9 +92,9 @@ export function DestinationPanel({
                   rel="noopener noreferrer"
                   onClick={() => onSelect?.(d)}
                   aria-label={destinationAccessibleName(d)}
-                  className="flex h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-2.5 text-center text-sm font-medium text-foreground hover:border-primary/40 hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  className="flex h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-2.5 text-center text-[13px] font-medium leading-tight sm:text-sm text-foreground hover:border-primary/40 hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 >
-                  <span className="truncate whitespace-nowrap">{destinationLabel(d)}</span>
+                  <span>{destinationLabel(d)}</span>
                   <ArrowUpRight className="h-3.5 w-3.5 shrink-0 opacity-60" aria-hidden="true" />
                 </a>
               </li>
