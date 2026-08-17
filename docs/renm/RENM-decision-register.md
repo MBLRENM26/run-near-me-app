@@ -202,3 +202,28 @@ Conflicts are raised explicitly. No AI system silently merges contradictory inst
 | D66 | Treat Lovable as RENM's validation/incubation platform, not an assumed permanent infrastructure commitment. | Remain on Lovable through the evidence window while keeping GitHub, migrations, data exports, integration boundaries, core rules, analytics definitions and configuration reproducible and portable. Do not migrate pre-emptively. |
 | D67 | Trigger platform graduation from demonstrated operational need rather than preference. | At PX5 or later, assess sustained traffic, feeds/background jobs, SSR/SEO/performance, CI/CD, observability, security, cost and deployment constraints. Graduate only the constrained layers; frontend/hosting may move while Supabase/Postgres remains. |
 | D68 | Finish and verify bounded existing-schema rectification, then run two product tests before broader infrastructure or schema work. | Test the Explorer on the existing backend first, then one authorised course-rich event page using toGeoJSON, Turf, Leaflet and Recharts. Introduce PostGIS, `pg_trgm` or broader series/edition/race/result/source schema only when measured prototype evidence demonstrates a named need. |
+
+## Decisions recorded after the outbound-wayfinding dry run — 14 August 2026
+
+| ID | Decision | Consequence |
+|---|---|---|
+| D69 | A RENM occurrence may have several legitimate role-specific next destinations rather than one universal official URL. | Present and track entry, organiser details, licensing, course and results destinations separately when evidenced; label the expected destination before the click and deduplicate identical URLs. |
+| D70 | Approve a bounded outbound-wayfinding/source-graph pilot using the Saturn/TRA/Eventrac and FNUL/OpenTrack journeys. | Correct only the reviewed rows through reversible audited writes, use existing fields first and test one server-rendered destination panel without bulk enrichment, outreach, filters or a national organiser graph. |
+| D71 | Organiser classification, licensing body/status and registration provider are separate dimensions. | Do not infer one from another. Consider a destination relation, organiser model or public filters only after a varied 6–10 event sample demonstrates stable roles and useful runner behaviour. |
+
+## Decisions recorded after showcase review — 15 August 2026
+
+| ID | Decision | Consequence |
+|---|---|---|
+| D72 | Demonstrate outbound-wayfinding breadth with four reviewed occurrences, but do not mutate production data merely for the England Athletics partnership call. | Use exact-row, fail-closed code manifests for FNUL, Rubber Ducky, Sedgefield and Hertfordshire; retain the original Saturn pilot and require a later decision before durable schema/data modelling. |
+| D73 | Use one dominant primary destination and a compact responsive secondary grid; treat post-race results as a lifecycle state rather than leaving a stale entry action. | Before the race, entry is primary. After the date, suppress entry and show a non-clickable completed/results-coming-soon state unless an exact reviewed occurrence-results URL exists; keep valid secondary information links. |
+| D74 | Public governance claims must follow the reviewed destination evidence, while private acquisition provenance remains private. | Label an England Athletics search destination as a listing rather than licence/approval; assert TRA approval only where the permit states it; keep commercial organiser, registration provider, governing/licensing body and status separate; never expose runABC or other private acquisition provenance. |
+| D75 | Outbound signposts must name the runner action and external destination without duplicating URLs or exporting a journey RENM already serves better on-page. | Order entry, organiser site, distinct registration occurrence, governing association, licence/permit and additional official information; expose providers in concise labels where useful. Remove Hertfordshire's Strava route exits because RENM already embeds the reviewed routes, while retaining course links that add a useful distinct destination on other events. |
+| D76 | Treat event-page information depth as a separate quality-of-life rectification layer: correct unsupported semantics first, then canonical data/linkage, then useful fact projection, with prose last. | Run bounded QL1–QL5 packages from the 15 August gap map. Keep governance, licence state/record, organiser and registration provider separate; do not auto-publish raw location/provenance or add venue/destination schema before a varied sample demonstrates the residual need. |
+
+## Decision recorded after QL1 production acceptance — 15 August 2026
+
+| ID | Decision | Consequence |
+|---|---|---|
+| D77 | Accept the bounded QL1 production result after transition-safe redeployment, audited Sedgefield correction and cross-pilot live verification. | Render a permitted claim only from canonical `licensed='true'`; keep governance/body, licence state, organiser and registration provider separate. Retain the full forward/rollback/recovery audit chain, leave `organiser_club_id` unset, and remove the temporary Sedgefield identity alternative only through a later separately verified cleanup. |
+| D78 | Close the outbound-wayfinding pilot and remain on the approved information-depth sequence. | No further pilot acceptance work blocks data rectification. Begin QL2 with read-only evidence and exact existing-schema previews; require separate approval before production writes. Keep QL3 entity coverage, QL5 schema decisions and transition-guard cleanup separately gated. |
