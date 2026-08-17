@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "last_reviewed": "2026-08-07",
+  "last_reviewed": "2026-08-16",
   "current_kernel": "docs/current/RENM-CURRENT.md",
   "lovable_project_knowledge": "docs/current/RENM-lovable-project-knowledge.generated.md",
   "decision_register": "docs/current/RENM-decision-register.md",
@@ -18,11 +18,18 @@
   ],
   "governed_documents": [
     {
+      "id": "workspace_readme",
+      "path": "README.md",
+      "status": "current_entrypoint",
+      "role": "new-thread read order, authority pointer and workspace boundary",
+      "sha256": "ef11b114a3592cf0d367c5387147ae9c45830351c949399ad2cead8729af724b"
+    },
+    {
       "id": "current_kernel",
       "path": "docs/current/RENM-CURRENT.md",
       "status": "current",
       "role": "immediate operating state and Lovable context source",
-      "sha256": "711c10394307f3ce782d23a12e7273ea3d888633281aefe421221c2ba9c66037"
+      "sha256": "a15ec635806111c05e666ae2e3ee9cb7d205ad603aae7c2d16ae0f0c6d1bd61e"
     },
     {
       "id": "project_knowledge",
@@ -43,21 +50,28 @@
       "path": "docs/current/RENM-decision-register.md",
       "status": "current",
       "role": "canonical decision text and unresolved questions",
-      "sha256": "2ccbf80faeb819012fd125b9d2ad521ff7fb0f0f44487740479db057f90ee2fc"
+      "sha256": "30dd0d7d7c8f6e08aa04bdc7d139af054a17eb99ff5b0b96bab590009c77b65e"
     },
     {
       "id": "phased_build_brief",
       "path": "docs/current/RENM-phased-build-brief.md",
       "status": "current",
       "role": "approval-gated implementation sequence",
-      "sha256": "46a834e1d1e840824c5f721153746983a1a5d71481547dc2545d77d4895df442"
+      "sha256": "78461e6b14b43942eb618a6b8fc91a38d1e2bd0c0d24639f74ee36a25e000dfb"
     },
     {
       "id": "next_thread_handover",
       "path": "docs/current/RENM-next-thread-handover-2026-08-02.md",
-      "status": "current_snapshot",
-      "role": "dated containment handover",
+      "status": "historical_containment_snapshot",
+      "role": "2 August containment handover; supporting history, not a current thread entrypoint",
       "sha256": "5fc8bd5f62b42424f2b9ae94ff74afb1e0dd6e4f5cb20dd568e504945a7ff5e2"
+    },
+    {
+      "id": "next_thread_handover_2026_08_16",
+      "path": "docs/current/RENM-next-thread-handover-2026-08-16.md",
+      "status": "current_handover",
+      "role": "verified pilot/QL1 closeout, QL2 opening objective and cross-repository context",
+      "sha256": "e19afffca8a463338995feebb71d5df7eafb1803397f0cbedff7005f5b23c0f8"
     },
     {
       "id": "validation_monitoring_phase1_plan",
@@ -149,7 +163,49 @@
       "status": "contact_ready_no_outreach",
       "role": "read-only Cock Crow evidence, role, destination and contact-readiness pack",
       "sha256": "a3d3a1fdb2ea7ea076778594a857d0903c800ee0c43ef0bb4ff2b8cf748d7fdc"
+    },
+    {
+      "id": "px2b_source_enrichment_acceptance",
+      "path": "docs/current/RENM-PX2B-source-enrichment-package-2026-08-12.md",
+      "status": "completed_production_source_package",
+      "role": "repeatable EA/SA enrichment implementation, production reconciliation and residual boundary",
+      "sha256": "4780e534f6f279261647c5abe12cd060c02ae950f2445669297ed85c6ae0a920"
+    },
+    {
+      "id": "px2c_course_rich_event_page_package",
+      "path": "docs/current/RENM-PX2C-course-rich-event-page-package-2026-08-12.md",
+      "status": "candidate_selected_embed_cleared_custom_asset_awaiting_permission",
+      "role": "North Downs Run course map/elevation product-test contract, provenance boundary, permission gate and rollback",
+      "sha256": "fc233f641c5856fde9182dda0558bf7407c3f4fa484214a42207e749782e45f5"
+    },
+    {
+      "id": "soft404_residual_source_resolution",
+      "path": "docs/current/RENM-soft-404-residual-source-resolution-manifest-2026-08-13.md",
+      "status": "completed_production_acceptance_gsc_validation_started",
+      "role": "47-URL source resolution, final 43-path acceptance and active GSC Soft 404 validation boundary",
+      "sha256": "3d94c6869b77b2c4dd79deb25fc84884247794a556e053581b17d5f142d919c1"
+    },
+    {
+      "id": "outbound_wayfinding_source_graph_pilot",
+      "path": "docs/current/RENM-outbound-wayfinding-source-graph-pilot-2026-08-14.md",
+      "status": "completed_production_wayfinding_pilot",
+      "role": "five-occurrence role-labelled destination showcase, production acceptance, analytics contract and data-work hand-off",
+      "sha256": "c03570fffdadf74332494ad0a3da5957e72f96893e4c8c058fe59685c6061173"
+    },
+    {
+      "id": "event_page_information_depth_gap_map",
+      "path": "docs/current/RENM-event-page-information-depth-gap-map-2026-08-15.md",
+      "status": "accepted_ql1_complete_ql2_next",
+      "role": "QL1–QL5 event-page data-quality sequence, current pilot gaps and package gates",
+      "sha256": "8c76cfdb3c22b0db2c3736d3ea16db5d226f4574a29e491be96a3b5353fcf1ff"
+    },
+    {
+      "id": "event_page_information_depth_ql1_acceptance",
+      "path": "docs/current/RENM-event-page-information-depth-QL1-preview-2026-08-15.md",
+      "status": "completed_production_semantic_and_data_package",
+      "role": "QL1 licence-state semantics, Sedgefield organiser correction, recovery audit and production acceptance",
+      "sha256": "51d4cec0c88ad4ed7c3e84fa13c6dbe4d5445cc38d29891d3d01b981a3c5d1b8"
     }
   ],
-  "hashes_refreshed_for_review_date": "2026-08-07"
+  "hashes_refreshed_for_review_date": "2026-08-16"
 }
