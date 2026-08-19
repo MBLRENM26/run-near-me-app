@@ -106,16 +106,18 @@ export type Candidate = Omit<PublicDestination, "roleLabel" | "host" | "linkType
  */
 export type ReviewedCandidate = Candidate & { reviewedListingExempt?: boolean };
 
+interface AcceptedPilotState {
+  organiser: string | null;
+  organiser_type: string;
+  organiser_url: string;
+  entry_url: string;
+  source: string;
+  source_url: string;
+  governance: string;
+}
+
 interface PilotSpec {
-  accepted: {
-    organiser: string | null;
-    organiser_type: string;
-    organiser_url: string;
-    entry_url: string;
-    source: string;
-    source_url: string;
-    governance: string;
-  };
+  accepted: AcceptedPilotState;
   /**
    * TRANSITION ONLY. Additional exact `(organiser, organiser_type)` pairs
    * accepted as whole pairs — never cross-pairs, spelling variants or any
@@ -124,6 +126,12 @@ interface PilotSpec {
    * separately verified cleanup once the production mutation is stable.
    */
   acceptedIdentityAlternatives?: Array<{ organiser: string | null; organiser_type: string }>;
+  /**
+   * TRANSITION ONLY. Complete reviewed row states accepted independently of
+   * `accepted`; every field must match one whole state so old/new cross-state
+   * combinations continue to fail closed.
+   */
+  acceptedStateAlternatives?: AcceptedPilotState[];
   destinations: ReviewedCandidate[];
 }
 
@@ -238,6 +246,21 @@ const PILOTS: Record<string, PilotSpec> = {
       source_url: DUCKY_TRA_RECORD,
       governance: "tra",
     },
+    // QL2 transition: retain the current TRA-shaped row until the separately
+    // audited organiser/location/profile write lands. The proposed complete
+    // state keeps Saturn commercial, TRA governance and Eventrac-powered entry
+    // as separate roles. Remove the old state only in a later verified cleanup.
+    acceptedStateAlternatives: [
+      {
+        organiser: "Saturn Running",
+        organiser_type: "commercial",
+        organiser_url: DUCKY_OCCURRENCE,
+        entry_url: DUCKY_OCCURRENCE,
+        source: "tra",
+        source_url: DUCKY_TRA_RECORD,
+        governance: "tra",
+      },
+    ],
     destinations: [
       {
         role: "entry",
@@ -396,13 +419,26 @@ export function buildPilotDestinations(row: PilotEventRow | null | undefined): P
   const identityMatches = identityPairs.some(
     (pair) => rowOrganiser === pair.organiser && rowOrganiserType === pair.organiser_type,
   );
-  const matches =
+  const canonicalOrIdentityAlternativeMatches =
     identityMatches &&
     (row.organiser_url ?? null) === a.organiser_url &&
     (row.entry_url ?? null) === a.entry_url &&
     (row.source ?? null) === a.source &&
     (row.source_url ?? null) === a.source_url &&
     (row.governance ?? null) === a.governance;
+
+  const exactStateMatches = (candidate: AcceptedPilotState) =>
+    rowOrganiser === candidate.organiser &&
+    rowOrganiserType === candidate.organiser_type &&
+    (row.organiser_url ?? null) === candidate.organiser_url &&
+    (row.entry_url ?? null) === candidate.entry_url &&
+    (row.source ?? null) === candidate.source &&
+    (row.source_url ?? null) === candidate.source_url &&
+    (row.governance ?? null) === candidate.governance;
+
+  const matches =
+    canonicalOrIdentityAlternativeMatches ||
+    (spec.acceptedStateAlternatives ?? []).some(exactStateMatches);
 
   if (!matches) return [];
 
