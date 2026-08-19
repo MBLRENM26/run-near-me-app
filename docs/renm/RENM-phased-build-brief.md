@@ -485,8 +485,6 @@ Acceptance:
 
 ## Next operation after this reset
 
-Status update — 16 August 2026: the PX0 context installation/preflight and subsequent bounded packages have been completed through the production-accepted outbound-wayfinding pilot and QL1. The current next operation is QL2 read-only evidence and exact existing-schema previews under `RENM-CURRENT.md` and the 16 August handover. The original reset sequence below is retained as decision history, not a current opening checklist.
-
 Complete PX0 before another code run:
 
 1. refresh and commit the governed documentation;
