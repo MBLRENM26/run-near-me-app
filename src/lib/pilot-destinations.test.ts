@@ -43,6 +43,14 @@ const DUCKY_ROW = {
   governance: "tra",
 };
 
+const DUCKY_QL2_ROW = {
+  ...DUCKY_ROW,
+  organiser: "Saturn Running",
+  organiser_type: "commercial",
+  organiser_url: "https://www.saturnrunning.co.uk/e/the-rubber-ducky-waddle-14932",
+  entry_url: "https://www.saturnrunning.co.uk/e/the-rubber-ducky-waddle-14932",
+};
+
 const SEDGEFIELD_ROW = {
   id: "c8eea9cc-0d2a-4db4-8bac-a7040b43dd59",
   organiser: null,
@@ -191,6 +199,32 @@ describe("buildPilotDestinations — Rubber Ducky Waddle", () => {
     expect(buildPilotDestinations({ ...DUCKY_ROW, organiser: "Saturn Running" })).toEqual([]);
     expect(buildPilotDestinations({ ...DUCKY_ROW, organiser_type: "commercial" })).toEqual([]);
     expect(buildPilotDestinations({ ...DUCKY_ROW, governance: "unknown" })).toEqual([]);
+  });
+});
+
+describe("buildPilotDestinations — Rubber Ducky QL2 complete-state transition", () => {
+  it("emits identical destinations for the complete pre- and post-mutation states", () => {
+    const pre = buildPilotDestinations(DUCKY_ROW);
+    const post = buildPilotDestinations(DUCKY_QL2_ROW);
+    expect(pre).toHaveLength(3);
+    expect(post).toEqual(pre);
+  });
+
+  it("rejects every reviewed old/new cross-state", () => {
+    const rejected = [
+      { ...DUCKY_ROW, organiser: "Saturn Running" },
+      { ...DUCKY_ROW, organiser_type: "commercial" },
+      { ...DUCKY_ROW, organiser_url: DUCKY_QL2_ROW.organiser_url },
+      { ...DUCKY_ROW, entry_url: DUCKY_QL2_ROW.entry_url },
+      { ...DUCKY_QL2_ROW, organiser: null },
+      { ...DUCKY_QL2_ROW, organiser_type: "unknown" },
+      { ...DUCKY_QL2_ROW, organiser_url: DUCKY_ROW.organiser_url },
+      { ...DUCKY_QL2_ROW, entry_url: DUCKY_ROW.entry_url },
+      { ...DUCKY_QL2_ROW, organiser: "saturn running" },
+      { ...DUCKY_QL2_ROW, organiser: "Saturn Running " },
+    ];
+
+    for (const row of rejected) expect(buildPilotDestinations(row)).toEqual([]);
   });
 });
 
