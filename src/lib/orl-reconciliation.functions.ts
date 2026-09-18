@@ -191,7 +191,8 @@ export const getOrlReconciliation = createServerFn({ method: "POST" })
   .inputValidator((d) =>
     z
       .object({
-        limit: z.number().int().min(1).max(500).default(200),
+        limit: z.number().int().min(1).max(500).default(100),
+        offset: z.number().int().min(0).default(0),
         state: z
           .enum(["linked_in_orl", "candidate_match", "ambiguous", "unmatched", "unresolved_seed"])
           .optional(),
@@ -208,32 +209,41 @@ export const getOrlReconciliation = createServerFn({ method: "POST" })
     const [events, graph, searchClicks, reminders] = await Promise.all([
       fetchFutureEvents(today),
       fetchOrlGraph(),
-      supabaseAdmin
-        .from("search_clicks")
-        .select("clicked_slug")
-        .gte("created_at", since)
-        .limit(5000),
+      fetchAllPages<{ clicked_slug: string }>(
+        (from, to) =>
+          supabaseAdmin
+            .from("search_clicks")
+            .select("clicked_slug")
+            .gte("created_at", since)
+            .range(from, to) as unknown as PromiseLike<{
+            data: { clicked_slug: string }[] | null;
+            error: { message: string } | null;
+          }>,
+      ),
       // event_id only — never subscriber emails.
-      supabaseAdmin
-        .from("email_subscriptions")
-        .select("event_id")
-        .gte("created_at", since)
-        .limit(5000),
+      fetchAllPages<{ event_id: string }>(
+        (from, to) =>
+          supabaseAdmin
+            .from("email_subscriptions")
+            .select("event_id")
+            .gte("created_at", since)
+            .range(from, to) as unknown as PromiseLike<{
+            data: { event_id: string }[] | null;
+            error: { message: string } | null;
+          }>,
+      ),
     ]);
-    for (const res of [searchClicks, reminders]) {
-      if (res.error) throw new Error(res.error.message);
-    }
 
     const clicksBySlug = new Map<string, number>();
-    for (const c of searchClicks.data ?? []) {
+    for (const c of searchClicks.rows) {
       clicksBySlug.set(c.clicked_slug, (clicksBySlug.get(c.clicked_slug) ?? 0) + 1);
     }
     const remindersByEvent = new Map<string, number>();
-    for (const r of reminders.data ?? []) {
+    for (const r of reminders.rows) {
       remindersByEvent.set(r.event_id, (remindersByEvent.get(r.event_id) ?? 0) + 1);
     }
 
-    const allRows = events.map((e) =>
+    const allRows = events.rows.map((e) =>
       reconcileEvent(e, graph, {
         search_clicks: (e.slug && clicksBySlug.get(e.slug)) || 0,
         reminder_requests: remindersByEvent.get(e.id) ?? 0,
@@ -245,6 +255,7 @@ export const getOrlReconciliation = createServerFn({ method: "POST" })
       ? allRows.filter((r) => r.state === (data.state as ReconciliationState))
       : allRows;
     const ordered = sortByReviewPriority(filtered);
+    const page = ordered.slice(data.offset, data.offset + data.limit);
 
     return {
       generated_at: new Date(now).toISOString(),
@@ -258,8 +269,12 @@ export const getOrlReconciliation = createServerFn({ method: "POST" })
         accepted_links: graph.links.filter((l) => l.review_status === "accepted").length,
         unresolved_seed_rows: graph.unresolved.length,
       },
-      display_limit: data.limit,
-      returned: Math.min(ordered.length, data.limit),
-      rows: ordered.slice(0, data.limit),
+      scan_truncated: events.truncated,
+      matching: ordered.length,
+      page_size: data.limit,
+      offset: data.offset,
+      returned: page.length,
+      has_more: data.offset + page.length < ordered.length,
+      rows: page,
     };
   });
