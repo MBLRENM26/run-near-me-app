@@ -181,9 +181,14 @@ export type OrlReconciliation = {
   /** Computed over every future event, before any display slicing. */
   totals: ReconciliationTotals;
   graph_inventory: OrlGraphInventory;
-  /** Row cap applied to the returned list only. */
-  display_limit: number;
+  /** True only if the hard safety page bound was hit (totals would be partial). */
+  scan_truncated: boolean;
+  /** Rows matching the selected state, uncapped. */
+  matching: number;
+  page_size: number;
+  offset: number;
   returned: number;
+  has_more: boolean;
   rows: ReconciliationRow[];
 };
 
