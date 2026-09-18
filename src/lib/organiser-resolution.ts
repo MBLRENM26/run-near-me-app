@@ -53,7 +53,7 @@ export function eventHost(raw: string | null | undefined): string | null {
   return link.host;
 }
 
-export type ClubHost = { id: string; name: string };
+export type ClubHost = { id: string; name: string; website_url: string | null };
 
 /**
  * Index active clubs by their website host for exact-match lookup.
