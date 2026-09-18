@@ -2,9 +2,21 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { getOrlReconciliation } from "@/lib/orl-reconciliation.functions";
 import { stageOrlCandidate } from "@/lib/orl-staging.functions";
-import { planStaging, proposalConfirmationSentence } from "@/lib/orl-staging";
+import {
+  existingCandidateReviewLink,
+  planStaging,
+  proposalConfirmationSentence,
+} from "@/lib/orl-staging";
 import type {
   CandidateBasis,
   ReconciliationRow,
@@ -115,6 +127,9 @@ function AdminOrganiserGapPage() {
     onError: (err) =>
       setNotice({ tone: "error", text: err instanceof Error ? err.message : "Staging failed" }),
   });
+
+  const confirmingRow = data?.rows.find((row) => row.event.id === confirming) ?? null;
+  const confirmingPlan = confirmingRow ? planStaging(confirmingRow) : null;
 
   return (
     <div>
@@ -271,20 +286,43 @@ function AdminOrganiserGapPage() {
                     row={row}
                     open={expanded === row.event.id}
                     onToggle={() => setExpanded(expanded === row.event.id ? null : row.event.id)}
-                    confirming={confirming === row.event.id}
-                    staging={stage.isPending}
                     onAskConfirm={() => {
                       setNotice(null);
-                      setConfirming(confirming === row.event.id ? null : row.event.id);
+                      setConfirming(row.event.id);
                     }}
-                    onStage={(organisation_id) =>
-                      stage.mutate({ event_id: row.event.id, organisation_id })
-                    }
                   />
                 ))}
               </tbody>
             </table>
           </div>
+
+          <Dialog
+            open={Boolean(confirmingRow && confirmingPlan?.allowed)}
+            onOpenChange={(open) => {
+              if (!open && !stage.isPending) setConfirming(null);
+            }}
+          >
+            <DialogContent
+              className="max-h-[85vh] overflow-y-auto sm:max-w-xl"
+              onEscapeKeyDown={(event) => stage.isPending && event.preventDefault()}
+              onPointerDownOutside={(event) => stage.isPending && event.preventDefault()}
+            >
+              {confirmingRow && confirmingPlan?.allowed && (
+                <ProposalConfirmation
+                  row={confirmingRow}
+                  plan={confirmingPlan}
+                  staging={stage.isPending}
+                  onCancel={() => setConfirming(null)}
+                  onConfirm={() =>
+                    stage.mutate({
+                      event_id: confirmingRow.event.id,
+                      organisation_id: confirmingPlan.organisation_id,
+                    })
+                  }
+                />
+              )}
+            </DialogContent>
+          </Dialog>
         </>
       )}
     </div>
@@ -305,20 +343,15 @@ function Row({
   row,
   open,
   onToggle,
-  confirming,
-  staging,
   onAskConfirm,
-  onStage,
 }: {
   row: ReconciliationRow;
   open: boolean;
   onToggle: () => void;
-  confirming: boolean;
-  staging: boolean;
   onAskConfirm: () => void;
-  onStage: (organisation_id: string) => void;
 }) {
   const e = row.event;
+  const inReview = existingCandidateReviewLink(row);
   const plan = planStaging(row);
   const orgs =
     row.state === "linked_in_orl"
@@ -330,16 +363,6 @@ function Row({
       : row.state === "unresolved_seed"
         ? row.unresolved_reasons
         : row.candidates.flatMap((c) => c.reasons);
-
-  // A row already sitting in the ORL review pipeline (proposed/reopened link)
-  // shows a persistent "In ORL review" state in the action area instead of an
-  // apparently vanished action.
-  const inReview =
-    !plan.allowed && plan.code === "already_in_review"
-      ? (row.linked.find((l) =>
-          row.candidates.some((c) => c.organisation_id === l.organisation_id),
-        ) ?? null)
-      : null;
 
   return (
     <>
@@ -395,7 +418,7 @@ function Row({
                 </Link>
               </div>
             )}
-            {plan.allowed && !confirming && (
+            {plan.allowed && (
               <Button size="sm" variant="outline" onClick={onAskConfirm}>
                 Review proposal
               </Button>
@@ -406,68 +429,6 @@ function Row({
           </div>
         </td>
       </tr>
-      {confirming && plan.allowed && (
-        <tr>
-          <td colSpan={10} className="px-3 pb-3">
-            <div className="rounded-md border border-primary/40 bg-primary/5 p-4">
-              <h3 className="text-sm font-semibold text-foreground">Confirm this proposal</h3>
-              <ul className="mt-2 space-y-1 text-sm text-foreground">
-                <li>
-                  Event: <strong>{e.name}</strong>
-                </li>
-                <li>
-                  {proposalConfirmationSentence(plan.relationship, plan.organisation_name, e.name)}
-                </li>
-                <li>
-                  Current organiser on the event:{" "}
-                  {e.organiser?.trim() ? e.organiser : <strong>blank</strong>}
-                </li>
-                <li>
-                  Evidence:{" "}
-                  {(() => {
-                    const b = strongestBasis(plan.bases);
-                    if (!b) return "no structured basis recorded";
-                    return (
-                      <>
-                        {b.detail}
-                        {b.url && (
-                          <span className="block break-all font-mono text-xs">{b.url}</span>
-                        )}
-                        {(b.tenant || b.path) && (
-                          <span className="block text-xs text-muted-foreground">
-                            {b.tenant && `tenant: ${b.tenant} `}
-                            {b.path && `path: ${b.path}`}
-                          </span>
-                        )}
-                      </>
-                    );
-                  })()}
-                </li>
-              </ul>
-              <p className="mt-2 text-sm text-muted-foreground">
-                What happens now: this creates a proposed ORL review item. It does not change the
-                public organiser.
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Next step: in{" "}
-                <Link to="/admin/organiser-identities" className="text-primary underline">
-                  Organiser identities
-                </Link>
-                , Accept &amp; apply organiser is the separate action that changes the public
-                organiser.
-              </p>
-              <div className="mt-3 flex gap-2">
-                <Button size="sm" disabled={staging} onClick={() => onStage(plan.organisation_id)}>
-                  {staging ? "Sending to review…" : "Confirm and send to review"}
-                </Button>
-                <Button size="sm" variant="outline" disabled={staging} onClick={onAskConfirm}>
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          </td>
-        </tr>
-      )}
       {open && (
         <tr className="bg-muted/30">
           <td colSpan={10} className="px-3 py-3">
@@ -557,6 +518,73 @@ function Row({
           </td>
         </tr>
       )}
+    </>
+  );
+}
+
+function ProposalConfirmation({
+  row,
+  plan,
+  staging,
+  onCancel,
+  onConfirm,
+}: {
+  row: ReconciliationRow;
+  plan: Extract<ReturnType<typeof planStaging>, { allowed: true }>;
+  staging: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const basis = strongestBasis(plan.bases);
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle>Confirm this proposal</DialogTitle>
+        <DialogDescription>
+          Review the evidence before creating an item in the ORL review queue.
+        </DialogDescription>
+      </DialogHeader>
+      <div className="space-y-3 text-sm text-foreground">
+        <div>
+          Event: <strong>{row.event.name}</strong>
+        </div>
+        <div>
+          {proposalConfirmationSentence(plan.relationship, plan.organisation_name, row.event.name)}
+        </div>
+        <div>
+          Current organiser on the event:{" "}
+          {row.event.organiser?.trim() ? row.event.organiser : <strong>blank</strong>}
+        </div>
+        <div className="rounded-md border border-border bg-muted/30 p-3">
+          <div className="font-medium">Strongest evidence</div>
+          <div className="mt-1 text-muted-foreground">
+            {basis?.detail ?? "no structured basis recorded"}
+          </div>
+          {basis?.url && <div className="mt-1 break-all font-mono text-xs">{basis.url}</div>}
+          {(basis?.tenant || basis?.path) && (
+            <div className="mt-1 text-xs text-muted-foreground">
+              {basis.tenant && `tenant: ${basis.tenant} `}
+              {basis.path && `path: ${basis.path}`}
+            </div>
+          )}
+        </div>
+        <p className="text-muted-foreground">
+          What happens now: this creates a proposed ORL review item. It does not change the public
+          organiser.
+        </p>
+        <p className="text-muted-foreground">
+          Next step: in Organiser identities, Accept &amp; apply organiser is the separate action
+          that changes the public organiser.
+        </p>
+      </div>
+      <DialogFooter>
+        <Button variant="outline" disabled={staging} onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button disabled={staging} onClick={onConfirm}>
+          {staging ? "Sending to review…" : "Confirm and send to review"}
+        </Button>
+      </DialogFooter>
     </>
   );
 }

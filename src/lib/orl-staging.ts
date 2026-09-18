@@ -22,7 +22,12 @@
  * - Demand signals never influence eligibility or relationship.
  */
 
-import type { CandidateBasis, CandidateMatch, ReconciliationRow } from "@/lib/orl-reconciliation";
+import type {
+  CandidateBasis,
+  CandidateMatch,
+  LinkedDetail,
+  ReconciliationRow,
+} from "@/lib/orl-reconciliation";
 
 export type EvidenceDraft = {
   source_url: string;
@@ -70,6 +75,23 @@ export function currentUtcDate(now: Date = new Date()): string {
 
 /** Confidence accepted by the live organisation_event_links check constraint. */
 export const STAGED_CONFIDENCE = "plausible_needs_review" as const;
+
+/**
+ * Preserve the exact candidate/link pairing needed by the UI after staging.
+ * planStaging deliberately reduces this to a block code, so derive it first.
+ */
+export function existingCandidateReviewLink(row: ReconciliationRow): LinkedDetail | null {
+  if (row.candidates.length !== 1) return null;
+  const candidate = row.candidates[0];
+  return (
+    row.linked.find(
+      (link) =>
+        link.organisation_id === candidate.organisation_id &&
+        link.relationship === candidate.suggested_relationship &&
+        (link.review_status === "proposed" || link.review_status === "reopened"),
+    ) ?? null
+  );
+}
 
 /**
  * Plain-English confirmation sentence for the staging UI. Staging only ever
