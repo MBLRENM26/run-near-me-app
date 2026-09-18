@@ -173,7 +173,7 @@ export function planStaging(row: ReconciliationRow): StagingPlan {
     organisation_name: candidate.organisation_name,
     relationship,
     // Always plausible_needs_review — exact evidence does not confer verification.
-    confidence: "plausible_needs_review",
+    confidence: STAGED_CONFIDENCE,
     reuse_evidence_ids,
     create_evidence,
     bases: candidate.bases,
