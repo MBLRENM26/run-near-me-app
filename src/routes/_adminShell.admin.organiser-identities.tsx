@@ -334,20 +334,31 @@ function RowView({
         </td>
         <td className="px-3 py-2">
           <div className="flex flex-wrap gap-1">
-            {actions.map((a) => (
-              <Button
-                key={a}
-                size="sm"
-                variant={a === "accepted" ? "default" : "outline"}
-                onClick={() => onAct(a)}
-              >
-                {a === "accepted" ? "Accept" : a === "rejected" ? "Reject" : "Reopen"}
-              </Button>
-            ))}
+            {actions.map((a) =>
+              a === "accepted" && row.relationship === "organises" ? (
+                <Button
+                  key={a}
+                  size="sm"
+                  variant="default"
+                  disabled={!applyDecision.allowed}
+                  title={applyDecision.allowed ? undefined : applyDecision.reason}
+                  onClick={() => onAct("apply")}
+                >
+                  Accept &amp; apply organiser
+                </Button>
+              ) : (
+                <Button key={a} size="sm" variant="outline" onClick={() => onAct(a)}>
+                  {a === "accepted" ? "Accept" : a === "rejected" ? "Reject" : "Reopen"}
+                </Button>
+              ),
+            )}
             {actions.length === 0 && (
               <span className="text-xs text-muted-foreground">terminal</span>
             )}
           </div>
+          {row.relationship === "organises" && !applyDecision.allowed && actions.includes("accepted") && (
+            <div className="mt-1 max-w-xs text-xs text-muted-foreground">{applyDecision.reason}</div>
+          )}
         </td>
       </tr>
       {expanded && (
