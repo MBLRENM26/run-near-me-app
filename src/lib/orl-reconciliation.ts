@@ -420,7 +420,12 @@ export function reconcileEvent(
       addCandidate(
         candidates,
         org,
-        isEntryPlatform ? "entry_platform_hosts" : "organises",
+        // Account ownership proves identity only. An exact endpoint match on a
+        // non-entry platform (e.g. a Facebook/social account) identifies the
+        // candidate organisation but never collapses channel evidence into an
+        // event role, so it stays `source_suggests` unless an explicit typed
+        // event-role fact exists.
+        isEntryPlatform ? "entry_platform_hosts" : "source_suggests",
         `exact ${acct.platform} account endpoint match (${acct.account_url})`,
       );
       continue;
