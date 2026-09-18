@@ -315,6 +315,16 @@ function Row({
         ? row.unresolved_reasons
         : row.candidates.flatMap((c) => c.reasons);
 
+  // A row already sitting in the ORL review pipeline (proposed/reopened link)
+  // shows a persistent "In ORL review" state in the action area instead of an
+  // apparently vanished action.
+  const inReview =
+    !plan.allowed && plan.code === "already_in_review"
+      ? row.linked.find((l) =>
+          row.candidates.some((c) => c.organisation_id === l.organisation_id),
+        ) ?? null
+      : null;
+
   return (
     <>
       <tr>
