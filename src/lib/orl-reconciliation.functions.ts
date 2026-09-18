@@ -75,7 +75,7 @@ async function fetchFutureEvents(
   );
 }
 
-async function fetchOrlGraph(): Promise<OrlGraph> {
+export async function fetchOrlGraph(): Promise<OrlGraph> {
   const [orgs, aliases, accounts, links, linkEvidence, reviews, unresolved] = await Promise.all([
     supabaseAdmin.from("organisations").select("id, canonical_name, website_domain, status"),
     supabaseAdmin
