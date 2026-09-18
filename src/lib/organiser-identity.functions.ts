@@ -25,6 +25,8 @@ export type OrganiserLinkRow = {
   event_slug: string;
   event_name: string;
   event_date_raw: string;
+  /** Current public organiser text — needed to state the exact projection. */
+  event_organiser: string | null;
   organisation_id: string;
   organisation_name: string;
   organisation_status: string;
