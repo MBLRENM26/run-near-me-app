@@ -67,8 +67,8 @@ export function buildClubHostIndex(clubs: ClubHost[]): Map<string, ClubHost[]> {
     const host = eventHost(club.website_url ?? null);
     if (!host) continue;
     const bucket = index.get(host);
-    if (bucket) bucket.push({ id: club.id, name: club.name });
-    else index.set(host, [{ id: club.id, name: club.name }]);
+    if (bucket) bucket.push({ id: club.id, name: club.name, website_url: club.website_url });
+    else index.set(host, [{ id: club.id, name: club.name, website_url: club.website_url }]);
   }
   return index;
 }
