@@ -5,6 +5,7 @@ import { fetchOrlGraph } from "@/lib/orl-reconciliation.functions";
 import { reconcileEvent, type ReconciliationEventInput } from "@/lib/orl-reconciliation";
 import {
   applyStaging,
+  currentUtcDate,
   planStaging,
   type EvidenceDraft,
   type StagingDb,
@@ -122,15 +123,24 @@ export const stageOrlCandidate = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<StagingResult> => {
     if (!(await isAdminAuthenticated())) throw new Error("Unauthorized");
 
+    // Step 1 scope: future ACTIVE events only. sort_date is a date column, so the
+    // guard is the current UTC date in YYYY-MM-DD, matching the reconciliation view.
+    const todayUtc = currentUtcDate();
+
     const { data: eventRow, error: eventError } = await supabaseAdmin
       .from("events")
       .select(EVENT_COLUMNS)
       .eq("id", data.event_id)
       .eq("status", "ACTIVE")
+      .gte("sort_date", todayUtc)
       .maybeSingle();
     if (eventError) throw new Error(eventError.message);
     if (!eventRow) {
-      return { ok: false, code: "not_single_candidate", reason: "Event not found or not active." };
+      return {
+        ok: false,
+        code: "not_single_candidate",
+        reason: `Event not found, not active, or not dated today or later (${todayUtc}). Staging is limited to future active events.`,
+      };
     }
 
     const graph = await fetchOrlGraph();

@@ -1,7 +1,14 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { reconcileEvent, type OrlGraph, type ReconciliationEventInput } from "./orl-reconciliation";
-import { applyStaging, planStaging, type StagingDb, type StagingPlan } from "./orl-staging";
+import {
+  applyStaging,
+  currentUtcDate,
+  planStaging,
+  STAGED_CONFIDENCE,
+  type StagingDb,
+  type StagingPlan,
+} from "./orl-staging";
 
 const EMPTY_GRAPH: OrlGraph = {
   organisations: [],
@@ -134,6 +141,8 @@ describe("staging eligibility", () => {
     expect(plan.allowed).toBe(true);
     if (!plan.allowed) return;
     expect(plan.relationship).toBe("organises");
+    // Live check constraint allows only 'verified' | 'plausible_needs_review'.
+    expect(plan.confidence).toBe("plausible_needs_review");
 
     const { db, links, attachments } = fakeDb();
     const result = await applyStaging(db, plan);
@@ -255,7 +264,7 @@ describe("existing link handling", () => {
           event_id: e.id,
           organisation_id: "o1",
           relationship: "organises",
-          confidence: "high",
+          confidence: "verified",
           review_status: "accepted",
         },
       ],
@@ -274,7 +283,7 @@ describe("existing link handling", () => {
           event_id: e.id,
           organisation_id: "o1",
           relationship: "organises",
-          confidence: "medium",
+          confidence: "plausible_needs_review",
           review_status: "proposed",
         },
       ],
@@ -293,7 +302,7 @@ describe("existing link handling", () => {
           event_id: e.id,
           organisation_id: "o1",
           relationship: "organises",
-          confidence: "low",
+          confidence: "plausible_needs_review",
           review_status: "rejected",
         },
       ],
@@ -410,5 +419,58 @@ describe("admin protection and projection boundary (source-level)", () => {
   it("always stages review_status proposed, never accepted", () => {
     expect(src).toContain('review_status: "proposed"');
     expect(src).not.toContain('"accepted"');
+  });
+});
+
+describe("live-compatible staged confidence", () => {
+  const src = readFileSync("src/lib/orl-staging.ts", "utf8");
+
+  it("exposes only plausible_needs_review as the staged confidence", () => {
+    expect(STAGED_CONFIDENCE).toBe("plausible_needs_review");
+    expect(src).not.toMatch(/confidence:\s*"(low|medium|high)"/);
+  });
+
+  it("never stages verified, whatever the evidence strength", () => {
+    const withReuse = planFor(
+      event({ organiser_url: "https://sedgefieldharriers.co.uk/races/serpentine-10k" }),
+      {
+        ...EMPTY_GRAPH,
+        organisations: [CLUB],
+        aliases: [
+          { organisation_id: "o1", alias_name: "Sedgefield Harriers", alias_type: "brand" },
+        ],
+        evidence_by_organisation: [
+          {
+            organisation_id: "o1",
+            evidence: {
+              id: "existing-ev",
+              source_url: "https://sedgefieldharriers.co.uk/races/serpentine-10k",
+              evidence_type: "page_content",
+              supporting_fact: "race page lists the club as organiser",
+            },
+          },
+        ],
+      },
+    );
+    expect(withReuse.allowed).toBe(true);
+    if (!withReuse.allowed) return;
+    expect(withReuse.reuse_evidence_ids.length).toBeGreaterThan(0);
+    expect(withReuse.confidence).toBe("plausible_needs_review");
+  });
+});
+
+describe("future-event eligibility boundary", () => {
+  const src = readFileSync("src/lib/orl-staging.functions.ts", "utf8");
+
+  it("computes the current UTC date as YYYY-MM-DD", () => {
+    expect(currentUtcDate(new Date("2026-09-18T23:30:00.000Z"))).toBe("2026-09-18");
+    expect(currentUtcDate(new Date("2026-01-01T00:00:00.000Z"))).toBe("2026-01-01");
+    expect(currentUtcDate()).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it("guards the staging query on ACTIVE status and sort_date today or later", () => {
+    expect(src).toContain('.eq("status", "ACTIVE")');
+    expect(src).toContain('.gte("sort_date", todayUtc)');
+    expect(src).toContain("currentUtcDate()");
   });
 });

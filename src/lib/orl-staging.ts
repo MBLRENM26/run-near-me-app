@@ -45,7 +45,13 @@ export type StagingPlan =
       organisation_id: string;
       organisation_name: string;
       relationship: CandidateMatch["suggested_relationship"];
-      confidence: "low" | "medium";
+      /**
+       * The live organisation_event_links check constraint allows exactly
+       * 'verified' | 'plausible_needs_review'. A newly staged proposal is always
+       * plausible_needs_review, however exact the clue: 'verified' is a
+       * conclusion of review/acceptance, never of staging.
+       */
+      confidence: "plausible_needs_review";
       /** Existing identity_evidence ids reused verbatim. */
       reuse_evidence_ids: string[];
       /** Deterministic observation to record when no exact evidence row exists. */
@@ -53,6 +59,17 @@ export type StagingPlan =
       bases: CandidateBasis[];
     }
   | { allowed: false; code: StagingBlockCode; reason: string };
+
+/**
+ * Current UTC date as YYYY-MM-DD, for the `sort_date >= today` eligibility guard.
+ * Pure and injectable so the boundary is testable without a request context.
+ */
+export function currentUtcDate(now: Date = new Date()): string {
+  return now.toISOString().slice(0, 10);
+}
+
+/** Confidence accepted by the live organisation_event_links check constraint. */
+export const STAGED_CONFIDENCE = "plausible_needs_review" as const;
 
 const ORGANISER_ROLE_BASES: CandidateBasis["kind"][] = [
   "organiser_owned_domain",
@@ -154,7 +171,8 @@ export function planStaging(row: ReconciliationRow): StagingPlan {
     organisation_id: candidate.organisation_id,
     organisation_name: candidate.organisation_name,
     relationship,
-    confidence: reuse_evidence_ids.length > 0 ? "medium" : "low",
+    // Always plausible_needs_review — exact evidence does not confer verification.
+    confidence: STAGED_CONFIDENCE,
     reuse_evidence_ids,
     create_evidence,
     bases: candidate.bases,
