@@ -54,9 +54,9 @@ describe("buildClubHostIndex", () => {
       { id: "c2", name: "No site", website_url: null },
       { id: "c3", name: "Bad URL", website_url: "not a url" },
     ]);
-    expect([...(index.get("westonac.co.uk") ?? []).map((c) => ({ id: c.id, name: c.name }))]).toEqual([
-      { id: "c1", name: "Weston AC" },
-    ]);
+    expect([
+      ...(index.get("westonac.co.uk") ?? []).map((c) => ({ id: c.id, name: c.name })),
+    ]).toEqual([{ id: "c1", name: "Weston AC" }]);
     expect(index.size).toBe(1);
   });
 
@@ -127,7 +127,10 @@ describe("proposeOrganiser", () => {
       ),
     ).toBeNull();
     expect(
-      proposeOrganiser({ organiser: null, organiser_url: "https://englandathletics.org" }, clubIndex),
+      proposeOrganiser(
+        { organiser: null, organiser_url: "https://englandathletics.org" },
+        clubIndex,
+      ),
     ).toBeNull();
     // Sub-domain tenants on an entry platform are not the platform brand.
     expect(

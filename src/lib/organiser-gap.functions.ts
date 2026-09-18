@@ -156,7 +156,11 @@ export const getOrganiserGap = createServerFn({ method: "POST" })
     const [events, clubs, searchClicks, reminders] = await Promise.all([
       fetchFutureEvents(today),
       fetchActiveClubs(),
-      supabaseAdmin.from("search_clicks").select("clicked_slug").gte("created_at", since).limit(5000),
+      supabaseAdmin
+        .from("search_clicks")
+        .select("clicked_slug")
+        .gte("created_at", since)
+        .limit(5000),
       supabaseAdmin
         .from("email_subscriptions")
         .select("event_id")

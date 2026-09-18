@@ -6,10 +6,7 @@ import { useState } from "react";
 
 export const Route = createFileRoute("/_adminShell/admin/organiser-gap")({
   head: () => ({
-    meta: [
-      { title: "Organiser gap — Admin" },
-      { name: "robots", content: "noindex, nofollow" },
-    ],
+    meta: [{ title: "Organiser gap — Admin" }, { name: "robots", content: "noindex, nofollow" }],
   }),
   component: AdminOrganiserGapPage,
 });
@@ -178,7 +175,11 @@ function AdminOrganiserGapPage() {
           </div>
 
           <div className="mt-4">
-            {section === "proposals" ? <ProposalsTable rows={data.proposals} /> : <TriageTable rows={data.triage} />}
+            {section === "proposals" ? (
+              <ProposalsTable rows={data.proposals} />
+            ) : (
+              <TriageTable rows={data.triage} />
+            )}
           </div>
         </>
       )}
@@ -228,7 +229,12 @@ function ProposalsTable({ rows }: { rows: ProposalRow[] }) {
             <tr key={r.id}>
               <td className="px-3 py-2 text-foreground">
                 {r.slug ? (
-                  <a href={`/events/${r.slug}`} target="_blank" rel="noreferrer" className="text-primary underline">
+                  <a
+                    href={`/events/${r.slug}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-primary underline"
+                  >
                     {r.name}
                   </a>
                 ) : (
