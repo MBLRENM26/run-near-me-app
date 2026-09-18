@@ -42,6 +42,8 @@ export const Route = createFileRoute("/_adminShell/admin/organiser-identities")(
 });
 
 type Action = "accepted" | "rejected" | "reopened";
+/** `apply` = accept the organises link AND project the public organiser atomically. */
+type RowAction = Action | "apply";
 
 const ALLOWED: Record<ReviewStatus, Action[]> = {
   proposed: ["accepted", "rejected"],
@@ -58,6 +60,7 @@ function OrganiserIdentitiesPage() {
   const check = useServerFn(adminCheckSession);
   const fetchList = useServerFn(listOrganiserLinks);
   const doReview = useServerFn(reviewOrganiserLink);
+  const doApply = useServerFn(acceptAndApplyOrganiser);
 
   const [authChecked, setAuthChecked] = useState(false);
   useEffect(() => {
@@ -78,12 +81,44 @@ function OrganiserIdentitiesPage() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [decision, setDecision] = useState<{
     row: OrganiserLinkRow;
-    action: Action;
+    action: RowAction;
   } | null>(null);
   const [note, setNote] = useState("");
+  const [applied, setApplied] = useState<{
+    slug: string | null;
+    from: string | null;
+    to: string;
+  } | null>(null);
 
   const submitDecision = async () => {
     if (!decision) return;
+
+    if (decision.action === "apply") {
+      const res = await doApply({
+        data: { link_id: decision.row.id, note: note || null, confirm: true },
+      });
+      if (res.ok) {
+        toast.success(
+          res.already_applied
+            ? "Already applied — nothing changed"
+            : `Organiser applied: ${res.new_organiser}`,
+        );
+        setApplied({
+          slug: res.event_slug,
+          from: res.previous_organiser,
+          to: res.new_organiser,
+        });
+        setDecision(null);
+        setNote("");
+        // Both the review list and the ORL reconciliation view reflect this.
+        qc.invalidateQueries({ queryKey: ["organiser-links"] });
+        qc.invalidateQueries({ queryKey: ["orl-reconciliation"] });
+      } else {
+        toast.error(res.reason);
+      }
+      return;
+    }
+
     const res = await doReview({
       data: { link_id: decision.row.id, action: decision.action, note: note || null },
     });
@@ -92,6 +127,7 @@ function OrganiserIdentitiesPage() {
       setDecision(null);
       setNote("");
       qc.invalidateQueries({ queryKey: ["organiser-links"] });
+      qc.invalidateQueries({ queryKey: ["orl-reconciliation"] });
     } else {
       toast.error(`Review failed: ${"error" in res ? res.error : "unknown"}`);
     }
