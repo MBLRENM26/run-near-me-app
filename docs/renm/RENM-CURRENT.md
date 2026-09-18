@@ -2,7 +2,9 @@
 
 Status: canonical short-form context for Mike, Codex and Lovable. Linked contracts retain authority; Lovable context is generated from this file.
 
-Last reviewed: 12 August 2026
+Last reviewed: 18 September 2026
+
+Note: sections dated before 18 September 2026 are retained as historical checkpoints. The `Operating checkpoint — 18 September 2026` section at the end of this file carries the current state, planned workstreams and active order, and supersedes the earlier `Active order` where they differ.
 
 ## Authority order
 
