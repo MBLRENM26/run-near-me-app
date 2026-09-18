@@ -137,9 +137,7 @@ export const getRevenueEvidence = createServerFn({ method: "POST" })
         .select("email, event_id")
         .gte("created_at", since)
         .limit(5000),
-      supabaseAdmin
-        .from("email_subscriptions")
-        .select("id", { count: "exact", head: true }),
+      supabaseAdmin.from("email_subscriptions").select("id", { count: "exact", head: true }),
     ]);
 
     for (const res of [searchLogs, searchClicks, reminders, remindersAllTime]) {

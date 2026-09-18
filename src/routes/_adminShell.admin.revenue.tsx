@@ -92,9 +92,7 @@ function AdminRevenuePage() {
                 </div>
                 <span
                   className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${
-                    g.met
-                      ? "bg-primary/10 text-primary"
-                      : "bg-muted text-muted-foreground"
+                    g.met ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
                   }`}
                 >
                   {g.met ? "Gate met" : `Not yet · target ${fmt(g.threshold)}`}
@@ -108,7 +106,11 @@ function AdminRevenuePage() {
             caveat="On-site behaviour only, from our own search log and reminder requests. It tells us whether runners do more than glance — it does not tell us anybody would pay."
           />
           <div className="mt-3 grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            <Stat label="Searches" value={fmt(data.runner.searches)} hint={`last ${data.window_days} days`} />
+            <Stat
+              label="Searches"
+              value={fmt(data.runner.searches)}
+              hint={`last ${data.window_days} days`}
+            />
             <Stat
               label="Searches with no results"
               value={fmt(data.runner.searches_with_no_results)}
@@ -119,8 +121,16 @@ function AdminRevenuePage() {
               value={fmt(data.runner.search_clicks)}
               hint={`${data.runner.click_through_pct}% of searches`}
             />
-            <Stat label="Reminder requests" value={fmt(data.runner.reminder_requests)} hint="in window" />
-            <Stat label="Distinct runners" value={fmt(data.runner.distinct_runner_emails)} hint="unique emails" />
+            <Stat
+              label="Reminder requests"
+              value={fmt(data.runner.reminder_requests)}
+              hint="in window"
+            />
+            <Stat
+              label="Distinct runners"
+              value={fmt(data.runner.distinct_runner_emails)}
+              hint="unique emails"
+            />
             <Stat
               label="Repeat runners"
               value={fmt(data.runner.repeat_runner_emails)}
@@ -137,7 +147,10 @@ function AdminRevenuePage() {
             caveat="Ranked pitch list for a paid or featured listing. Demand signals = on-site result clicks plus reminder requests for that organiser's future races. Outbound hand-offs are only recorded in the analytics product, so they are not included here."
           />
           <div className="mt-3 grid gap-3 sm:grid-cols-3">
-            <Stat label="Organisers with future races" value={fmt(data.organisers.total_with_label)} />
+            <Stat
+              label="Organisers with future races"
+              value={fmt(data.organisers.total_with_label)}
+            />
             <Stat
               label={`Organisers with ${data.organisers.min_signals}+ signals`}
               value={fmt(data.organisers.with_reach)}

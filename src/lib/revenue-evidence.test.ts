@@ -43,7 +43,14 @@ describe("entryPlatformExposure", () => {
 });
 
 describe("organiserLabel", () => {
-  const base = { id: "1", slug: "a", organiser: null, organiser_url: null, entry_url: null, discoverable: false };
+  const base = {
+    id: "1",
+    slug: "a",
+    organiser: null,
+    organiser_url: null,
+    entry_url: null,
+    discoverable: false,
+  };
 
   it("prefers the stored organiser name", () => {
     expect(organiserLabel({ ...base, organiser: "  Sedgefield Harriers " })).toBe(
@@ -58,7 +65,9 @@ describe("organiserLabel", () => {
   });
 
   it("never labels an organiser from an entry platform or aggregator", () => {
-    expect(organiserLabel({ ...base, entry_url: "https://sientries.co.uk/event.php?x=1" })).toBeNull();
+    expect(
+      organiserLabel({ ...base, entry_url: "https://sientries.co.uk/event.php?x=1" }),
+    ).toBeNull();
     expect(organiserLabel({ ...base, organiser_url: "https://findarace.com/e/x" })).toBeNull();
   });
 });
@@ -66,9 +75,30 @@ describe("organiserLabel", () => {
 describe("organiserReach", () => {
   it("aggregates events and demand signals per organiser, ranked by signals", () => {
     const rows = [
-      { id: "e1", slug: "race-one", organiser: "Club A", organiser_url: null, entry_url: null, discoverable: true },
-      { id: "e2", slug: "race-two", organiser: "Club A", organiser_url: null, entry_url: null, discoverable: false },
-      { id: "e3", slug: "race-three", organiser: "Club B", organiser_url: null, entry_url: null, discoverable: true },
+      {
+        id: "e1",
+        slug: "race-one",
+        organiser: "Club A",
+        organiser_url: null,
+        entry_url: null,
+        discoverable: true,
+      },
+      {
+        id: "e2",
+        slug: "race-two",
+        organiser: "Club A",
+        organiser_url: null,
+        entry_url: null,
+        discoverable: false,
+      },
+      {
+        id: "e3",
+        slug: "race-three",
+        organiser: "Club B",
+        organiser_url: null,
+        entry_url: null,
+        discoverable: true,
+      },
     ];
     const clicks = new Map([
       ["race-one", 5],
