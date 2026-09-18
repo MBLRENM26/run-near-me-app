@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { getOrganiserGap } from "@/lib/organiser-gap.functions";
+import { getOrganiserGap, type ProposalRow, type TriageRow } from "@/lib/organiser-gap.functions";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
@@ -206,7 +206,7 @@ function CohortRow({ label, n, route }: { label: string; n: number; route: strin
   );
 }
 
-function ProposalsTable({ rows }: { rows: Awaited<ReturnType<typeof getOrganiserGap>> extends never ? never : import("@/lib/organiser-gap.functions").ProposalRow[] }) {
+function ProposalsTable({ rows }: { rows: ProposalRow[] }) {
   if (rows.length === 0)
     return <p className="text-sm text-muted-foreground">No deterministic proposals right now.</p>;
   return (
@@ -260,7 +260,7 @@ function ProposalsTable({ rows }: { rows: Awaited<ReturnType<typeof getOrganiser
   );
 }
 
-function TriageTable({ rows }: { rows: import("@/lib/organiser-gap.functions").TriageRow[] }) {
+function TriageTable({ rows }: { rows: TriageRow[] }) {
   if (rows.length === 0)
     return <p className="text-sm text-muted-foreground">Nothing queued for manual triage.</p>;
   return (
