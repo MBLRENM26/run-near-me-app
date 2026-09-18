@@ -5,11 +5,13 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { adminCheckSession } from "@/lib/admin.functions";
 import {
+  acceptAndApplyOrganiser,
   listOrganiserLinks,
   reviewOrganiserLink,
   type OrganiserLinkRow,
   type ReviewStatus,
 } from "@/lib/organiser-identity.functions";
+import { canApplyOrganiser, describeOrganiserProjection } from "@/lib/orl-apply";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
