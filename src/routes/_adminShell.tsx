@@ -100,6 +100,12 @@ function AdminLayout() {
               Recurrence
             </Link>
             <Link
+              to="/admin/revenue"
+              className="text-sm font-medium text-foreground hover:text-primary"
+            >
+              Revenue
+            </Link>
+            <Link
               to="/admin/organiser-identities"
               className="text-sm font-medium text-foreground hover:text-primary"
             >
