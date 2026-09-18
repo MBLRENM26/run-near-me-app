@@ -1,12 +1,16 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { getOrganiserGap, type ProposalRow, type TriageRow } from "@/lib/organiser-gap.functions";
-import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { getOrlReconciliation } from "@/lib/orl-reconciliation.functions";
+import type { ReconciliationRow, ReconciliationState } from "@/lib/orl-reconciliation";
 
 export const Route = createFileRoute("/_adminShell/admin/organiser-gap")({
   head: () => ({
-    meta: [{ title: "Organiser gap — Admin" }, { name: "robots", content: "noindex, nofollow" }],
+    meta: [
+      { title: "Organiser gap — ORL reconciliation — Admin" },
+      { name: "robots", content: "noindex, nofollow" },
+    ],
   }),
   component: AdminOrganiserGapPage,
 });
@@ -25,24 +29,49 @@ function dateLabel(iso: string | null): string {
   });
 }
 
-type Section = "proposals" | "triage";
+const STATES: Array<{ key: ReconciliationState | "all"; label: string }> = [
+  { key: "all", label: "All" },
+  { key: "linked_in_orl", label: "Linked in ORL" },
+  { key: "candidate_match", label: "Candidate" },
+  { key: "ambiguous", label: "Ambiguous" },
+  { key: "unmatched", label: "Unmatched" },
+  { key: "unresolved_seed", label: "Unresolved seed" },
+];
+
+const STATE_LABEL: Record<ReconciliationState, string> = {
+  linked_in_orl: "Linked in ORL",
+  candidate_match: "Candidate",
+  ambiguous: "Ambiguous",
+  unmatched: "Unmatched",
+  unresolved_seed: "Unresolved seed",
+};
 
 function AdminOrganiserGapPage() {
-  const [section, setSection] = useState<Section>("proposals");
+  const [state, setState] = useState<ReconciliationState | "all">("all");
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["admin", "organiser-gap"],
-    queryFn: () => getOrganiserGap({ data: { limit: 200 } }),
+    queryKey: ["admin", "orl-reconciliation", state],
+    queryFn: () =>
+      getOrlReconciliation({
+        data: { limit: 200, ...(state === "all" ? {} : { state }) },
+      }),
     staleTime: 60_000,
   });
 
   return (
     <div>
       <div className="flex flex-wrap items-baseline justify-between gap-4">
-        <h1 className="text-2xl font-bold text-foreground">Organiser gap</h1>
-        <p className="max-w-md text-sm text-muted-foreground">
-          Read-only evidence. Nothing on this page writes to the database — organiser proposals are
-          for review and would be applied later through a separately approved audited update.
+        <h1 className="text-2xl font-bold text-foreground">Organiser gap — ORL reconciliation</h1>
+        <p className="max-w-lg text-sm text-muted-foreground">
+          Read-only confirmation view over the existing ORL evidence graph. Nothing here writes,
+          stages or reviews: staging clues into ORL intake (Step 2) is deliberately absent and
+          separately gated. Evidence is never reduced to a flat organiser name — review and approval
+          happen only in{" "}
+          <Link to="/admin/organiser-identities" className="text-primary underline">
+            Organiser identities
+          </Link>
+          .
         </p>
       </div>
 
@@ -55,131 +84,91 @@ function AdminOrganiserGapPage() {
 
       {data && (
         <>
-          <div className="mt-6 grid gap-3 sm:grid-cols-4">
+          <div className="mt-6 grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
             <Stat
               label="Future events"
               value={fmt(data.totals.future_events)}
               hint="ACTIVE, dated today or later"
             />
             <Stat
-              label="Named organiser"
-              value={`${fmt(data.totals.named)} (${data.totals.named_share_pct}%)`}
-              hint="the reachable account list"
+              label="Linked in ORL"
+              value={`${fmt(data.totals.linked_in_orl)} (${data.totals.orl_coverage_pct}%)`}
+              hint="direct organisation_event_link"
             />
+            <Stat label="Candidate" value={fmt(data.totals.candidate_match)} hint="one explainable organisation" />
+            <Stat label="Ambiguous" value={fmt(data.totals.ambiguous)} hint="several possible organisations" />
+            <Stat label="Unmatched" value={fmt(data.totals.unmatched)} hint="no ORL connection yet" />
             <Stat
-              label="No name"
-              value={fmt(data.totals.unnamed_total)}
-              hint={`${fmt(data.totals.unnamed_with_organiser_url)} hold an organiser website`}
-            />
-            <Stat
-              label="Deterministic proposals"
-              value={fmt(
-                data.proposals.length === data.totals.unnamed_total
-                  ? data.proposals.length
-                  : data.proposals.length,
-              )}
-              hint="club-domain or reviewed commercial map"
+              label="Unresolved seed"
+              value={fmt(data.totals.unresolved_seed)}
+              hint="existing quarantine applies"
             />
           </div>
 
-          <div className="mt-6 overflow-x-auto rounded-lg border border-border">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/50 text-left text-muted-foreground">
-                <tr>
-                  <th className="px-3 py-2 font-medium">Cohort</th>
-                  <th className="px-3 py-2 font-medium text-right">Events</th>
-                  <th className="px-3 py-2 font-medium">Resolution route</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                <CohortRow
-                  label="England Athletics — organiser website held"
-                  n={data.totals.cohorts.ea_with_url}
-                  route="club-domain match or reviewed commercial map"
-                />
-                <CohortRow
-                  label="England Athletics — no website held"
-                  n={data.totals.cohorts.ea_without_url}
-                  route="needs source evidence (out of scope)"
-                />
-                <CohortRow
-                  label="runabc import"
-                  n={data.totals.cohorts.runabc}
-                  route="links point at entry platforms — needs source evidence (out of scope)"
-                />
-                <CohortRow
-                  label="TRA import"
-                  n={data.totals.cohorts.tra}
-                  route="links point at the TRA listing — needs source evidence (out of scope)"
-                />
-                <CohortRow
-                  label="Welsh Athletics / Athletics NI"
-                  n={data.totals.cohorts.welsh_ni}
-                  route="needs source evidence (out of scope)"
-                />
-                <CohortRow
-                  label="Literal “TBC” (May 2026 import, no provenance)"
-                  n={data.totals.cohorts.tbc_literal}
-                  route="manual triage queue below"
-                />
-                <CohortRow
-                  label="Literal “Unknown”"
-                  n={data.totals.cohorts.unknown_literal}
-                  route="manual triage queue below"
-                />
-                <CohortRow
-                  label="Other unnamed"
-                  n={data.totals.cohorts.other_unnamed}
-                  route="manual triage or source evidence"
-                />
-              </tbody>
-            </table>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Totals cover all {fmt(data.totals.future_events)} future events and are computed before
+            any display slicing. {fmt(data.totals.shared_host_only)} events hold only
+            shared-host/social/entry-platform endpoints, which can never name an organiser on their
+            own. ORL graph read: {fmt(data.graph_inventory.organisations)} organisations,{" "}
+            {fmt(data.graph_inventory.aliases)} aliases, {fmt(data.graph_inventory.platform_accounts)}{" "}
+            platform accounts, {fmt(data.graph_inventory.links)} links (
+            {fmt(data.graph_inventory.accepted_links)} accepted),{" "}
+            {fmt(data.graph_inventory.unresolved_seed_rows)} quarantined seed rows.
+          </p>
+
+          <div className="mt-6 flex flex-wrap gap-2">
+            {STATES.map((s) => (
+              <Button
+                key={s.key}
+                size="sm"
+                variant={state === s.key ? "default" : "outline"}
+                onClick={() => setState(s.key)}
+              >
+                {s.label}
+              </Button>
+            ))}
           </div>
+
+          <p className="mt-3 text-xs text-muted-foreground">
+            Showing {fmt(data.returned)} rows (display cap {fmt(data.display_limit)}), ordered by
+            runner demand. Demand orders review priority only — it is not identity evidence and
+            contains no runner details.
+          </p>
 
           <div className="mt-4 overflow-x-auto rounded-lg border border-border">
             <table className="w-full text-sm">
               <thead className="bg-muted/50 text-left text-muted-foreground">
                 <tr>
-                  <th className="px-3 py-2 font-medium">Reviewed commercial host</th>
-                  <th className="px-3 py-2 font-medium">Name used</th>
-                  <th className="px-3 py-2 font-medium text-right">Future events matched</th>
+                  <th className="px-3 py-2 font-medium">Event</th>
+                  <th className="px-3 py-2 font-medium">Date</th>
+                  <th className="px-3 py-2 font-medium">Flat label</th>
+                  <th className="px-3 py-2 font-medium">Reconciliation state</th>
+                  <th className="px-3 py-2 font-medium">Canonical organisation(s)</th>
+                  <th className="px-3 py-2 font-medium">Reasons</th>
+                  <th className="px-3 py-2 font-medium text-right">Clues</th>
+                  <th className="px-3 py-2 font-medium">Review</th>
+                  <th className="px-3 py-2 font-medium text-right">Demand</th>
+                  <th className="px-3 py-2" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {data.commercial_map_usage.map((m) => (
-                  <tr key={m.host}>
-                    <td className="px-3 py-2 font-mono text-xs text-foreground">{m.host}</td>
-                    <td className="px-3 py-2 text-foreground">{m.name}</td>
-                    <td className="px-3 py-2 text-right text-muted-foreground">{fmt(m.events)}</td>
+                {data.rows.length === 0 && (
+                  <tr>
+                    <td colSpan={10} className="px-3 py-4 text-muted-foreground">
+                      No events in this state.
+                    </td>
                   </tr>
+                )}
+                {data.rows.map((row) => (
+                  <Row
+                    key={row.event.id}
+                    row={row}
+                    open={expanded === row.event.id}
+                    onToggle={() => setExpanded(expanded === row.event.id ? null : row.event.id)}
+                  />
                 ))}
               </tbody>
             </table>
-          </div>
-
-          <div className="mt-6 flex flex-wrap gap-2">
-            <Button
-              size="sm"
-              variant={section === "proposals" ? "default" : "outline"}
-              onClick={() => setSection("proposals")}
-            >
-              Proposed matches
-            </Button>
-            <Button
-              size="sm"
-              variant={section === "triage" ? "default" : "outline"}
-              onClick={() => setSection("triage")}
-            >
-              TBC triage queue
-            </Button>
-          </div>
-
-          <div className="mt-4">
-            {section === "proposals" ? (
-              <ProposalsTable rows={data.proposals} />
-            ) : (
-              <TriageTable rows={data.triage} />
-            )}
           </div>
         </>
       )}
@@ -197,116 +186,152 @@ function Stat({ label, value, hint }: { label: string; value: string; hint?: str
   );
 }
 
-function CohortRow({ label, n, route }: { label: string; n: number; route: string }) {
-  return (
-    <tr>
-      <td className="px-3 py-2 text-foreground">{label}</td>
-      <td className="px-3 py-2 text-right font-semibold text-foreground">{fmt(n)}</td>
-      <td className="px-3 py-2 text-muted-foreground">{route}</td>
-    </tr>
-  );
-}
+function Row({
+  row,
+  open,
+  onToggle,
+}: {
+  row: ReconciliationRow;
+  open: boolean;
+  onToggle: () => void;
+}) {
+  const e = row.event;
+  const orgs =
+    row.state === "linked_in_orl"
+      ? row.linked.map((l) => `${l.organisation_name} (${l.relationship})`)
+      : row.candidates.map((c) => `${c.organisation_name} (${c.suggested_relationship})`);
+  const reasons =
+    row.state === "linked_in_orl"
+      ? row.linked.map((l) => `link ${l.review_status}, confidence ${l.confidence}`)
+      : row.state === "unresolved_seed"
+        ? row.unresolved_reasons
+        : row.candidates.flatMap((c) => c.reasons);
 
-function ProposalsTable({ rows }: { rows: ProposalRow[] }) {
-  if (rows.length === 0)
-    return <p className="text-sm text-muted-foreground">No deterministic proposals right now.</p>;
   return (
-    <div className="overflow-x-auto rounded-lg border border-border">
-      <table className="w-full text-sm">
-        <thead className="bg-muted/50 text-left text-muted-foreground">
-          <tr>
-            <th className="px-3 py-2 font-medium">Event</th>
-            <th className="px-3 py-2 font-medium">Where</th>
-            <th className="px-3 py-2 font-medium">Date</th>
-            <th className="px-3 py-2 font-medium">Current</th>
-            <th className="px-3 py-2 font-medium">Proposal</th>
-            <th className="px-3 py-2 font-medium">Basis</th>
-            <th className="px-3 py-2 font-medium text-right">Signals</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-border">
-          {rows.map((r) => (
-            <tr key={r.id}>
-              <td className="px-3 py-2 text-foreground">
-                {r.slug ? (
-                  <a
-                    href={`/events/${r.slug}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-primary underline"
-                  >
-                    {r.name}
-                  </a>
-                ) : (
-                  r.name
+    <>
+      <tr>
+        <td className="px-3 py-2 text-foreground">
+          <a href={`/admin/events/${e.id}`} className="text-primary underline">
+            {e.name}
+          </a>
+          <div className="text-xs text-muted-foreground">
+            {[e.town, e.county].filter(Boolean).join(", ") || "—"}
+            {e.source ? ` · ${e.source}` : ""}
+          </div>
+        </td>
+        <td className="px-3 py-2 text-muted-foreground">{dateLabel(e.sort_date)}</td>
+        <td className="px-3 py-2 text-muted-foreground">{e.organiser?.trim() || "(no name)"}</td>
+        <td className="px-3 py-2 font-medium text-foreground">{STATE_LABEL[row.state]}</td>
+        <td className="px-3 py-2 text-foreground">{orgs.length > 0 ? orgs.join("; ") : "—"}</td>
+        <td className="max-w-[320px] px-3 py-2 text-xs text-muted-foreground">
+          {reasons.length > 0 ? reasons[0] : "no ORL-matching clue"}
+          {reasons.length > 1 && ` (+${reasons.length - 1})`}
+        </td>
+        <td className="px-3 py-2 text-right text-muted-foreground">{fmt(row.clues.length)}</td>
+        <td className="px-3 py-2 text-xs text-muted-foreground">
+          {row.linked.length > 0 ? (
+            <Link
+              to="/admin/organiser-identities"
+              search={{ status: undefined }}
+              className="text-primary underline"
+            >
+              {row.linked.map((l) => l.review_status).join(", ")}
+            </Link>
+          ) : (
+            "—"
+          )}
+        </td>
+        <td className="px-3 py-2 text-right text-muted-foreground">
+          {row.demand_total > 0 ? fmt(row.demand_total) : "—"}
+        </td>
+        <td className="px-3 py-2 text-right">
+          <Button size="sm" variant="outline" onClick={onToggle}>
+            {open ? "Hide" : "Evidence"}
+          </Button>
+        </td>
+      </tr>
+      {open && (
+        <tr className="bg-muted/30">
+          <td colSpan={10} className="px-3 py-3">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Clue bundle (channel and role kept separate)
+                </h3>
+                <ul className="mt-2 space-y-1 text-xs text-foreground">
+                  {row.clues.map((c, i) => (
+                    <li key={i}>
+                      <span className="font-medium">{c.kind}</span> · role {c.role}
+                      {c.shared_host && " · shared/multi-tenant host"}
+                      <div className="text-muted-foreground">{c.label}</div>
+                      {c.url && <div className="break-all font-mono">{c.url}</div>}
+                      {(c.tenant || c.path) && (
+                        <div className="text-muted-foreground">
+                          {c.tenant && `tenant: ${c.tenant} `}
+                          {c.path && `path: ${c.path}`}
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  ORL evidence bucket
+                </h3>
+                {row.linked.length === 0 && row.candidates.length === 0 && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    No ORL organisation, alias, platform account or evidence row matches these clues
+                    exactly. Unknown is preferred to an unsupported conclusion.
+                  </p>
                 )}
-              </td>
-              <td className="px-3 py-2 text-muted-foreground">
-                {[r.town, r.county].filter(Boolean).join(", ") || "—"}
-              </td>
-              <td className="px-3 py-2 text-muted-foreground">{dateLabel(r.sort_date)}</td>
-              <td className="px-3 py-2 text-muted-foreground">{r.current}</td>
-              <td className="px-3 py-2 font-semibold text-foreground">
-                {r.proposal.organiser}
-                <span className="ml-1 text-xs font-normal text-muted-foreground">
-                  ({r.proposal.organiser_type})
-                </span>
-              </td>
-              <td className="px-3 py-2 text-xs text-muted-foreground">
-                {r.proposal.basis === "club-domain" ? "club website" : "commercial map"}
-              </td>
-              <td className="px-3 py-2 text-right text-muted-foreground">
-                {r.demand_signals > 0 ? fmt(r.demand_signals) : "—"}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function TriageTable({ rows }: { rows: TriageRow[] }) {
-  if (rows.length === 0)
-    return <p className="text-sm text-muted-foreground">Nothing queued for manual triage.</p>;
-  return (
-    <div className="overflow-x-auto rounded-lg border border-border">
-      <table className="w-full text-sm">
-        <thead className="bg-muted/50 text-left text-muted-foreground">
-          <tr>
-            <th className="px-3 py-2 font-medium">Event</th>
-            <th className="px-3 py-2 font-medium">Where</th>
-            <th className="px-3 py-2 font-medium">Date</th>
-            <th className="px-3 py-2 font-medium">Entry link</th>
-            <th className="px-3 py-2 font-medium text-right">Signals</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-border">
-          {rows.map((r) => (
-            <tr key={r.id}>
-              <td className="px-3 py-2 text-foreground">
-                {r.slug ? (
-                  <a href={`/admin/events/${r.id}`} className="text-primary underline">
-                    {r.name}
-                  </a>
-                ) : (
-                  r.name
+                {row.linked.map((l) => (
+                  <div key={l.link_id} className="mt-2 text-xs text-foreground">
+                    <div className="font-medium">
+                      {l.organisation_name} — {l.relationship} · {l.review_status} · confidence{" "}
+                      {l.confidence}
+                    </div>
+                    <div className="text-muted-foreground">
+                      {l.evidence_count} evidence row(s), {l.review_count} review row(s)
+                    </div>
+                    {l.aliases.length > 0 && (
+                      <div className="text-muted-foreground">Aliases: {l.aliases.join(", ")}</div>
+                    )}
+                    {l.platform_accounts.map((p, i) => (
+                      <div key={i} className="break-all text-muted-foreground">
+                        {p.platform}
+                        {p.tenant ? ` (${p.tenant})` : ""}: {p.account_url ?? "—"}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+                {row.candidates.map((c) => (
+                  <div key={c.organisation_id} className="mt-2 text-xs text-foreground">
+                    <div className="font-medium">
+                      {c.organisation_name} — possible {c.suggested_relationship} ({c.organisation_status})
+                    </div>
+                    <ul className="list-disc pl-4 text-muted-foreground">
+                      {c.reasons.map((r, i) => (
+                        <li key={i} className="break-all">
+                          {r}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+                {row.unresolved_reasons.length > 0 && (
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    Seed quarantine: {row.unresolved_reasons.join("; ")}
+                  </div>
                 )}
-              </td>
-              <td className="px-3 py-2 text-muted-foreground">
-                {[r.town, r.county].filter(Boolean).join(", ") || "—"}
-              </td>
-              <td className="px-3 py-2 text-muted-foreground">{dateLabel(r.sort_date)}</td>
-              <td className="max-w-[220px] truncate px-3 py-2 text-xs text-muted-foreground">
-                {r.entry_host ?? "none"}
-              </td>
-              <td className="px-3 py-2 text-right text-muted-foreground">
-                {r.demand_signals > 0 ? fmt(r.demand_signals) : "—"}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Read-only. No staging, no review action, no write from this page.
+                </p>
+              </div>
+            </div>
+          </td>
+        </tr>
+      )}
+    </>
   );
 }
