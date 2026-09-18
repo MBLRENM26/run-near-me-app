@@ -259,6 +259,7 @@ export type CandidateBasisKind =
   | "alias_name"
   | "platform_account_endpoint"
   | "platform_tenant"
+  | "verified_dedicated_tenant"
   | "evidence_url"
   | "existing_link";
 
@@ -276,6 +277,14 @@ export type CandidateBasis = {
   /** True when the URL sits on a shared / multi-tenant / social host. */
   shared_host: boolean;
   detail: string;
+  /** Platform the basis came from, when the basis is a platform account. */
+  platform?: string | null;
+  /** Dedicated tenant slug / platform identifier the basis rests on. */
+  tenant?: string | null;
+  /** Stored confidence of the ORL platform account behind the basis. */
+  account_confidence?: string | null;
+  /** Full event-specific path retained alongside the tenant. */
+  path?: string | null;
 };
 
 export type CandidateMatch = {
