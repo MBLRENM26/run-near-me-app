@@ -96,6 +96,12 @@ function AdminLayout() {
               Sync runs
             </Link>
             <Link
+              to="/admin/recurrence"
+              className="text-sm font-medium text-foreground hover:text-primary"
+            >
+              Recurrence
+            </Link>
+            <Link
               to="/admin/organiser-identities"
               className="text-sm font-medium text-foreground hover:text-primary"
             >
