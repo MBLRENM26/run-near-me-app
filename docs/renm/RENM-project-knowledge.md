@@ -2,6 +2,24 @@
 
 Status: current master context. Installed in Lovable during Phase 0; subsequent operational decisions remain governed by the decision register.
 
+## Operating checkpoint — 18 September 2026
+
+Documentation-only. Earlier dated sections stay as history; this checkpoint carries current doctrine additions.
+
+**Runner communication doctrine.** A stored reminder request is race-specific transactional consent. It may not be repurposed for newsletters, marketing or wider alerting; broader communication needs separate explicit optional consent. Reminder fulfilment is manual-first and fail-closed: scheduled job 6 remains inactive and sending requires `REMINDER_SENDING_ENABLED` to be exactly `true`. No historic or bulk subscriber messaging is approved; historic records need individual eligibility and purpose review.
+
+**Communication eligibility doctrine.** A record may be communicated about only with stable occurrence identity, confirmed date/status, typed canonical entry destination, entry state with opening/closing evidence where known, source/provenance, last verification, and accepted organiser identity where organiser communication is involved. Ineligible or uncertain records go to an exception queue. A safely eligible subset is sufficient; full-catalogue perfection is not a prerequisite.
+
+**Lifecycle doctrine for sends.** Request, confirmation, scheduled, sent, delivered, failed, clicked and self-reported-entered are distinct states. A failed send must remain visible and retryable and must never be recorded as completed. Clicks remain hand-offs, not entries or revenue.
+
+**Organiser identity doctrine.** The Organiser Review Layer is the single canonical organiser identity, evidence and approval authority. The Organiser Gap page is read-only intake and proposal evidence, never a parallel identity system. Ambiguous evidence — for example one website host mapping to several clubs — must produce no deterministic proposal. Organiser opportunity evidence is aggregated and excludes runner PII. The ORL-intake integration remains review/planned work pending separate approval.
+
+**Shared communications infrastructure.** Email first, social later, on the same verified facts, eligibility rules, scheduling, approvals, status, failure handling and audit history. Social automation begins as drafts for approval; no raw-feed-to-public automation.
+
+**Observed evidence, 18 September 2026 (volatile, not doctrine).** 36 stored reminder requests from 34 distinct addresses in the recent 90-day window, two addresses with more than one race — the agreed 25-request prototype trigger is met and repeat intent is measured separately. 1,181 future ACTIVE events with 141 usefully named organisers (12%), 108 `TBC` and 10 `Unknown` rows from a single 8 May import, and 575 unnamed England Athletics events of which 566 hold `organiser_url` evidence. ORL holds 8 organisations, 2 links, 2 accepted links and one linked future event. September Lovable analytics showed a large direct/desktop anomaly against the earlier Google/mobile profile; exclude bots, monitoring and measurement changes before relying on it.
+
+**Commercial ordering.** Prove the operational reminder flow before copy, pricing or wider promotion. Accuracy and corrections remain free; no organiser can buy factual authority.
+
 ## Historical context-reset evidence — 25 July 2026
 
 - This section records the pre-Phase-0 evidence state. Phase 0 knowledge control has since been installed; the current operating kernel governs immediate state.
