@@ -1,6 +1,7 @@
 import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { canApplyOrganiser } from "@/lib/orl-apply";
 
 // Loaded lazily so the server-only session module never enters the client
 // import graph (route components statically import this module).
@@ -10,6 +11,7 @@ const isAdminAuthenticated = createServerOnlyFn(async () => {
   );
   return impl();
 });
+
 
 
 const REVIEW_STATUSES = ["proposed", "accepted", "rejected", "reopened"] as const;
