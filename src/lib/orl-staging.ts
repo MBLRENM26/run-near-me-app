@@ -45,7 +45,13 @@ export type StagingPlan =
       organisation_id: string;
       organisation_name: string;
       relationship: CandidateMatch["suggested_relationship"];
-      confidence: "low" | "medium";
+      /**
+       * The live organisation_event_links check constraint allows exactly
+       * 'verified' | 'plausible_needs_review'. A newly staged proposal is always
+       * plausible_needs_review, however exact the clue: 'verified' is a
+       * conclusion of review/acceptance, never of staging.
+       */
+      confidence: "plausible_needs_review";
       /** Existing identity_evidence ids reused verbatim. */
       reuse_evidence_ids: string[];
       /** Deterministic observation to record when no exact evidence row exists. */
