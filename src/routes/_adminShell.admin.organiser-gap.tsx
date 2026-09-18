@@ -349,9 +349,30 @@ function Row({
           {row.demand_total > 0 ? fmt(row.demand_total) : "—"}
         </td>
         <td className="px-3 py-2 text-right">
-          <Button size="sm" variant="outline" onClick={onToggle}>
-            {open ? "Hide" : "Evidence"}
-          </Button>
+          <div className="flex justify-end gap-2">
+            {plan.allowed &&
+              (confirming ? (
+                <>
+                  <Button
+                    size="sm"
+                    disabled={staging}
+                    onClick={() => onStage(plan.organisation_id)}
+                  >
+                    {staging ? "Staging…" : `Confirm ${plan.relationship}`}
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={onAskConfirm}>
+                    Cancel
+                  </Button>
+                </>
+              ) : (
+                <Button size="sm" variant="outline" onClick={onAskConfirm}>
+                  Stage proposal
+                </Button>
+              ))}
+            <Button size="sm" variant="outline" onClick={onToggle}>
+              {open ? "Hide" : "Evidence"}
+            </Button>
+          </div>
         </td>
       </tr>
       {open && (
