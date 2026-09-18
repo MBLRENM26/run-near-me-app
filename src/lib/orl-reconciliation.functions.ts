@@ -40,7 +40,10 @@ const EVENT_COLUMNS =
 
 /** Pages a SELECT to exhaustion so nothing is silently capped at 1,000 rows. */
 async function fetchAllPages<T>(
-  run: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
+  run: (
+    from: number,
+    to: number,
+  ) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
 ): Promise<{ rows: T[]; truncated: boolean }> {
   const rows: T[] = [];
   for (let page = 0; page < MAX_PAGES; page += 1) {

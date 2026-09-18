@@ -155,7 +155,8 @@ function AdminOrganiserGapPage() {
               Showing {fmt(data.offset + 1)}–{fmt(data.offset + data.returned)} of{" "}
               {fmt(data.matching)} matching rows, ordered by runner demand. Demand orders review
               priority only — it is not identity evidence and contains no runner details.
-              {data.scan_truncated && " Warning: the safety page bound was reached, so totals are partial."}
+              {data.scan_truncated &&
+                " Warning: the safety page bound was reached, so totals are partial."}
             </span>
             <span className="flex gap-2">
               <Button
