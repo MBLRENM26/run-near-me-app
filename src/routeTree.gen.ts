@@ -75,6 +75,7 @@ import { Route as AdminShellAdminSearchRouteImport } from './routes/_adminShell.
 import { Route as AdminShellAdminRevenueRouteImport } from './routes/_adminShell.admin.revenue'
 import { Route as AdminShellAdminRecurrenceRouteImport } from './routes/_adminShell.admin.recurrence'
 import { Route as AdminShellAdminOrganiserIdentitiesRouteImport } from './routes/_adminShell.admin.organiser-identities'
+import { Route as AdminShellAdminOrganiserGapRouteImport } from './routes/_adminShell.admin.organiser-gap'
 import { Route as AdminShellAdminClubClaimsRouteImport } from './routes/_adminShell.admin.club-claims'
 import { Route as AdminShellAdminClaimsRouteImport } from './routes/_adminShell.admin.claims'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
@@ -442,6 +443,12 @@ const AdminShellAdminOrganiserIdentitiesRoute =
     path: '/admin/organiser-identities',
     getParentRoute: () => AdminShellRoute,
   } as any)
+const AdminShellAdminOrganiserGapRoute =
+  AdminShellAdminOrganiserGapRouteImport.update({
+    id: '/admin/organiser-gap',
+    path: '/admin/organiser-gap',
+    getParentRoute: () => AdminShellRoute,
+  } as any)
 const AdminShellAdminClubClaimsRoute =
   AdminShellAdminClubClaimsRouteImport.update({
     id: '/admin/club-claims',
@@ -631,6 +638,7 @@ export interface FileRoutesByFullPath {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/admin/claims': typeof AdminShellAdminClaimsRoute
   '/admin/club-claims': typeof AdminShellAdminClubClaimsRoute
+  '/admin/organiser-gap': typeof AdminShellAdminOrganiserGapRoute
   '/admin/organiser-identities': typeof AdminShellAdminOrganiserIdentitiesRouteWithChildren
   '/admin/recurrence': typeof AdminShellAdminRecurrenceRoute
   '/admin/revenue': typeof AdminShellAdminRevenueRoute
@@ -721,6 +729,7 @@ export interface FileRoutesByTo {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/admin/claims': typeof AdminShellAdminClaimsRoute
   '/admin/club-claims': typeof AdminShellAdminClubClaimsRoute
+  '/admin/organiser-gap': typeof AdminShellAdminOrganiserGapRoute
   '/admin/organiser-identities': typeof AdminShellAdminOrganiserIdentitiesRouteWithChildren
   '/admin/recurrence': typeof AdminShellAdminRecurrenceRoute
   '/admin/revenue': typeof AdminShellAdminRevenueRoute
@@ -813,6 +822,7 @@ export interface FileRoutesById {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/_adminShell/admin/claims': typeof AdminShellAdminClaimsRoute
   '/_adminShell/admin/club-claims': typeof AdminShellAdminClubClaimsRoute
+  '/_adminShell/admin/organiser-gap': typeof AdminShellAdminOrganiserGapRoute
   '/_adminShell/admin/organiser-identities': typeof AdminShellAdminOrganiserIdentitiesRouteWithChildren
   '/_adminShell/admin/recurrence': typeof AdminShellAdminRecurrenceRoute
   '/_adminShell/admin/revenue': typeof AdminShellAdminRevenueRoute
@@ -905,6 +915,7 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/admin/claims'
     | '/admin/club-claims'
+    | '/admin/organiser-gap'
     | '/admin/organiser-identities'
     | '/admin/recurrence'
     | '/admin/revenue'
@@ -995,6 +1006,7 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/admin/claims'
     | '/admin/club-claims'
+    | '/admin/organiser-gap'
     | '/admin/organiser-identities'
     | '/admin/recurrence'
     | '/admin/revenue'
@@ -1086,6 +1098,7 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/_adminShell/admin/claims'
     | '/_adminShell/admin/club-claims'
+    | '/_adminShell/admin/organiser-gap'
     | '/_adminShell/admin/organiser-identities'
     | '/_adminShell/admin/recurrence'
     | '/_adminShell/admin/revenue'
@@ -1661,6 +1674,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminShellAdminOrganiserIdentitiesRouteImport
       parentRoute: typeof AdminShellRoute
     }
+    '/_adminShell/admin/organiser-gap': {
+      id: '/_adminShell/admin/organiser-gap'
+      path: '/admin/organiser-gap'
+      fullPath: '/admin/organiser-gap'
+      preLoaderRoute: typeof AdminShellAdminOrganiserGapRouteImport
+      parentRoute: typeof AdminShellRoute
+    }
     '/_adminShell/admin/club-claims': {
       id: '/_adminShell/admin/club-claims'
       path: '/admin/club-claims'
@@ -1843,6 +1863,7 @@ const AdminShellAdminOrganiserIdentitiesRouteWithChildren =
 interface AdminShellRouteChildren {
   AdminShellAdminClaimsRoute: typeof AdminShellAdminClaimsRoute
   AdminShellAdminClubClaimsRoute: typeof AdminShellAdminClubClaimsRoute
+  AdminShellAdminOrganiserGapRoute: typeof AdminShellAdminOrganiserGapRoute
   AdminShellAdminOrganiserIdentitiesRoute: typeof AdminShellAdminOrganiserIdentitiesRouteWithChildren
   AdminShellAdminRecurrenceRoute: typeof AdminShellAdminRecurrenceRoute
   AdminShellAdminRevenueRoute: typeof AdminShellAdminRevenueRoute
@@ -1862,6 +1883,7 @@ interface AdminShellRouteChildren {
 const AdminShellRouteChildren: AdminShellRouteChildren = {
   AdminShellAdminClaimsRoute: AdminShellAdminClaimsRoute,
   AdminShellAdminClubClaimsRoute: AdminShellAdminClubClaimsRoute,
+  AdminShellAdminOrganiserGapRoute: AdminShellAdminOrganiserGapRoute,
   AdminShellAdminOrganiserIdentitiesRoute:
     AdminShellAdminOrganiserIdentitiesRouteWithChildren,
   AdminShellAdminRecurrenceRoute: AdminShellAdminRecurrenceRoute,

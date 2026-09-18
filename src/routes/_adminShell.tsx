@@ -106,6 +106,12 @@ function AdminLayout() {
               Revenue
             </Link>
             <Link
+              to="/admin/organiser-gap"
+              className="text-sm font-medium text-foreground hover:text-primary"
+            >
+              Organiser gap
+            </Link>
+            <Link
               to="/admin/organiser-identities"
               className="text-sm font-medium text-foreground hover:text-primary"
             >
