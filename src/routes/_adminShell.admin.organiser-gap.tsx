@@ -285,12 +285,21 @@ function Row({
   row,
   open,
   onToggle,
+  confirming,
+  staging,
+  onAskConfirm,
+  onStage,
 }: {
   row: ReconciliationRow;
   open: boolean;
   onToggle: () => void;
+  confirming: boolean;
+  staging: boolean;
+  onAskConfirm: () => void;
+  onStage: (organisation_id: string) => void;
 }) {
   const e = row.event;
+  const plan = planStaging(row);
   const orgs =
     row.state === "linked_in_orl"
       ? row.linked.map((l) => `${l.organisation_name} (${l.relationship})`)
