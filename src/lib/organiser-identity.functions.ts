@@ -232,6 +232,126 @@ export const reviewOrganiserLink = createServerFn({ method: "POST" })
   });
 
 // ---------------------------------------------------------------------------
+// Accept & apply organiser (single link, atomic acceptance + public projection)
+// ---------------------------------------------------------------------------
+export type AcceptAndApplyResult =
+  | {
+      ok: true;
+      already_applied: boolean;
+      link_id: string;
+      event_slug: string | null;
+      previous_organiser: string | null;
+      new_organiser: string;
+    }
+  | { ok: false; error: string; reason: string };
+
+/**
+ * Accept ONE `organises` link and project the canonical organisation name onto
+ * events.organiser in the same database transaction. No bulk path exists: the
+ * input is a single link id plus an explicit confirmation.
+ *
+ * organiser_club_id and organiser_type are never written.
+ */
+export const acceptAndApplyOrganiser = createServerFn({ method: "POST" })
+  .inputValidator((d) =>
+    z
+      .object({
+        link_id: z.string().uuid(),
+        note: z.string().max(2000).optional().nullable(),
+        /** Explicit per-row confirmation; there is no bulk route. */
+        confirm: z.literal(true),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }): Promise<AcceptAndApplyResult> => {
+    await requireAdminMutation();
+
+    const { data: link, error: linkErr } = await supabaseAdmin
+      .from("organisation_event_links")
+      .select("id, event_id, organisation_id, relationship, review_status")
+      .eq("id", data.link_id)
+      .maybeSingle();
+    if (linkErr) throw new Error(linkErr.message);
+    if (!link) return { ok: false, error: "link_not_found", reason: "Link not found." };
+
+    const [{ data: org, error: orgErr }, { data: event, error: eventErr }] = await Promise.all([
+      supabaseAdmin
+        .from("organisations")
+        .select("id, canonical_name")
+        .eq("id", link.organisation_id)
+        .maybeSingle(),
+      supabaseAdmin
+        .from("events")
+        .select("id, slug, organiser")
+        .eq("id", link.event_id)
+        .maybeSingle(),
+    ]);
+    if (orgErr) throw new Error(orgErr.message);
+    if (eventErr) throw new Error(eventErr.message);
+    if (!org) return { ok: false, error: "organisation_not_found", reason: "Organisation not found." };
+    if (!event) return { ok: false, error: "event_not_found", reason: "Event not found." };
+
+    // Pre-flight using the same rules the database function re-validates inside
+    // the transaction; the database remains the authority.
+    const decision = canApplyOrganiser({
+      relationship: link.relationship,
+      review_status: link.review_status,
+      current_organiser: event.organiser,
+      canonical_name: org.canonical_name,
+    });
+    if (!decision.allowed && decision.code !== "already_applied") {
+      return { ok: false, error: decision.code, reason: decision.reason };
+    }
+
+    const { data: result, error } = await supabaseAdmin.rpc(
+      "accept_and_apply_organiser" as never,
+      {
+        _link_id: data.link_id,
+        _note: data.note ?? null,
+        _reviewer_identity: "admin:cookie-session",
+      } as never,
+    );
+    if (error) {
+      const msg = error.message ?? "unknown_error";
+      // The function ships in the repository but is activated by the normal
+      // reviewed migration/deployment step.
+      if (msg.includes("accept_and_apply_organiser") || msg.includes("does not exist")) {
+        return {
+          ok: false,
+          error: "rpc_not_installed",
+          reason:
+            "The atomic accept-and-apply database function is not installed yet. It ships in the repository and needs the normal reviewed migration step before this action can run.",
+        };
+      }
+      throw new Error(msg);
+    }
+
+    const payload = (result ?? {}) as {
+      ok?: boolean;
+      error?: string;
+      already_applied?: boolean;
+      previous_organiser?: string | null;
+      new_organiser?: string;
+    };
+    if (!payload.ok) {
+      return {
+        ok: false,
+        error: payload.error ?? "unknown_error",
+        reason: `The database refused the change (${payload.error ?? "unknown_error"}). Nothing was modified.`,
+      };
+    }
+
+    return {
+      ok: true,
+      already_applied: Boolean(payload.already_applied),
+      link_id: link.id,
+      event_slug: event.slug,
+      previous_organiser: payload.previous_organiser ?? event.organiser,
+      new_organiser: payload.new_organiser ?? org.canonical_name,
+    };
+  });
+
+// ---------------------------------------------------------------------------
 // Unresolved seed rows (admin-only visibility)
 // ---------------------------------------------------------------------------
 export type UnresolvedRow = {
