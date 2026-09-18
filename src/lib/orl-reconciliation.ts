@@ -510,6 +510,42 @@ export function reconcileEvent(
         .filter(Boolean)
         .includes(needle);
       if (!tenantHit && !pathHit) continue;
+
+      // Dedicated-tenant evidence. A generic platform host alone is never
+      // enough, but a VERIFIED ORL platform account whose dedicated tenant
+      // sub-domain carries an event-specific path identifies BOTH the
+      // organisation (exact tenant) and the occurrence (exact path). That may
+      // PROPOSE `organises` for human review — never accept it. A
+      // plausible_needs_review account, a path-only hit, or any social account
+      // stays channel evidence.
+      const dedicatedTenant =
+        tenantHit &&
+        Boolean(acct.tenant_slug) &&
+        acct.confidence === "verified" &&
+        !isSocialHost(clue.host) &&
+        Boolean(clue.path);
+
+      if (dedicatedTenant) {
+        addCandidate(
+          candidates,
+          org,
+          "organises",
+          `verified dedicated ${acct.platform} tenant "${identifier}" with event-specific path ${clue.path} (${clue.url})`,
+          {
+            kind: "verified_dedicated_tenant",
+            url: clue.url,
+            evidence_id: null,
+            shared_host: clue.shared_host,
+            detail: `verified dedicated ${acct.platform} tenant "${identifier}" on ${clue.host} with event-specific path ${clue.path} (${clue.url})`,
+            platform: acct.platform,
+            tenant: identifier,
+            account_confidence: acct.confidence,
+            path: clue.path,
+          },
+        );
+        continue;
+      }
+
       addCandidate(
         candidates,
         org,
@@ -521,6 +557,10 @@ export function reconcileEvent(
           evidence_id: null,
           shared_host: clue.shared_host,
           detail: `${acct.platform} ${acct.tenant_slug ? "tenant" : "platform identifier"} "${identifier}" present in ${clue.url}${clue.path ? ` (path ${clue.path})` : ""}`,
+          platform: acct.platform,
+          tenant: identifier,
+          account_confidence: acct.confidence,
+          path: clue.path,
         },
       );
     }
