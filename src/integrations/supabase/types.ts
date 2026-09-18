@@ -1733,6 +1733,10 @@ export type Database = {
       }
     }
     Functions: {
+      accept_and_apply_organiser: {
+        Args: { _link_id: string; _note?: string; _reviewer_identity?: string }
+        Returns: Json
+      }
       consume_login_rate: {
         Args: { _key_hash: string }
         Returns: {

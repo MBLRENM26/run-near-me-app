@@ -1,10 +1,9 @@
 -- RENM — ORL Step 3: atomic "Accept & apply organiser".
 --
--- PENDING / NOT APPLIED. Committed to the repository only. Activation requires
--- the normal reviewed migration/deployment step; this file is deliberately held
--- outside supabase/migrations/ because that directory is applied automatically
--- by the platform migration tool. To activate, move/apply it through the
--- reviewed migration process.
+-- REVIEWED AND ACTIVATED on 18 September 2026. Retained in normal migration
+-- history for reproducibility; the function body and grants below are
+-- byte-for-byte the reviewed version (CREATE OR REPLACE and grants are
+-- idempotent).
 --
 -- Contract: accept exactly ONE organisation_event_link whose relationship is
 -- `organises` and whose review status is `proposed` or `reopened`, and — in the
