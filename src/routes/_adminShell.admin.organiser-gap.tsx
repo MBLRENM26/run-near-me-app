@@ -451,7 +451,13 @@ function Row({
                   </div>
                 )}
                 <p className="mt-2 text-xs text-muted-foreground">
-                  Read-only. No staging, no review action, no write from this page.
+                  {plan.allowed
+                    ? `Stageable as a proposed ${plan.relationship} link for ${plan.organisation_name} (confidence ${plan.confidence}${
+                        plan.reuse_evidence_ids.length > 0
+                          ? `, reusing ${plan.reuse_evidence_ids.length} existing evidence row(s)`
+                          : ", recording the exact endpoint as a new evidence observation"
+                      }). No acceptance happens here.`
+                    : `Staging blocked: ${plan.reason}`}
                 </p>
               </div>
             </div>
