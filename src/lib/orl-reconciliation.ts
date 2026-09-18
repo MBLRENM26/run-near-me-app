@@ -339,10 +339,12 @@ function addCandidate(
   org: OrlOrganisation,
   relationship: CandidateMatch["suggested_relationship"],
   reason: string,
+  basis: CandidateBasis,
 ) {
   const existing = map.get(org.id);
   if (existing) {
     if (!existing.reasons.includes(reason)) existing.reasons.push(reason);
+    existing.bases.push(basis);
     // A stronger identity claim upgrades the suggested relationship.
     if (relationship === "organises") existing.suggested_relationship = "organises";
     return;
@@ -353,6 +355,7 @@ function addCandidate(
     organisation_status: org.status,
     suggested_relationship: relationship,
     reasons: [reason],
+    bases: [basis],
   });
 }
 
