@@ -78,6 +78,22 @@ const ORGANISER_ROLE_BASES: CandidateBasis["kind"][] = [
   "existing_link",
 ];
 
+/**
+ * A verified dedicated tenant is the one organiser-role basis that legitimately
+ * sits on a shared platform host: the exact tenant identifies the organisation
+ * and the event-specific path identifies the occurrence. It still only ever
+ * PROPOSES `organises` for human review.
+ */
+const SHARED_HOST_ROLE_BASES: CandidateBasis["kind"][] = ["verified_dedicated_tenant"];
+
+function hasOrganiserRoleBasis(bases: CandidateBasis[]): boolean {
+  return bases.some(
+    (b) =>
+      (ORGANISER_ROLE_BASES.includes(b.kind) && !b.shared_host) ||
+      SHARED_HOST_ROLE_BASES.includes(b.kind),
+  );
+}
+
 /** Decide, deterministically, whether one reconciliation row may be staged. */
 export function planStaging(row: ReconciliationRow): StagingPlan {
   // An accepted ORL relationship is already confirmed: nothing to stage.
