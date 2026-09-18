@@ -102,7 +102,7 @@ function AdminOrganiserGapPage() {
             <Stat
               label="Linked in ORL"
               value={`${fmt(data.totals.linked_in_orl)} (${data.totals.orl_coverage_pct}%)`}
-              hint="direct organisation_event_link"
+              hint="accepted organisation_event_link"
             />
             <Stat
               label="Candidate"
