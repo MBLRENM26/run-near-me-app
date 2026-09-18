@@ -17,7 +17,8 @@
  *   named organisers) produces NO proposal. Unknown beats false precision.
  */
 
-import { classifyEventLink, isEntryPlatformHost } from "@/lib/link-trust";
+import { classifyEventLink } from "@/lib/link-trust";
+import { isSharedPlatformHost } from "@/lib/orl-reconciliation";
 
 /**
  * Reviewed commercial organiser domains. Keys are hosts exactly as
@@ -113,10 +114,12 @@ export function proposeOrganiser(
   if (!host) return null;
 
   // Multi-tenant, social and entry-platform hosts are shared by many
-  // unrelated organisations: a host match there proves nothing.
-  if (isSharedPlatformHost(host)) return null;
+  // unrelated organisations: a club-host match there proves nothing. The
+  // reviewed commercial map below is explicit, hand-verified evidence and is
+  // unaffected.
+  const sharedHost = isSharedPlatformHost(host);
 
-  const clubMatches = clubHosts.get(host);
+  const clubMatches = sharedHost ? undefined : clubHosts.get(host);
   // Never choose the first club when a host maps to several clubs — ambiguous
   // evidence must produce no proposal and be reconciled in ORL instead.
   if (clubMatches && clubMatches.length === 1) {
