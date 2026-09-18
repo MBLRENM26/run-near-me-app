@@ -71,6 +71,24 @@ export function currentUtcDate(now: Date = new Date()): string {
 /** Confidence accepted by the live organisation_event_links check constraint. */
 export const STAGED_CONFIDENCE = "plausible_needs_review" as const;
 
+/**
+ * Plain-English confirmation sentence for the staging UI. Staging only ever
+ * proposes; the wording must reflect that for every relationship type.
+ */
+export function proposalConfirmationSentence(
+  relationship: CandidateMatch["suggested_relationship"],
+  organisationName: string,
+  eventName: string,
+): string {
+  if (relationship === "organises") {
+    return `Propose that ${organisationName} organises ${eventName}.`;
+  }
+  if (relationship === "entry_platform_hosts") {
+    return `Propose recording ${organisationName} as the entry-platform host for ${eventName}.`;
+  }
+  return `Propose recording ${organisationName} as source evidence for ${eventName}.`;
+}
+
 const ORGANISER_ROLE_BASES: CandidateBasis["kind"][] = [
   "organiser_owned_domain",
   "canonical_name",
