@@ -252,6 +252,32 @@ export type ReconciliationState =
   | "unmatched"
   | "unresolved_seed";
 
+/** The kind of exact, explainable clue that produced a candidate. */
+export type CandidateBasisKind =
+  | "organiser_owned_domain"
+  | "canonical_name"
+  | "alias_name"
+  | "platform_account_endpoint"
+  | "platform_tenant"
+  | "evidence_url"
+  | "existing_link";
+
+/**
+ * A single explainable basis for a candidate. Retained structurally (not just
+ * as prose) so Step 2 staging can decide, deterministically, which typed
+ * relationship and which evidence provenance a proposal may carry.
+ */
+export type CandidateBasis = {
+  kind: CandidateBasisKind;
+  /** Full endpoint the basis rests on, when the basis is URL-bearing. */
+  url: string | null;
+  /** Existing identity_evidence id when the basis is an exact ORL evidence row. */
+  evidence_id: string | null;
+  /** True when the URL sits on a shared / multi-tenant / social host. */
+  shared_host: boolean;
+  detail: string;
+};
+
 export type CandidateMatch = {
   organisation_id: string;
   organisation_name: string;
@@ -259,6 +285,7 @@ export type CandidateMatch = {
   /** Typed relationship the clue could support — never assumed to be `organises`. */
   suggested_relationship: "organises" | "entry_platform_hosts" | "source_suggests";
   reasons: string[];
+  bases: CandidateBasis[];
 };
 
 export type LinkedDetail = {
