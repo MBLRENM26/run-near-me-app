@@ -1,63 +1,92 @@
-# Runner subscription prototype + placeholder organiser clean-up
+# Organiser identity cleanup — scope plan (TBC/unknown cohort)
 
-Two separate packages. Both code-only and read-only against live data unless a step is
-explicitly marked as a later, separately approved data update.
+## Why this matters
 
-## 1. Runner subscription prototype (interest capture + manual service)
+The organiser reach table on /admin/revenue — the account list for any paid
+organiser offer — only works when an event has a named organiser. Today only
+141 of 1,181 future ACTIVE events (12%) have one. Everything else groups as
+"TBC" (108, ranked 2nd), a bare domain, or is skipped entirely.
 
-Verified signal: 36 reminder requests from 34 distinct people, all inside the last 90 days.
-That clears the agreed 25 threshold. One honest caveat: only 2 of those 34 people asked about
-more than one race, so repeat intent is not yet demonstrated. The gate currently requires both
-25 requests and 10 repeat runners, so it still reads "not met".
+## Verified current state (production, read-only, 18 Sep 2026)
 
-Proposed change to how the gate reads:
-- Keep 25 requests as the trigger for prototyping.
-- Move repeat runners to a separate observation shown next to it, not a blocker.
-- The gate wording stays honest: requests are interest, not paid intent.
+| Cohort | Events | What we hold | Resolution route |
+|---|---|---|---|
+| Named organiser | 141 | organiser text (SA 78, manual/submissions 167 incl. past) | already fine |
+| organiser = NULL, EA source | 575 | organiser_url on 566 (real organiser sites: RunThrough 89, Nice Work 38, ATW 11, club sites…); organiser name absent | domain → organiser |
+| organiser = NULL, runabc source | 222 | organiser_url mostly entry platforms (Eventrac 49, EntryCentral 12) — not organiser-owned | needs source evidence (out of scope) |
+| organiser = NULL, TRA source | 119 | organiser_url = races.tra-uk.org listing (untrusted host) | needs source evidence (out of scope) |
+| organiser = 'TBC' | 108 | one-off batch imported 8 May 2026. Zero provenance: no source, source_url or organiser_url. 33 have entry links (21 scottishhillrunners.uk, 8 letsdothis, 4 eventrac). One row even has town 'TBC' | manual triage per event |
+| organiser = 'Unknown' | 10 | as above | same triage |
+| organiser = NULL, Welsh/NI | 14 | no organiser_url | needs source evidence (out of scope) |
 
-What gets built:
-- A "Race alerts" interest page. A runner gives an email plus what they want to hear about
-  (area, distance, how far ahead). Stored as an interest record. No payment, no pricing claim.
-- Existing per-race reminder buttons stay exactly as they are.
-- An admin screen listing interest records with the stated preferences, so you can run the
-  manual service yourself: pick a small number of people, verify the races by hand, send.
-- A send log on that screen recording what you sent and when, so the manual test is auditable.
+Supporting facts: the clubs table has 1,356 active clubs with websites
+(1,073 distinct hosts, none on multi-tenant platforms); 168 EA future events
+already match a club website domain exactly. The ORL `organisations` table is
+empty (8 placeholder rows) so domain→organisation has nothing to match yet —
+we will not populate it in this package.
 
-What is deliberately not in this package:
-- No automated sending. The reminder job stays inactive and sending stays fail-closed.
-- No payment provider, no tiers, no prices published anywhere.
-- No change to event pages, links, discovery gates, analytics or provenance.
+## What we build (this package — code + read-only admin, no data writes)
 
-## 2. Placeholder organiser records (the "TBC" entry)
+1. **`src/lib/organiser-resolution.ts`** — pure, deterministic, no network:
+   given an event, propose `{ organiser, organiser_type }` from evidence only:
+   - Club-domain match: organiser_url host == club website_url host
+     (www-normalised). Sets organiser_type 'club'.
+   - Reviewed commercial map: a constant object of organiser_url host →
+     `{ name, type: 'commercial' }` for recurring EA hosts (RunThrough,
+     Nice Work, ATW, RunNation, Evensplits, Run For All, …), each entry
+     annotated with the matched event count so the map is reviewable.
+   - Everything else (entry platforms, races.tra-uk.org, no URL) → no
+     proposal. Unknown beats false precision.
+   - Unit tests: host normalisation, club vs commercial precedence, no-match
+     cases, the TBC/Unknown literals treated as unnamed.
 
-Confirmed in production: 118 future active races carry a placeholder in the organiser field —
-108 literally "TBC", 10 "Unknown", plus 11 "Ngb" (governing-body shorthand). All were created in
-the 8 May bulk import, all have governance "unknown" and no organiser website. That is why "TBC"
-appeared as the second-biggest organiser: 108 unrelated races grouped under a non-organiser.
+2. **Admin worklist page** (`_adminShell.admin.organisers.tsx`, "Organisers"
+   nav link): cohort summary counts, a proposed-match queue (event, current
+   value, proposal, basis, search clicks + reminder requests so high-value
+   rows sort first), and the TBC triage queue (33 with entry links and any
+   with demand signals first). Read-only: accepting a proposal stages it into
+   a review list; nothing is written.
 
-Step A — stop reporting them as an organiser (immediate, code-only):
-Treat TBC / TBA / TBD / N/A / Unknown / Ngb / "-" as "no organiser recorded". They then count
-toward the "no organiser recorded" figure instead of inventing an entity.
+3. **Application step (separately approved, after review)**: apply staged
+   proposals through the audited edit route (event_edits rows with notes),
+   plus re-run the existing name-based club backfill. Then re-check
+   /admin/revenue organiser reach before/after.
 
-Step B — export for your manual research (immediate, read-only):
-Produce a file listing every affected race, one row each: event id, race name, date, town,
-county, region, distances, current organiser value, current links, and the public page URL.
-Delivered as both CSV and JSON so you can hand it out for research and send a JSON file back.
+4. **TBC cohort triage (manual, ~118 rows)**: per event — find the official
+   site; if found, audited edit fills organiser / organiser_type /
+   organiser_url; if unverifiable, demote (EXPIRED/HIDDEN) through the same
+   audited route, never delete. Mike does the judgement calls; the worklist
+   page makes it fast.
 
-Step C — apply your returned JSON (separate approval, later):
-When you return the researched organiser names, I read the file, validate it against the ids,
-show you a before/after diff, and only then apply it through the existing audited edit route
-with an event_edits row per change. No ad-hoc updates.
+## Success measure
+
+Named-organiser share of future inventory: 141/1,181 (12%) → ~70%+ after the
+EA cohort resolution and TBC triage. The revenue page's organiser reach
+becomes an honest account list for the manual organiser sales test.
+
+## Out of scope
+
+- Scraping runabc / TRA / Welsh / NI pages for organiser names (needs the
+  QL2 source-evidence step and feed rules).
+- Populating the ORL `organisations` graph; organiser portal; any new schema.
+- Discovery gates, event pages, links, analytics, provenance, sitemaps.
+
+## Boundaries
+
+No schema/migration writes; no deploy without explicit approval; every data
+write goes through event_edits with a note under separate approval; organiser
+never asserted without deterministic evidence; clicks remain hand-offs, never
+entries or organiser value.
 
 ## Technical notes
 
-- Placeholder handling lives in one exported constant plus a predicate in
-  `src/lib/revenue-evidence.ts`, used by `organiserLabel`, with unit tests.
-- Gate change is a small edit to `evaluateGates` in the same module; thresholds stay in
-  `REVENUE_THRESHOLDS`.
-- Interest capture needs one new table (email, preferences, created_at, unsubscribe token) with
-  RLS: anonymous insert only, no anonymous select; admin reads via the existing admin gate and
-  service role. This is the only schema change in either package, and it is additive.
-- Manual send log: a second small additive table, admin-written only.
-- Export is generated by a read-only query and written to your Files area; no DB writes.
-- Nothing deployed or published in this package.
+- Club-domain matching uses exact host equality after lowercasing and
+  stripping `www.`; subdomain hosts (e.g. `zigzagrunning.eventrac.co.uk`)
+  are entry-platform and never proposed.
+- The commercial map lives in one reviewable constant, same pattern as
+  REVENUE_THRESHOLDS.
+- Worklist queries reuse the admin-gated read-only function pattern from
+  admin-recurrence.functions.ts (paging past the 1,000-row cap).
+- Filling organiser text will change how /admin/revenue groups organisers —
+  that is the intended outcome; no public page changes (OrganiserLine already
+  renders whatever is stored).
