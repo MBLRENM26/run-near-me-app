@@ -60,6 +60,18 @@ export type StagingPlan =
     }
   | { allowed: false; code: StagingBlockCode; reason: string };
 
+/**
+ * Current UTC date as YYYY-MM-DD, for the `sort_date >= today` eligibility guard.
+ * Pure and injectable so the boundary is testable without a request context.
+ */
+export function currentUtcDate(now: Date = new Date()): string {
+  return now.toISOString().slice(0, 10);
+}
+
+/** Confidence accepted by the live organisation_event_links check constraint. */
+export const STAGED_CONFIDENCE = "plausible_needs_review" as const;
+
+
 const ORGANISER_ROLE_BASES: CandidateBasis["kind"][] = [
   "organiser_owned_domain",
   "canonical_name",
