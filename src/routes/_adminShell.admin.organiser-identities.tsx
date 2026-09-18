@@ -198,12 +198,29 @@ function OrganiserIdentitiesPage() {
         </div>
       )}
 
+      {applied && (
+        <div className="rounded-lg border border-border bg-muted/30 p-3 text-sm">
+          Applied: {describeOrganiserProjection(applied.from, applied.to)}.{" "}
+          {applied.slug && (
+            <a
+              href={`/events/${applied.slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              View the event page →
+            </a>
+          )}
+        </div>
+      )}
+
       <Dialog open={!!decision} onOpenChange={(o) => !o && setDecision(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {decision?.action[0].toUpperCase()}
-              {decision?.action.slice(1)} link
+              {decision?.action === "apply"
+                ? "Accept & apply organiser"
+                : `${(decision?.action ?? "").charAt(0).toUpperCase()}${(decision?.action ?? "").slice(1)} link`}
             </DialogTitle>
           </DialogHeader>
           {decision && (
@@ -215,6 +232,21 @@ function OrganiserIdentitiesPage() {
                   {decision.row.organisation_name} ({decision.row.relationship})
                 </span>
               </div>
+              {decision.action === "apply" && (
+                <div className="rounded border border-border bg-muted/30 p-2">
+                  <div className="font-medium">
+                    {describeOrganiserProjection(
+                      decision.row.event_organiser,
+                      decision.row.organisation_name,
+                    )}
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    This accepts the ORL relationship and changes the public organiser shown on the
+                    event page, in one audited transaction. The club link and organiser type are not
+                    changed.
+                  </p>
+                </div>
+              )}
               <Textarea
                 placeholder="Optional note (visible in audit history)"
                 value={note}
