@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { getOrlReconciliation } from "@/lib/orl-reconciliation.functions";
+import { stageOrlCandidate } from "@/lib/orl-staging.functions";
+import { planStaging } from "@/lib/orl-staging";
 import type { ReconciliationRow, ReconciliationState } from "@/lib/orl-reconciliation";
 
 export const Route = createFileRoute("/_adminShell/admin/organiser-gap")({
@@ -52,12 +54,17 @@ function AdminOrganiserGapPage() {
   const [state, setStateRaw] = useState<ReconciliationState | "all">("all");
   const [offset, setOffset] = useState(0);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
 
   const setState = (next: ReconciliationState | "all") => {
     setStateRaw(next);
     setOffset(0);
     setExpanded(null);
+    setConfirming(null);
   };
+
+  const queryClient = useQueryClient();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["admin", "orl-reconciliation", state, offset],
@@ -68,21 +75,57 @@ function AdminOrganiserGapPage() {
     staleTime: 60_000,
   });
 
+  const stage = useMutation({
+    mutationFn: (vars: { event_id: string; organisation_id: string }) =>
+      stageOrlCandidate({ data: { ...vars, confirm: true } }),
+    onSuccess: async (result) => {
+      setConfirming(null);
+      setNotice(
+        result.ok
+          ? {
+              tone: "ok",
+              text: result.created
+                ? `Staged as a proposed ${result.relationship} link. Review it in Organiser identities — nothing is accepted here.`
+                : `Already in ORL review as ${result.relationship} (status ${result.review_status}). No duplicate was created.`,
+            }
+          : { tone: "error", text: result.reason },
+      );
+      await queryClient.invalidateQueries({ queryKey: ["admin", "orl-reconciliation"] });
+    },
+    onError: (err) =>
+      setNotice({ tone: "error", text: err instanceof Error ? err.message : "Staging failed" }),
+  });
+
   return (
     <div>
       <div className="flex flex-wrap items-baseline justify-between gap-4">
         <h1 className="text-2xl font-bold text-foreground">Organiser gap — ORL reconciliation</h1>
         <p className="max-w-lg text-sm text-muted-foreground">
-          Read-only confirmation view over the existing ORL evidence graph. Nothing here writes,
-          stages or reviews: staging clues into ORL intake (Step 2) is deliberately absent and
-          separately gated. Evidence is never reduced to a flat organiser name — review and approval
-          happen only in{" "}
+          Confirmation view over the existing ORL evidence graph. Reconciliation is read-only except
+          for the explicit per-row <strong>Stage proposal</strong> action, which creates a{" "}
+          <em>proposed</em> ORL link only. No acceptance, no bulk staging and no write to any public
+          event field happens here — review and approval stay in{" "}
           <Link to="/admin/organiser-identities" className="text-primary underline">
             Organiser identities
           </Link>
           .
         </p>
       </div>
+
+      {notice && (
+        <p
+          className={`mt-4 rounded-md border px-3 py-2 text-sm ${
+            notice.tone === "ok"
+              ? "border-border bg-muted/40 text-foreground"
+              : "border-destructive/40 text-destructive"
+          }`}
+        >
+          {notice.text}{" "}
+          <Link to="/admin/organiser-identities" className="text-primary underline">
+            Open Organiser identities
+          </Link>
+        </p>
+      )}
 
       {isLoading && <p className="mt-6 text-muted-foreground">Loading…</p>}
       {error && (
@@ -208,6 +251,15 @@ function AdminOrganiserGapPage() {
                     row={row}
                     open={expanded === row.event.id}
                     onToggle={() => setExpanded(expanded === row.event.id ? null : row.event.id)}
+                    confirming={confirming === row.event.id}
+                    staging={stage.isPending}
+                    onAskConfirm={() => {
+                      setNotice(null);
+                      setConfirming(confirming === row.event.id ? null : row.event.id);
+                    }}
+                    onStage={(organisation_id) =>
+                      stage.mutate({ event_id: row.event.id, organisation_id })
+                    }
                   />
                 ))}
               </tbody>
@@ -233,12 +285,21 @@ function Row({
   row,
   open,
   onToggle,
+  confirming,
+  staging,
+  onAskConfirm,
+  onStage,
 }: {
   row: ReconciliationRow;
   open: boolean;
   onToggle: () => void;
+  confirming: boolean;
+  staging: boolean;
+  onAskConfirm: () => void;
+  onStage: (organisation_id: string) => void;
 }) {
   const e = row.event;
+  const plan = planStaging(row);
   const orgs =
     row.state === "linked_in_orl"
       ? row.linked.map((l) => `${l.organisation_name} (${l.relationship})`)
@@ -288,9 +349,30 @@ function Row({
           {row.demand_total > 0 ? fmt(row.demand_total) : "—"}
         </td>
         <td className="px-3 py-2 text-right">
-          <Button size="sm" variant="outline" onClick={onToggle}>
-            {open ? "Hide" : "Evidence"}
-          </Button>
+          <div className="flex justify-end gap-2">
+            {plan.allowed &&
+              (confirming ? (
+                <>
+                  <Button
+                    size="sm"
+                    disabled={staging}
+                    onClick={() => onStage(plan.organisation_id)}
+                  >
+                    {staging ? "Staging…" : `Confirm ${plan.relationship}`}
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={onAskConfirm}>
+                    Cancel
+                  </Button>
+                </>
+              ) : (
+                <Button size="sm" variant="outline" onClick={onAskConfirm}>
+                  Stage proposal
+                </Button>
+              ))}
+            <Button size="sm" variant="outline" onClick={onToggle}>
+              {open ? "Hide" : "Evidence"}
+            </Button>
+          </div>
         </td>
       </tr>
       {open && (
@@ -369,7 +451,13 @@ function Row({
                   </div>
                 )}
                 <p className="mt-2 text-xs text-muted-foreground">
-                  Read-only. No staging, no review action, no write from this page.
+                  {plan.allowed
+                    ? `Stageable as a proposed ${plan.relationship} link for ${plan.organisation_name} (confidence ${plan.confidence}${
+                        plan.reuse_evidence_ids.length > 0
+                          ? `, reusing ${plan.reuse_evidence_ids.length} existing evidence row(s)`
+                          : ", recording the exact endpoint as a new evidence observation"
+                      }). No acceptance happens here.`
+                    : `Staging blocked: ${plan.reason}`}
                 </p>
               </div>
             </div>

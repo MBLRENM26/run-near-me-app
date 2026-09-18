@@ -252,6 +252,32 @@ export type ReconciliationState =
   | "unmatched"
   | "unresolved_seed";
 
+/** The kind of exact, explainable clue that produced a candidate. */
+export type CandidateBasisKind =
+  | "organiser_owned_domain"
+  | "canonical_name"
+  | "alias_name"
+  | "platform_account_endpoint"
+  | "platform_tenant"
+  | "evidence_url"
+  | "existing_link";
+
+/**
+ * A single explainable basis for a candidate. Retained structurally (not just
+ * as prose) so Step 2 staging can decide, deterministically, which typed
+ * relationship and which evidence provenance a proposal may carry.
+ */
+export type CandidateBasis = {
+  kind: CandidateBasisKind;
+  /** Full endpoint the basis rests on, when the basis is URL-bearing. */
+  url: string | null;
+  /** Existing identity_evidence id when the basis is an exact ORL evidence row. */
+  evidence_id: string | null;
+  /** True when the URL sits on a shared / multi-tenant / social host. */
+  shared_host: boolean;
+  detail: string;
+};
+
 export type CandidateMatch = {
   organisation_id: string;
   organisation_name: string;
@@ -259,6 +285,7 @@ export type CandidateMatch = {
   /** Typed relationship the clue could support — never assumed to be `organises`. */
   suggested_relationship: "organises" | "entry_platform_hosts" | "source_suggests";
   reasons: string[];
+  bases: CandidateBasis[];
 };
 
 export type LinkedDetail = {
@@ -312,10 +339,12 @@ function addCandidate(
   org: OrlOrganisation,
   relationship: CandidateMatch["suggested_relationship"],
   reason: string,
+  basis: CandidateBasis,
 ) {
   const existing = map.get(org.id);
   if (existing) {
     if (!existing.reasons.includes(reason)) existing.reasons.push(reason);
+    existing.bases.push(basis);
     // A stronger identity claim upgrades the suggested relationship.
     if (relationship === "organises") existing.suggested_relationship = "organises";
     return;
@@ -326,6 +355,7 @@ function addCandidate(
     organisation_status: org.status,
     suggested_relationship: relationship,
     reasons: [reason],
+    bases: [basis],
   });
 }
 
@@ -382,6 +412,13 @@ export function reconcileEvent(
         org,
         clue.kind === "organiser_website" ? "organises" : "source_suggests",
         `organiser-owned host ${clue.host} equals canonical organisation domain (${clue.url})`,
+        {
+          kind: "organiser_owned_domain",
+          url: clue.url,
+          evidence_id: null,
+          shared_host: false,
+          detail: `organiser-owned host ${clue.host} equals canonical organisation domain; role ${clue.role}${clue.path ? `, path ${clue.path}` : ""}`,
+        },
       );
     }
   }
@@ -395,6 +432,13 @@ export function reconcileEvent(
           org,
           "organises",
           `current organiser text exactly matches canonical name "${org.canonical_name}"`,
+          {
+            kind: "canonical_name",
+            url: null,
+            evidence_id: null,
+            shared_host: false,
+            detail: `current organiser text exactly matches canonical name "${org.canonical_name}"`,
+          },
         );
       }
     }
@@ -407,6 +451,13 @@ export function reconcileEvent(
         org,
         "organises",
         `current organiser text exactly matches ${alias.alias_type} alias "${alias.alias_name}"`,
+        {
+          kind: "alias_name",
+          url: null,
+          evidence_id: null,
+          shared_host: false,
+          detail: `current organiser text exactly matches ${alias.alias_type} alias "${alias.alias_name}"`,
+        },
       );
     }
   }
@@ -417,6 +468,7 @@ export function reconcileEvent(
     const acctUrl = normFullUrl(acct.account_url);
     const isEntryPlatform = isEntryPlatformHost(normDomain(acct.account_url));
     if (acctUrl && fullUrls.has(acctUrl)) {
+      const clue = urlClues.find((c) => normFullUrl(c.url) === acctUrl);
       addCandidate(
         candidates,
         org,
@@ -427,6 +479,13 @@ export function reconcileEvent(
         // event-role fact exists.
         isEntryPlatform ? "entry_platform_hosts" : "source_suggests",
         `exact ${acct.platform} account endpoint match (${acct.account_url})`,
+        {
+          kind: "platform_account_endpoint",
+          url: clue?.url ?? acct.account_url ?? null,
+          evidence_id: null,
+          shared_host: clue?.shared_host ?? true,
+          detail: `exact ${acct.platform} account endpoint match (${acct.account_url})${clue?.tenant ? `, tenant ${clue.tenant}` : ""}${clue?.path ? `, path ${clue.path}` : ""}`,
+        },
       );
       continue;
     }
@@ -447,6 +506,13 @@ export function reconcileEvent(
         org,
         clue.kind === "entry_platform_record" ? "entry_platform_hosts" : "source_suggests",
         `${acct.platform} ${acct.tenant_slug ? "tenant" : "platform identifier"} "${identifier}" present in ${clue.url}`,
+        {
+          kind: "platform_tenant",
+          url: clue.url,
+          evidence_id: null,
+          shared_host: clue.shared_host,
+          detail: `${acct.platform} ${acct.tenant_slug ? "tenant" : "platform identifier"} "${identifier}" present in ${clue.url}${clue.path ? ` (path ${clue.path})` : ""}`,
+        },
       );
     }
   }
@@ -461,6 +527,13 @@ export function reconcileEvent(
       org,
       "source_suggests",
       `exact evidence URL match (${evidence.evidence_type}: ${evidence.source_url})`,
+      {
+        kind: "evidence_url",
+        url: evidence.source_url,
+        evidence_id: evidence.id,
+        shared_host: urlClues.find((c) => normFullUrl(c.url) === evUrl)?.shared_host ?? false,
+        detail: `exact existing identity_evidence URL match (${evidence.evidence_type}: ${evidence.source_url})`,
+      },
     );
   }
 
@@ -487,6 +560,13 @@ export function reconcileEvent(
         ? l.relationship
         : "source_suggests",
       `existing ORL link awaiting review (${l.relationship}, status ${l.review_status})`,
+      {
+        kind: "existing_link",
+        url: null,
+        evidence_id: null,
+        shared_host: false,
+        detail: `existing ORL link ${l.link_id} awaiting review (${l.relationship}, status ${l.review_status})`,
+      },
     );
   }
 
