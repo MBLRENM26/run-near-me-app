@@ -251,6 +251,15 @@ function AdminOrganiserGapPage() {
                     row={row}
                     open={expanded === row.event.id}
                     onToggle={() => setExpanded(expanded === row.event.id ? null : row.event.id)}
+                    confirming={confirming === row.event.id}
+                    staging={stage.isPending}
+                    onAskConfirm={() => {
+                      setNotice(null);
+                      setConfirming(confirming === row.event.id ? null : row.event.id);
+                    }}
+                    onStage={(organisation_id) =>
+                      stage.mutate({ event_id: row.event.id, organisation_id })
+                    }
                   />
                 ))}
               </tbody>
