@@ -115,3 +115,44 @@ After every approved decision or completed package:
 6. Verify hashes, Project Knowledge content, repository commit and production/deployment state separately.
 
 Do not edit `RENM-lovable-project-knowledge.generated.md` or `RENM-decision-ledger.generated.json` by hand.
+
+## Operating checkpoint — 18 September 2026
+
+Documentation-only checkpoint. It records state and plans; it authorises no application, schema, production-data, configuration, scheduled-job, integration, UI or deployment mutation.
+
+### Observed state and limitations
+
+- **Reminder demand (observed evidence, production read, recent 90-day window, 18 September 2026):** 36 stored race-reminder requests from 34 distinct email addresses; only two addresses requested more than one race. The previously agreed prototype trigger of 25 stored requests is met. Repeat behaviour is a secondary observation to test, not an additional veto and not a retrospective gate. These are interest signals only — not paid intent, delivered value, entries or revenue.
+- **Live path (observed evidence):** a request stores an event-specific reminder row and queues an immediate confirmation email. An authenticated subscriptions admin page and unseen-work indicators exist. There is no reliable fulfilment loop after confirmation: scheduled reminder job 6 remains inactive and the HTTP sender remains fail-closed unless `REMINDER_SENDING_ENABLED` is exactly `true`.
+- **Implementation findings, not repairs:** the sender currently marks `reminder_sent_at` after an attempted send even when enqueueing fails, so a failed reminder can become invisible and unretryable. Confirmation-delivery failure is not surfaced to the public flow. Both are defects scoped into the planned package.
+- **Boundary:** no historic or bulk subscriber messaging is approved. Historic records require individual eligibility and purpose review before any fulfilment.
+- **Organiser Gap (observed evidence, dated production read):** the Organiser Gap admin page is live and read-only. 1,181 future ACTIVE events; 141 with a usable named organiser (12%); 108 literal `TBC` and 10 literal `Unknown` rows from a single 8 May import; 575 unnamed England Athletics events of which 566 hold `organiser_url` evidence. These counts are volatile observed evidence, not permanent doctrine.
+- **Organiser Review Layer (ORL):** implemented (canonical organisations, organisation–event relationships, evidence, review decisions and history) but sparsely populated — 8 organisations, 2 links, 2 accepted links and one future event carrying an ORL link at the dated review. Organiser Gap and ORL are not yet a continuous workflow. A separate read-only review is assessing how gap proposals should enter ORL as the single evidence and approval authority.
+- **Planned correction, not completed work:** current organiser-resolution code must not automatically choose the first club when a website host maps ambiguously to more than one club. Ambiguous evidence must yield no deterministic proposal.
+- **Traffic caveat (observed, September 2026):** recent Lovable analytics showed a large direct/desktop anomaly against the earlier Google/mobile profile. Exclude bots, monitoring and measurement changes before drawing any demand or commercial conclusion from that traffic.
+
+### Planned workstreams and sequencing
+
+1. **Data and communication eligibility.** A record is communicable only with stable occurrence identity, confirmed date/status, typed canonical entry destination, entry state with opening/closing evidence where known, source/provenance, last verification, and accepted organiser identity where organiser communication is involved. Full-catalogue perfection is not a prerequisite; ineligible or uncertain records go to an exception queue.
+2. **Reminder Operations manual proof.** request → immediate confirmation → real-time admin notification → visible operational task → link/timing verification → schedule → preview/manual send → delivery, suppression, failure and retry → click and explicitly labelled self-reported outcome. Every action audited; no silent disappearance, duplicate send or unsafe link.
+3. **Controlled automation only after the manual loop passes acceptance.** Automate deterministic eligible cases, escalate uncertainty, and retain a kill switch, idempotency, capped retries and visible failures.
+4. **Organiser relationship and ORL.** Event-level reminder demand becomes aggregated opportunity evidence with no runner identities disclosed. Organiser relationships resolve through ORL; the gap page is intake and proposal evidence, never a parallel canonical organiser system. This integration stays review/planned work until separately approved.
+5. **Shared communications infrastructure.** Email first, social later, on the same verified facts, eligibility rules, scheduling, approvals, delivery/publication status, failure handling and audit history. Initial social automation produces drafts for approval; no raw-feed-to-public automation.
+6. **Measurement.** Keep request, confirmation, scheduled, sent, delivered, failed, clicked and self-reported-entered as separate states. Clicks remain hand-offs, not entries. Measure verification time, eligible proportion, successful delivery, failure/retry and repeat behaviour before any commercial claim.
+7. **Commercial and copy work stay downstream.** Prove the operational flow first. Race-specific transactional consent cannot be repurposed for newsletters or marketing; broader alerts need separate explicit optional consent. Accuracy and corrections remain free, and no organiser can buy factual authority.
+
+### Bounded immediate implementation package (not authorised by this document)
+
+Scope: real-time admin notification for new reminder requests; a Reminder Operations queue and state model; event/link eligibility and verification; manual preview/send; correction of failed-send completion semantics; retry, idempotency, suppression and unsubscribe audit; organiser opportunity aggregation without PII; and a controlled test matrix covering verified-open link, future opening, unknown state, changed/cancelled event, queue failure, duplicate attempt, and suppressed/unsubscribed address.
+
+Acceptance: every signup creates visible work; no silent loss; no duplicate send; no unverified link sent; failure remains actionable; unsubscribe and suppression work; all actions auditable. Separate approval, rollback, tests and production acceptance still apply.
+
+### Active order from 18 September 2026
+
+1. PX0 canon and baseline verification continues.
+2. **Reminder Operations manual proof (new, runs in parallel):** the bounded package above, manual and fail-closed.
+3. **Bounded organiser/data rectification (parallel):** eligibility-focused correction, ambiguity-safe organiser resolution and the ORL-intake review. Total database cleanup is explicitly not a prerequisite for communicating about a safely eligible subset.
+4. PX1 QL2 onward read-only evidence and existing-schema previews, through separate gates.
+5. PX2 Explorer and authorised course work; PX3 evidence-led expansion; PX4 distribution; PX5 day-120–150 gate — unchanged.
+
+Kent and South London remain offline.
