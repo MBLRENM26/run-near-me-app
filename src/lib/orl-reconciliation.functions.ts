@@ -31,29 +31,45 @@ async function requireAdminOrThrow() {
 }
 
 const PAGE_SIZE = 1000;
-const MAX_PAGES = 6;
+/** Hard safety bound only — exhaustion is the normal exit, and truncation is reported. */
+const MAX_PAGES = 50;
 const DEMAND_WINDOW_DAYS = 90;
 
 const EVENT_COLUMNS =
   "id, slug, name, sort_date, town, county, source, organiser, organiser_type, organiser_club_id, organiser_url, entry_url";
 
-async function fetchFutureEvents(today: string): Promise<ReconciliationEventInput[]> {
-  const rows: ReconciliationEventInput[] = [];
+/** Pages a SELECT to exhaustion so nothing is silently capped at 1,000 rows. */
+async function fetchAllPages<T>(
+  run: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
+): Promise<{ rows: T[]; truncated: boolean }> {
+  const rows: T[] = [];
   for (let page = 0; page < MAX_PAGES; page += 1) {
     const from = page * PAGE_SIZE;
-    const { data, error } = await supabaseAdmin
-      .from("events")
-      .select(EVENT_COLUMNS)
-      .eq("status", "ACTIVE")
-      .gte("sort_date", today)
-      .order("sort_date", { ascending: true })
-      .range(from, from + PAGE_SIZE - 1);
+    const { data, error } = await run(from, from + PAGE_SIZE - 1);
     if (error) throw new Error(error.message);
-    const batch = (data ?? []) as unknown as ReconciliationEventInput[];
+    const batch = data ?? [];
     rows.push(...batch);
-    if (batch.length < PAGE_SIZE) break;
+    if (batch.length < PAGE_SIZE) return { rows, truncated: false };
   }
-  return rows;
+  return { rows, truncated: true };
+}
+
+async function fetchFutureEvents(
+  today: string,
+): Promise<{ rows: ReconciliationEventInput[]; truncated: boolean }> {
+  return fetchAllPages<ReconciliationEventInput>(
+    (from, to) =>
+      supabaseAdmin
+        .from("events")
+        .select(EVENT_COLUMNS)
+        .eq("status", "ACTIVE")
+        .gte("sort_date", today)
+        .order("sort_date", { ascending: true })
+        .range(from, to) as unknown as PromiseLike<{
+        data: ReconciliationEventInput[] | null;
+        error: { message: string } | null;
+      }>,
+  );
 }
 
 async function fetchOrlGraph(): Promise<OrlGraph> {
