@@ -192,6 +192,24 @@ export const reviewOrganiserLink = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<{ ok: true; review_id: string } | { ok: false; error: string }> => {
     await requireAdminMutation();
 
+    // An `organises` acceptance must never leave the public projection
+    // disconnected: it is routed exclusively through acceptAndApplyOrganiser,
+    // which accepts and projects atomically. Rejection and reopen are unchanged,
+    // and non-organises relationships never touch the event.
+    if (data.action === "accepted") {
+      const { data: link, error: linkErr } = await supabaseAdmin
+        .from("organisation_event_links")
+        .select("relationship")
+        .eq("id", data.link_id)
+        .maybeSingle();
+      if (linkErr) throw new Error(linkErr.message);
+      if (!link) return { ok: false, error: "link_not_found" };
+      if (link.relationship === "organises") {
+        return { ok: false, error: "use_accept_and_apply_organiser" };
+      }
+    }
+
+
     const { data: reviewId, error } = await supabaseAdmin.rpc(
       "review_organisation_event_link_txn",
       {
