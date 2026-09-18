@@ -4,6 +4,7 @@ import { reconcileEvent, type OrlGraph, type ReconciliationEventInput } from "./
 import {
   applyStaging,
   currentUtcDate,
+  existingCandidateReviewLink,
   planStaging,
   proposalConfirmationSentence,
   STAGED_CONFIDENCE,
@@ -276,7 +277,7 @@ describe("existing link handling", () => {
   });
 
   it("reports a proposed link as already in review", () => {
-    const plan = planFor(e, {
+    const row = reconcileEvent(e, {
       ...graph,
       links: [
         {
@@ -289,9 +290,16 @@ describe("existing link handling", () => {
         },
       ],
     });
+    const plan = planStaging(row);
     expect(plan.allowed).toBe(false);
     if (plan.allowed) return;
     expect(plan.code).toBe("already_in_review");
+    expect(existingCandidateReviewLink(row)).toMatchObject({
+      organisation_id: "o1",
+      organisation_name: "Sedgefield Harriers",
+      relationship: "organises",
+      review_status: "proposed",
+    });
   });
 
   it("never silently recreates a rejected link", () => {
@@ -319,6 +327,24 @@ describe("existing link handling", () => {
     const result = await applyStaging(db, plan);
     expect(result.ok).toBe(false);
     expect(links).toHaveLength(0);
+  });
+});
+
+describe("organiser-gap confirmation UI regression", () => {
+  const route = readFileSync("src/routes/_adminShell.admin.organiser-gap.tsx", "utf8");
+
+  it("uses the viewport dialog instead of a confirmation table row", () => {
+    expect(route).toContain("<Dialog");
+    expect(route).toContain("<DialogContent");
+    expect(route).toContain("<ProposalConfirmation");
+    expect(route).not.toMatch(/confirming\s*&&\s*plan\.allowed\s*&&\s*\(\s*<tr>/s);
+  });
+
+  it("renders the persistent onward state from the exact candidate review link", () => {
+    expect(route).toContain("existingCandidateReviewLink(row)");
+    expect(route).toContain("In ORL review");
+    expect(route).toContain("Review &amp; apply organiser →");
+    expect(route).toContain('to="/admin/organiser-identities"');
   });
 });
 
