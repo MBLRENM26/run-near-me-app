@@ -17,7 +17,8 @@
  *   named organisers) produces NO proposal. Unknown beats false precision.
  */
 
-import { classifyEventLink, isEntryPlatformHost } from "@/lib/link-trust";
+import { classifyEventLink } from "@/lib/link-trust";
+import { isSharedPlatformHost } from "@/lib/orl-reconciliation";
 
 /**
  * Reviewed commercial organiser domains. Keys are hosts exactly as
@@ -79,6 +80,15 @@ export type OrganiserProposal = {
   basis: "club-domain" | "commercial-map";
 };
 
+/**
+ * PROVISIONAL INTAKE ONLY (D75).
+ *
+ * A host match cannot establish canonical identity or relationship. Results of
+ * this module are provisional clues for ORL reconciliation, never deterministic
+ * organiser conclusions, and are not part of the ORL confirmation path on the
+ * admin Organiser Gap page.
+ */
+
 export type ProposeOrganiserInput = {
   /** Current organiser text — already-named events get no proposal. */
   organiser: string | null | undefined;
@@ -103,14 +113,23 @@ export function proposeOrganiser(
   const host = eventHost(input.organiser_url);
   if (!host) return null;
 
-  const clubMatches = clubHosts.get(host);
-  if (clubMatches && clubMatches.length > 0) {
+  // Multi-tenant, social and entry-platform hosts are shared by many
+  // unrelated organisations: a club-host match there proves nothing. The
+  // reviewed commercial map below is explicit, hand-verified evidence and is
+  // unaffected.
+  const sharedHost = isSharedPlatformHost(host);
+
+  const clubMatches = sharedHost ? undefined : clubHosts.get(host);
+  // Never choose the first club when a host maps to several clubs — ambiguous
+  // evidence must produce no proposal and be reconciled in ORL instead.
+  if (clubMatches && clubMatches.length === 1) {
     return {
       organiser: clubMatches[0].name,
       organiser_type: "club",
       basis: "club-domain",
     };
   }
+  if (clubMatches && clubMatches.length > 1) return null;
 
   const commercialName = COMMERCIAL_ORGANISER_HOSTS[host];
   if (commercialName) {
