@@ -31,29 +31,48 @@ async function requireAdminOrThrow() {
 }
 
 const PAGE_SIZE = 1000;
-const MAX_PAGES = 6;
+/** Hard safety bound only — exhaustion is the normal exit, and truncation is reported. */
+const MAX_PAGES = 50;
 const DEMAND_WINDOW_DAYS = 90;
 
 const EVENT_COLUMNS =
   "id, slug, name, sort_date, town, county, source, organiser, organiser_type, organiser_club_id, organiser_url, entry_url";
 
-async function fetchFutureEvents(today: string): Promise<ReconciliationEventInput[]> {
-  const rows: ReconciliationEventInput[] = [];
+/** Pages a SELECT to exhaustion so nothing is silently capped at 1,000 rows. */
+async function fetchAllPages<T>(
+  run: (
+    from: number,
+    to: number,
+  ) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
+): Promise<{ rows: T[]; truncated: boolean }> {
+  const rows: T[] = [];
   for (let page = 0; page < MAX_PAGES; page += 1) {
     const from = page * PAGE_SIZE;
-    const { data, error } = await supabaseAdmin
-      .from("events")
-      .select(EVENT_COLUMNS)
-      .eq("status", "ACTIVE")
-      .gte("sort_date", today)
-      .order("sort_date", { ascending: true })
-      .range(from, from + PAGE_SIZE - 1);
+    const { data, error } = await run(from, from + PAGE_SIZE - 1);
     if (error) throw new Error(error.message);
-    const batch = (data ?? []) as unknown as ReconciliationEventInput[];
+    const batch = data ?? [];
     rows.push(...batch);
-    if (batch.length < PAGE_SIZE) break;
+    if (batch.length < PAGE_SIZE) return { rows, truncated: false };
   }
-  return rows;
+  return { rows, truncated: true };
+}
+
+async function fetchFutureEvents(
+  today: string,
+): Promise<{ rows: ReconciliationEventInput[]; truncated: boolean }> {
+  return fetchAllPages<ReconciliationEventInput>(
+    (from, to) =>
+      supabaseAdmin
+        .from("events")
+        .select(EVENT_COLUMNS)
+        .eq("status", "ACTIVE")
+        .gte("sort_date", today)
+        .order("sort_date", { ascending: true })
+        .range(from, to) as unknown as PromiseLike<{
+        data: ReconciliationEventInput[] | null;
+        error: { message: string } | null;
+      }>,
+  );
 }
 
 async function fetchOrlGraph(): Promise<OrlGraph> {
@@ -165,9 +184,14 @@ export type OrlReconciliation = {
   /** Computed over every future event, before any display slicing. */
   totals: ReconciliationTotals;
   graph_inventory: OrlGraphInventory;
-  /** Row cap applied to the returned list only. */
-  display_limit: number;
+  /** True only if the hard safety page bound was hit (totals would be partial). */
+  scan_truncated: boolean;
+  /** Rows matching the selected state, uncapped. */
+  matching: number;
+  page_size: number;
+  offset: number;
   returned: number;
+  has_more: boolean;
   rows: ReconciliationRow[];
 };
 
@@ -175,7 +199,8 @@ export const getOrlReconciliation = createServerFn({ method: "POST" })
   .inputValidator((d) =>
     z
       .object({
-        limit: z.number().int().min(1).max(500).default(200),
+        limit: z.number().int().min(1).max(500).default(100),
+        offset: z.number().int().min(0).default(0),
         state: z
           .enum(["linked_in_orl", "candidate_match", "ambiguous", "unmatched", "unresolved_seed"])
           .optional(),
@@ -192,32 +217,41 @@ export const getOrlReconciliation = createServerFn({ method: "POST" })
     const [events, graph, searchClicks, reminders] = await Promise.all([
       fetchFutureEvents(today),
       fetchOrlGraph(),
-      supabaseAdmin
-        .from("search_clicks")
-        .select("clicked_slug")
-        .gte("created_at", since)
-        .limit(5000),
+      fetchAllPages<{ clicked_slug: string }>(
+        (from, to) =>
+          supabaseAdmin
+            .from("search_clicks")
+            .select("clicked_slug")
+            .gte("created_at", since)
+            .range(from, to) as unknown as PromiseLike<{
+            data: { clicked_slug: string }[] | null;
+            error: { message: string } | null;
+          }>,
+      ),
       // event_id only — never subscriber emails.
-      supabaseAdmin
-        .from("email_subscriptions")
-        .select("event_id")
-        .gte("created_at", since)
-        .limit(5000),
+      fetchAllPages<{ event_id: string }>(
+        (from, to) =>
+          supabaseAdmin
+            .from("email_subscriptions")
+            .select("event_id")
+            .gte("created_at", since)
+            .range(from, to) as unknown as PromiseLike<{
+            data: { event_id: string }[] | null;
+            error: { message: string } | null;
+          }>,
+      ),
     ]);
-    for (const res of [searchClicks, reminders]) {
-      if (res.error) throw new Error(res.error.message);
-    }
 
     const clicksBySlug = new Map<string, number>();
-    for (const c of searchClicks.data ?? []) {
+    for (const c of searchClicks.rows) {
       clicksBySlug.set(c.clicked_slug, (clicksBySlug.get(c.clicked_slug) ?? 0) + 1);
     }
     const remindersByEvent = new Map<string, number>();
-    for (const r of reminders.data ?? []) {
+    for (const r of reminders.rows) {
       remindersByEvent.set(r.event_id, (remindersByEvent.get(r.event_id) ?? 0) + 1);
     }
 
-    const allRows = events.map((e) =>
+    const allRows = events.rows.map((e) =>
       reconcileEvent(e, graph, {
         search_clicks: (e.slug && clicksBySlug.get(e.slug)) || 0,
         reminder_requests: remindersByEvent.get(e.id) ?? 0,
@@ -229,6 +263,7 @@ export const getOrlReconciliation = createServerFn({ method: "POST" })
       ? allRows.filter((r) => r.state === (data.state as ReconciliationState))
       : allRows;
     const ordered = sortByReviewPriority(filtered);
+    const page = ordered.slice(data.offset, data.offset + data.limit);
 
     return {
       generated_at: new Date(now).toISOString(),
@@ -242,8 +277,12 @@ export const getOrlReconciliation = createServerFn({ method: "POST" })
         accepted_links: graph.links.filter((l) => l.review_status === "accepted").length,
         unresolved_seed_rows: graph.unresolved.length,
       },
-      display_limit: data.limit,
-      returned: Math.min(ordered.length, data.limit),
-      rows: ordered.slice(0, data.limit),
+      scan_truncated: events.truncated,
+      matching: ordered.length,
+      page_size: data.limit,
+      offset: data.offset,
+      returned: page.length,
+      has_more: data.offset + page.length < ordered.length,
+      rows: page,
     };
   });

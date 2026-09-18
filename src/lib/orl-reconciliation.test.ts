@@ -337,3 +337,63 @@ describe("admin access + read-only guarantees in the server module", () => {
     expect(source).not.toMatch(/select\([^)]*email/);
   });
 });
+
+describe("accepted vs pending ORL links", () => {
+  const baseGraph = (review_status: string): OrlGraph => ({
+    ...EMPTY_GRAPH,
+    organisations: [ORG_CLUB],
+    links: [
+      {
+        id: "l1",
+        event_id: "e1",
+        organisation_id: "o1",
+        relationship: "organises",
+        confidence: "high",
+        review_status,
+      },
+    ],
+  });
+
+  it("treats a proposed link as reconciliation work, not a confirmed relationship", () => {
+    const row = reconcileEvent(event(), baseGraph("proposed"));
+    expect(row.state).toBe("candidate_match");
+    expect(row.candidates[0]?.reasons.join(" ")).toContain("awaiting review");
+    expect(row.linked[0]?.review_status).toBe("proposed");
+  });
+
+  it("treats a rejected link as neither confirmed nor a candidate", () => {
+    const row = reconcileEvent(event(), baseGraph("rejected"));
+    expect(row.state).toBe("unmatched");
+    expect(row.candidates).toHaveLength(0);
+  });
+
+  it("only an accepted link is linked_in_orl", () => {
+    expect(reconcileEvent(event(), baseGraph("accepted")).state).toBe("linked_in_orl");
+  });
+});
+
+describe("totals and paging", () => {
+  const rows = Array.from({ length: 250 }, (_, i) =>
+    reconcileEvent(event({ id: `e${i}`, slug: `race-${i}`, name: `Race ${i}` }), EMPTY_GRAPH, {
+      search_clicks: i,
+      reminder_requests: 0,
+    }),
+  );
+
+  it("computes totals over every row, not just a displayed page", () => {
+    const totals = summariseReconciliation(rows);
+    expect(totals.future_events).toBe(250);
+    expect(totals.unmatched).toBe(250);
+    const page = sortByReviewPriority(rows).slice(0, 100);
+    expect(page).toHaveLength(100);
+    expect(summariseReconciliation(rows).future_events).toBeGreaterThan(page.length);
+  });
+
+  it("pages deterministically with no overlap or gaps", () => {
+    const ordered = sortByReviewPriority(rows);
+    const first = ordered.slice(0, 100).map((r) => r.event.id);
+    const second = ordered.slice(100, 200).map((r) => r.event.id);
+    expect(new Set([...first, ...second]).size).toBe(200);
+    expect(ordered[0]?.demand_total).toBe(249);
+  });
+});

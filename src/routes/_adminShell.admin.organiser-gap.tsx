@@ -46,15 +46,24 @@ const STATE_LABEL: Record<ReconciliationState, string> = {
   unresolved_seed: "Unresolved seed",
 };
 
+const PAGE_SIZE = 100;
+
 function AdminOrganiserGapPage() {
-  const [state, setState] = useState<ReconciliationState | "all">("all");
+  const [state, setStateRaw] = useState<ReconciliationState | "all">("all");
+  const [offset, setOffset] = useState(0);
   const [expanded, setExpanded] = useState<string | null>(null);
 
+  const setState = (next: ReconciliationState | "all") => {
+    setStateRaw(next);
+    setOffset(0);
+    setExpanded(null);
+  };
+
   const { data, isLoading, error } = useQuery({
-    queryKey: ["admin", "orl-reconciliation", state],
+    queryKey: ["admin", "orl-reconciliation", state, offset],
     queryFn: () =>
       getOrlReconciliation({
-        data: { limit: 200, ...(state === "all" ? {} : { state }) },
+        data: { limit: PAGE_SIZE, offset, ...(state === "all" ? {} : { state }) },
       }),
     staleTime: 60_000,
   });
@@ -93,7 +102,7 @@ function AdminOrganiserGapPage() {
             <Stat
               label="Linked in ORL"
               value={`${fmt(data.totals.linked_in_orl)} (${data.totals.orl_coverage_pct}%)`}
-              hint="direct organisation_event_link"
+              hint="accepted organisation_event_link"
             />
             <Stat
               label="Candidate"
@@ -141,11 +150,33 @@ function AdminOrganiserGapPage() {
             ))}
           </div>
 
-          <p className="mt-3 text-xs text-muted-foreground">
-            Showing {fmt(data.returned)} rows (display cap {fmt(data.display_limit)}), ordered by
-            runner demand. Demand orders review priority only — it is not identity evidence and
-            contains no runner details.
-          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+            <span>
+              Showing {fmt(data.offset + 1)}–{fmt(data.offset + data.returned)} of{" "}
+              {fmt(data.matching)} matching rows, ordered by runner demand. Demand orders review
+              priority only — it is not identity evidence and contains no runner details.
+              {data.scan_truncated &&
+                " Warning: the safety page bound was reached, so totals are partial."}
+            </span>
+            <span className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={data.offset === 0}
+                onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
+              >
+                Previous
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={!data.has_more}
+                onClick={() => setOffset(offset + PAGE_SIZE)}
+              >
+                Next
+              </Button>
+            </span>
+          </div>
 
           <div className="mt-4 overflow-x-auto rounded-lg border border-border">
             <table className="w-full text-sm">
