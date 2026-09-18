@@ -95,9 +95,21 @@ function AdminOrganiserGapPage() {
               value={`${fmt(data.totals.linked_in_orl)} (${data.totals.orl_coverage_pct}%)`}
               hint="direct organisation_event_link"
             />
-            <Stat label="Candidate" value={fmt(data.totals.candidate_match)} hint="one explainable organisation" />
-            <Stat label="Ambiguous" value={fmt(data.totals.ambiguous)} hint="several possible organisations" />
-            <Stat label="Unmatched" value={fmt(data.totals.unmatched)} hint="no ORL connection yet" />
+            <Stat
+              label="Candidate"
+              value={fmt(data.totals.candidate_match)}
+              hint="one explainable organisation"
+            />
+            <Stat
+              label="Ambiguous"
+              value={fmt(data.totals.ambiguous)}
+              hint="several possible organisations"
+            />
+            <Stat
+              label="Unmatched"
+              value={fmt(data.totals.unmatched)}
+              hint="no ORL connection yet"
+            />
             <Stat
               label="Unresolved seed"
               value={fmt(data.totals.unresolved_seed)}
@@ -110,10 +122,10 @@ function AdminOrganiserGapPage() {
             any display slicing. {fmt(data.totals.shared_host_only)} events hold only
             shared-host/social/entry-platform endpoints, which can never name an organiser on their
             own. ORL graph read: {fmt(data.graph_inventory.organisations)} organisations,{" "}
-            {fmt(data.graph_inventory.aliases)} aliases, {fmt(data.graph_inventory.platform_accounts)}{" "}
-            platform accounts, {fmt(data.graph_inventory.links)} links (
-            {fmt(data.graph_inventory.accepted_links)} accepted),{" "}
-            {fmt(data.graph_inventory.unresolved_seed_rows)} quarantined seed rows.
+            {fmt(data.graph_inventory.aliases)} aliases,{" "}
+            {fmt(data.graph_inventory.platform_accounts)} platform accounts,{" "}
+            {fmt(data.graph_inventory.links)} links ({fmt(data.graph_inventory.accepted_links)}{" "}
+            accepted), {fmt(data.graph_inventory.unresolved_seed_rows)} quarantined seed rows.
           </p>
 
           <div className="mt-6 flex flex-wrap gap-2">
@@ -308,7 +320,8 @@ function Row({
                 {row.candidates.map((c) => (
                   <div key={c.organisation_id} className="mt-2 text-xs text-foreground">
                     <div className="font-medium">
-                      {c.organisation_name} — possible {c.suggested_relationship} ({c.organisation_status})
+                      {c.organisation_name} — possible {c.suggested_relationship} (
+                      {c.organisation_status})
                     </div>
                     <ul className="list-disc pl-4 text-muted-foreground">
                       {c.reasons.map((r, i) => (

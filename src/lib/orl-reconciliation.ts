@@ -292,7 +292,10 @@ function normName(v: string | null | undefined): string {
 function normDomain(v: string | null | undefined): string | null {
   if (!v) return null;
   const host = normalizeUrl(v)?.hostname ?? v;
-  const h = host.trim().toLowerCase().replace(/^www\./, "");
+  const h = host
+    .trim()
+    .toLowerCase()
+    .replace(/^www\./, "");
   return h.includes(".") ? h : null;
 }
 
