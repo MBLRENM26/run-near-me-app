@@ -146,10 +146,7 @@ export function planStaging(row: ReconciliationRow): StagingPlan {
   }
 
   if (relationship === "organises") {
-    const hasRoleBasis = candidate.bases.some(
-      (b) => ORGANISER_ROLE_BASES.includes(b.kind) && !b.shared_host,
-    );
-    if (!hasRoleBasis) {
+    if (!hasOrganiserRoleBasis(candidate.bases)) {
       return {
         allowed: false,
         code: "no_organiser_role_basis",
