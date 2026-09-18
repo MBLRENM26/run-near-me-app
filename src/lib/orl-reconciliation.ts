@@ -412,6 +412,13 @@ export function reconcileEvent(
         org,
         clue.kind === "organiser_website" ? "organises" : "source_suggests",
         `organiser-owned host ${clue.host} equals canonical organisation domain (${clue.url})`,
+        {
+          kind: "organiser_owned_domain",
+          url: clue.url,
+          evidence_id: null,
+          shared_host: false,
+          detail: `organiser-owned host ${clue.host} equals canonical organisation domain; role ${clue.role}${clue.path ? `, path ${clue.path}` : ""}`,
+        },
       );
     }
   }
@@ -425,6 +432,13 @@ export function reconcileEvent(
           org,
           "organises",
           `current organiser text exactly matches canonical name "${org.canonical_name}"`,
+          {
+            kind: "canonical_name",
+            url: null,
+            evidence_id: null,
+            shared_host: false,
+            detail: `current organiser text exactly matches canonical name "${org.canonical_name}"`,
+          },
         );
       }
     }
@@ -437,6 +451,13 @@ export function reconcileEvent(
         org,
         "organises",
         `current organiser text exactly matches ${alias.alias_type} alias "${alias.alias_name}"`,
+        {
+          kind: "alias_name",
+          url: null,
+          evidence_id: null,
+          shared_host: false,
+          detail: `current organiser text exactly matches ${alias.alias_type} alias "${alias.alias_name}"`,
+        },
       );
     }
   }
@@ -447,6 +468,7 @@ export function reconcileEvent(
     const acctUrl = normFullUrl(acct.account_url);
     const isEntryPlatform = isEntryPlatformHost(normDomain(acct.account_url));
     if (acctUrl && fullUrls.has(acctUrl)) {
+      const clue = urlClues.find((c) => normFullUrl(c.url) === acctUrl);
       addCandidate(
         candidates,
         org,
@@ -457,6 +479,13 @@ export function reconcileEvent(
         // event-role fact exists.
         isEntryPlatform ? "entry_platform_hosts" : "source_suggests",
         `exact ${acct.platform} account endpoint match (${acct.account_url})`,
+        {
+          kind: "platform_account_endpoint",
+          url: clue?.url ?? acct.account_url ?? null,
+          evidence_id: null,
+          shared_host: clue?.shared_host ?? true,
+          detail: `exact ${acct.platform} account endpoint match (${acct.account_url})${clue?.tenant ? `, tenant ${clue.tenant}` : ""}${clue?.path ? `, path ${clue.path}` : ""}`,
+        },
       );
       continue;
     }
@@ -477,6 +506,13 @@ export function reconcileEvent(
         org,
         clue.kind === "entry_platform_record" ? "entry_platform_hosts" : "source_suggests",
         `${acct.platform} ${acct.tenant_slug ? "tenant" : "platform identifier"} "${identifier}" present in ${clue.url}`,
+        {
+          kind: "platform_tenant",
+          url: clue.url,
+          evidence_id: null,
+          shared_host: clue.shared_host,
+          detail: `${acct.platform} ${acct.tenant_slug ? "tenant" : "platform identifier"} "${identifier}" present in ${clue.url}${clue.path ? ` (path ${clue.path})` : ""}`,
+        },
       );
     }
   }
@@ -491,6 +527,13 @@ export function reconcileEvent(
       org,
       "source_suggests",
       `exact evidence URL match (${evidence.evidence_type}: ${evidence.source_url})`,
+      {
+        kind: "evidence_url",
+        url: evidence.source_url,
+        evidence_id: evidence.id,
+        shared_host: urlClues.find((c) => normFullUrl(c.url) === evUrl)?.shared_host ?? false,
+        detail: `exact existing identity_evidence URL match (${evidence.evidence_type}: ${evidence.source_url})`,
+      },
     );
   }
 
