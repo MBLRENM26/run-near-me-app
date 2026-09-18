@@ -448,7 +448,9 @@ describe("proposal confirmation wording", () => {
       "Sedgefield Harriers",
       "Some Race",
     );
-    expect(sentence).toBe("Propose recording Sedgefield Harriers as source evidence for Some Race.");
+    expect(sentence).toBe(
+      "Propose recording Sedgefield Harriers as source evidence for Some Race.",
+    );
     expect(sentence).not.toMatch(/organis(e|es|ing)/);
   });
 });

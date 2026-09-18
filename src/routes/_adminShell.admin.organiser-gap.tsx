@@ -67,9 +67,7 @@ const BASIS_ORDER: CandidateBasis["kind"][] = [
 ];
 
 function strongestBasis(bases: CandidateBasis[]): CandidateBasis | undefined {
-  return [...bases].sort(
-    (a, b) => BASIS_ORDER.indexOf(a.kind) - BASIS_ORDER.indexOf(b.kind),
-  )[0];
+  return [...bases].sort((a, b) => BASIS_ORDER.indexOf(a.kind) - BASIS_ORDER.indexOf(b.kind))[0];
 }
 
 function AdminOrganiserGapPage() {
@@ -338,9 +336,9 @@ function Row({
   // apparently vanished action.
   const inReview =
     !plan.allowed && plan.code === "already_in_review"
-      ? row.linked.find((l) =>
+      ? (row.linked.find((l) =>
           row.candidates.some((c) => c.organisation_id === l.organisation_id),
-        ) ?? null
+        ) ?? null)
       : null;
 
   return (
@@ -418,11 +416,7 @@ function Row({
                   Event: <strong>{e.name}</strong>
                 </li>
                 <li>
-                  {proposalConfirmationSentence(
-                    plan.relationship,
-                    plan.organisation_name,
-                    e.name,
-                  )}
+                  {proposalConfirmationSentence(plan.relationship, plan.organisation_name, e.name)}
                 </li>
                 <li>
                   Current organiser on the event:{" "}
@@ -436,7 +430,9 @@ function Row({
                     return (
                       <>
                         {b.detail}
-                        {b.url && <span className="block break-all font-mono text-xs">{b.url}</span>}
+                        {b.url && (
+                          <span className="block break-all font-mono text-xs">{b.url}</span>
+                        )}
                         {(b.tenant || b.path) && (
                           <span className="block text-xs text-muted-foreground">
                             {b.tenant && `tenant: ${b.tenant} `}
