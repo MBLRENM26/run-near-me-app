@@ -4,8 +4,12 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { getOrlReconciliation } from "@/lib/orl-reconciliation.functions";
 import { stageOrlCandidate } from "@/lib/orl-staging.functions";
-import { planStaging } from "@/lib/orl-staging";
-import type { ReconciliationRow, ReconciliationState } from "@/lib/orl-reconciliation";
+import { planStaging, proposalConfirmationSentence } from "@/lib/orl-staging";
+import type {
+  CandidateBasis,
+  ReconciliationRow,
+  ReconciliationState,
+} from "@/lib/orl-reconciliation";
 
 export const Route = createFileRoute("/_adminShell/admin/organiser-gap")({
   head: () => ({
@@ -49,6 +53,22 @@ const STATE_LABEL: Record<ReconciliationState, string> = {
 };
 
 const PAGE_SIZE = 100;
+
+/** Presentation order for the confirmation panel's strongest-evidence line. */
+const BASIS_ORDER: CandidateBasis["kind"][] = [
+  "organiser_owned_domain",
+  "canonical_name",
+  "alias_name",
+  "verified_dedicated_tenant",
+  "platform_tenant",
+  "platform_account_endpoint",
+  "evidence_url",
+  "existing_link",
+];
+
+function strongestBasis(bases: CandidateBasis[]): CandidateBasis | undefined {
+  return [...bases].sort((a, b) => BASIS_ORDER.indexOf(a.kind) - BASIS_ORDER.indexOf(b.kind))[0];
+}
 
 function AdminOrganiserGapPage() {
   const [state, setStateRaw] = useState<ReconciliationState | "all">("all");
@@ -102,7 +122,7 @@ function AdminOrganiserGapPage() {
         <h1 className="text-2xl font-bold text-foreground">Organiser gap — ORL reconciliation</h1>
         <p className="max-w-lg text-sm text-muted-foreground">
           Confirmation view over the existing ORL evidence graph. Reconciliation is read-only except
-          for the explicit per-row <strong>Stage proposal</strong> action, which creates a{" "}
+          for the explicit per-row <strong>Review proposal</strong> action, which creates a{" "}
           <em>proposed</em> ORL link only. No acceptance, no bulk staging and no write to any public
           event field happens here — review and approval stay in{" "}
           <Link to="/admin/organiser-identities" className="text-primary underline">
@@ -311,6 +331,16 @@ function Row({
         ? row.unresolved_reasons
         : row.candidates.flatMap((c) => c.reasons);
 
+  // A row already sitting in the ORL review pipeline (proposed/reopened link)
+  // shows a persistent "In ORL review" state in the action area instead of an
+  // apparently vanished action.
+  const inReview =
+    !plan.allowed && plan.code === "already_in_review"
+      ? (row.linked.find((l) =>
+          row.candidates.some((c) => c.organisation_id === l.organisation_id),
+        ) ?? null)
+      : null;
+
   return (
     <>
       <tr>
@@ -350,31 +380,94 @@ function Row({
         </td>
         <td className="px-3 py-2 text-right">
           <div className="flex justify-end gap-2">
-            {plan.allowed &&
-              (confirming ? (
-                <>
-                  <Button
-                    size="sm"
-                    disabled={staging}
-                    onClick={() => onStage(plan.organisation_id)}
-                  >
-                    {staging ? "Staging…" : `Confirm ${plan.relationship}`}
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={onAskConfirm}>
-                    Cancel
-                  </Button>
-                </>
-              ) : (
-                <Button size="sm" variant="outline" onClick={onAskConfirm}>
-                  Stage proposal
-                </Button>
-              ))}
+            {inReview && (
+              <div className="flex flex-col items-end gap-1 text-right">
+                <span className="text-xs font-semibold text-foreground">In ORL review</span>
+                <span className="text-xs text-muted-foreground">
+                  {inReview.organisation_name} · {inReview.relationship} ({inReview.review_status})
+                </span>
+                <Link
+                  to="/admin/organiser-identities"
+                  search={{ status: undefined }}
+                  className="text-xs text-primary underline"
+                >
+                  Review &amp; apply organiser →
+                </Link>
+              </div>
+            )}
+            {plan.allowed && !confirming && (
+              <Button size="sm" variant="outline" onClick={onAskConfirm}>
+                Review proposal
+              </Button>
+            )}
             <Button size="sm" variant="outline" onClick={onToggle}>
               {open ? "Hide" : "Evidence"}
             </Button>
           </div>
         </td>
       </tr>
+      {confirming && plan.allowed && (
+        <tr>
+          <td colSpan={10} className="px-3 pb-3">
+            <div className="rounded-md border border-primary/40 bg-primary/5 p-4">
+              <h3 className="text-sm font-semibold text-foreground">Confirm this proposal</h3>
+              <ul className="mt-2 space-y-1 text-sm text-foreground">
+                <li>
+                  Event: <strong>{e.name}</strong>
+                </li>
+                <li>
+                  {proposalConfirmationSentence(plan.relationship, plan.organisation_name, e.name)}
+                </li>
+                <li>
+                  Current organiser on the event:{" "}
+                  {e.organiser?.trim() ? e.organiser : <strong>blank</strong>}
+                </li>
+                <li>
+                  Evidence:{" "}
+                  {(() => {
+                    const b = strongestBasis(plan.bases);
+                    if (!b) return "no structured basis recorded";
+                    return (
+                      <>
+                        {b.detail}
+                        {b.url && (
+                          <span className="block break-all font-mono text-xs">{b.url}</span>
+                        )}
+                        {(b.tenant || b.path) && (
+                          <span className="block text-xs text-muted-foreground">
+                            {b.tenant && `tenant: ${b.tenant} `}
+                            {b.path && `path: ${b.path}`}
+                          </span>
+                        )}
+                      </>
+                    );
+                  })()}
+                </li>
+              </ul>
+              <p className="mt-2 text-sm text-muted-foreground">
+                What happens now: this creates a proposed ORL review item. It does not change the
+                public organiser.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Next step: in{" "}
+                <Link to="/admin/organiser-identities" className="text-primary underline">
+                  Organiser identities
+                </Link>
+                , Accept &amp; apply organiser is the separate action that changes the public
+                organiser.
+              </p>
+              <div className="mt-3 flex gap-2">
+                <Button size="sm" disabled={staging} onClick={() => onStage(plan.organisation_id)}>
+                  {staging ? "Sending to review…" : "Confirm and send to review"}
+                </Button>
+                <Button size="sm" variant="outline" disabled={staging} onClick={onAskConfirm}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </td>
+        </tr>
+      )}
       {open && (
         <tr className="bg-muted/30">
           <td colSpan={10} className="px-3 py-3">

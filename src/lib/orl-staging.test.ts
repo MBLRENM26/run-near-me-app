@@ -5,6 +5,7 @@ import {
   applyStaging,
   currentUtcDate,
   planStaging,
+  proposalConfirmationSentence,
   STAGED_CONFIDENCE,
   type StagingDb,
   type StagingPlan,
@@ -419,6 +420,38 @@ describe("admin protection and projection boundary (source-level)", () => {
   it("always stages review_status proposed, never accepted", () => {
     expect(src).toContain('review_status: "proposed"');
     expect(src).not.toContain('"accepted"');
+  });
+});
+
+describe("proposal confirmation wording", () => {
+  it("phrases organises as the organisation organising the event", () => {
+    expect(proposalConfirmationSentence("organises", "Zig Zag Running", "Lucky Horseshoe")).toBe(
+      "Propose that Zig Zag Running organises Lucky Horseshoe.",
+    );
+  });
+
+  it("phrases entry-platform evidence neutrally, never as organising", () => {
+    const sentence = proposalConfirmationSentence(
+      "entry_platform_hosts",
+      "Zig Zag Running",
+      "Lucky Horseshoe",
+    );
+    expect(sentence).toBe(
+      "Propose recording Zig Zag Running as the entry-platform host for Lucky Horseshoe.",
+    );
+    expect(sentence).not.toMatch(/organis(e|es|ing)/);
+  });
+
+  it("phrases source evidence neutrally, never as organising", () => {
+    const sentence = proposalConfirmationSentence(
+      "source_suggests",
+      "Sedgefield Harriers",
+      "Some Race",
+    );
+    expect(sentence).toBe(
+      "Propose recording Sedgefield Harriers as source evidence for Some Race.",
+    );
+    expect(sentence).not.toMatch(/organis(e|es|ing)/);
   });
 });
 
