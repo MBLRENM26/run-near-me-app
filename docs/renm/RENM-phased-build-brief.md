@@ -1,6 +1,32 @@
 # RENM — Phased Build Brief for Approval
 
-Status: sequencing contract under the approved 120–150 day product reset of 7 August 2026. Earlier phases remain preserved as supporting packages; the PX sequence below controls new implementation.
+Status: sequencing contract under the approved 120–150 day product reset of 7 August 2026. Earlier phases remain preserved as supporting packages; the PX sequence below controls new implementation, as amended by the 18 September 2026 checkpoint immediately following.
+
+## Operations checkpoint — 18 September 2026
+
+Documentation-only. No application, schema, production-data, configuration, scheduled-job, integration, UI or deployment mutation is authorised by this checkpoint.
+
+The 25-request prototype trigger for runner reminders is met (36 stored requests from 34 distinct addresses in the recent 90-day window; two addresses requested more than one race). Repeat intent is measured separately. The blocking problem is fulfilment, not demand: after confirmation there is no reliable loop — job 6 is inactive, the HTTP sender is fail-closed unless `REMINDER_SENDING_ENABLED` is exactly `true`, failed sends are currently marked complete, and confirmation-delivery failure is not surfaced.
+
+### Amended sequencing
+
+A manual communications proof now runs **in parallel** with bounded organiser/data rectification. Total database cleanup is explicitly not a prerequisite for communicating about a safely eligible subset.
+
+1. **Reminder Operations manual proof.** request → immediate confirmation → real-time admin notification → visible operational task → link/timing verification → schedule → preview/manual send → delivery, suppression, failure, retry → click and explicitly labelled self-reported outcome. Every action audited.
+2. **Eligibility layer.** Stable occurrence identity, confirmed date/status, typed canonical entry destination, entry state with opening/closing evidence where known, source/provenance, last verification, and accepted organiser identity where organiser communication is involved; ineligible or uncertain records route to an exception queue.
+3. **Controlled automation** only after the manual loop passes acceptance: deterministic eligible cases automated, uncertainty escalated, kill switch, idempotency, capped retries and visible failures retained.
+4. **Organiser relationship and ORL.** Aggregated, PII-free event-level demand becomes opportunity evidence; relationships resolve through ORL; the Organiser Gap page stays intake/proposal evidence. Ambiguous host-to-club evidence must produce no deterministic proposal. Integration remains review/planned work pending separate approval.
+5. **Shared communications infrastructure.** Email first, social later, on shared verified facts, eligibility, scheduling, approvals, status, failures and audit history; social begins approval-gated drafts.
+6. **Measurement.** Separate request, confirmation, scheduled, sent, delivered, failed, clicked and self-reported-entered states; measure verification time, eligible proportion, delivery success, failure/retry and repeat behaviour before commercial claims.
+7. **Commercial and copy work downstream.** Race-specific consent stays purpose-limited; broader alerts need separate consent; accuracy and corrections remain free.
+
+PX0 canon verification continues; PX1 QL2 onward, PX2, PX3, PX4 and the PX5 day-120–150 gate remain as previously sequenced and separately gated.
+
+### Bounded immediate implementation package — proposed, not authorised
+
+Scope: real-time admin notification for new reminder requests; Reminder Operations queue/state model; event/link eligibility and verification; manual preview/send; corrected failed-send completion semantics; retry, idempotency, suppression and unsubscribe audit; organiser opportunity aggregation without PII; and a controlled test matrix covering verified-open link, future opening, unknown state, changed/cancelled event, queue failure, duplicate attempt and suppressed/unsubscribed address.
+
+Acceptance: every signup creates visible work; no silent loss; no duplicate send; no unverified link sent; failure remains actionable; unsubscribe and suppression work; all actions auditable. Separate approval, rollback, tests and production acceptance still required.
 
 ## Product-direction checkpoint — 7 August 2026
 
