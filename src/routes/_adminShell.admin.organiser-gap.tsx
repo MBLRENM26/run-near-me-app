@@ -54,6 +54,24 @@ const STATE_LABEL: Record<ReconciliationState, string> = {
 
 const PAGE_SIZE = 100;
 
+/** Presentation order for the confirmation panel's strongest-evidence line. */
+const BASIS_ORDER: CandidateBasis["kind"][] = [
+  "organiser_owned_domain",
+  "canonical_name",
+  "alias_name",
+  "verified_dedicated_tenant",
+  "platform_tenant",
+  "platform_account_endpoint",
+  "evidence_url",
+  "existing_link",
+];
+
+function strongestBasis(bases: CandidateBasis[]): CandidateBasis | undefined {
+  return [...bases].sort(
+    (a, b) => BASIS_ORDER.indexOf(a.kind) - BASIS_ORDER.indexOf(b.kind),
+  )[0];
+}
+
 function AdminOrganiserGapPage() {
   const [state, setStateRaw] = useState<ReconciliationState | "all">("all");
   const [offset, setOffset] = useState(0);
