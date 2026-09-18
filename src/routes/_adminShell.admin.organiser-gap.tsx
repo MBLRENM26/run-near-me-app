@@ -364,31 +364,96 @@ function Row({
         </td>
         <td className="px-3 py-2 text-right">
           <div className="flex justify-end gap-2">
-            {plan.allowed &&
-              (confirming ? (
-                <>
-                  <Button
-                    size="sm"
-                    disabled={staging}
-                    onClick={() => onStage(plan.organisation_id)}
-                  >
-                    {staging ? "Staging…" : `Confirm ${plan.relationship}`}
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={onAskConfirm}>
-                    Cancel
-                  </Button>
-                </>
-              ) : (
-                <Button size="sm" variant="outline" onClick={onAskConfirm}>
-                  Stage proposal
-                </Button>
-              ))}
+            {inReview && (
+              <div className="flex flex-col items-end gap-1 text-right">
+                <span className="text-xs font-semibold text-foreground">In ORL review</span>
+                <span className="text-xs text-muted-foreground">
+                  {inReview.organisation_name} · {inReview.relationship} ({inReview.review_status})
+                </span>
+                <Link
+                  to="/admin/organiser-identities"
+                  search={{ status: undefined }}
+                  className="text-xs text-primary underline"
+                >
+                  Review &amp; apply organiser →
+                </Link>
+              </div>
+            )}
+            {plan.allowed && !confirming && (
+              <Button size="sm" variant="outline" onClick={onAskConfirm}>
+                Review proposal
+              </Button>
+            )}
             <Button size="sm" variant="outline" onClick={onToggle}>
               {open ? "Hide" : "Evidence"}
             </Button>
           </div>
         </td>
       </tr>
+      {confirming && plan.allowed && (
+        <tr>
+          <td colSpan={10} className="px-3 pb-3">
+            <div className="rounded-md border border-primary/40 bg-primary/5 p-4">
+              <h3 className="text-sm font-semibold text-foreground">Confirm this proposal</h3>
+              <ul className="mt-2 space-y-1 text-sm text-foreground">
+                <li>
+                  Event: <strong>{e.name}</strong>
+                </li>
+                <li>
+                  {proposalConfirmationSentence(
+                    plan.relationship,
+                    plan.organisation_name,
+                    e.name,
+                  )}
+                </li>
+                <li>
+                  Current organiser on the event:{" "}
+                  {e.organiser?.trim() ? e.organiser : <strong>blank</strong>}
+                </li>
+                <li>
+                  Evidence:{" "}
+                  {(() => {
+                    const b = strongestBasis(plan.bases);
+                    if (!b) return "no structured basis recorded";
+                    return (
+                      <>
+                        {b.detail}
+                        {b.url && <span className="block break-all font-mono text-xs">{b.url}</span>}
+                        {(b.tenant || b.path) && (
+                          <span className="block text-xs text-muted-foreground">
+                            {b.tenant && `tenant: ${b.tenant} `}
+                            {b.path && `path: ${b.path}`}
+                          </span>
+                        )}
+                      </>
+                    );
+                  })()}
+                </li>
+              </ul>
+              <p className="mt-2 text-sm text-muted-foreground">
+                What happens now: this creates a proposed ORL review item. It does not change the
+                public organiser.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Next step: in{" "}
+                <Link to="/admin/organiser-identities" className="text-primary underline">
+                  Organiser identities
+                </Link>
+                , Accept &amp; apply organiser is the separate action that changes the public
+                organiser.
+              </p>
+              <div className="mt-3 flex gap-2">
+                <Button size="sm" disabled={staging} onClick={() => onStage(plan.organisation_id)}>
+                  {staging ? "Sending to review…" : "Confirm and send to review"}
+                </Button>
+                <Button size="sm" variant="outline" disabled={staging} onClick={onAskConfirm}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </td>
+        </tr>
+      )}
       {open && (
         <tr className="bg-muted/30">
           <td colSpan={10} className="px-3 py-3">
