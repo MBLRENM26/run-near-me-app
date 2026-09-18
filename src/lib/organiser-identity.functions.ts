@@ -160,6 +160,7 @@ export const listOrganiserLinks = createServerFn({ method: "POST" })
         event_slug: ev?.slug ?? "",
         event_name: ev?.name ?? "",
         event_date_raw: ev?.date_raw ?? "",
+        event_organiser: ev?.organiser ?? null,
         organisation_id: r.organisation_id,
         organisation_name: org?.canonical_name ?? "(unknown)",
         organisation_status: org?.status ?? "candidate",
