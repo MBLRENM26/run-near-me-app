@@ -71,7 +71,6 @@ export function currentUtcDate(now: Date = new Date()): string {
 /** Confidence accepted by the live organisation_event_links check constraint. */
 export const STAGED_CONFIDENCE = "plausible_needs_review" as const;
 
-
 const ORGANISER_ROLE_BASES: CandidateBasis["kind"][] = [
   "organiser_owned_domain",
   "canonical_name",
