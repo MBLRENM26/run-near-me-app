@@ -494,6 +494,10 @@ export function reconcileEvent(
           evidence_id: null,
           shared_host: clue?.shared_host ?? true,
           detail: `exact ${acct.platform} account endpoint match (${acct.account_url})${clue?.tenant ? `, tenant ${clue.tenant}` : ""}${clue?.path ? `, path ${clue.path}` : ""}`,
+          platform: acct.platform,
+          tenant: acct.tenant_slug ?? clue?.tenant ?? null,
+          account_confidence: acct.confidence,
+          path: clue?.path ?? null,
         },
       );
       continue;
