@@ -487,9 +487,7 @@ describe("dedicated-tenant organiser evidence (Part A)", () => {
       "https://www.sientries.co.uk/event.php?event_id=9999",
     ]) {
       const row = reconcileEvent(event({ entry_url: url }), graphWith("verified"));
-      expect(
-        row.candidates.some((c) => c.suggested_relationship === "organises"),
-      ).toBe(false);
+      expect(row.candidates.some((c) => c.suggested_relationship === "organises")).toBe(false);
     }
   });
 

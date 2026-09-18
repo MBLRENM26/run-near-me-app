@@ -356,9 +356,13 @@ function RowView({
               <span className="text-xs text-muted-foreground">terminal</span>
             )}
           </div>
-          {row.relationship === "organises" && !applyDecision.allowed && actions.includes("accepted") && (
-            <div className="mt-1 max-w-xs text-xs text-muted-foreground">{applyDecision.reason}</div>
-          )}
+          {row.relationship === "organises" &&
+            !applyDecision.allowed &&
+            actions.includes("accepted") && (
+              <div className="mt-1 max-w-xs text-xs text-muted-foreground">
+                {applyDecision.reason}
+              </div>
+            )}
         </td>
       </tr>
       {expanded && (
