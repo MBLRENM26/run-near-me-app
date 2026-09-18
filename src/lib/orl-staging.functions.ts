@@ -98,12 +98,10 @@ function makeDb(): StagingDb {
 
     async attachEvidence(link_id, evidence_ids) {
       if (evidence_ids.length === 0) return;
-      const { error } = await supabaseAdmin
-        .from("organisation_event_link_evidence")
-        .upsert(
-          evidence_ids.map((evidence_id) => ({ link_id, evidence_id })),
-          { onConflict: "link_id,evidence_id", ignoreDuplicates: true },
-        );
+      const { error } = await supabaseAdmin.from("organisation_event_link_evidence").upsert(
+        evidence_ids.map((evidence_id) => ({ link_id, evidence_id })),
+        { onConflict: "link_id,evidence_id", ignoreDuplicates: true },
+      );
       if (error) throw new Error(error.message);
     },
   };

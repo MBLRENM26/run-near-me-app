@@ -127,9 +127,7 @@ export function planStaging(row: ReconciliationRow): StagingPlan {
   }
 
   const reuse_evidence_ids = [
-    ...new Set(
-      candidate.bases.map((b) => b.evidence_id).filter((id): id is string => Boolean(id)),
-    ),
+    ...new Set(candidate.bases.map((b) => b.evidence_id).filter((id): id is string => Boolean(id))),
   ];
 
   let create_evidence: EvidenceDraft | null = null;
