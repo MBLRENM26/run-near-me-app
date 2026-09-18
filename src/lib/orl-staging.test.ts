@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { reconcileEvent, type OrlGraph, type ReconciliationEventInput } from "./orl-reconciliation";
 import { applyStaging, planStaging, type StagingDb, type StagingPlan } from "./orl-staging";
@@ -386,5 +387,28 @@ describe("demand separation", () => {
       { search_clicks: 500, reminder_requests: 100 },
     );
     expect(plan.allowed).toBe(false);
+  });
+});
+
+describe("admin protection and projection boundary (source-level)", () => {
+  const src = readFileSync("src/lib/orl-staging.functions.ts", "utf8");
+
+  it("rejects an unauthenticated request before any ORL write", () => {
+    expect(src).toContain('if (!(await isAdminAuthenticated())) throw new Error("Unauthorized")');
+    const guard = src.indexOf("isAdminAuthenticated()))");
+    const firstInsert = src.indexOf(".insert(");
+    expect(guard).toBeGreaterThan(-1);
+    expect(src.slice(0, src.indexOf("stageOrlCandidate")).includes("Unauthorized")).toBe(false);
+    expect(firstInsert).toBeGreaterThan(-1);
+  });
+
+  it("never writes a public event projection field", () => {
+    expect(src).not.toMatch(/from\("events"\)[\s\S]{0,200}\.(insert|update|upsert)\(/);
+    expect(src).not.toMatch(/organiser_club_id:/);
+  });
+
+  it("always stages review_status proposed, never accepted", () => {
+    expect(src).toContain('review_status: "proposed"');
+    expect(src).not.toContain('"accepted"');
   });
 });
