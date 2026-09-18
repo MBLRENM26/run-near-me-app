@@ -548,7 +548,9 @@ function ProposalConfirmation({
         <div>
           Event: <strong>{row.event.name}</strong>
         </div>
-        <div>{proposalConfirmationSentence(plan.relationship, plan.organisation_name, row.event.name)}</div>
+        <div>
+          {proposalConfirmationSentence(plan.relationship, plan.organisation_name, row.event.name)}
+        </div>
         <div>
           Current organiser on the event:{" "}
           {row.event.organiser?.trim() ? row.event.organiser : <strong>blank</strong>}
@@ -571,8 +573,8 @@ function ProposalConfirmation({
           organiser.
         </p>
         <p className="text-muted-foreground">
-          Next step: in Organiser identities, Accept &amp; apply organiser is the separate action that
-          changes the public organiser.
+          Next step: in Organiser identities, Accept &amp; apply organiser is the separate action
+          that changes the public organiser.
         </p>
       </div>
       <DialogFooter>
