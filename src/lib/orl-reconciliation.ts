@@ -464,12 +464,33 @@ export function reconcileEvent(
     .filter((u) => u.candidate_event_ids.includes(event.id))
     .map((u) => `${u.reason} (seed row ${u.csv_row_number})`);
 
+  // Only an ACCEPTED link is a confirmed ORL relationship. A link still in the
+  // append-only review state machine (proposed / reopened / anything not yet
+  // accepted) is reconciliation work, so it surfaces as a candidate instead;
+  // a rejected link is neither confirmed nor a candidate.
+  const acceptedLinks = linked.filter((l) => l.review_status === "accepted");
+  for (const l of linked) {
+    if (l.review_status === "accepted" || l.review_status === "rejected") continue;
+    const org = orgById.get(l.organisation_id);
+    if (!org) continue;
+    addCandidate(
+      candidates,
+      org,
+      l.relationship === "organises" ||
+        l.relationship === "entry_platform_hosts" ||
+        l.relationship === "source_suggests"
+        ? l.relationship
+        : "source_suggests",
+      `existing ORL link awaiting review (${l.relationship}, status ${l.review_status})`,
+    );
+  }
+
   const candidateList = [...candidates.values()].sort((a, b) =>
     a.organisation_name.localeCompare(b.organisation_name),
   );
 
   let state: ReconciliationState;
-  if (linked.length > 0) state = "linked_in_orl";
+  if (acceptedLinks.length > 0) state = "linked_in_orl";
   else if (unresolved_reasons.length > 0) state = "unresolved_seed";
   else if (candidateList.length > 1) state = "ambiguous";
   else if (candidateList.length === 1) state = "candidate_match";
