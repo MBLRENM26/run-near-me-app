@@ -7,7 +7,7 @@ import {
 } from "./orl-apply";
 
 const MIGRATION_PATH =
-  "docs/renm/pending-migrations/20260918230000_orl_accept_and_apply_organiser.sql";
+  "supabase/migrations/20260918230000_orl_accept_and_apply_organiser.sql";
 const sql = readFileSync(MIGRATION_PATH, "utf8");
 
 describe("apply eligibility", () => {
