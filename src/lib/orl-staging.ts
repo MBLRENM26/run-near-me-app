@@ -63,6 +63,18 @@ const ORGANISER_ROLE_BASES: CandidateBasis["kind"][] = [
 
 /** Decide, deterministically, whether one reconciliation row may be staged. */
 export function planStaging(row: ReconciliationRow): StagingPlan {
+  // An accepted ORL relationship is already confirmed: nothing to stage.
+  const accepted = row.linked.filter((l) => l.review_status === "accepted");
+  if (accepted.length > 0) {
+    return {
+      allowed: false,
+      code: "already_accepted",
+      reason: `Already confirmed in ORL (${accepted
+        .map((l) => `${l.organisation_name}: ${l.relationship}`)
+        .join("; ")}). Nothing to stage.`,
+    };
+  }
+
   if (row.state !== "candidate_match" || row.candidates.length !== 1) {
     return {
       allowed: false,
