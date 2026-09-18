@@ -96,7 +96,7 @@ export const listOrganiserLinks = createServerFn({ method: "POST" })
     const linkIds = linkRows.map((r) => r.id);
 
     const [eventsRes, orgsRes, evJoinRes, historyRes] = await Promise.all([
-      supabaseAdmin.from("events").select("id, slug, name, date_raw").in("id", eventIds),
+      supabaseAdmin.from("events").select("id, slug, name, date_raw, organiser").in("id", eventIds),
       supabaseAdmin
         .from("organisations")
         .select("id, canonical_name, status")
