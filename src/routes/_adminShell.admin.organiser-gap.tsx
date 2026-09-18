@@ -4,8 +4,12 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { getOrlReconciliation } from "@/lib/orl-reconciliation.functions";
 import { stageOrlCandidate } from "@/lib/orl-staging.functions";
-import { planStaging } from "@/lib/orl-staging";
-import type { ReconciliationRow, ReconciliationState } from "@/lib/orl-reconciliation";
+import { planStaging, proposalConfirmationSentence } from "@/lib/orl-staging";
+import type {
+  CandidateBasis,
+  ReconciliationRow,
+  ReconciliationState,
+} from "@/lib/orl-reconciliation";
 
 export const Route = createFileRoute("/_adminShell/admin/organiser-gap")({
   head: () => ({
@@ -102,7 +106,7 @@ function AdminOrganiserGapPage() {
         <h1 className="text-2xl font-bold text-foreground">Organiser gap — ORL reconciliation</h1>
         <p className="max-w-lg text-sm text-muted-foreground">
           Confirmation view over the existing ORL evidence graph. Reconciliation is read-only except
-          for the explicit per-row <strong>Stage proposal</strong> action, which creates a{" "}
+          for the explicit per-row <strong>Review proposal</strong> action, which creates a{" "}
           <em>proposed</em> ORL link only. No acceptance, no bulk staging and no write to any public
           event field happens here — review and approval stay in{" "}
           <Link to="/admin/organiser-identities" className="text-primary underline">
