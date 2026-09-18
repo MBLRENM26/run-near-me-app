@@ -46,16 +46,12 @@ function AdminLayout() {
   const claims = counts?.clubClaims ?? 0;
   const emailSubs = counts?.emailSubscriptions ?? 0;
 
-
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
         <div className="mx-auto max-w-6xl px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <Link
-              to="/"
-              className="text-sm font-semibold text-foreground hover:text-primary"
-            >
+            <Link to="/" className="text-sm font-semibold text-foreground hover:text-primary">
               Running Events Near Me
             </Link>
             <span className="text-sm text-muted-foreground">Admin</span>
@@ -63,13 +59,15 @@ function AdminLayout() {
               to="/admin/claims"
               className="text-sm font-medium text-foreground hover:text-primary"
             >
-              Submissions<Badge n={subs} />
+              Submissions
+              <Badge n={subs} />
             </Link>
             <Link
               to="/admin/club-claims"
               className="text-sm font-medium text-foreground hover:text-primary"
             >
-              Club claims<Badge n={claims} />
+              Club claims
+              <Badge n={claims} />
             </Link>
             <Link
               to="/admin/clubs"
@@ -111,9 +109,9 @@ function AdminLayout() {
               to="/admin/subscriptions"
               className="text-sm font-medium text-foreground hover:text-primary"
             >
-              Subscribers<Badge n={emailSubs} />
+              Subscribers
+              <Badge n={emailSubs} />
             </Link>
-
           </div>
           <Button variant="ghost" size="sm" onClick={handleLogout}>
             Log out
@@ -126,4 +124,3 @@ function AdminLayout() {
     </div>
   );
 }
-

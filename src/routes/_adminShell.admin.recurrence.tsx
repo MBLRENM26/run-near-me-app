@@ -264,11 +264,7 @@ function RediscoveryPanel() {
               value={fmt(data.total_missing_future)}
               hint={`last ${data.lookback_days} days`}
             />
-            <Stat
-              label="Due now"
-              value={fmt(data.due_now)}
-              hint="last seen 330+ days ago"
-            />
+            <Stat label="Due now" value={fmt(data.due_now)} hint="last seen 330+ days ago" />
             <Stat
               label="Had organiser link"
               value={fmt(data.with_organiser_link)}
@@ -311,7 +307,9 @@ function RediscoveryPanel() {
                     <td className="px-3 py-2 text-muted-foreground">{dateLabel(r.last_seen)}</td>
                     <td
                       className={`px-3 py-2 text-right ${
-                        r.days_since >= 330 ? "font-semibold text-foreground" : "text-muted-foreground"
+                        r.days_since >= 330
+                          ? "font-semibold text-foreground"
+                          : "text-muted-foreground"
                       }`}
                     >
                       {fmt(r.days_since)}
@@ -328,8 +326,8 @@ function RediscoveryPanel() {
             </table>
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
-            These races were held recently and have no future date recorded. Most are annual and
-            due to return — check them on the next manual sync run.
+            These races were held recently and have no future date recorded. Most are annual and due
+            to return — check them on the next manual sync run.
           </p>
         </>
       )}
@@ -388,10 +386,7 @@ function SeriesPanel() {
                         <tr key={o.id}>
                           <td className="px-3 py-2 text-foreground">
                             {o.slug ? (
-                              <a
-                                href={`/admin/events/${o.id}`}
-                                className="text-primary underline"
-                              >
+                              <a href={`/admin/events/${o.id}`} className="text-primary underline">
                                 {o.name}
                               </a>
                             ) : (

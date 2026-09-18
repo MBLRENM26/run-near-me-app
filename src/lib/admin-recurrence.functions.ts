@@ -209,9 +209,7 @@ export const getRediscoveryWorklist = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await requireAdminOrThrow();
     const today = todayIso();
-    const cutoff = new Date(Date.now() - data.lookbackDays * 86_400_000)
-      .toISOString()
-      .slice(0, 10);
+    const cutoff = new Date(Date.now() - data.lookbackDays * 86_400_000).toISOString().slice(0, 10);
 
     const rows = await fetchEventRows();
     const groups = groupBySeries(rows);
@@ -276,9 +274,7 @@ export type ReplacementMonth = {
 
 export const getReplacementRate = createServerFn({ method: "POST" })
   .inputValidator((d) =>
-    z
-      .object({ months: z.number().int().min(3).max(24).default(12) })
-      .parse(d ?? {}),
+    z.object({ months: z.number().int().min(3).max(24).default(12) }).parse(d ?? {}),
   )
   .handler(async ({ data }) => {
     await requireAdminOrThrow();
@@ -313,7 +309,11 @@ export const getReplacementRate = createServerFn({ method: "POST" })
 
       // Gained: added to the catalogue while still future-dated.
       const createdMonth = monthKey(row.created_at);
-      if (createdMonth >= startMonth && row.sort_date && row.sort_date >= row.created_at.slice(0, 10)) {
+      if (
+        createdMonth >= startMonth &&
+        row.sort_date &&
+        row.sort_date >= row.created_at.slice(0, 10)
+      ) {
         const b = ensure(createdMonth);
         b.gained += 1;
         if (isDiscoverable) b.gained_discoverable += 1;
@@ -389,10 +389,7 @@ export const getSyncSourceSummary = createServerFn({ method: "GET" }).handler(as
       new_events: run.new_events,
       updated_existing: run.updated_existing,
       error_message: run.error_message,
-      days_since: Math.max(
-        0,
-        Math.round((Date.now() - Date.parse(run.started_at)) / 86_400_000),
-      ),
+      days_since: Math.max(0, Math.round((Date.now() - Date.parse(run.started_at)) / 86_400_000)),
     });
   }
 
