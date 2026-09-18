@@ -1,16 +1,14 @@
 import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { canApplyOrganiser } from "@/lib/orl-apply";
 
 // Loaded lazily so the server-only session module never enters the client
 // import graph (route components statically import this module).
 const isAdminAuthenticated = createServerOnlyFn(async () => {
-  const { isAdminAuthenticated: impl } = await import(
-    "@/lib/admin-session.server"
-  );
+  const { isAdminAuthenticated: impl } = await import("@/lib/admin-session.server");
   return impl();
 });
-
 
 const REVIEW_STATUSES = ["proposed", "accepted", "rejected", "reopened"] as const;
 const REVIEW_ACTIONS = ["accepted", "rejected", "reopened"] as const;
@@ -23,6 +21,8 @@ export type OrganiserLinkRow = {
   event_slug: string;
   event_name: string;
   event_date_raw: string;
+  /** Current public organiser text — needed to state the exact projection. */
+  event_organiser: string | null;
   organisation_id: string;
   organisation_name: string;
   organisation_status: string;
@@ -73,9 +73,12 @@ export const listOrganiserLinks = createServerFn({ method: "POST" })
 
     let q = supabaseAdmin
       .from("organisation_event_links")
-      .select("id, event_id, organisation_id, relationship, confidence, review_status, created_at", {
-        count: "exact",
-      })
+      .select(
+        "id, event_id, organisation_id, relationship, confidence, review_status, created_at",
+        {
+          count: "exact",
+        },
+      )
       .order("created_at", { ascending: false })
       .range(data.offset, data.offset + data.limit - 1);
 
@@ -92,14 +95,13 @@ export const listOrganiserLinks = createServerFn({ method: "POST" })
     const linkIds = linkRows.map((r) => r.id);
 
     const [eventsRes, orgsRes, evJoinRes, historyRes] = await Promise.all([
-      supabaseAdmin.from("events").select("id, slug, name, date_raw").in("id", eventIds),
-      supabaseAdmin
-        .from("organisations")
-        .select("id, canonical_name, status")
-        .in("id", orgIds),
+      supabaseAdmin.from("events").select("id, slug, name, date_raw, organiser").in("id", eventIds),
+      supabaseAdmin.from("organisations").select("id, canonical_name, status").in("id", orgIds),
       supabaseAdmin
         .from("organisation_event_link_evidence")
-        .select("link_id, evidence_id, identity_evidence!inner(id, source_url, evidence_type, supporting_fact, captured_at)")
+        .select(
+          "link_id, evidence_id, identity_evidence!inner(id, source_url, evidence_type, supporting_fact, captured_at)",
+        )
         .in("link_id", linkIds),
       supabaseAdmin
         .from("organisation_event_link_reviews")
@@ -156,6 +158,7 @@ export const listOrganiserLinks = createServerFn({ method: "POST" })
         event_slug: ev?.slug ?? "",
         event_name: ev?.name ?? "",
         event_date_raw: ev?.date_raw ?? "",
+        event_organiser: ev?.organiser ?? null,
         organisation_id: r.organisation_id,
         organisation_name: org?.canonical_name ?? "(unknown)",
         organisation_status: org?.status ?? "candidate",
@@ -184,28 +187,168 @@ export const reviewOrganiserLink = createServerFn({ method: "POST" })
       })
       .parse(d),
   )
-  .handler(async ({ data }): Promise<{ ok: true; review_id: string } | { ok: false; error: string }> => {
+  .handler(
+    async ({ data }): Promise<{ ok: true; review_id: string } | { ok: false; error: string }> => {
+      await requireAdminMutation();
+
+      // An `organises` acceptance must never leave the public projection
+      // disconnected: it is routed exclusively through acceptAndApplyOrganiser,
+      // which accepts and projects atomically. Rejection and reopen are unchanged,
+      // and non-organises relationships never touch the event.
+      if (data.action === "accepted") {
+        const { data: link, error: linkErr } = await supabaseAdmin
+          .from("organisation_event_links")
+          .select("relationship")
+          .eq("id", data.link_id)
+          .maybeSingle();
+        if (linkErr) throw new Error(linkErr.message);
+        if (!link) return { ok: false, error: "link_not_found" };
+        if (link.relationship === "organises") {
+          return { ok: false, error: "use_accept_and_apply_organiser" };
+        }
+      }
+
+      const { data: reviewId, error } = await supabaseAdmin.rpc(
+        "review_organisation_event_link_txn",
+        {
+          _link_id: data.link_id,
+          _action: data.action,
+          _note: data.note,
+          _reviewed_by: null,
+          _reviewer_identity: "admin:cookie-session",
+        } as never,
+      );
+
+      if (error) {
+        const msg = error.message ?? "unknown_error";
+        if (msg.includes("invalid_transition")) return { ok: false, error: msg };
+        if (msg.includes("invalid_action")) return { ok: false, error: msg };
+        if (msg.includes("link_not_found")) return { ok: false, error: "link_not_found" };
+        throw new Error(msg);
+      }
+      return { ok: true, review_id: reviewId as unknown as string };
+    },
+  );
+
+// ---------------------------------------------------------------------------
+// Accept & apply organiser (single link, atomic acceptance + public projection)
+// ---------------------------------------------------------------------------
+export type AcceptAndApplyResult =
+  | {
+      ok: true;
+      already_applied: boolean;
+      link_id: string;
+      event_slug: string | null;
+      previous_organiser: string | null;
+      new_organiser: string;
+    }
+  | { ok: false; error: string; reason: string };
+
+/**
+ * Accept ONE `organises` link and project the canonical organisation name onto
+ * events.organiser in the same database transaction. No bulk path exists: the
+ * input is a single link id plus an explicit confirmation.
+ *
+ * organiser_club_id and organiser_type are never written.
+ */
+export const acceptAndApplyOrganiser = createServerFn({ method: "POST" })
+  .inputValidator((d) =>
+    z
+      .object({
+        link_id: z.string().uuid(),
+        note: z.string().max(2000).optional().nullable(),
+        /** Explicit per-row confirmation; there is no bulk route. */
+        confirm: z.literal(true),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }): Promise<AcceptAndApplyResult> => {
     await requireAdminMutation();
 
-    const { data: reviewId, error } = await supabaseAdmin.rpc(
-      "review_organisation_event_link_txn",
+    const { data: link, error: linkErr } = await supabaseAdmin
+      .from("organisation_event_links")
+      .select("id, event_id, organisation_id, relationship, review_status")
+      .eq("id", data.link_id)
+      .maybeSingle();
+    if (linkErr) throw new Error(linkErr.message);
+    if (!link) return { ok: false, error: "link_not_found", reason: "Link not found." };
+
+    const [{ data: org, error: orgErr }, { data: event, error: eventErr }] = await Promise.all([
+      supabaseAdmin
+        .from("organisations")
+        .select("id, canonical_name")
+        .eq("id", link.organisation_id)
+        .maybeSingle(),
+      supabaseAdmin
+        .from("events")
+        .select("id, slug, organiser")
+        .eq("id", link.event_id)
+        .maybeSingle(),
+    ]);
+    if (orgErr) throw new Error(orgErr.message);
+    if (eventErr) throw new Error(eventErr.message);
+    if (!org)
+      return { ok: false, error: "organisation_not_found", reason: "Organisation not found." };
+    if (!event) return { ok: false, error: "event_not_found", reason: "Event not found." };
+
+    // Pre-flight using the same rules the database function re-validates inside
+    // the transaction; the database remains the authority.
+    const decision = canApplyOrganiser({
+      relationship: link.relationship,
+      review_status: link.review_status,
+      current_organiser: event.organiser,
+      canonical_name: org.canonical_name,
+    });
+    if (!decision.allowed && decision.code !== "already_applied") {
+      return { ok: false, error: decision.code, reason: decision.reason };
+    }
+
+    const { data: result, error } = await supabaseAdmin.rpc(
+      "accept_and_apply_organiser" as never,
       {
         _link_id: data.link_id,
-        _action: data.action,
-        _note: data.note,
-        _reviewed_by: null,
+        _note: data.note ?? null,
         _reviewer_identity: "admin:cookie-session",
       } as never,
     );
-
     if (error) {
       const msg = error.message ?? "unknown_error";
-      if (msg.includes("invalid_transition")) return { ok: false, error: msg };
-      if (msg.includes("invalid_action")) return { ok: false, error: msg };
-      if (msg.includes("link_not_found")) return { ok: false, error: "link_not_found" };
+      // The function ships in the repository but is activated by the normal
+      // reviewed migration/deployment step.
+      if (msg.includes("accept_and_apply_organiser") || msg.includes("does not exist")) {
+        return {
+          ok: false,
+          error: "rpc_not_installed",
+          reason:
+            "The atomic accept-and-apply database function is not installed yet. It ships in the repository and needs the normal reviewed migration step before this action can run.",
+        };
+      }
       throw new Error(msg);
     }
-    return { ok: true, review_id: reviewId as unknown as string };
+
+    const payload = (result ?? {}) as {
+      ok?: boolean;
+      error?: string;
+      already_applied?: boolean;
+      previous_organiser?: string | null;
+      new_organiser?: string;
+    };
+    if (!payload.ok) {
+      return {
+        ok: false,
+        error: payload.error ?? "unknown_error",
+        reason: `The database refused the change (${payload.error ?? "unknown_error"}). Nothing was modified.`,
+      };
+    }
+
+    return {
+      ok: true,
+      already_applied: Boolean(payload.already_applied),
+      link_id: link.id,
+      event_slug: event.slug,
+      previous_organiser: payload.previous_organiser ?? event.organiser,
+      new_organiser: payload.new_organiser ?? org.canonical_name,
+    };
   });
 
 // ---------------------------------------------------------------------------
@@ -236,7 +379,9 @@ export const listSeedUnresolved = createServerFn({ method: "POST" })
 
     let q = supabaseAdmin
       .from("organisation_seed_unresolved")
-      .select("id, seed_run_id, csv_sha256, csv_row_number, raw_row, reason, candidate_event_ids, attempted_at")
+      .select(
+        "id, seed_run_id, csv_sha256, csv_row_number, raw_row, reason, candidate_event_ids, attempted_at",
+      )
       .order("attempted_at", { ascending: false })
       .limit(data.limit);
     if (data.seed_run_id) q = q.eq("seed_run_id", data.seed_run_id);

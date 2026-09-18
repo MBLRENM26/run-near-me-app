@@ -5,11 +5,13 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { adminCheckSession } from "@/lib/admin.functions";
 import {
+  acceptAndApplyOrganiser,
   listOrganiserLinks,
   reviewOrganiserLink,
   type OrganiserLinkRow,
   type ReviewStatus,
 } from "@/lib/organiser-identity.functions";
+import { canApplyOrganiser, describeOrganiserProjection } from "@/lib/orl-apply";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -40,6 +42,8 @@ export const Route = createFileRoute("/_adminShell/admin/organiser-identities")(
 });
 
 type Action = "accepted" | "rejected" | "reopened";
+/** `apply` = accept the organises link AND project the public organiser atomically. */
+type RowAction = Action | "apply";
 
 const ALLOWED: Record<ReviewStatus, Action[]> = {
   proposed: ["accepted", "rejected"],
@@ -56,6 +60,7 @@ function OrganiserIdentitiesPage() {
   const check = useServerFn(adminCheckSession);
   const fetchList = useServerFn(listOrganiserLinks);
   const doReview = useServerFn(reviewOrganiserLink);
+  const doApply = useServerFn(acceptAndApplyOrganiser);
 
   const [authChecked, setAuthChecked] = useState(false);
   useEffect(() => {
@@ -76,12 +81,44 @@ function OrganiserIdentitiesPage() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [decision, setDecision] = useState<{
     row: OrganiserLinkRow;
-    action: Action;
+    action: RowAction;
   } | null>(null);
   const [note, setNote] = useState("");
+  const [applied, setApplied] = useState<{
+    slug: string | null;
+    from: string | null;
+    to: string;
+  } | null>(null);
 
   const submitDecision = async () => {
     if (!decision) return;
+
+    if (decision.action === "apply") {
+      const res = await doApply({
+        data: { link_id: decision.row.id, note: note || null, confirm: true },
+      });
+      if (res.ok) {
+        toast.success(
+          res.already_applied
+            ? "Already applied — nothing changed"
+            : `Organiser applied: ${res.new_organiser}`,
+        );
+        setApplied({
+          slug: res.event_slug,
+          from: res.previous_organiser,
+          to: res.new_organiser,
+        });
+        setDecision(null);
+        setNote("");
+        // Both the review list and the ORL reconciliation view reflect this.
+        qc.invalidateQueries({ queryKey: ["organiser-links"] });
+        qc.invalidateQueries({ queryKey: ["orl-reconciliation"] });
+      } else {
+        toast.error(res.reason);
+      }
+      return;
+    }
+
     const res = await doReview({
       data: { link_id: decision.row.id, action: decision.action, note: note || null },
     });
@@ -90,6 +127,7 @@ function OrganiserIdentitiesPage() {
       setDecision(null);
       setNote("");
       qc.invalidateQueries({ queryKey: ["organiser-links"] });
+      qc.invalidateQueries({ queryKey: ["orl-reconciliation"] });
     } else {
       toast.error(`Review failed: ${"error" in res ? res.error : "unknown"}`);
     }
@@ -160,12 +198,29 @@ function OrganiserIdentitiesPage() {
         </div>
       )}
 
+      {applied && (
+        <div className="rounded-lg border border-border bg-muted/30 p-3 text-sm">
+          Applied: {describeOrganiserProjection(applied.from, applied.to)}.{" "}
+          {applied.slug && (
+            <a
+              href={`/events/${applied.slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              View the event page →
+            </a>
+          )}
+        </div>
+      )}
+
       <Dialog open={!!decision} onOpenChange={(o) => !o && setDecision(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {decision?.action[0].toUpperCase()}
-              {decision?.action.slice(1)} link
+              {decision?.action === "apply"
+                ? "Accept & apply organiser"
+                : `${(decision?.action ?? "").charAt(0).toUpperCase()}${(decision?.action ?? "").slice(1)} link`}
             </DialogTitle>
           </DialogHeader>
           {decision && (
@@ -177,6 +232,21 @@ function OrganiserIdentitiesPage() {
                   {decision.row.organisation_name} ({decision.row.relationship})
                 </span>
               </div>
+              {decision.action === "apply" && (
+                <div className="rounded border border-border bg-muted/30 p-2">
+                  <div className="font-medium">
+                    {describeOrganiserProjection(
+                      decision.row.event_organiser,
+                      decision.row.organisation_name,
+                    )}
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    This accepts the ORL relationship and changes the public organiser shown on the
+                    event page, in one audited transaction. The club link and organiser type are not
+                    changed.
+                  </p>
+                </div>
+              )}
               <Textarea
                 placeholder="Optional note (visible in audit history)"
                 value={note}
@@ -231,9 +301,17 @@ function RowView({
   row: OrganiserLinkRow;
   expanded: boolean;
   onToggle: () => void;
-  onAct: (action: Action) => void;
+  onAct: (action: RowAction) => void;
 }) {
   const actions = ALLOWED[row.review_status];
+  // An `organises` acceptance always runs through Accept & apply, so the public
+  // organiser can never be left disconnected from the accepted relationship.
+  const applyDecision = canApplyOrganiser({
+    relationship: row.relationship,
+    review_status: row.review_status,
+    current_organiser: row.event_organiser,
+    canonical_name: row.organisation_name,
+  });
   return (
     <>
       <tr className="border-b border-border/60">
@@ -256,20 +334,35 @@ function RowView({
         </td>
         <td className="px-3 py-2">
           <div className="flex flex-wrap gap-1">
-            {actions.map((a) => (
-              <Button
-                key={a}
-                size="sm"
-                variant={a === "accepted" ? "default" : "outline"}
-                onClick={() => onAct(a)}
-              >
-                {a === "accepted" ? "Accept" : a === "rejected" ? "Reject" : "Reopen"}
-              </Button>
-            ))}
+            {actions.map((a) =>
+              a === "accepted" && row.relationship === "organises" ? (
+                <Button
+                  key={a}
+                  size="sm"
+                  variant="default"
+                  disabled={!applyDecision.allowed}
+                  title={applyDecision.allowed ? undefined : applyDecision.reason}
+                  onClick={() => onAct("apply")}
+                >
+                  Accept &amp; apply organiser
+                </Button>
+              ) : (
+                <Button key={a} size="sm" variant="outline" onClick={() => onAct(a)}>
+                  {a === "accepted" ? "Accept" : a === "rejected" ? "Reject" : "Reopen"}
+                </Button>
+              ),
+            )}
             {actions.length === 0 && (
               <span className="text-xs text-muted-foreground">terminal</span>
             )}
           </div>
+          {row.relationship === "organises" &&
+            !applyDecision.allowed &&
+            actions.includes("accepted") && (
+              <div className="mt-1 max-w-xs text-xs text-muted-foreground">
+                {applyDecision.reason}
+              </div>
+            )}
         </td>
       </tr>
       {expanded && (
