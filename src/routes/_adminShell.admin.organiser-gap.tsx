@@ -46,15 +46,24 @@ const STATE_LABEL: Record<ReconciliationState, string> = {
   unresolved_seed: "Unresolved seed",
 };
 
+const PAGE_SIZE = 100;
+
 function AdminOrganiserGapPage() {
-  const [state, setState] = useState<ReconciliationState | "all">("all");
+  const [state, setStateRaw] = useState<ReconciliationState | "all">("all");
+  const [offset, setOffset] = useState(0);
   const [expanded, setExpanded] = useState<string | null>(null);
 
+  const setState = (next: ReconciliationState | "all") => {
+    setStateRaw(next);
+    setOffset(0);
+    setExpanded(null);
+  };
+
   const { data, isLoading, error } = useQuery({
-    queryKey: ["admin", "orl-reconciliation", state],
+    queryKey: ["admin", "orl-reconciliation", state, offset],
     queryFn: () =>
       getOrlReconciliation({
-        data: { limit: 200, ...(state === "all" ? {} : { state }) },
+        data: { limit: PAGE_SIZE, offset, ...(state === "all" ? {} : { state }) },
       }),
     staleTime: 60_000,
   });
