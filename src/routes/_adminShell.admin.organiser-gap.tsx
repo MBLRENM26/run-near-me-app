@@ -54,12 +54,17 @@ function AdminOrganiserGapPage() {
   const [state, setStateRaw] = useState<ReconciliationState | "all">("all");
   const [offset, setOffset] = useState(0);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
 
   const setState = (next: ReconciliationState | "all") => {
     setStateRaw(next);
     setOffset(0);
     setExpanded(null);
+    setConfirming(null);
   };
+
+  const queryClient = useQueryClient();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["admin", "orl-reconciliation", state, offset],
@@ -70,21 +75,57 @@ function AdminOrganiserGapPage() {
     staleTime: 60_000,
   });
 
+  const stage = useMutation({
+    mutationFn: (vars: { event_id: string; organisation_id: string }) =>
+      stageOrlCandidate({ data: { ...vars, confirm: true } }),
+    onSuccess: async (result) => {
+      setConfirming(null);
+      setNotice(
+        result.ok
+          ? {
+              tone: "ok",
+              text: result.created
+                ? `Staged as a proposed ${result.relationship} link. Review it in Organiser identities — nothing is accepted here.`
+                : `Already in ORL review as ${result.relationship} (status ${result.review_status}). No duplicate was created.`,
+            }
+          : { tone: "error", text: result.reason },
+      );
+      await queryClient.invalidateQueries({ queryKey: ["admin", "orl-reconciliation"] });
+    },
+    onError: (err) =>
+      setNotice({ tone: "error", text: err instanceof Error ? err.message : "Staging failed" }),
+  });
+
   return (
     <div>
       <div className="flex flex-wrap items-baseline justify-between gap-4">
         <h1 className="text-2xl font-bold text-foreground">Organiser gap — ORL reconciliation</h1>
         <p className="max-w-lg text-sm text-muted-foreground">
-          Read-only confirmation view over the existing ORL evidence graph. Nothing here writes,
-          stages or reviews: staging clues into ORL intake (Step 2) is deliberately absent and
-          separately gated. Evidence is never reduced to a flat organiser name — review and approval
-          happen only in{" "}
+          Confirmation view over the existing ORL evidence graph. Reconciliation is read-only except
+          for the explicit per-row <strong>Stage proposal</strong> action, which creates a{" "}
+          <em>proposed</em> ORL link only. No acceptance, no bulk staging and no write to any public
+          event field happens here — review and approval stay in{" "}
           <Link to="/admin/organiser-identities" className="text-primary underline">
             Organiser identities
           </Link>
           .
         </p>
       </div>
+
+      {notice && (
+        <p
+          className={`mt-4 rounded-md border px-3 py-2 text-sm ${
+            notice.tone === "ok"
+              ? "border-border bg-muted/40 text-foreground"
+              : "border-destructive/40 text-destructive"
+          }`}
+        >
+          {notice.text}{" "}
+          <Link to="/admin/organiser-identities" className="text-primary underline">
+            Open Organiser identities
+          </Link>
+        </p>
+      )}
 
       {isLoading && <p className="mt-6 text-muted-foreground">Loading…</p>}
       {error && (
