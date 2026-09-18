@@ -72,6 +72,7 @@ import { Route as ApiPublicImportClubsRouteImport } from './routes/api/public/im
 import { Route as AdminShellAdminSyncRunsRouteImport } from './routes/_adminShell.admin.sync-runs'
 import { Route as AdminShellAdminSubscriptionsRouteImport } from './routes/_adminShell.admin.subscriptions'
 import { Route as AdminShellAdminSearchRouteImport } from './routes/_adminShell.admin.search'
+import { Route as AdminShellAdminRevenueRouteImport } from './routes/_adminShell.admin.revenue'
 import { Route as AdminShellAdminRecurrenceRouteImport } from './routes/_adminShell.admin.recurrence'
 import { Route as AdminShellAdminOrganiserIdentitiesRouteImport } from './routes/_adminShell.admin.organiser-identities'
 import { Route as AdminShellAdminClubClaimsRouteImport } from './routes/_adminShell.admin.club-claims'
@@ -424,6 +425,11 @@ const AdminShellAdminSearchRoute = AdminShellAdminSearchRouteImport.update({
   path: '/admin/search',
   getParentRoute: () => AdminShellRoute,
 } as any)
+const AdminShellAdminRevenueRoute = AdminShellAdminRevenueRouteImport.update({
+  id: '/admin/revenue',
+  path: '/admin/revenue',
+  getParentRoute: () => AdminShellRoute,
+} as any)
 const AdminShellAdminRecurrenceRoute =
   AdminShellAdminRecurrenceRouteImport.update({
     id: '/admin/recurrence',
@@ -627,6 +633,7 @@ export interface FileRoutesByFullPath {
   '/admin/club-claims': typeof AdminShellAdminClubClaimsRoute
   '/admin/organiser-identities': typeof AdminShellAdminOrganiserIdentitiesRouteWithChildren
   '/admin/recurrence': typeof AdminShellAdminRecurrenceRoute
+  '/admin/revenue': typeof AdminShellAdminRevenueRoute
   '/admin/search': typeof AdminShellAdminSearchRoute
   '/admin/subscriptions': typeof AdminShellAdminSubscriptionsRoute
   '/admin/sync-runs': typeof AdminShellAdminSyncRunsRoute
@@ -716,6 +723,7 @@ export interface FileRoutesByTo {
   '/admin/club-claims': typeof AdminShellAdminClubClaimsRoute
   '/admin/organiser-identities': typeof AdminShellAdminOrganiserIdentitiesRouteWithChildren
   '/admin/recurrence': typeof AdminShellAdminRecurrenceRoute
+  '/admin/revenue': typeof AdminShellAdminRevenueRoute
   '/admin/search': typeof AdminShellAdminSearchRoute
   '/admin/subscriptions': typeof AdminShellAdminSubscriptionsRoute
   '/admin/sync-runs': typeof AdminShellAdminSyncRunsRoute
@@ -807,6 +815,7 @@ export interface FileRoutesById {
   '/_adminShell/admin/club-claims': typeof AdminShellAdminClubClaimsRoute
   '/_adminShell/admin/organiser-identities': typeof AdminShellAdminOrganiserIdentitiesRouteWithChildren
   '/_adminShell/admin/recurrence': typeof AdminShellAdminRecurrenceRoute
+  '/_adminShell/admin/revenue': typeof AdminShellAdminRevenueRoute
   '/_adminShell/admin/search': typeof AdminShellAdminSearchRoute
   '/_adminShell/admin/subscriptions': typeof AdminShellAdminSubscriptionsRoute
   '/_adminShell/admin/sync-runs': typeof AdminShellAdminSyncRunsRoute
@@ -898,6 +907,7 @@ export interface FileRouteTypes {
     | '/admin/club-claims'
     | '/admin/organiser-identities'
     | '/admin/recurrence'
+    | '/admin/revenue'
     | '/admin/search'
     | '/admin/subscriptions'
     | '/admin/sync-runs'
@@ -987,6 +997,7 @@ export interface FileRouteTypes {
     | '/admin/club-claims'
     | '/admin/organiser-identities'
     | '/admin/recurrence'
+    | '/admin/revenue'
     | '/admin/search'
     | '/admin/subscriptions'
     | '/admin/sync-runs'
@@ -1077,6 +1088,7 @@ export interface FileRouteTypes {
     | '/_adminShell/admin/club-claims'
     | '/_adminShell/admin/organiser-identities'
     | '/_adminShell/admin/recurrence'
+    | '/_adminShell/admin/revenue'
     | '/_adminShell/admin/search'
     | '/_adminShell/admin/subscriptions'
     | '/_adminShell/admin/sync-runs'
@@ -1628,6 +1640,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminShellAdminSearchRouteImport
       parentRoute: typeof AdminShellRoute
     }
+    '/_adminShell/admin/revenue': {
+      id: '/_adminShell/admin/revenue'
+      path: '/admin/revenue'
+      fullPath: '/admin/revenue'
+      preLoaderRoute: typeof AdminShellAdminRevenueRouteImport
+      parentRoute: typeof AdminShellRoute
+    }
     '/_adminShell/admin/recurrence': {
       id: '/_adminShell/admin/recurrence'
       path: '/admin/recurrence'
@@ -1826,6 +1845,7 @@ interface AdminShellRouteChildren {
   AdminShellAdminClubClaimsRoute: typeof AdminShellAdminClubClaimsRoute
   AdminShellAdminOrganiserIdentitiesRoute: typeof AdminShellAdminOrganiserIdentitiesRouteWithChildren
   AdminShellAdminRecurrenceRoute: typeof AdminShellAdminRecurrenceRoute
+  AdminShellAdminRevenueRoute: typeof AdminShellAdminRevenueRoute
   AdminShellAdminSearchRoute: typeof AdminShellAdminSearchRoute
   AdminShellAdminSubscriptionsRoute: typeof AdminShellAdminSubscriptionsRoute
   AdminShellAdminSyncRunsRoute: typeof AdminShellAdminSyncRunsRoute
@@ -1845,6 +1865,7 @@ const AdminShellRouteChildren: AdminShellRouteChildren = {
   AdminShellAdminOrganiserIdentitiesRoute:
     AdminShellAdminOrganiserIdentitiesRouteWithChildren,
   AdminShellAdminRecurrenceRoute: AdminShellAdminRecurrenceRoute,
+  AdminShellAdminRevenueRoute: AdminShellAdminRevenueRoute,
   AdminShellAdminSearchRoute: AdminShellAdminSearchRoute,
   AdminShellAdminSubscriptionsRoute: AdminShellAdminSubscriptionsRoute,
   AdminShellAdminSyncRunsRoute: AdminShellAdminSyncRunsRoute,
