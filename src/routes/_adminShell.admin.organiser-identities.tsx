@@ -301,9 +301,17 @@ function RowView({
   row: OrganiserLinkRow;
   expanded: boolean;
   onToggle: () => void;
-  onAct: (action: Action) => void;
+  onAct: (action: RowAction) => void;
 }) {
   const actions = ALLOWED[row.review_status];
+  // An `organises` acceptance always runs through Accept & apply, so the public
+  // organiser can never be left disconnected from the accepted relationship.
+  const applyDecision = canApplyOrganiser({
+    relationship: row.relationship,
+    review_status: row.review_status,
+    current_organiser: row.event_organiser,
+    canonical_name: row.organisation_name,
+  });
   return (
     <>
       <tr className="border-b border-border/60">
