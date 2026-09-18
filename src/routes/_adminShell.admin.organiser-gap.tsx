@@ -150,11 +150,32 @@ function AdminOrganiserGapPage() {
             ))}
           </div>
 
-          <p className="mt-3 text-xs text-muted-foreground">
-            Showing {fmt(data.returned)} rows (display cap {fmt(data.display_limit)}), ordered by
-            runner demand. Demand orders review priority only — it is not identity evidence and
-            contains no runner details.
-          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+            <span>
+              Showing {fmt(data.offset + 1)}–{fmt(data.offset + data.returned)} of{" "}
+              {fmt(data.matching)} matching rows, ordered by runner demand. Demand orders review
+              priority only — it is not identity evidence and contains no runner details.
+              {data.scan_truncated && " Warning: the safety page bound was reached, so totals are partial."}
+            </span>
+            <span className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={data.offset === 0}
+                onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
+              >
+                Previous
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={!data.has_more}
+                onClick={() => setOffset(offset + PAGE_SIZE)}
+              >
+                Next
+              </Button>
+            </span>
+          </div>
 
           <div className="mt-4 overflow-x-auto rounded-lg border border-border">
             <table className="w-full text-sm">
