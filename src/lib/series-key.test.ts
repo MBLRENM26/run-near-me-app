@@ -52,8 +52,9 @@ describe("primaryDistanceToken", () => {
   });
 
   it("falls back to sniffing free text", () => {
-    expect(primaryDistanceToken(null, "Half Marathon and 10K")).toBe("marathon");
+    expect(primaryDistanceToken(null, "Half Marathon and 10K")).toBe("half-marathon");
     expect(primaryDistanceToken([], "10K only")).toBe("10k");
+    expect(primaryDistanceToken([], "Marathon")).toBe("marathon");
   });
 
   it("returns empty when nothing reliable is present", () => {

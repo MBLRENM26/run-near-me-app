@@ -69,10 +69,12 @@ export function normaliseTownToken(town: string | null | undefined): string {
     .replace(/\s+/g, "-");
 }
 
+// Order matters: more specific tokens first, so "half marathon" is not
+// swallowed by "marathon".
 const DISTANCE_TOKEN_ORDER = [
   "ultra",
-  "marathon",
   "half-marathon",
+  "marathon",
   "half",
   "20m",
   "10m",
