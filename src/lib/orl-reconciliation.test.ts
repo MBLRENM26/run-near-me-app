@@ -429,3 +429,97 @@ describe("totals and paging", () => {
     expect(ordered[0]?.demand_total).toBe(249);
   });
 });
+
+describe("dedicated-tenant organiser evidence (Part A)", () => {
+  const ZIGZAG = {
+    id: "o9",
+    canonical_name: "Zig Zag Running",
+    website_domain: null,
+    status: "confirmed",
+  };
+
+  function graphWith(confidence: string, tenant: string | null = "zigzagrunning"): OrlGraph {
+    return {
+      ...EMPTY_GRAPH,
+      organisations: [ZIGZAG],
+      platform_accounts: [
+        {
+          organisation_id: ZIGZAG.id,
+          platform: "eventrac",
+          account_url: null,
+          tenant_slug: tenant,
+          platform_identifier: null,
+          confidence,
+        },
+      ],
+    };
+  }
+
+  it("proposes organises from a verified dedicated tenant plus an event-specific path", () => {
+    const row = reconcileEvent(
+      event({
+        name: "The Lucky Horseshoe",
+        entry_url: "https://zigzagrunning.eventrac.co.uk/e/the-lucky-horseshoe-11111",
+      }),
+      graphWith("verified"),
+    );
+    expect(row.state).toBe("candidate_match");
+    const c = row.candidates[0];
+    expect(c.organisation_name).toBe("Zig Zag Running");
+    expect(c.suggested_relationship).toBe("organises");
+    const basis = c.bases.find((b) => b.kind === "verified_dedicated_tenant")!;
+    expect(basis.url).toBe("https://zigzagrunning.eventrac.co.uk/e/the-lucky-horseshoe-11111");
+    expect(basis.tenant).toBe("zigzagrunning");
+    expect(basis.path).toBe("/e/the-lucky-horseshoe-11111");
+    expect(basis.account_confidence).toBe("verified");
+    // Still only a proposal: staging remains plausible_needs_review.
+    expect(planStaging(row)).toMatchObject({
+      allowed: true,
+      relationship: "organises",
+      confidence: "plausible_needs_review",
+    });
+  });
+
+  it("does not propose organises from a generic Eventrac or SI Entries host alone", () => {
+    for (const url of [
+      "https://www.eventrac.co.uk/e/some-race-1234",
+      "https://www.sientries.co.uk/event.php?event_id=9999",
+    ]) {
+      const row = reconcileEvent(event({ entry_url: url }), graphWith("verified"));
+      expect(
+        row.candidates.some((c) => c.suggested_relationship === "organises"),
+      ).toBe(false);
+    }
+  });
+
+  it("does not propose organises from a plausible_needs_review account", () => {
+    const row = reconcileEvent(
+      event({ entry_url: "https://zigzagrunning.eventrac.co.uk/e/the-lucky-horseshoe-11111" }),
+      graphWith("plausible_needs_review"),
+    );
+    expect(row.candidates[0].suggested_relationship).toBe("entry_platform_hosts");
+    expect(planStaging(row)).toMatchObject({ allowed: true, relationship: "entry_platform_hosts" });
+  });
+
+  it("never proposes organises from a social account tenant", () => {
+    const graph: OrlGraph = {
+      ...EMPTY_GRAPH,
+      organisations: [ZIGZAG],
+      platform_accounts: [
+        {
+          organisation_id: ZIGZAG.id,
+          platform: "facebook",
+          account_url: "https://www.facebook.com/zigzagrunning",
+          tenant_slug: "zigzagrunning",
+          platform_identifier: null,
+          confidence: "verified",
+        },
+      ],
+    };
+    const row = reconcileEvent(
+      event({ organiser_url: "https://www.facebook.com/zigzagrunning/events/123" }),
+      graph,
+    );
+    expect(row.candidates[0].suggested_relationship).not.toBe("organises");
+  });
+});

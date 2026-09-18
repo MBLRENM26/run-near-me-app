@@ -175,3 +175,30 @@ describe("accept_and_apply_organiser migration contract", () => {
     expect(sql).not.toMatch(/\bFOR\b[^\n]*\bIN\b[^\n]*\bLOOP\b/);
   });
 });
+
+describe("server function guards (source level)", () => {
+  const src = readFileSync("src/lib/organiser-identity.functions.ts", "utf8");
+
+  it("requires an authenticated admin for the apply mutation", () => {
+    const idx = src.indexOf("export const acceptAndApplyOrganiser");
+    expect(idx).toBeGreaterThan(-1);
+    expect(src).toContain('if (!(await isAdminAuthenticated())) throw new Error("Unauthorized")');
+    expect(src.slice(idx)).toContain("await requireAdminMutation();");
+  });
+
+  it("takes a single link id plus an explicit confirmation — no bulk path", () => {
+    const fn = src.slice(src.indexOf("export const acceptAndApplyOrganiser"));
+    expect(fn).toContain("link_id: z.string().uuid()");
+    expect(fn).toContain("confirm: z.literal(true)");
+    expect(fn).not.toContain("z.array");
+  });
+
+  it("routes an ordinary organises acceptance to accept & apply", () => {
+    expect(src).toContain('return { ok: false, error: "use_accept_and_apply_organiser" }');
+  });
+
+  it("never writes organiser_club_id or organiser_type from the apply path", () => {
+    expect(src).not.toContain("organiser_club_id:");
+    expect(src).not.toContain("organiser_type:");
+  });
+});
