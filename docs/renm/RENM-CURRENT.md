@@ -160,3 +160,15 @@ Acceptance: every signup creates visible work; no silent loss; no duplicate send
 5. PX2 Explorer and authorised course work; PX3 evidence-led expansion; PX4 distribution; PX5 day-120–150 gate — unchanged.
 
 Kent and South London remain offline.
+
+## Context recovery note — 18 September 2026
+
+Documentation-only provenance record. It authorises no mutation.
+
+- The prior Windows desktop OS, its Codex local/worktree workspace and the exact Codex conversation transcript were wiped and are not recovered.
+- Uncommitted local-only code or plans from that machine remain unrecoverable unless they existed in another backup. Nothing in this note implies otherwise.
+- The durable project baseline was substantially recovered from the connected GitHub repository and history, Lovable project source/history/knowledge, versioned canonical documents, migrations/tests/audits/acceptance records, and read-only production observations.
+- Recovered durable material includes the operating kernel, Project Knowledge, the data and lifecycle contract, the phased build brief, the decision register through D68 (since extended through D75), reminder containment history, ORL architecture and evidence model, and audits and implementation/acceptance history.
+- The 18 September checkpoint and D69–D75 extend that recovered baseline. The project is continuing from a reconstructed evidence-backed canon, not restarting from memory.
+- The recovered baseline is substantial but is not identical to the lost transcript. Where a claim exists only in recollection and not in durable evidence, it must be labelled as recollection or re-verified before it is relied on.
+- GitHub remains the source of truth; Lovable history is supporting implementation/context evidence; production observations are time-stamped evidence rather than doctrine.
