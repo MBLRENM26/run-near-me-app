@@ -163,6 +163,38 @@ describe("reconcileEvent", () => {
     expect(row.candidates[0].reasons[0]).toContain("exact facebook account endpoint match");
   });
 
+  it("keeps an exact Facebook account endpoint as source_suggests identity evidence, never organises", () => {
+    const graph: OrlGraph = {
+      ...EMPTY_GRAPH,
+      organisations: [ORG_CLUB],
+      platform_accounts: [
+        {
+          organisation_id: "o1",
+          platform: "facebook",
+          account_url: "https://www.facebook.com/sedgefieldharriers",
+          tenant_slug: null,
+          platform_identifier: null,
+          confidence: "high",
+        },
+      ],
+    };
+    const row = reconcileEvent(
+      event({ organiser_url: "https://facebook.com/sedgefieldharriers" }),
+      graph,
+    );
+    expect(row.state).toBe("candidate_match");
+    expect(row.candidates).toHaveLength(1);
+    expect(row.candidates[0].organisation_id).toBe("o1");
+    // Channel/identity evidence must not collapse into an event role.
+    expect(row.candidates[0].suggested_relationship).toBe("source_suggests");
+    // Full exact endpoint is preserved in the reason and the clue bundle.
+    expect(row.candidates[0].reasons[0]).toContain(
+      "exact facebook account endpoint match (https://www.facebook.com/sedgefieldharriers)",
+    );
+    const socialClue = row.clues.find((c) => c.kind === "social_endpoint");
+    expect(socialClue?.url).toBe("https://facebook.com/sedgefieldharriers");
+  });
+
   it("suggests entry_platform_hosts — never organises — from an entry-platform account", () => {
     const graph: OrlGraph = {
       ...EMPTY_GRAPH,
