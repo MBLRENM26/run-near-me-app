@@ -5,6 +5,7 @@ import {
   applyStaging,
   currentUtcDate,
   planStaging,
+  proposalConfirmationSentence,
   STAGED_CONFIDENCE,
   type StagingDb,
   type StagingPlan,
