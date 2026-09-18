@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   buildClueBundle,
@@ -308,5 +309,31 @@ describe("provisional host matcher safety", () => {
         index,
       ),
     ).toBeNull();
+  });
+});
+
+describe("admin access + read-only guarantees in the server module", () => {
+  const source = readFileSync(
+    new URL("./orl-reconciliation.functions.ts", import.meta.url),
+    "utf8",
+  );
+
+  it("still gates every handler behind the existing admin session check", () => {
+    expect(source).toContain("admin-session.server");
+    const handlers = source.match(/\.handler\(/g) ?? [];
+    const guards = source.match(/await requireAdminOrThrow\(\)/g) ?? [];
+    expect(handlers.length).toBeGreaterThan(0);
+    expect(guards.length).toBe(handlers.length);
+  });
+
+  it("performs no writes, staging or review mutations", () => {
+    for (const forbidden of [".insert(", ".update(", ".upsert(", ".delete(", ".rpc("]) {
+      expect(source).not.toContain(forbidden);
+    }
+  });
+
+  it("never selects subscriber email addresses", () => {
+    expect(source).toMatch(/email_subscriptions[\s\S]{0,120}select\("event_id"\)/);
+    expect(source).not.toMatch(/select\([^)]*email/);
   });
 });
