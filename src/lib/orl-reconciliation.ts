@@ -560,6 +560,13 @@ export function reconcileEvent(
         ? l.relationship
         : "source_suggests",
       `existing ORL link awaiting review (${l.relationship}, status ${l.review_status})`,
+      {
+        kind: "existing_link",
+        url: null,
+        evidence_id: null,
+        shared_host: false,
+        detail: `existing ORL link ${l.link_id} awaiting review (${l.relationship}, status ${l.review_status})`,
+      },
     );
   }
 
