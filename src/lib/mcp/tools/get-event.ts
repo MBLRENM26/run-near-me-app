@@ -13,9 +13,7 @@ export default defineTool({
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: withUsageLogging("get_event", async ({ slug }) => {
-    const { supabaseAdmin } = await import(
-      "@/integrations/supabase/client.server"
-    );
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const supabase = supabaseAdmin;
 
     const { data, error } = await supabase
@@ -29,7 +27,10 @@ export default defineTool({
 
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
     if (!data) {
-      return { content: [{ type: "text", text: `Event '${slug}' not found or not active.` }], isError: true };
+      return {
+        content: [{ type: "text", text: `Event '${slug}' not found or not active.` }],
+        isError: true,
+      };
     }
 
     const { id, status, ...publicEvent } = data;
