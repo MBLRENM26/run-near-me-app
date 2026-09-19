@@ -1,7 +1,6 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
 import { withUsageLogging } from "../usage";
-import { createClient } from "@supabase/supabase-js";
 import { SITE_URL } from "@/lib/site";
 
 export default defineTool({
@@ -17,11 +16,10 @@ export default defineTool({
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: withUsageLogging("list_clubs", async (input) => {
-    const supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_PUBLISHABLE_KEY!,
-      { auth: { persistSession: false, autoRefreshToken: false } },
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
     );
+    const supabase = supabaseAdmin;
 
     let q = supabase
       .from("clubs")
