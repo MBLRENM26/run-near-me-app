@@ -16,9 +16,7 @@ export type LiveStats = {
  */
 export const getLiveStats = createServerFn({ method: "GET" }).handler(
   async (): Promise<LiveStats> => {
-    const { supabaseAdmin } = await import(
-      "@/integrations/supabase/client.server"
-    );
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // `duplicate_of` is not readable by anon (provenance hardening revoked all
     // non-projection columns on public.events), so the count comes from a

@@ -24,9 +24,7 @@ async function record(
   clientHint: string | null,
 ): Promise<void> {
   try {
-    const { supabaseAdmin } = await import(
-      "@/integrations/supabase/client.server"
-    );
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await supabaseAdmin.rpc("log_mcp_tool_call", {
       _tool_name: toolName,
       _ok: ok,
@@ -43,10 +41,7 @@ async function record(
  * Wrap an MCP tool handler so every invocation is logged. Any logging failure
  * is swallowed; the tool's own result is returned unchanged.
  */
-export function withUsageLogging(
-  toolName: string,
-  handler: (input: any, ctx?: any) => any,
-): any {
+export function withUsageLogging(toolName: string, handler: (input: any, ctx?: any) => any): any {
   return async (input: any, ctx?: any) => {
     const started = Date.now();
     let ok = true;

@@ -11,14 +11,18 @@ export default defineTool({
   inputSchema: {
     query: z.string().trim().optional().describe("Free-text match on club name or town."),
     region: z.string().trim().optional(),
-    governing_body: z.string().trim().optional().describe("Governing body slug: england-athletics, scottish-athletics, welsh-athletics, athletics-ni."),
+    governing_body: z
+      .string()
+      .trim()
+      .optional()
+      .describe(
+        "Governing body slug: england-athletics, scottish-athletics, welsh-athletics, athletics-ni.",
+      ),
     limit: z.number().int().min(1).max(100).optional().default(30),
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: withUsageLogging("list_clubs", async (input) => {
-    const { supabaseAdmin } = await import(
-      "@/integrations/supabase/client.server"
-    );
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const supabase = supabaseAdmin;
 
     let q = supabase

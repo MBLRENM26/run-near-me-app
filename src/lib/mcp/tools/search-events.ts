@@ -11,11 +11,7 @@ export default defineTool({
   description:
     "Search upcoming UK running events by keyword, region, distance tag (5k, 10k, half-marathon, marathon, ultra), terrain tag (road, trail, fell, multi-terrain), or month (YYYY-MM). Returns active events only, filtered to those with an organiser-owned link (never aggregator-only listings).",
   inputSchema: {
-    query: z
-      .string()
-      .trim()
-      .optional()
-      .describe("Free-text match against event name or town."),
+    query: z.string().trim().optional().describe("Free-text match against event name or town."),
     region: z
       .string()
       .trim()
@@ -40,9 +36,7 @@ export default defineTool({
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: withUsageLogging("search_events", async (input) => {
-    const { supabaseAdmin } = await import(
-      "@/integrations/supabase/client.server"
-    );
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const supabase = supabaseAdmin;
 
     let q = supabase
@@ -86,7 +80,9 @@ export default defineTool({
       }));
 
     return {
-      content: [{ type: "text", text: JSON.stringify({ count: rows.length, events: rows }, null, 2) }],
+      content: [
+        { type: "text", text: JSON.stringify({ count: rows.length, events: rows }, null, 2) },
+      ],
       structuredContent: { count: rows.length, events: rows },
     };
   }),
