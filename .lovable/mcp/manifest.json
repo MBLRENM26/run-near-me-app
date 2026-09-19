@@ -3,7 +3,13 @@
   "sdk_version": "0.24.0",
   "path": "/mcp",
   "auth": {
-    "type": "none"
+    "type": "oauth",
+    "issuer": "https://bmfoyladahcfjixcwtcq.supabase.co/auth/v1",
+    "resource": "https://runningeventsnearme.com/mcp",
+    "resource_name": "Running Events Near Me",
+    "accepted_audiences": [
+      "authenticated"
+    ]
   },
   "mcp": {
     "server": {
