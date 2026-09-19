@@ -1,5 +1,3 @@
-import { createClient } from "@supabase/supabase-js";
-
 /**
  * Minimal usage instrumentation for the public MCP server.
  *
@@ -9,8 +7,9 @@ import { createClient } from "@supabase/supabase-js";
  *
  * Deliberately narrow: tool name, success flag, duration, and a coarse client
  * hint (User-Agent, truncated). No arguments, no results, no IPs, no PII.
- * Writes go through the insert-only `public.log_mcp_tool_call` RPC with the
- * publishable key — never a service-role client.
+ * Writes go through the insert-only `public.log_mcp_tool_call` RPC from the
+ * server only. EXECUTE is revoked from anon/authenticated so no browser or
+ * public API caller can write usage rows.
  */
 
 function coarseClientHint(value: string | null | undefined): string | null {
@@ -24,15 +23,11 @@ async function record(
   durationMs: number,
   clientHint: string | null,
 ): Promise<void> {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_PUBLISHABLE_KEY;
-  if (!url || !key) return;
-
   try {
-    const supabase = createClient(url, key, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-    await supabase.rpc("log_mcp_tool_call", {
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
+    await supabaseAdmin.rpc("log_mcp_tool_call", {
       _tool_name: toolName,
       _ok: ok,
       _duration_ms: Math.round(durationMs),
