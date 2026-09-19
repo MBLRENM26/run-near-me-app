@@ -31,7 +31,8 @@ async function record(
       _tool_name: toolName,
       _ok: ok,
       _duration_ms: Math.round(durationMs),
-      _client_hint: clientHint,
+      // Generated RPC types declare this as text NOT NULL; null is valid in SQL.
+      _client_hint: clientHint as unknown as string,
     });
   } catch {
     // Instrumentation must never fail a tool call.
