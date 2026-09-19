@@ -1,7 +1,6 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
 import { withUsageLogging } from "../usage";
-import { createClient } from "@supabase/supabase-js";
 import { DISCOVERY_EVENT_COLUMNS, UK_BOUNDS_OR_NULL } from "@/lib/events-query";
 import { hasOrganiserOwnedLink } from "@/lib/link-trust";
 import { SITE_URL } from "@/lib/site";
@@ -41,11 +40,10 @@ export default defineTool({
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: withUsageLogging("search_events", async (input) => {
-    const supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_PUBLISHABLE_KEY!,
-      { auth: { persistSession: false, autoRefreshToken: false } },
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
     );
+    const supabase = supabaseAdmin;
 
     let q = supabase
       .from("events")

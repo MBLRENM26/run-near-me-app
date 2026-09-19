@@ -1,6 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { createClient } from "@supabase/supabase-js";
-import type { Database } from "@/integrations/supabase/types";
 
 export type LiveStats = {
   activeEvents: number;
@@ -12,28 +10,20 @@ export type LiveStats = {
  * publish new events or admins flip hidden events live — the DB count IS the
  * source of truth, so no counter table to maintain.
  *
- * Uses the server publishable client (anon RLS), not the admin client, so it's
- * safe to call from public homepage SSR. The events table already exposes a
- * narrow public SELECT policy.
+ * Runs entirely server-side and returns only an integer, so the underlying
+ * `count_active_events` RPC no longer needs to be executable by anon or
+ * signed-in roles.
  */
 export const getLiveStats = createServerFn({ method: "GET" }).handler(
   async (): Promise<LiveStats> => {
-    const supabasePublic = createClient<Database>(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_PUBLISHABLE_KEY!,
-      {
-        auth: {
-          storage: undefined,
-          persistSession: false,
-          autoRefreshToken: false,
-        },
-      },
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
     );
 
     // `duplicate_of` is not readable by anon (provenance hardening revoked all
     // non-projection columns on public.events), so the count comes from a
     // security-definer function that returns only the integer.
-    const { data, error } = await supabasePublic.rpc("count_active_events");
+    const { data, error } = await supabaseAdmin.rpc("count_active_events");
 
     if (error) {
       console.error("[getLiveStats] failed", error);
