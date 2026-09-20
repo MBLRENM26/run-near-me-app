@@ -121,6 +121,7 @@ export function EventCard({ event }: { event: EventCardData }) {
         className={cn(
           "space-y-1.5 text-sm text-muted-foreground",
           event.is_featured && "px-5",
+          photo && "pt-4",
         )}
       >
         {event.date_raw ? (
