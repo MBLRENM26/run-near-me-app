@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Calendar, MapPin, Tag, Star, ArrowRight, Repeat } from "lucide-react";
 import { formatDistance } from "@/lib/distance";
 import { cn } from "@/lib/utils";
+import featuredBanner from "@/assets/featured-race-banner.jpg";
 
 export interface EventCardData {
   id: string;
