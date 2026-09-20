@@ -127,7 +127,12 @@ export function EventCard({ event }: { event: EventCardData }) {
         )}
       </div>
 
-      <div className="mt-auto flex items-center justify-end pt-2">
+      <div
+        className={cn(
+          "mt-auto flex items-center justify-end pt-2",
+          event.is_featured && "px-5",
+        )}
+      >
         {event.slug && (
           <Link
             to={route}

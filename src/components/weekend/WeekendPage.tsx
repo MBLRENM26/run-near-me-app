@@ -92,7 +92,7 @@ export function WeekendPage({ which, data }: Props) {
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {events.map((e) => (
+              {featuredFirst(events).map((e) => (
                 <EventCard key={e.id} event={toCard(e)} />
               ))}
             </div>
