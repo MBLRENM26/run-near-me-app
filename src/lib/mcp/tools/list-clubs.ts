@@ -32,7 +32,11 @@ export default defineTool({
       .order("name", { ascending: true })
       .limit(input.limit ?? 30);
 
-    if (input.query) q = q.or(`name.ilike.%${input.query}%,town.ilike.%${input.query}%`);
+    if (input.query) {
+      // Never interpolate raw user text into a PostgREST filter string.
+      const term = sanitizeOrFilterTerm(input.query);
+      if (term) q = q.or(`name.ilike.%${term}%,town.ilike.%${term}%`);
+    }
     if (input.region) q = q.ilike("region", input.region);
     if (input.governing_body) q = q.eq("governing_body", input.governing_body);
 
