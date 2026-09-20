@@ -21,6 +21,26 @@ const inputSchema = z.object({
 export const subscribeToRaceReminder = createServerFn({ method: 'POST' })
   .inputValidator((input: unknown) => inputSchema.parse(input))
   .handler(async ({ data }): Promise<{ ok: true; alreadySubscribed: boolean }> => {
+    // Anti-abuse: this path dispatches an email to an arbitrary address, so it
+    // gets the same two limiters as public event submissions.
+    const { checkSubmissionRateLimit } = await import(
+      '@/lib/submission-burst-limit.server',
+    )
+    if (!(await checkSubmissionRateLimit())) {
+      throw new Error('Too many signups from this network. Please try again later.')
+    }
+    const { consumeDurableSubmissionRate } = await import(
+      '@/lib/submission-rate-limit.server',
+    )
+    const gate = await consumeDurableSubmissionRate()
+    if (!gate.ok) {
+      throw new Error(
+        gate.reason === 'rate_limited'
+          ? 'Too many signups from this network. Please try again later.'
+          : 'Reminder signups are temporarily unavailable. Please try again later.',
+      )
+    }
+
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server')
     const { sendRaceEmail } = await import('@/lib/race-email.server')
 
