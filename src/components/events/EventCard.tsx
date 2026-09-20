@@ -52,6 +52,14 @@ export function EventCard({ event }: { event: EventCardData }) {
           Featured race
         </div>
       )}
+      {photo && (
+        <img
+          src={photo.image}
+          alt={photo.alt}
+          loading="lazy"
+          className="h-44 w-full object-cover"
+        />
+      )}
       <div
         className={cn(
           "flex items-start justify-between gap-2",
