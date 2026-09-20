@@ -32,6 +32,7 @@ import {
   formatMonthLabelLong,
   type MonthKey,
 } from "@/lib/month-filter";
+import { featuredFirst } from "@/lib/featured";
 import { CURRENT_YEAR } from "@/lib/site";
 
 function toEventCardData(e: DistanceEvent): EventCardData {

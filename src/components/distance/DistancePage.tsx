@@ -30,6 +30,7 @@ import {
   formatMonthLabelLong,
   type MonthKey,
 } from "@/lib/month-filter";
+import { featuredFirst } from "@/lib/featured";
 
 function regionSlugFromName(name: string): string | null {
   return REGIONS.find((r) => r.name === name)?.slug ?? null;

@@ -23,6 +23,7 @@ import {
   formatMonthLabelLong,
   type MonthKey,
 } from "@/lib/month-filter";
+import { featuredFirst } from "@/lib/featured";
 
 export type TaxonomyPageData = {
   events: DistanceEvent[];

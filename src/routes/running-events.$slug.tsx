@@ -26,6 +26,7 @@ import {
   type MonthKey,
   type MonthSearch,
 } from "@/lib/month-filter";
+import { featuredFirst } from "@/lib/featured";
 
 const SLUG_REDIRECTS: Record<string, string> = {
   kent: "south-east",
