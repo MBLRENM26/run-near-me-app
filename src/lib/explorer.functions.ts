@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { supabase } from "@/integrations/supabase/client";
 import { hasDiscoverableLink } from "@/lib/link-trust";
 import {
   EXPLORER_DATE_MODES,
@@ -154,10 +153,13 @@ function compareEvents(a: ExplorerEvent, b: ExplorerEvent, sort: "date" | "dista
 export const getExplorerEvents = createServerFn({ method: "GET" })
   .inputValidator((input: unknown) => inputSchema.parse(input))
   .handler(async ({ data }): Promise<ExplorerResult> => {
+    // Trusted server-side reads only: the keyword search RPC is no longer
+    // executable by the public roles, and only safe columns are selected.
+    const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
     let searchIds: string[] | null = null;
     let searchCapped = false;
     if (data.q) {
-      const { data: matches, error: searchError } = await supabase.rpc("search_events_v1", {
+      const { data: matches, error: searchError } = await db.rpc("search_events_v1", {
         q: data.q,
         lim: 50,
       });
@@ -167,7 +169,7 @@ export const getExplorerEvents = createServerFn({ method: "GET" })
       if (!searchIds.length) return { events: [], total: 0, capped: false };
     }
 
-    let query = supabase.from("events_public_v1").select(EXPLORER_COLUMNS).limit(FETCH_LIMIT);
+    let query = db.from("events_public_v1").select(EXPLORER_COLUMNS).limit(FETCH_LIMIT);
 
     if (searchIds) query = query.in("id", searchIds);
 

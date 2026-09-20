@@ -69,7 +69,7 @@ export const listClubs = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
 
     return {
-      clubs: ((rows ?? []) as unknown as ClubListItem[]),
+      clubs: (rows ?? []) as unknown as ClubListItem[],
       total: count ?? 0,
     };
   });
@@ -78,7 +78,12 @@ export const getClubPageData = createServerFn({ method: "GET" })
   .inputValidator((d) =>
     z
       .object({
-        slug: z.string().trim().min(1).max(255).regex(/^[a-z0-9-]+$/),
+        slug: z
+          .string()
+          .trim()
+          .min(1)
+          .max(255)
+          .regex(/^[a-z0-9-]+$/),
       })
       .parse(d),
   )
@@ -96,19 +101,18 @@ export const getClubPageData = createServerFn({ method: "GET" })
     return { club: club as unknown as ClubDetail };
   });
 
-export const getAllClubSlugs = createServerFn({ method: "GET" }).handler(
-  async () => {
-    const { data, error } = await supabaseAdmin
-      .from("public_clubs")
-      .select("slug, created_at")
-      .eq("status", "ACTIVE")
-      .limit(10000);
-    if (error) throw new Error(error.message);
-    return (data ?? []).filter((r): r is { slug: string; created_at: string } =>
+export const getAllClubSlugs = createServerFn({ method: "GET" }).handler(async () => {
+  const { data, error } = await supabaseAdmin
+    .from("public_clubs")
+    .select("slug, created_at")
+    .eq("status", "ACTIVE")
+    .limit(10000);
+  if (error) throw new Error(error.message);
+  return (data ?? []).filter(
+    (r): r is { slug: string; created_at: string } =>
       typeof r.slug === "string" && r.slug.length > 0,
-    );
-  },
-);
+  );
+});
 
 const ROLE_VALUES = [
   "chair",
@@ -125,7 +129,12 @@ export const submitClubClaim = createServerFn({ method: "POST" })
   .inputValidator((d) =>
     z
       .object({
-        club_slug: z.string().trim().min(1).max(255).regex(/^[a-z0-9-]+$/),
+        club_slug: z
+          .string()
+          .trim()
+          .min(1)
+          .max(255)
+          .regex(/^[a-z0-9-]+$/),
         claimant_name: z.string().trim().min(1).max(200),
         claimant_email: z.string().trim().email().max(255),
         role_at_club: z.enum(ROLE_VALUES),
@@ -136,6 +145,22 @@ export const submitClubClaim = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }) => {
+    // Anti-abuse, same two layers as public event submissions:
+    // Layer 1 in-memory burst limiter, Layer 2 durable per-IP UTC buckets.
+    const { checkSubmissionRateLimit } = await import("@/lib/submission-burst-limit.server");
+    if (!(await checkSubmissionRateLimit())) {
+      throw new Error("Too many submissions. Please try again later.");
+    }
+    const { consumeDurableSubmissionRate } = await import("@/lib/submission-rate-limit.server");
+    const gate = await consumeDurableSubmissionRate();
+    if (!gate.ok) {
+      throw new Error(
+        gate.reason === "rate_limited"
+          ? "Too many submissions. Please try again later."
+          : "Submissions are temporarily unavailable. Please try again later.",
+      );
+    }
+
     // Look up the club id from the slug — we never trust client-supplied ids.
     const { data: club, error: lookupErr } = await supabaseAdmin
       .from("clubs")

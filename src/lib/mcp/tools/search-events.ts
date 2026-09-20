@@ -1,6 +1,7 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
 import { withUsageLogging } from "../usage";
+import { sanitizeOrFilterTerm } from "../sanitize";
 import { DISCOVERY_EVENT_COLUMNS, UK_BOUNDS_OR_NULL } from "@/lib/events-query";
 import { hasOrganiserOwnedLink } from "@/lib/link-trust";
 import { SITE_URL } from "@/lib/site";
@@ -48,7 +49,11 @@ export default defineTool({
       .order("sort_date", { ascending: true })
       .limit(Math.min(input.limit ?? 20, 50) * 3); // over-fetch, filter below
 
-    if (input.query) q = q.or(`name.ilike.%${input.query}%,town.ilike.%${input.query}%`);
+    if (input.query) {
+      // Never interpolate raw user text into a PostgREST filter string.
+      const term = sanitizeOrFilterTerm(input.query);
+      if (term) q = q.or(`name.ilike.%${term}%,town.ilike.%${term}%`);
+    }
     if (input.region) q = q.ilike("region", input.region);
     if (input.distance_tag) q = q.contains("distance_tags", [input.distance_tag]);
     if (input.terrain_tag) q = q.contains("terrain_tags", [input.terrain_tag]);
