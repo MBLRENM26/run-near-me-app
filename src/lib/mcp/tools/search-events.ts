@@ -1,6 +1,7 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
 import { withUsageLogging } from "../usage";
+import { sanitizeOrFilterTerm } from "../sanitize";
 import { DISCOVERY_EVENT_COLUMNS, UK_BOUNDS_OR_NULL } from "@/lib/events-query";
 import { hasOrganiserOwnedLink } from "@/lib/link-trust";
 import { SITE_URL } from "@/lib/site";

@@ -1,6 +1,7 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
 import { withUsageLogging } from "../usage";
+import { sanitizeOrFilterTerm } from "../sanitize";
 import { SITE_URL } from "@/lib/site";
 
 export default defineTool({
