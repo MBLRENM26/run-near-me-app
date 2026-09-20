@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Calendar, MapPin, Tag, Star, ArrowRight, Repeat } from "lucide-react";
 import { formatDistance } from "@/lib/distance";
 import { cn } from "@/lib/utils";
+import { getEventImage } from "@/lib/event-images";
 
 export interface EventCardData {
   id: string;
@@ -32,6 +33,8 @@ function detailRoute(e: EventCardData): "/parkrun-events/$slug" | "/events/$slug
 
 export function EventCard({ event }: { event: EventCardData }) {
   const route = detailRoute(event);
+  // Organiser-cleared photo — currently shown on featured cards only.
+  const photo = event.is_featured ? getEventImage(event.slug) : null;
 
   return (
     <article
@@ -48,6 +51,14 @@ export function EventCard({ event }: { event: EventCardData }) {
           <Star className="h-3.5 w-3.5 fill-current" />
           Featured race
         </div>
+      )}
+      {photo && (
+        <img
+          src={photo.image}
+          alt={photo.alt}
+          loading="lazy"
+          className="h-44 w-full object-cover"
+        />
       )}
       <div
         className={cn(
