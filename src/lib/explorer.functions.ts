@@ -155,9 +155,7 @@ export const getExplorerEvents = createServerFn({ method: "GET" })
   .handler(async ({ data }): Promise<ExplorerResult> => {
     // Trusted server-side reads only: the keyword search RPC is no longer
     // executable by the public roles, and only safe columns are selected.
-    const { supabaseAdmin: db } = await import(
-      "@/integrations/supabase/client.server"
-    );
+    const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
     let searchIds: string[] | null = null;
     let searchCapped = false;
     if (data.q) {
