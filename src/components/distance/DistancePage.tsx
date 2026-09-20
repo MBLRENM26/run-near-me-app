@@ -30,6 +30,7 @@ import {
   formatMonthLabelLong,
   type MonthKey,
 } from "@/lib/month-filter";
+import { featuredFirst } from "@/lib/featured";
 
 function regionSlugFromName(name: string): string | null {
   return REGIONS.find((r) => r.name === name)?.slug ?? null;
@@ -70,7 +71,7 @@ export function DistancePage({ cfg, data }: DistancePageProps) {
   }, [cfg.key, total]);
 
   const months = availableMonths(events);
-  const filtered = filterByMonth(events, month);
+  const filtered = featuredFirst(filterByMonth(events, month));
   const showing = filtered.length;
 
   const setMonth = (m: MonthKey | undefined) =>
