@@ -69,7 +69,7 @@ export function RegionDistancePage({
   const navigate = useNavigate();
   const month = search.month;
   const months = availableMonths(events);
-  const filtered = filterByMonth(events, month);
+  const filtered = featuredFirst(filterByMonth(events, month));
   const showing = filtered.length;
   const h1 = `${headingDistance(cfg)} in ${region.name} ${CURRENT_YEAR}`;
   const noun = pluralNoun(cfg);

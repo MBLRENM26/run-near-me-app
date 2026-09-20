@@ -170,7 +170,7 @@ function RegionPage() {
   });
 
   const months = events ? availableMonths(events) : [];
-  const filtered = events ? filterByMonth(events, month) : [];
+  const filtered = events ? featuredFirst(filterByMonth(events, month)) : [];
 
   useEffect(() => {
     if (events) trackRegionView({ region: region.name, total_events: events.length });

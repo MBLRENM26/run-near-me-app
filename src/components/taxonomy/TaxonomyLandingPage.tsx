@@ -64,7 +64,7 @@ export function TaxonomyLandingPage({ cfg, data }: Props) {
   }, [cfg.slug, total]);
 
   const months = availableMonths(events);
-  const filtered = filterByMonth(events, month);
+  const filtered = featuredFirst(filterByMonth(events, month));
   const showing = filtered.length;
 
   const setMonth = (m: MonthKey | undefined) =>
