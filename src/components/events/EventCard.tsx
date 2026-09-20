@@ -33,6 +33,8 @@ function detailRoute(e: EventCardData): "/parkrun-events/$slug" | "/events/$slug
 
 export function EventCard({ event }: { event: EventCardData }) {
   const route = detailRoute(event);
+  // Organiser-cleared photo — currently shown on featured cards only.
+  const photo = event.is_featured ? getEventImage(event.slug) : null;
 
   return (
     <article
