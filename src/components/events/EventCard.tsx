@@ -69,12 +69,6 @@ export function EventCard({ event }: { event: EventCardData }) {
           )}
         </h3>
         <div className="flex shrink-0 flex-col items-end gap-1">
-          {event.is_featured && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground">
-              <Star className="h-3 w-3 fill-current" />
-              Featured
-            </span>
-          )}
           {event.is_recurring && (
             <span
               className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground"
@@ -87,7 +81,12 @@ export function EventCard({ event }: { event: EventCardData }) {
         </div>
       </div>
 
-      <div className="space-y-1.5 text-sm text-muted-foreground">
+      <div
+        className={cn(
+          "space-y-1.5 text-sm text-muted-foreground",
+          event.is_featured && "px-5",
+        )}
+      >
         {event.date_raw ? (
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 shrink-0" />
