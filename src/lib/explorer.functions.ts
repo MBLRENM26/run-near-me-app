@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { supabase } from "@/integrations/supabase/client";
 import { hasDiscoverableLink } from "@/lib/link-trust";
 import {
   EXPLORER_DATE_MODES,
