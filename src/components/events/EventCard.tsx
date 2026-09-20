@@ -37,12 +37,35 @@ export function EventCard({ event }: { event: EventCardData }) {
   return (
     <article
       className={cn(
-        "group rounded-2xl bg-card border border-border p-5 flex flex-col gap-3 transition-all duration-200",
+        "group rounded-2xl bg-card border border-border flex flex-col gap-3 transition-all duration-200 overflow-hidden",
         "shadow-card hover:shadow-card-hover hover:-translate-y-0.5",
-        event.is_featured && "ring-1 ring-primary/30",
+        event.is_featured
+          ? "border-primary/40 ring-2 ring-primary/25 bg-gradient-to-b from-accent/40 to-card p-0 pb-5 shadow-card-hover"
+          : "p-5",
       )}
     >
-      <div className="flex items-start justify-between gap-2">
+      {event.is_featured && (
+        <div className="relative">
+          <img
+            src={featuredBanner}
+            alt=""
+            loading="lazy"
+            width={1536}
+            height={512}
+            className="h-24 w-full object-cover"
+          />
+          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground shadow-card">
+            <Star className="h-3 w-3 fill-current" />
+            Featured race
+          </span>
+        </div>
+      )}
+      <div
+        className={cn(
+          "flex items-start justify-between gap-2",
+          event.is_featured && "px-5 pt-1",
+        )}
+      >
         <h3 className="font-semibold text-lg text-foreground leading-snug">
           {event.slug ? (
             <Link
