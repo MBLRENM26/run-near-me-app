@@ -210,7 +210,7 @@ export function RegionDistancePage({
                   {showing} {showing === 1 ? "event" : "events"}
                 </p>
               )}
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {filtered.map((e) => (
                   <EventCard key={e.id} event={toEventCardData(e)} />
                 ))}

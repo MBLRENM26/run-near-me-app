@@ -267,7 +267,7 @@ function RegionPage() {
               <p className="text-sm text-muted-foreground mb-4">
                 {filtered.length} {filtered.length === 1 ? "event" : "events"}
               </p>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {filtered.map((event) => (
                   <EventCard key={event.id} event={event} />
                 ))}
