@@ -42,60 +42,86 @@ export function EventCard({ event }: { event: EventCardData }) {
         "group rounded-2xl bg-card border border-border flex flex-col gap-3 transition-all duration-200 overflow-hidden",
         "shadow-card hover:shadow-card-hover hover:-translate-y-0.5",
         event.is_featured
-          ? "border-primary/40 ring-2 ring-primary/25 bg-gradient-to-b from-accent/40 to-card p-0 pb-5 shadow-card-hover"
-          : "p-5",
+          ? "border-primary/40 ring-2 ring-primary/25 shadow-card-hover"
+          : "",
+        event.is_featured && photo ? "gap-0 p-0 pb-5" : "p-5",
+        event.is_featured && !photo
+          ? "bg-gradient-to-b from-accent/40 to-card gap-0 p-0 pb-5"
+          : "",
       )}
     >
-      {event.is_featured && (
-        <div className="flex items-center gap-1.5 bg-primary px-5 py-2 text-xs font-semibold uppercase tracking-wide text-primary-foreground">
+      {event.is_featured && !photo && (
+        <div className="mb-3 flex items-center gap-1.5 bg-primary px-5 py-2 text-xs font-semibold uppercase tracking-wide text-primary-foreground">
           <Star className="h-3.5 w-3.5 fill-current" />
           Featured race
         </div>
       )}
       {photo && (
-        <img
-          src={photo.image}
-          alt={photo.alt}
-          loading="lazy"
-          className="h-44 w-full object-cover"
-        />
-      )}
-      <div
-        className={cn(
-          "flex items-start justify-between gap-2",
-          event.is_featured && "px-5 pt-1",
-        )}
-      >
-        <h3 className="font-semibold text-lg text-foreground leading-snug">
-          {event.slug ? (
-            <Link
-              to={route}
-              params={{ slug: event.slug }}
-              className="hover:text-primary transition-colors"
-            >
-              {event.name}
-            </Link>
-          ) : (
-            event.name
-          )}
-        </h3>
-        <div className="flex shrink-0 flex-col items-end gap-1">
-          {event.is_recurring && (
-            <span
-              className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground"
-              title="This event runs on a recurring schedule — multiple dates available."
-            >
-              <Repeat className="h-3 w-3" />
-              Recurring
+        <div className="relative">
+          <img
+            src={photo.image}
+            alt={photo.alt}
+            loading="lazy"
+            className="h-56 w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-foreground/85 via-foreground/25 to-foreground/10" />
+          <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1.5 p-5">
+            <span className="inline-flex w-fit items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-background">
+              <Star className="h-3.5 w-3.5 fill-current" />
+              Featured race
             </span>
-          )}
+            <h3 className="text-xl font-semibold leading-snug text-background">
+              {event.slug ? (
+                <Link to={route} params={{ slug: event.slug }}>
+                  {event.name}
+                </Link>
+              ) : (
+                event.name
+              )}
+            </h3>
+          </div>
         </div>
-      </div>
+      )}
+      {!photo && (
+        <div
+          className={cn(
+            "flex items-start justify-between gap-2",
+            event.is_featured && "px-5 pt-1",
+          )}
+        >
+          <h3 className="font-semibold text-lg text-foreground leading-snug">
+            {event.slug ? (
+              <Link
+                to={route}
+                params={{ slug: event.slug }}
+                className="hover:text-primary transition-colors"
+              >
+                {event.name}
+              </Link>
+            ) : (
+              event.name
+            )}
+          </h3>
+          <div className="flex shrink-0 flex-col items-end gap-1">
+            {event.is_recurring && (
+              <span
+                className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground"
+                title="This event runs on a recurring schedule — multiple dates available."
+              >
+                <Repeat className="h-3 w-3" />
+                Recurring
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
 
       <div
         className={cn(
           "space-y-1.5 text-sm text-muted-foreground",
           event.is_featured && "px-5",
+          photo && "pt-4",
         )}
       >
         {event.date_raw ? (

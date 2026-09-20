@@ -101,7 +101,7 @@ export function TerrainHubPage({ cfg, data }: Props) {
               <h2 className="text-xl font-semibold text-foreground mb-4">
                 Upcoming {cfg.nounPlural}
               </h2>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {events.map((e) => (
                   <EventCard key={e.id} event={toCard(e)} />
                 ))}

@@ -85,7 +85,7 @@ export function MonthPage({ data, distanceKey }: Props) {
               </p>
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {featuredFirst(events).map((e) => (
                 <EventCard key={e.id} event={toCard(e)} />
               ))}

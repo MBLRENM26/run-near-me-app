@@ -381,7 +381,7 @@ function HomePage() {
                   )}
                 </p>
                 {races.length > 0 && (
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {races.map((event) => (
                       <EventCard key={event.id} event={event} />
                     ))}
@@ -396,7 +396,7 @@ function HomePage() {
                       Every Saturday (juniors on Sunday) — free, timed, all
                       abilities welcome.
                     </p>
-                    <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="mt-4 grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
                       {parkruns.map((event) => (
                         <EventCard key={event.id} event={event} />
                       ))}
@@ -414,7 +414,7 @@ function HomePage() {
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
               Featured events near you
             </h2>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-6 grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {featuredNearby.map((event) => (
                 <EventCard key={event.id} event={event} />
               ))}
@@ -548,7 +548,7 @@ function HomePage() {
             <p className="mt-2 text-muted-foreground">
               A selection of races coming up across the UK.
             </p>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-6 grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {upcomingEvents.map((e) => (
                 <EventCard
                   key={e.id ?? e.slug}
