@@ -4,6 +4,7 @@ import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { BackToSearchBar } from "@/components/site/BackToSearchBar";
 import { EventCard, type EventCardData } from "@/components/events/EventCard";
+import { featuredFirst } from "@/lib/featured";
 import type { WeekendPageData } from "@/lib/weekend.functions";
 import type { WeekendWhich } from "@/lib/weekend";
 import { formatWeekendRange } from "@/lib/weekend";
@@ -92,7 +93,7 @@ export function WeekendPage({ which, data }: Props) {
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {events.map((e) => (
+              {featuredFirst(events).map((e) => (
                 <EventCard key={e.id} event={toCard(e)} />
               ))}
             </div>

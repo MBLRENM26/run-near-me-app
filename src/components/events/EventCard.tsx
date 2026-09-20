@@ -36,12 +36,25 @@ export function EventCard({ event }: { event: EventCardData }) {
   return (
     <article
       className={cn(
-        "group rounded-2xl bg-card border border-border p-5 flex flex-col gap-3 transition-all duration-200",
+        "group rounded-2xl bg-card border border-border flex flex-col gap-3 transition-all duration-200 overflow-hidden",
         "shadow-card hover:shadow-card-hover hover:-translate-y-0.5",
-        event.is_featured && "ring-1 ring-primary/30",
+        event.is_featured
+          ? "border-primary/40 ring-2 ring-primary/25 bg-gradient-to-b from-accent/40 to-card p-0 pb-5 shadow-card-hover"
+          : "p-5",
       )}
     >
-      <div className="flex items-start justify-between gap-2">
+      {event.is_featured && (
+        <div className="flex items-center gap-1.5 bg-primary px-5 py-2 text-xs font-semibold uppercase tracking-wide text-primary-foreground">
+          <Star className="h-3.5 w-3.5 fill-current" />
+          Featured race
+        </div>
+      )}
+      <div
+        className={cn(
+          "flex items-start justify-between gap-2",
+          event.is_featured && "px-5 pt-1",
+        )}
+      >
         <h3 className="font-semibold text-lg text-foreground leading-snug">
           {event.slug ? (
             <Link
@@ -56,12 +69,6 @@ export function EventCard({ event }: { event: EventCardData }) {
           )}
         </h3>
         <div className="flex shrink-0 flex-col items-end gap-1">
-          {event.is_featured && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground">
-              <Star className="h-3 w-3 fill-current" />
-              Featured
-            </span>
-          )}
           {event.is_recurring && (
             <span
               className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground"
@@ -74,7 +81,12 @@ export function EventCard({ event }: { event: EventCardData }) {
         </div>
       </div>
 
-      <div className="space-y-1.5 text-sm text-muted-foreground">
+      <div
+        className={cn(
+          "space-y-1.5 text-sm text-muted-foreground",
+          event.is_featured && "px-5",
+        )}
+      >
         {event.date_raw ? (
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 shrink-0" />
@@ -115,7 +127,12 @@ export function EventCard({ event }: { event: EventCardData }) {
         )}
       </div>
 
-      <div className="mt-auto flex items-center justify-end pt-2">
+      <div
+        className={cn(
+          "mt-auto flex items-center justify-end pt-2",
+          event.is_featured && "px-5",
+        )}
+      >
         {event.slug && (
           <Link
             to={route}
