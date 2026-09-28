@@ -1,5 +1,6 @@
 import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireChangeFeedAcceptance } from "@/lib/change-feed-release";
 
 const requireAdmin = createServerOnlyFn(async () => {
   const { isAdminAuthenticated } = await import("@/lib/admin-session.server");
@@ -55,6 +56,7 @@ export const reviewChangeReport = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     await requireAdmin();
+    requireChangeFeedAcceptance(data.decision);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: r, error } = await supabaseAdmin
       .from("source_change_reports")
