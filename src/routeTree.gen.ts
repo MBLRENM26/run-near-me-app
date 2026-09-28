@@ -78,12 +78,15 @@ import { Route as AdminShellAdminOrganiserIdentitiesRouteImport } from './routes
 import { Route as AdminShellAdminOrganiserGapRouteImport } from './routes/_adminShell.admin.organiser-gap'
 import { Route as AdminShellAdminClubClaimsRouteImport } from './routes/_adminShell.admin.club-claims'
 import { Route as AdminShellAdminClaimsRouteImport } from './routes/_adminShell.admin.claims'
+import { Route as AdminShellAdminChangeReportsRouteImport } from './routes/_adminShell.admin.change-reports'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as AdminShellAdminEventsIndexRouteImport } from './routes/_adminShell.admin.events.index'
 import { Route as AdminShellAdminClubsIndexRouteImport } from './routes/_adminShell.admin.clubs.index'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
+import { Route as ApiPublicIngestWatchlistRouteImport } from './routes/api/public/ingest/watchlist'
+import { Route as ApiPublicIngestChangeReportRouteImport } from './routes/api/public/ingest/change-report'
 import { Route as ApiPublicHooksSendRaceRemindersRouteImport } from './routes/api/public/hooks/send-race-reminders'
 import { Route as ApiPublicHooksNotifyMissedSubmissionsRouteImport } from './routes/api/public/hooks/notify-missed-submissions'
 import { Route as ApiPublicAdminSyncScottishAthleticsClubsRouteImport } from './routes/api/public/admin/sync-scottish-athletics-clubs'
@@ -460,6 +463,12 @@ const AdminShellAdminClaimsRoute = AdminShellAdminClaimsRouteImport.update({
   path: '/admin/claims',
   getParentRoute: () => AdminShellRoute,
 } as any)
+const AdminShellAdminChangeReportsRoute =
+  AdminShellAdminChangeReportsRouteImport.update({
+    id: '/admin/change-reports',
+    path: '/admin/change-reports',
+    getParentRoute: () => AdminShellRoute,
+  } as any)
 const Char91DotmcpChar93InvokeToolToolRoute =
   Char91DotmcpChar93InvokeToolToolRouteImport.update({
     id: '/.mcp/invoke-tool/$tool',
@@ -494,6 +503,18 @@ const LovableEmailQueueProcessRoute =
   LovableEmailQueueProcessRouteImport.update({
     id: '/lovable/email/queue/process',
     path: '/lovable/email/queue/process',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicIngestWatchlistRoute =
+  ApiPublicIngestWatchlistRouteImport.update({
+    id: '/api/public/ingest/watchlist',
+    path: '/api/public/ingest/watchlist',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicIngestChangeReportRoute =
+  ApiPublicIngestChangeReportRouteImport.update({
+    id: '/api/public/ingest/change-report',
+    path: '/api/public/ingest/change-report',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksSendRaceRemindersRoute =
@@ -636,6 +657,7 @@ export interface FileRoutesByFullPath {
   '/parkrun-events/': typeof ParkrunEventsIndexRoute
   '/running-clubs/': typeof RunningClubsIndexRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/admin/change-reports': typeof AdminShellAdminChangeReportsRoute
   '/admin/claims': typeof AdminShellAdminClaimsRoute
   '/admin/club-claims': typeof AdminShellAdminClubClaimsRoute
   '/admin/organiser-gap': typeof AdminShellAdminOrganiserGapRoute
@@ -669,6 +691,8 @@ export interface FileRoutesByFullPath {
   '/api/public/admin/sync-scottish-athletics-clubs': typeof ApiPublicAdminSyncScottishAthleticsClubsRoute
   '/api/public/hooks/notify-missed-submissions': typeof ApiPublicHooksNotifyMissedSubmissionsRoute
   '/api/public/hooks/send-race-reminders': typeof ApiPublicHooksSendRaceRemindersRoute
+  '/api/public/ingest/change-report': typeof ApiPublicIngestChangeReportRoute
+  '/api/public/ingest/watchlist': typeof ApiPublicIngestWatchlistRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
@@ -727,6 +751,7 @@ export interface FileRoutesByTo {
   '/parkrun-events': typeof ParkrunEventsIndexRoute
   '/running-clubs': typeof RunningClubsIndexRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/admin/change-reports': typeof AdminShellAdminChangeReportsRoute
   '/admin/claims': typeof AdminShellAdminClaimsRoute
   '/admin/club-claims': typeof AdminShellAdminClubClaimsRoute
   '/admin/organiser-gap': typeof AdminShellAdminOrganiserGapRoute
@@ -760,6 +785,8 @@ export interface FileRoutesByTo {
   '/api/public/admin/sync-scottish-athletics-clubs': typeof ApiPublicAdminSyncScottishAthleticsClubsRoute
   '/api/public/hooks/notify-missed-submissions': typeof ApiPublicHooksNotifyMissedSubmissionsRoute
   '/api/public/hooks/send-race-reminders': typeof ApiPublicHooksSendRaceRemindersRoute
+  '/api/public/ingest/change-report': typeof ApiPublicIngestChangeReportRoute
+  '/api/public/ingest/watchlist': typeof ApiPublicIngestWatchlistRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
@@ -820,6 +847,7 @@ export interface FileRoutesById {
   '/parkrun-events/': typeof ParkrunEventsIndexRoute
   '/running-clubs/': typeof RunningClubsIndexRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/_adminShell/admin/change-reports': typeof AdminShellAdminChangeReportsRoute
   '/_adminShell/admin/claims': typeof AdminShellAdminClaimsRoute
   '/_adminShell/admin/club-claims': typeof AdminShellAdminClubClaimsRoute
   '/_adminShell/admin/organiser-gap': typeof AdminShellAdminOrganiserGapRoute
@@ -853,6 +881,8 @@ export interface FileRoutesById {
   '/api/public/admin/sync-scottish-athletics-clubs': typeof ApiPublicAdminSyncScottishAthleticsClubsRoute
   '/api/public/hooks/notify-missed-submissions': typeof ApiPublicHooksNotifyMissedSubmissionsRoute
   '/api/public/hooks/send-race-reminders': typeof ApiPublicHooksSendRaceRemindersRoute
+  '/api/public/ingest/change-report': typeof ApiPublicIngestChangeReportRoute
+  '/api/public/ingest/watchlist': typeof ApiPublicIngestWatchlistRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
@@ -913,6 +943,7 @@ export interface FileRouteTypes {
     | '/parkrun-events/'
     | '/running-clubs/'
     | '/.mcp/invoke-tool/$tool'
+    | '/admin/change-reports'
     | '/admin/claims'
     | '/admin/club-claims'
     | '/admin/organiser-gap'
@@ -946,6 +977,8 @@ export interface FileRouteTypes {
     | '/api/public/admin/sync-scottish-athletics-clubs'
     | '/api/public/hooks/notify-missed-submissions'
     | '/api/public/hooks/send-race-reminders'
+    | '/api/public/ingest/change-report'
+    | '/api/public/ingest/watchlist'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
@@ -1004,6 +1037,7 @@ export interface FileRouteTypes {
     | '/parkrun-events'
     | '/running-clubs'
     | '/.mcp/invoke-tool/$tool'
+    | '/admin/change-reports'
     | '/admin/claims'
     | '/admin/club-claims'
     | '/admin/organiser-gap'
@@ -1037,6 +1071,8 @@ export interface FileRouteTypes {
     | '/api/public/admin/sync-scottish-athletics-clubs'
     | '/api/public/hooks/notify-missed-submissions'
     | '/api/public/hooks/send-race-reminders'
+    | '/api/public/ingest/change-report'
+    | '/api/public/ingest/watchlist'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
@@ -1096,6 +1132,7 @@ export interface FileRouteTypes {
     | '/parkrun-events/'
     | '/running-clubs/'
     | '/.mcp/invoke-tool/$tool'
+    | '/_adminShell/admin/change-reports'
     | '/_adminShell/admin/claims'
     | '/_adminShell/admin/club-claims'
     | '/_adminShell/admin/organiser-gap'
@@ -1129,6 +1166,8 @@ export interface FileRouteTypes {
     | '/api/public/admin/sync-scottish-athletics-clubs'
     | '/api/public/hooks/notify-missed-submissions'
     | '/api/public/hooks/send-race-reminders'
+    | '/api/public/ingest/change-report'
+    | '/api/public/ingest/watchlist'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
@@ -1205,6 +1244,8 @@ export interface RootRouteChildren {
   ApiPublicAdminSyncScottishAthleticsClubsRoute: typeof ApiPublicAdminSyncScottishAthleticsClubsRoute
   ApiPublicHooksNotifyMissedSubmissionsRoute: typeof ApiPublicHooksNotifyMissedSubmissionsRoute
   ApiPublicHooksSendRaceRemindersRoute: typeof ApiPublicHooksSendRaceRemindersRoute
+  ApiPublicIngestChangeReportRoute: typeof ApiPublicIngestChangeReportRoute
+  ApiPublicIngestWatchlistRoute: typeof ApiPublicIngestWatchlistRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
   LovableEmailTransactionalSendRoute: typeof LovableEmailTransactionalSendRoute
@@ -1695,6 +1736,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminShellAdminClaimsRouteImport
       parentRoute: typeof AdminShellRoute
     }
+    '/_adminShell/admin/change-reports': {
+      id: '/_adminShell/admin/change-reports'
+      path: '/admin/change-reports'
+      fullPath: '/admin/change-reports'
+      preLoaderRoute: typeof AdminShellAdminChangeReportsRouteImport
+      parentRoute: typeof AdminShellRoute
+    }
     '/.mcp/invoke-tool/$tool': {
       id: '/.mcp/invoke-tool/$tool'
       path: '/.mcp/invoke-tool/$tool'
@@ -1735,6 +1783,20 @@ declare module '@tanstack/react-router' {
       path: '/lovable/email/queue/process'
       fullPath: '/lovable/email/queue/process'
       preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/ingest/watchlist': {
+      id: '/api/public/ingest/watchlist'
+      path: '/api/public/ingest/watchlist'
+      fullPath: '/api/public/ingest/watchlist'
+      preLoaderRoute: typeof ApiPublicIngestWatchlistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/ingest/change-report': {
+      id: '/api/public/ingest/change-report'
+      path: '/api/public/ingest/change-report'
+      fullPath: '/api/public/ingest/change-report'
+      preLoaderRoute: typeof ApiPublicIngestChangeReportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/send-race-reminders': {
@@ -1861,6 +1923,7 @@ const AdminShellAdminOrganiserIdentitiesRouteWithChildren =
   )
 
 interface AdminShellRouteChildren {
+  AdminShellAdminChangeReportsRoute: typeof AdminShellAdminChangeReportsRoute
   AdminShellAdminClaimsRoute: typeof AdminShellAdminClaimsRoute
   AdminShellAdminClubClaimsRoute: typeof AdminShellAdminClubClaimsRoute
   AdminShellAdminOrganiserGapRoute: typeof AdminShellAdminOrganiserGapRoute
@@ -1881,6 +1944,7 @@ interface AdminShellRouteChildren {
 }
 
 const AdminShellRouteChildren: AdminShellRouteChildren = {
+  AdminShellAdminChangeReportsRoute: AdminShellAdminChangeReportsRoute,
   AdminShellAdminClaimsRoute: AdminShellAdminClaimsRoute,
   AdminShellAdminClubClaimsRoute: AdminShellAdminClubClaimsRoute,
   AdminShellAdminOrganiserGapRoute: AdminShellAdminOrganiserGapRoute,
@@ -1991,6 +2055,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksNotifyMissedSubmissionsRoute:
     ApiPublicHooksNotifyMissedSubmissionsRoute,
   ApiPublicHooksSendRaceRemindersRoute: ApiPublicHooksSendRaceRemindersRoute,
+  ApiPublicIngestChangeReportRoute: ApiPublicIngestChangeReportRoute,
+  ApiPublicIngestWatchlistRoute: ApiPublicIngestWatchlistRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
   LovableEmailTransactionalSendRoute: LovableEmailTransactionalSendRoute,
