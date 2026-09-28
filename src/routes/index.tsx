@@ -1,3 +1,4 @@
+import { hydrateReviewedOccurrences } from "@/lib/reviewed-occurrences";
 import { Suspense, useMemo } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SITE_URL, SITE_NAME, SOCIALS } from "@/lib/site";
@@ -191,7 +192,11 @@ function HomePage() {
         console.error("[home/nearby] rpc failed", error);
         throw error;
       }
-      return data;
+      return hydrateReviewedOccurrences(data ?? [], async (ids) => {
+        const result = await supabase.from("events_public_v1").select("id, sort_date").in("id", ids);
+        if (result.error) return []; // no review admission on failed verification
+        return (result.data ?? []).filter((r): r is { id: string; sort_date: string | null } => !!r.id);
+      });
     },
   });
 
@@ -224,7 +229,7 @@ function HomePage() {
         .limit(20);
       if (error) throw error;
       const trusted = (data ?? []).filter((e) =>
-        hasDiscoverableLink(e.entry_url, e.organiser_url, e.governance),
+        hasDiscoverableLink(e.entry_url, e.organiser_url, e.governance, e),
       );
       return trusted.slice(0, 9);
     },
@@ -241,7 +246,7 @@ function HomePage() {
     // suppressed from recommendations everywhere — see
     // src/lib/link-trust.ts and mem://constraints/scraped-data-trust.
     return nearbyEvents
-      .filter((e) => hasDiscoverableLink(e.entry_url, e.organiser_url, e.governance))
+      .filter((e) => hasDiscoverableLink(e.entry_url, e.organiser_url, e.governance, e))
       .map((e) => ({
         id: e.id,
         slug: e.slug,

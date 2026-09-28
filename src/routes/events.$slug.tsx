@@ -215,13 +215,11 @@ export const Route = createFileRoute("/events/$slug")({
     const headProximity = eventProximity(e);
     const headIsPast = headProximity === "past";
 
-    // No fee claims in the description — scraped single-value pricing goes
-    // stale and misleads. Only promise "the official site" when we actually
-    // have a trustworthy official link to show.
+    // Describe useful destinations without inferring availability or ownership.
     const headEntryLink = classifyEventLink(e.entry_url);
     const headOrgLink = classifyEventLink(e.organiser_url);
-    const hasOfficialLink =
-      isTrustedLink(headEntryLink) || isTrustedLink(headOrgLink);
+    const hasRaceLink =
+      isTrustedLink(headEntryLink) || isTrustedLink(headOrgLink) || !!loaderData?.destinations?.length;
     const when = e.date_is_estimated
       ? dateLabel
         ? `, expected ${dateLabel.replace(" (date TBC)", "")} — date to be confirmed`
@@ -233,8 +231,8 @@ export const Route = createFileRoute("/events/$slug")({
       ? [
           `Took place${dateLabel ? ` on ${dateLabel}` : ""}.`,
           `${e.name} was a ${distance} race${loc ? ` in ${loc}` : ""}.`,
-          hasOfficialLink
-            ? "Visit the organiser website for results or future dates."
+          hasRaceLink
+            ? "Follow the race links for further information."
             : "See more upcoming races nearby.",
         ]
           .filter(Boolean)
@@ -242,8 +240,8 @@ export const Route = createFileRoute("/events/$slug")({
           .slice(0, 300)
       : [
           `${e.name} is a ${distance} race${loc ? ` in ${loc}` : ""}${when}.`,
-          hasOfficialLink
-            ? "See route details, start time and how to enter on the official site."
+          hasRaceLink
+            ? "Follow the race links for entry information and current details."
             : "See date, location and distance details, plus more races nearby.",
         ]
           .filter(Boolean)
@@ -299,24 +297,9 @@ export const Route = createFileRoute("/events/$slug")({
           addressCountry: "GB",
         },
       };
-      // Offers: entry link only — no price claim, only event-specific pages
-      // on trusted (non-aggregator) hosts, and never for imminent/past
-      // events where "InStock" availability would overpromise.
-      if (headEntryLink.kind === "entry" && eventProximity(e) === null) {
-        jsonLd.offers = {
-          "@type": "Offer",
-          url: headEntryLink.href,
-          availability: "https://schema.org/InStock",
-        };
-      }
-      if (isTrustedLink(headOrgLink)) {
-        const orgName = e.organiser?.trim() || headOrgLink.host || "";
-        jsonLd.organizer = {
-          "@type": "Organization",
-          ...(orgName ? { name: orgName } : {}),
-          url: headOrgLink.href,
-        };
-      }
+      // A URL is not evidence of availability or organiser identity.
+      // Omit offers/organizer until those facts have explicit verification.
+
     }
 
     // No FAQPage JSON-LD on event pages — the trust module below is
@@ -483,7 +466,7 @@ function EventDetailPage() {
     date_raw: e.date_raw,
     date_is_estimated: e.date_is_estimated,
     distanceKey: related.distanceKey,
-    hasOfficialLink: !!primaryCta,
+    hasOfficialLink: !!primaryCta || !!destinations?.length,
     regionCount: related.totalCount,
   });
 
@@ -493,13 +476,14 @@ function EventDetailPage() {
   const showPilotPanel = (destinations?.length ?? 0) > 0;
 
   // No trustworthy official link → invite the organiser to claim the listing.
-  const showClaim = !primaryCta && !isPast;
+  const showClaim = !primaryCta && !showPilotPanel && !isPast;
 
   // "About this listing" — site-level trust Q&A, NOT event-specific FAQs.
   // 3 fixed Qs; a 4th appears only when the listing has no trusted entry
   // OR organiser link (missing URLs and untrusted/aggregator URLs both
   // count as absent — only `entry` or `organiser-site` classify as trusted).
   const hasAnyTrustedLink =
+    showPilotPanel ||
     entryLink.kind === "entry" ||
     entryLink.kind === "organiser-site" ||
     orgLink.kind === "entry" ||

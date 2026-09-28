@@ -99,6 +99,12 @@ export function DestinationPanel({
           </ul>
         )}
       </div>
+      {destinations.some((d) => d.reviewedOn) && (
+        <div className="mt-3 max-w-2xl space-y-1 text-sm text-muted-foreground">
+          <p>Race links reviewed on {destinations.find((d) => d.reviewedOn)?.reviewedOn}. Availability can change.</p>
+          {!isPast && destinations.filter((d) => d.reviewNote).map((d) => <p key={d.href}>{d.reviewNote}</p>)}
+        </div>
+      )}
     </section>
   );
 }

@@ -32,6 +32,8 @@ export type DestinationRole =
    * never infers it.
    */
   | "licence_record"
+  | "third_party_listing"
+  | "payment_instructions"
   | "unknown";
 
 /** Explicit ballot / waitlist / lottery evidence tokens. */

@@ -1,18 +1,8 @@
-/**
- * Site-wide link-trust policy for scraped event URLs.
- *
- * Scraped data routinely contains aggregator listing pages, bare organiser
- * homepages and malformed URLs. Every external URL shown anywhere on the
- * site must pass through `classifyEventLink` first:
- *
- * - `entry`          — event-specific page on a non-aggregator host.
- *                      May be shown as "Enter now" and asserted in JSON-LD.
- * - `organiser-site` — homepage of a non-aggregator host. May be shown as
- *                      "Visit organiser website", never as "Enter now".
- * - `untrusted`      — aggregator/listing-site URL. NEVER rendered as a
- *                      link, named on the page, or asserted in structured
- *                      data. Kept in the DB for internal use only.
- * - `invalid`        — missing or unparseable. Never rendered.
+import { findWayfindingReview, type WayfindingRow } from "./wayfinding-reviews";
+
+/** Legacy URL classification, with occurrence-specific reviewed exceptions.
+ * A path does not prove booking availability or official ownership. Reviewed
+ * destinations carry explicit roles; unknown listings remain excluded.
  */
 
 export type EventLinkKind = "entry" | "organiser-site" | "untrusted" | "invalid";
@@ -40,18 +30,8 @@ const AGGREGATOR_HOSTS = [
   "athleticsni.org",
 ];
 
-/**
- * Third-party entry / booking / timing platforms. NOT aggregators — these
- * host real event-specific entry pages, so `classifyEventLink` still
- * returns `entry` / `organiser-site` for them and the event page may
- * render "Enter now" pointing at one. They just don't count as the
- * organiser's OWN website, so `hasOrganiserOwnedLink` rejects them —
- * which means events whose ONLY link is on one of these platforms are
- * excluded from discovery surfaces (homepage, region / distance landing
- * pages, "other races near you", etc.).
- *
- * See mem://constraints/scraped-data-trust.
- */
+/** Entry platforms require governance evidence or a matching occurrence review
+ * for discovery. Provider identity alone does not admit an event. */
 const ENTRY_PLATFORM_HOSTS = [
   "sientries.co.uk",
   "eventrac.co.uk",
@@ -94,7 +74,17 @@ export function normalizeUrl(raw: string | null | undefined): URL | null {
   try {
     const u = new URL(withProtocol);
     if (u.protocol !== "http:" && u.protocol !== "https:") return null;
-    if (!u.hostname.includes(".")) return null;
+    if (!u.hostname.includes(".") || u.username || u.password) return null;
+    // External links only. Block local hosts, IP literals and malformed hosts.
+    const host = u.hostname.toLowerCase();
+    if (
+      !/^[a-z0-9.-]+$/.test(host) ||
+      !/[a-z]{2,}$/.test(host) ||
+      host.endsWith(".local") ||
+      host.endsWith(".internal") ||
+      host.endsWith(".localhost")
+    )
+      return null;
     return u;
   } catch {
     return null;
@@ -111,6 +101,9 @@ export function classifyEventLink(raw: string | null | undefined): ClassifiedLin
     return { kind: "untrusted", href: u.href, host };
   }
 
+  // A bare payment link does not establish who receives it or which race.
+  if (isPaymentHost(host)) return { kind: "untrusted", href: u.href, host };
+
   // Bare homepage (no path) — an organiser's site, not an entry page.
   const segments = u.pathname.split("/").filter(Boolean);
   if (segments.length === 0) {
@@ -120,7 +113,7 @@ export function classifyEventLink(raw: string | null | undefined): ClassifiedLin
   return { kind: "entry", href: u.href, host };
 }
 
-/** True when the link may be rendered as a clickable official link. */
+/** True when the legacy link may be rendered with a neutral destination label. */
 export function isTrustedLink(link: ClassifiedLink): boolean {
   return link.kind === "entry" || link.kind === "organiser-site";
 }
@@ -133,7 +126,7 @@ export function isTrustedLink(link: ClassifiedLink): boolean {
  * Use for discovery surfaces only (homepage curated lists, region /
  * distance landing pages, "other races near you", etc.). Event-page
  * CTAs keep using `classifyEventLink` / `isTrustedLink` directly so
- * "Enter now → sientries" etc. still works for runners who land on a
+ * "Check entries at SI Entries" etc. still works for runners who land on a
  * specific event page.
  */
 export function hasOrganiserOwnedLink(
@@ -165,20 +158,27 @@ const TRUSTED_GOVERNANCE = new Set([
 /**
  * Discovery gate used across homepage / region / distance / cross-link
  * surfaces. Admits an event when EITHER:
+ *   - an occurrence-specific reviewed destination matches its ID, date and URLs, OR
  *   - it has an organiser-owned link (see hasOrganiserOwnedLink), OR
  *   - it carries a trusted governance tag AND has at least one trusted
  *     event-specific link (entry-platform links count here; aggregator
  *     links never do).
  *
  * Event detail-page CTAs keep using classifyEventLink / isTrustedLink
- * directly, so "Enter now → sientries" still works for people who land
+ * directly, so "Check entries at SI Entries" still works for people who land
  * on a specific event page.
  */
 export function hasDiscoverableLink(
   entryUrl: string | null | undefined,
   organiserUrl: string | null | undefined,
   governance: string | null | undefined,
+  occurrence?: WayfindingRow,
 ): boolean {
+  if (
+    occurrence &&
+    findWayfindingReview({ ...occurrence, entry_url: entryUrl, organiser_url: organiserUrl })
+  )
+    return true;
   if (hasOrganiserOwnedLink(entryUrl, organiserUrl)) return true;
   if (!governance || !TRUSTED_GOVERNANCE.has(governance)) return false;
   for (const raw of [entryUrl, organiserUrl]) {
@@ -186,4 +186,23 @@ export function hasDiscoverableLink(
     if (link.kind === "entry") return true;
   }
   return false;
+}
+
+export function isPaymentHost(host: string): boolean {
+  return ["paypal.com", "paypal.me", "buy.stripe.com"].some(
+    (h) => host === h || host.endsWith(`.${h}`),
+  );
+}
+
+export function entryProviderLabel(host: string): string {
+  const labels: Record<string, string> = {
+    "sientries.co.uk": "SI Entries",
+    "entrycentral.com": "EntryCentral",
+    "racebest.com": "RaceBest",
+    "eventrac.co.uk": "Eventrac",
+    "sport80.com": "Sport:80",
+    "justgo.com": "JustGo",
+    "opentrack.run": "OpenTrack",
+  };
+  return Object.entries(labels).find(([h]) => host === h || host.endsWith(`.${h}`))?.[1] ?? host;
 }

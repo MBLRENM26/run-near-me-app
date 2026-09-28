@@ -1,3 +1,4 @@
+import { hydrateReviewedOccurrences } from "@/lib/reviewed-occurrences";
 import { createServerFn } from "@tanstack/react-start";
 import { setResponseHeader } from "@tanstack/react-start/server";
 import { notFound, redirect } from "@tanstack/react-router";
@@ -24,7 +25,8 @@ import {
   type IndexabilityResult,
   type SiblingEvent,
 } from "@/lib/event-indexability";
-import { hasOrganiserOwnedLink, hasDiscoverableLink } from "@/lib/link-trust";
+import { hasDiscoverableLink } from "@/lib/link-trust";
+import { buildReviewedDestinations } from "@/lib/reviewed-destinations";
 import { buildPilotDestinations } from "@/lib/pilot-destinations";
 import { DISCOVERY_EVENT_COLUMNS, UK_BOUNDS_OR_NULL } from "@/lib/events-query";
 import {
@@ -334,13 +336,9 @@ export const getEventsByDistance = createServerFn({ method: "GET" })
       });
     }
 
-    // Discovery-surface trust gate: only include events with a link on
-    // the organiser's own site (not aggregator, not third-party entry
-    // platform). Event detail pages still render "Enter now" for these
-    // — we just don't recommend them from landing pages. See
-    // src/lib/link-trust.ts and mem://constraints/scraped-data-trust.
+    // Shared discovery gate: legacy eligibility plus reviewed occurrences.
     const trusted = all.filter((e) =>
-      hasDiscoverableLink(e.entry_url, e.organiser_url, e.governance),
+      hasDiscoverableLink(e.entry_url, e.organiser_url, e.governance, e),
     );
 
     // Group by region for the regional breakdown section.
@@ -454,7 +452,7 @@ export const getEventsByRegionAndDistance = createServerFn({ method: "GET" })
     // the "other distances in this region" panel match what users will
     // actually see when they click through.
     const trusted = all.filter((e) =>
-      hasDiscoverableLink(e.entry_url, e.organiser_url, e.governance),
+      hasDiscoverableLink(e.entry_url, e.organiser_url, e.governance, e),
     );
 
     const rowMatches = (e: RowWithTags, key: DistanceKey) =>
@@ -516,6 +514,8 @@ export const getRegionDistanceMatrix = createServerFn({ method: "GET" })
 
     // Pull every active future event with a region + distances/tags in one pass.
     type MatrixRow = {
+      id: string;
+      sort_date: string | null;
       region: string | null;
       distances: string | null;
       distance_tags: string[] | null;
@@ -528,7 +528,7 @@ export const getRegionDistanceMatrix = createServerFn({ method: "GET" })
       supabaseAdmin
         .from("events")
         .select(
-          "region, distances, distance_tags, terrain_tags, entry_url, organiser_url, governance",
+          "id, sort_date, region, distances, distance_tags, terrain_tags, entry_url, organiser_url, governance",
         )
         .eq("status", "ACTIVE")
         .not("region", "is", null)
@@ -544,7 +544,7 @@ export const getRegionDistanceMatrix = createServerFn({ method: "GET" })
     for (const r of rows) {
       // Discovery-surface trust gate — match the landing-page filter so
       // the matrix counts agree with what users actually see.
-      if (!hasDiscoverableLink(r.entry_url, r.organiser_url, r.governance)) continue;
+      if (!hasDiscoverableLink(r.entry_url, r.organiser_url, r.governance, r)) continue;
       for (const p of DISTANCE_PAGE_LIST) {
         if (rowMatchesDistanceKey(r, p.key)) {
           const key = `${r.region}::${p.key}`;
@@ -761,7 +761,8 @@ export const getEventPageData = createServerFn({ method: "GET" })
     // Reviewed wayfinding pilot: derived here, where provenance is visible.
     // `source` / `source_url` never leave this handler except as the single
     // intentional public TRA licence destination.
-    const destinations = buildPilotDestinations({
+    const reviewedDestinations = buildReviewedDestinations(eventRow);
+    const destinations = reviewedDestinations.length ? reviewedDestinations : buildPilotDestinations({
       id: eventRow.id,
       organiser: eventRow.organiser,
       organiser_type: eventRow.organiser_type,
@@ -892,7 +893,7 @@ export const getEventPageData = createServerFn({ method: "GET" })
       const trusted = all.filter(
         (r) =>
           r.id === event.id ||
-          hasDiscoverableLink(r.entry_url, r.organiser_url, r.governance),
+          hasDiscoverableLink(r.entry_url, r.organiser_url, r.governance, r),
       );
 
       const matched = related.distanceKey
@@ -934,8 +935,14 @@ export const getEventPageData = createServerFn({ method: "GET" })
         );
         if (nearErr) break; // fall back to region list silently
         if (!nearRows) continue;
+        const datedNearRows = await hydrateReviewedOccurrences(nearRows, async (ids) => {
+          const result = await supabaseAdmin.from("events_public_v1").select("id, sort_date").in("id", ids);
+          if (result.error) return [];
+          return (result.data ?? []).filter((r): r is { id: string; sort_date: string | null } => !!r.id);
+        });
         const picked: RelatedEvent[] = [];
-        for (const r of nearRows as Array<{
+        for (const r of datedNearRows as Array<{
+          sort_date?: string | null;
           id: string;
           slug: string | null;
           name: string;
@@ -954,7 +961,7 @@ export const getEventPageData = createServerFn({ method: "GET" })
           // here. Could be upgraded if/when the RPC starts returning tags.
           if (cfg && !matchesDistance(r.distance_type, cfg)) continue;
           // Discovery-surface trust gate (same as the region fallback).
-          if (!hasDiscoverableLink(r.entry_url, r.organiser_url, r.governance)) continue;
+          if (!hasDiscoverableLink(r.entry_url, r.organiser_url, r.governance, r)) continue;
           picked.push({
             id: r.id,
             slug: r.slug,
@@ -1004,6 +1011,7 @@ export const getEventPageData = createServerFn({ method: "GET" })
               r.entry_url as string | null,
               r.organiser_url as string | null,
               r.governance as string | null,
+              r,
             )
           )
             continue;
@@ -1101,6 +1109,7 @@ export const getEventPageData = createServerFn({ method: "GET" })
               r.entry_url as string | null,
               r.organiser_url as string | null,
               r.governance as string | null,
+              r,
             )
           )
             continue;
@@ -1334,12 +1343,11 @@ export const getEventsByTaxonomy = createServerFn({ method: "GET" })
 
     // Governance-permitted races are inherently trusted (permit implies a
     // real, sanctioned event), so we admit entry-platform-only links too.
-    // Non-governance surfaces (e.g. organiser_type=club) still require an
-    // organiser-owned link.
+    // Other taxonomy surfaces retain legacy eligibility plus reviewed occurrences.
     const trusted =
       data.field === "governance"
         ? all
-        : all.filter((e) => hasOrganiserOwnedLink(e.entry_url, e.organiser_url));
+        : all.filter((e) => hasDiscoverableLink(e.entry_url, e.organiser_url, undefined, e));
 
     const counts = new Map<string, number>();
     for (const e of trusted) {

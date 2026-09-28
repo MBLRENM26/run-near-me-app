@@ -33,9 +33,13 @@ export type DestinationRoleKind =
   | "licence"
   | "governing_listing"
   | "athlete_information"
-  | "course";
+  | "course"
+  | "listing"
+  | "payment_instructions";
 
 export interface PublicDestination {
+  reviewedOn?: string;
+  reviewNote?: string;
   role: DestinationRoleKind;
   /** Human-readable role label — accessible text only, never a visible heading. */
   roleLabel: string;
@@ -68,6 +72,8 @@ export interface PilotEventRow {
 }
 
 const ROLE_LABELS: Record<DestinationRoleKind, string> = {
+  listing: "Third-party listing",
+  payment_instructions: "Payment instructions",
   results: "Results",
   entry: "Entry",
   official_details: "Official details",
@@ -78,6 +84,8 @@ const ROLE_LABELS: Record<DestinationRoleKind, string> = {
 };
 
 const ROLE_PRECEDENCE: Record<DestinationRoleKind, number> = {
+  listing: 7,
+  payment_instructions: 8,
   results: 0,
   entry: 1,
   official_details: 2,
@@ -88,6 +96,8 @@ const ROLE_PRECEDENCE: Record<DestinationRoleKind, number> = {
 };
 
 const LINK_TYPES: Record<DestinationRoleKind, EventCtaLinkType> = {
+  listing: "organiser-other",
+  payment_instructions: "organiser-other",
   results: "organiser-other",
   entry: "entry",
   official_details: "organiser-other",
@@ -508,7 +518,7 @@ export function resolvePanelLayout(
   destinations: PublicDestination[],
   { isPast = false }: { isPast?: boolean } = {},
 ): PanelLayout {
-  const usable = isPast ? destinations.filter((d) => d.role !== "entry") : destinations;
+  const usable = isPast ? destinations.filter((d) => d.role !== "entry" && d.role !== "payment_instructions") : destinations;
   const results = usable.find((d) => d.role === "results") ?? null;
   const primary = isPast ? results : (results ?? usable.find((d) => d.role === "entry") ?? null);
   const secondary = usable.filter((d) => d !== primary);
@@ -522,6 +532,10 @@ export function resolvePanelLayout(
 export function destinationLabel(d: PublicDestination): string {
   if (d.shortLabel) return d.shortLabel;
   switch (d.role) {
+    case "listing":
+      return `View listing on ${d.provider}`;
+    case "payment_instructions":
+      return "Read organiser payment instructions";
     case "entry":
       return "Enter race";
     case "official_details":

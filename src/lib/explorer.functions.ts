@@ -208,7 +208,7 @@ export const getExplorerEvents = createServerFn({ method: "GET" })
 
     const publicRows = (rows ?? []) as unknown as PublicEventRow[];
     const eligible = publicRows
-      .filter((row) => hasDiscoverableLink(row.entry_url, row.organiser_url, row.governance))
+      .filter((row) => hasDiscoverableLink(row.entry_url, row.organiser_url, row.governance, row))
       .filter((row) => matchesExplorerRadius(data, row.lat ?? null, row.lng ?? null));
 
     const origin = hasCoordinates(data) ? { lat: data.lat, lng: data.lng } : undefined;
