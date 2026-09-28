@@ -66,7 +66,7 @@ export function RaceReminderSignup({ eventId, eventName, sortDate }: Props) {
         </div>
         <div className="flex-1">
           <h2 className="text-lg font-semibold text-foreground">
-            Get a reminder before entries close
+            Get a race reminder
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
             We'll email you about a week before {eventName}. No account, one
