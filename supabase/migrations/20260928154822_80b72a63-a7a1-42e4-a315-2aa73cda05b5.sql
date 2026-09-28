@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public.run_england_athletics_chunked() TO service_role;
