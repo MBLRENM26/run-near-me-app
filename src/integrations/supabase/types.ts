@@ -1182,6 +1182,76 @@ export type Database = {
         }
         Relationships: []
       }
+      source_change_reports: {
+        Row: {
+          admin_note: string | null
+          created_at: string
+          event_id: string
+          field: string
+          fingerprint: string
+          id: string
+          new_value: string | null
+          observed_at: string
+          old_value: string | null
+          reporter: string
+          reviewed_at: string | null
+          source_url: string
+          status: string
+        }
+        Insert: {
+          admin_note?: string | null
+          created_at?: string
+          event_id: string
+          field: string
+          fingerprint: string
+          id?: string
+          new_value?: string | null
+          observed_at: string
+          old_value?: string | null
+          reporter?: string
+          reviewed_at?: string | null
+          source_url: string
+          status?: string
+        }
+        Update: {
+          admin_note?: string | null
+          created_at?: string
+          event_id?: string
+          field?: string
+          fingerprint?: string
+          id?: string
+          new_value?: string | null
+          observed_at?: string
+          old_value?: string | null
+          reporter?: string
+          reviewed_at?: string | null
+          source_url?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_change_reports_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_change_reports_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_public_v1"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_change_reports_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "public_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       submission_rate_hits: {
         Row: {
           bucket_kind: string
