@@ -1,9 +1,7 @@
 import { useEffect } from "react";
 import { createFileRoute, Link, notFound, redirect, useRouter } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
 import { trackRegionView } from "@/lib/analytics";
 import { ArrowLeft, X } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { EventCard, type EventCardData } from "@/components/events/EventCard";
@@ -12,9 +10,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { slugToRegion } from "@/lib/regions";
 import { SITE_URL } from "@/lib/site";
 import { BackToSearchBar } from "@/components/site/BackToSearchBar";
-import { hasDiscoverableLink } from "@/lib/link-trust";
-import { DISCOVERY_EVENT_COLUMNS, UK_BOUNDS_OR_NULL } from "@/lib/events-query";
-
+import { getEventsForRegion } from "@/lib/region-page.functions";
 
 import { DistanceNav } from "@/components/distance/DistanceNav";
 import {
@@ -22,7 +18,6 @@ import {
   filterByMonth,
   formatMonthLabelLong,
   monthSearchValidator,
-  sortEstimatedLastWithinMonth,
   type MonthKey,
   type MonthSearch,
 } from "@/lib/month-filter";
@@ -52,12 +47,19 @@ export const Route = createFileRoute("/running-events/$slug")({
   },
   loader: async ({ params }) => {
     const month = parseMonthSlug(params.slug);
-    if (!month) return null;
-    return await getEventsForMonth({ data: { monthKey: month.key } });
+    if (month)
+      return {
+        kind: "month" as const,
+        ...(await getEventsForMonth({ data: { monthKey: month.key } })),
+      };
+    return {
+      kind: "region" as const,
+      events: await getEventsForRegion({ data: { regionSlug: params.slug } }),
+    };
   },
   head: ({ params, loaderData }) => {
     const month = parseMonthSlug(params.slug);
-    if (month && loaderData) {
+    if (month && loaderData?.kind === "month") {
       return buildMonthHead(loaderData, `/running-events/${params.slug}`);
     }
     const region = slugToRegion(params.slug);
@@ -112,17 +114,14 @@ export const Route = createFileRoute("/running-events/$slug")({
 });
 
 function SlugRouter() {
-  const { slug } = Route.useParams();
-  const month = parseMonthSlug(slug);
-  if (month) {
-    const data = Route.useLoaderData();
-    if (!data) return null;
+  const data = Route.useLoaderData();
+  if (data.kind === "month") {
     return <MonthPage data={data} />;
   }
-  return <RegionPage />;
+  return <RegionPage events={data.events} />;
 }
 
-function RegionPage() {
+function RegionPage({ events }: { events: EventCardData[] }) {
   const { slug } = Route.useParams();
   const region = slugToRegion(slug)!;
   const search = Route.useSearch() as MonthSearch;
@@ -136,42 +135,8 @@ function RegionPage() {
       replace: true,
     });
 
-  const { data: events, isLoading } = useQuery({
-    queryKey: ["events", "region", region.name],
-    queryFn: async () => {
-      const today = new Date().toISOString().slice(0, 10);
-      const pageSize = 1000;
-      const all: EventCardData[] = [];
-      for (let from = 0; ; from += pageSize) {
-        const { data, error } = await supabase
-          .from("events_public_v1")
-          .select(DISCOVERY_EVENT_COLUMNS)
-          .eq("region", region.name)
-          .or(`sort_date.gte.${today},sort_date.is.null`)
-          .or(UK_BOUNDS_OR_NULL)
-          .order("sort_date", { ascending: true, nullsFirst: false })
-          .range(from, from + pageSize - 1);
-        if (error) throw error;
-        if (!data || data.length === 0) break;
-        all.push(
-          ...(data.map((r) => ({
-            ...r,
-            distance_type: r.distances,
-          })) as EventCardData[]),
-        );
-        if (data.length < pageSize) break;
-      }
-      // Discovery-surface trust gate: only recommend events with an
-      // organiser-owned link. See src/lib/link-trust.ts.
-      const trusted = all.filter((e) =>
-        hasDiscoverableLink(e.entry_url, e.organiser_url, (e as { governance?: string | null }).governance),
-      );
-      return sortEstimatedLastWithinMonth(trusted);
-    },
-  });
-
-  const months = events ? availableMonths(events) : [];
-  const filtered = events ? featuredFirst(filterByMonth(events, month)) : [];
+  const months = availableMonths(events);
+  const filtered = featuredFirst(filterByMonth(events, month));
 
   useEffect(() => {
     if (events) trackRegionView({ region: region.name, total_events: events.length });
@@ -194,9 +159,7 @@ function RegionPage() {
           <h1 className="mt-4 text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
             Running events in {region.name}
           </h1>
-          <p className="mt-2 text-muted-foreground">
-            Browse upcoming races across {region.name}.
-          </p>
+          <p className="mt-2 text-muted-foreground">Browse upcoming races across {region.name}.</p>
         </section>
 
         <section className="mx-auto max-w-6xl px-4 pb-6">
@@ -224,9 +187,7 @@ function RegionPage() {
           {month && (
             <p className="mb-4 inline-flex items-center gap-2 text-sm text-muted-foreground">
               Showing events in{" "}
-              <span className="font-medium text-foreground">
-                {formatMonthLabelLong(month)}
-              </span>
+              <span className="font-medium text-foreground">{formatMonthLabelLong(month)}</span>
               <button
                 type="button"
                 onClick={() => setMonth(undefined)}
@@ -237,11 +198,7 @@ function RegionPage() {
               </button>
             </p>
           )}
-          {isLoading ? (
-            <p className="text-center text-muted-foreground py-12">
-              Loading events…
-            </p>
-          ) : !events || events.length === 0 ? (
+          {events.length === 0 ? (
             <div className="text-center py-16 rounded-2xl border border-dashed border-border bg-muted/30">
               <p className="text-lg font-medium text-foreground">
                 No events listed yet for {region.name}
@@ -250,7 +207,8 @@ function RegionPage() {
           ) : filtered.length === 0 ? (
             <div className="text-center py-16 rounded-2xl border border-dashed border-border bg-muted/30">
               <p className="text-lg font-medium text-foreground">
-                No events in {region.name} in {month ? formatMonthLabelLong(month) : "this month"} yet
+                No events in {region.name} in {month ? formatMonthLabelLong(month) : "this month"}{" "}
+                yet
               </p>
               <button
                 type="button"
@@ -262,9 +220,7 @@ function RegionPage() {
             </div>
           ) : (
             <>
-              <h2 className="text-xl font-semibold text-foreground mb-2">
-                Upcoming events
-              </h2>
+              <h2 className="text-xl font-semibold text-foreground mb-2">Upcoming events</h2>
               <p className="text-sm text-muted-foreground mb-4">
                 {filtered.length} {filtered.length === 1 ? "event" : "events"}
               </p>
@@ -311,9 +267,7 @@ function RegionError({ error, reset }: { error: Error; reset: () => void }) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold text-foreground">
-          Couldn't load events
-        </h1>
+        <h1 className="text-xl font-semibold text-foreground">Couldn't load events</h1>
         <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
         <button
           onClick={() => {

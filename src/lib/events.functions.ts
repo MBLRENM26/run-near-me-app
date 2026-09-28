@@ -176,6 +176,7 @@ export const getIndexableEventSlugsForSitemap = createServerFn({ method: "GET" }
         .eq("status", "ACTIVE")
         .not("slug", "is", null)
         .or(`sort_date.gte.${today},sort_date.is.null`)
+        .order("id", { ascending: true })
         .range(from, to),
     );
 

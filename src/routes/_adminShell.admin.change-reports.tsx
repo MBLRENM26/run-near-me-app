@@ -8,6 +8,7 @@ import { listChangeReports, reviewChangeReport } from "@/lib/admin-change-report
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
+import { CHANGE_FEED_ACCEPTANCE_ENABLED } from "@/lib/change-feed-release";
 
 const STATUSES = ["pending", "accepted", "rejected", "unknown"] as const;
 
@@ -64,9 +65,9 @@ function ChangeReportsPage() {
       <Toaster />
       <h1 className="text-2xl font-bold text-foreground">Race change reports</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Changes spotted on official race pages by the homelab checker. Nothing changes on the site
-        until you accept. Only date and entry-link changes are applied; cancellations and entry
-        status are recorded for manual follow-up.
+        Changes spotted on official race pages by the homelab checker. Reports are collected for
+        review. Applying changes is temporarily unavailable; keep reports pending until that work
+        is complete. Rejecting or marking a report unknown does not change the race listing.
       </p>
       <div className="mt-4 flex gap-2">
         {STATUSES.map((s) => (
@@ -114,7 +115,7 @@ function ChangeReportsPage() {
             </a>
             {status === "pending" && (
               <div className="mt-3 flex gap-2">
-                <Button size="sm" disabled={busy === r.id} onClick={() => decide(r.id, "accepted")}>
+                <Button size="sm" disabled={!CHANGE_FEED_ACCEPTANCE_ENABLED || busy === r.id} onClick={() => decide(r.id, "accepted")}>
                   Accept
                 </Button>
                 <Button size="sm" variant="outline" disabled={busy === r.id} onClick={() => decide(r.id, "rejected")}>
