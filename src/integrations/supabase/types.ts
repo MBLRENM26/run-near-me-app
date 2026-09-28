@@ -273,6 +273,39 @@ export type Database = {
           },
         ]
       }
+      ea_sync_state: {
+        Row: {
+          chunks: number
+          finished_at: string | null
+          id: number
+          last_error: string | null
+          last_status: number | null
+          next_from: number | null
+          req_id: number | null
+          sent_at: string | null
+        }
+        Insert: {
+          chunks?: number
+          finished_at?: string | null
+          id?: number
+          last_error?: string | null
+          last_status?: number | null
+          next_from?: number | null
+          req_id?: number | null
+          sent_at?: string | null
+        }
+        Update: {
+          chunks?: number
+          finished_at?: string | null
+          id?: number
+          last_error?: string | null
+          last_status?: number | null
+          next_from?: number | null
+          req_id?: number | null
+          sent_at?: string | null
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
@@ -1765,10 +1798,21 @@ export type Database = {
         }[]
       }
       count_active_events: { Args: never; Returns: number }
+      cron_health_24h: {
+        Args: never
+        Returns: {
+          at: string
+          detail: string
+          kind: string
+          name: string
+        }[]
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
       }
+      ea_sync_post_chunk: { Args: { p_from: number }; Returns: number }
+      ea_sync_tick: { Args: never; Returns: undefined }
       email_queue_dispatch: { Args: never; Returns: undefined }
       enqueue_email: {
         Args: { payload: Json; queue_name: string }

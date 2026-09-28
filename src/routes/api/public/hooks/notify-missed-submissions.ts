@@ -43,6 +43,44 @@ export const Route = createFileRoute(
         const { sendNewSubmissionNotification, adminNotifyMessageId } =
           await import("@/lib/notify.server");
 
+        // Daily cron-health check: email admin if any scheduled job or its
+        // HTTP call failed in the last 24h, so silent 401s/timeouts surface.
+        try {
+          const { data: issues } = await (supabaseAdmin as any).rpc(
+            "cron_health_24h",
+          );
+          if (Array.isArray(issues) && issues.length > 0) {
+            const { sendSyncSummaryNotification } = await import(
+              "@/lib/notify-sync.server"
+            );
+            const day = new Date().toISOString().slice(0, 10);
+            await sendSyncSummaryNotification({
+              syncRunId: `cron-health-${day}`,
+              source: "Scheduled jobs health check",
+              status: "error",
+              startedAt: new Date().toISOString(),
+              durationMs: null,
+              fetched: null,
+              active: null,
+              written: null,
+              newEvents: null,
+              updatedExisting: null,
+              skippedDupes: null,
+              skippedNoDate: null,
+              failedPages: issues.length,
+              errorMessage: issues
+                .slice(0, 20)
+                .map(
+                  (i: { kind: string; name: string; detail: string | null; at: string }) =>
+                    `${i.at} ${i.kind} ${i.name}: ${(i.detail ?? "").slice(0, 160)}`,
+                )
+                .join("\n"),
+            });
+          }
+        } catch (e) {
+          console.warn("[cron-health] check failed", e);
+        }
+
         const cutoff = new Date(
           Date.now() - 30 * 24 * 60 * 60 * 1000,
         ).toISOString();
