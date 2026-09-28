@@ -97,7 +97,7 @@ export const getEventsForMonth = createServerFn({ method: "GET" })
     }
 
     const trusted = all.filter((e) =>
-      hasDiscoverableLink(e.entry_url, e.organiser_url, e.governance),
+      hasDiscoverableLink(e.entry_url, e.organiser_url, e.governance, e),
     );
 
     const filtered = data.distanceKey
@@ -159,6 +159,7 @@ export const getMonthPageMatrix = createServerFn({ method: "GET" })
     const endLastDay = new Date(Date.UTC(endY, endM0 + 1, 0)).toISOString().slice(0, 10);
 
     type Row = {
+      id: string;
       sort_date: string | null;
       distances: string | null;
       distance_tags: string[] | null;
@@ -174,7 +175,7 @@ export const getMonthPageMatrix = createServerFn({ method: "GET" })
       const { data, error } = await supabaseAdmin
         .from("events")
         .select(
-          "sort_date, distances, distance_tags, terrain_tags, entry_url, organiser_url, governance",
+          "id, sort_date, distances, distance_tags, terrain_tags, entry_url, organiser_url, governance",
         )
         .eq("status", "ACTIVE")
         .gte("sort_date", startFrom)
@@ -188,7 +189,7 @@ export const getMonthPageMatrix = createServerFn({ method: "GET" })
     }
 
     const trusted = all.filter((e) =>
-      hasDiscoverableLink(e.entry_url, e.organiser_url, e.governance),
+      hasDiscoverableLink(e.entry_url, e.organiser_url, e.governance, e),
     );
 
     const counts = new Map<string, number>();

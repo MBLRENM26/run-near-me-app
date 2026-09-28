@@ -11,6 +11,7 @@
 
 import {
   classifyEventLink,
+  entryProviderLabel,
   isEntryPlatformHost,
   isTrustedLink,
   type ClassifiedLink,
@@ -35,23 +36,13 @@ interface EventLikeUrls {
   organiser_url?: string | null;
 }
 
-/**
- * Label a trusted link based on host (booking platform vs organiser).
- *
- * `proximity` only affects the non-platform `entry` case (today/imminent
- * shifts "Enter now" → "View event details"), matching prior behaviour.
- */
-function labelFor(
-  link: ClassifiedLink,
-  source: "entry" | "organiser",
-  proximity: "today" | "imminent" | null,
-): string {
-  if (isEntryPlatformHost(link.host)) return "Book your place";
-  if (link.kind === "entry") {
-    return proximity ? "View event details" : "Enter now";
+/** Labels describe destinations, never inferred entry availability. */
+function labelFor(link: ClassifiedLink): string {
+  if (isEntryPlatformHost(link.host)) {
+    const provider = entryProviderLabel(link.host!);
+    return link.kind === "entry" ? `Check entries at ${provider}` : `Visit ${provider}`;
   }
-  // organiser-site
-  return "Race website";
+  return link.kind === "entry" ? "View race details" : "Visit race website";
 }
 
 /**
@@ -61,26 +52,19 @@ function labelFor(
  *   - entry_url, kind=organiser   → "organiser-site"
  *   - organiser_url (any trusted) → "organiser-other"
  */
-function linkTypeFor(
-  link: ClassifiedLink,
-  source: "entry" | "organiser",
-): EventCtaLinkType {
+function linkTypeFor(link: ClassifiedLink, source: "entry" | "organiser"): EventCtaLinkType {
   if (source === "entry") {
     return link.kind === "entry" ? "entry" : "organiser-site";
   }
   return "organiser-other";
 }
 
-function toCta(
-  link: ClassifiedLink,
-  source: "entry" | "organiser",
-  proximity: "today" | "imminent" | null,
-): EventCta | null {
+function toCta(link: ClassifiedLink, source: "entry" | "organiser"): EventCta | null {
   if (!isTrustedLink(link) || !link.href || !link.host) return null;
   return {
     href: link.href,
     host: link.host,
-    label: labelFor(link, source, proximity),
+    label: labelFor(link),
     linkType: linkTypeFor(link, source),
   };
 }
@@ -99,8 +83,8 @@ export function buildEventCtas(
 ): EventCtasWithUseful | null {
   if (opts.isPast) return null;
 
-  const entry = toCta(classifyEventLink(e.entry_url), "entry", opts.proximity);
-  const org = toCta(classifyEventLink(e.organiser_url), "organiser", opts.proximity);
+  const entry = toCta(classifyEventLink(e.entry_url), "entry");
+  const org = toCta(classifyEventLink(e.organiser_url), "organiser");
 
   const ordered: EventCta[] = [];
   if (entry) ordered.push(entry);
@@ -108,16 +92,6 @@ export function buildEventCtas(
   if (ordered.length === 0) return null;
 
   const [primary, second] = ordered;
-  const secondary = second && second.host !== primary.host ? second : null;
-
-  const usefulLinks: EventCta[] = [];
-  const usedHosts = new Set<string>();
-  if (primary) usedHosts.add(primary.host);
-  if (secondary) usedHosts.add(secondary.host);
-
-  if (second && !secondary && second.host !== primary.host && !usedHosts.has(second.host)) {
-    usefulLinks.push(second);
-  }
-
-  return { primary, secondary, usefulLinks };
+  const secondary = second && second.href !== primary.href ? second : null;
+  return { primary, secondary, usefulLinks: [] };
 }

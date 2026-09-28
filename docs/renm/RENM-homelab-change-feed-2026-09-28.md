@@ -1,6 +1,6 @@
 # Homelab change-feed contract (28 Sep 2026)
 
-Status: built, unpublished. Reports enter a private review queue only; nothing changes on the site until an admin accepts at `/admin/change-reports`.
+Status: review-only intake. Reports enter a private queue at `/admin/change-reports`. Accept is disabled in both the UI and server until transactional updates, stale-state checks and date-field consistency are implemented. This document describes the server contract; it does not establish that a homelab worker is running.
 
 ## Signing
 Every request carries:
@@ -10,7 +10,11 @@ Every request carries:
   - change report: over `${timestamp}.${raw_body}`
 
 ## 1. Get the watchlist
-`GET /api/public/ingest/watchlist` returns future active races with `id, slug, name, date_from, organiser_url, entry_url`.
+`GET /api/public/ingest/watchlist` returns future active races with `id, slug, name, date_from, sort_date, organiser_url, entry_url, watch_targets`.
+
+`watch_targets` is additive: each target has `url`, `role`, `provider`, and nullable `reviewed_on`. Roles include `entry`, `official_details`, `listing`, and `unreviewed`. Prefer these targets to the legacy URL fields: they include reviewed destinations such as the club page that was missing from the imported record. An unreviewed target is a candidate for checking, not verified evidence. Direct payment-account URLs are excluded.
+
+Workers should fetch public information pages only, deduplicate URLs, obey site access rules and rate limits, and never submit forms or follow payment/checkout actions. Redirects and DNS must be checked by the worker before fetching; URL syntax validation here is not an SSRF protection boundary. Report observed changes with their source, without applying them. Results are ordered by date and ID for stable pagination.
 
 ## 2. Send changes only
 `POST /api/public/ingest/change-report`, up to 200 per call:
@@ -41,9 +45,8 @@ requests.post(f"{BASE}/api/public/ingest/change-report", data=body,
               "x-renm-signature": sig(f"{ts}.{body}")})
 ```
 
-## What an accept does
-- `date_from`, `entry_url`: the race record is updated and an audited edit is saved with the page the change came from.
-- `entries_status`, `event_status` (cancelled/postponed): only an audited note is saved. Any status change stays a separate manual decision.
+## Acceptance remains disabled
+The proposed write path is not enabled. Before enabling it, acceptance must atomically validate the expected old value, update every dependent date field, and persist the audit entry. A successful intake response means queued for review, never that the public race changed.
 
 ## Rollback
 Remove `CHANGE_FEED_SECRET` (the entry point then answers 503). The queue table can be dropped with no effect on the public pages.

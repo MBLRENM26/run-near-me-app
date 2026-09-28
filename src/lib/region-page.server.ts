@@ -34,7 +34,7 @@ export async function loadRegionEvents(regionSlug: string): Promise<EventCardDat
   }
   return sortEstimatedLastWithinMonth(
     all.filter((event) =>
-      hasDiscoverableLink(event.entry_url, event.organiser_url, event.governance),
+      hasDiscoverableLink(event.entry_url, event.organiser_url, event.governance, event),
     ),
   );
 }

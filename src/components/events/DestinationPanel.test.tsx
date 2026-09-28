@@ -1,3 +1,5 @@
+import { buildReviewedDestinations } from "@/lib/reviewed-destinations";
+import { WAYFINDING_REVIEWS } from "@/lib/wayfinding-reviews";
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { DestinationPanel } from "./DestinationPanel";
@@ -283,5 +285,22 @@ describe("DestinationPanel analytics callback", () => {
       ["athlete_information", "official_information", "organiser-other"],
       ["course", "official_information", "organiser-other"],
     ]);
+  });
+});
+
+
+describe("reviewed occurrence labels", () => {
+  it("renders a dated closed-entry observation beside the provider link", () => {
+    const html = renderToStaticMarkup(<DestinationPanel destinations={buildReviewedDestinations(WAYFINDING_REVIEWS[0].expected)} />);
+    expect(html).toContain("Check entry status at EntryCentral");
+    expect(html).toContain("Race links reviewed on 2026-09-28");
+    expect(html).toContain("showed entries closed when reviewed");
+    expect(html).not.toContain("Enter now");
+  });
+  it("keeps a third-party listing and organiser destination visible together", () => {
+    const html = renderToStaticMarkup(<DestinationPanel destinations={buildReviewedDestinations(WAYFINDING_REVIEWS[2].expected)} />);
+    expect(html).toContain("View listing on Find a Race");
+    expect(html).toContain('href="https://outeredge-events.com/"');
+    expect(html).toContain("2 October and Granite 50 on 3 October");
   });
 });

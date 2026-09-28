@@ -124,8 +124,8 @@ export function buildAboutParagraph(e: AboutEventInput): AboutParagraph | null {
   if (e.hasOfficialLink) {
     s2 =
       v === 1
-        ? "For entry details and current pricing, head to the official event website."
-        : "Entry details and pricing are available on the official event website.";
+        ? "Follow the race links for entry information and current details."
+        : "Check the linked race pages for entry information and current details.";
   }
 
   // Sentence 3 — live regional count, split so the count phrase is linkable.

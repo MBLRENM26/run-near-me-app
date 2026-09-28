@@ -3,7 +3,7 @@ import { notFound, redirect } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { regionFromCoords, type UKRegionSlug } from "@/lib/region-from-coords";
-import { hasOrganiserOwnedLink } from "@/lib/link-trust";
+import { hasDiscoverableLink } from "@/lib/link-trust";
 
 
 export type ParkrunVariant = "adult" | "junior";
@@ -206,7 +206,7 @@ export const getParkrunBySlug = createServerFn({ method: "GET" })
         .slice(0, 5);
     }
     // One-off races near this parkrun. Same discovery gate as every other
-    // discovery surface: organiser-owned link only, mainland-or-null bounds
+    // discovery surface, including reviewed occurrences. Geographic bounds
     // are implied by the bbox below. Structured fields only — no prose.
     let nearbyRaces: NearbyRace[] = [];
     if (me.lat != null && me.lng != null) {
@@ -216,7 +216,7 @@ export const getParkrunBySlug = createServerFn({ method: "GET" })
       const { data: raceRows } = await supabaseAdmin
         .from("events")
         .select(
-          "id, slug, name, date_raw, sort_date, town, county, distances, entry_url, organiser_url, lat, lng",
+          "id, slug, name, date_raw, sort_date, town, county, distances, entry_url, organiser_url, governance, lat, lng",
         )
         .eq("status", "ACTIVE")
         .not("slug", "is", null)
@@ -230,9 +230,10 @@ export const getParkrunBySlug = createServerFn({ method: "GET" })
         .limit(400);
       nearbyRaces = (raceRows ?? [])
         .filter((r) =>
-          hasOrganiserOwnedLink(
+          hasDiscoverableLink(
             r.entry_url as string | null,
             r.organiser_url as string | null,
+            r.governance, r,
           ),
         )
         .map((r) => ({

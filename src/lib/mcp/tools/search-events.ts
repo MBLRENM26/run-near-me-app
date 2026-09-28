@@ -3,14 +3,14 @@ import { z } from "zod";
 import { withUsageLogging } from "../usage";
 import { sanitizeOrFilterTerm } from "../sanitize";
 import { DISCOVERY_EVENT_COLUMNS, UK_BOUNDS_OR_NULL } from "@/lib/events-query";
-import { hasOrganiserOwnedLink } from "@/lib/link-trust";
+import { hasDiscoverableLink } from "@/lib/link-trust";
 import { SITE_URL } from "@/lib/site";
 
 export default defineTool({
   name: "search_events",
   title: "Search UK running events",
   description:
-    "Search upcoming UK running events by keyword, region, distance tag (5k, 10k, half-marathon, marathon, ultra), terrain tag (road, trail, fell, multi-terrain), or month (YYYY-MM). Returns active events only, filtered to those with an organiser-owned link (never aggregator-only listings).",
+    "Search upcoming UK running events by keyword, region, distance tag (5k, 10k, half-marathon, marathon, ultra), terrain tag (road, trail, fell, multi-terrain), or month (YYYY-MM). Returns active events only, filtered using the site discovery policy, including occurrence-specific reviewed entry providers and listings.",
   inputSchema: {
     query: z.string().trim().optional().describe("Free-text match against event name or town."),
     region: z
@@ -70,7 +70,7 @@ export default defineTool({
     }
 
     const rows = (data ?? [])
-      .filter((r: any) => hasOrganiserOwnedLink(r.entry_url, r.organiser_url))
+      .filter((r: any) => hasDiscoverableLink(r.entry_url, r.organiser_url, r.governance, r))
       .slice(0, input.limit ?? 20)
       .map((r: any) => ({
         slug: r.slug,

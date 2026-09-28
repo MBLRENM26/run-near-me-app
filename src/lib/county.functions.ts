@@ -63,7 +63,7 @@ export const getEventsForCounty = createServerFn({ method: "GET" })
     }
 
     const trusted = all.filter((e) =>
-      hasDiscoverableLink(e.entry_url, e.organiser_url, e.governance),
+      hasDiscoverableLink(e.entry_url, e.organiser_url, e.governance, e),
     );
 
     const events: DistanceEvent[] = trusted.map((r) => ({

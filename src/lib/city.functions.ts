@@ -91,7 +91,7 @@ async function fetchEventsNearCity(city: CityConfig): Promise<{
   });
 
   const trusted = inRadius.filter((e) =>
-    hasDiscoverableLink(e.entry_url, e.organiser_url, e.governance),
+    hasDiscoverableLink(e.entry_url, e.organiser_url, e.governance, e),
   );
 
   const events: DistanceEvent[] = trusted.map((r) => ({
@@ -170,7 +170,7 @@ export const getCityEventCounts = createServerFn({ method: "GET" }).handler(
     }
 
     const trusted = all.filter((e) =>
-      hasDiscoverableLink(e.entry_url, e.organiser_url, e.governance),
+      hasDiscoverableLink(e.entry_url, e.organiser_url, e.governance, e),
     );
 
     const out: Array<{ slug: string; name: string; total: number }> = [];

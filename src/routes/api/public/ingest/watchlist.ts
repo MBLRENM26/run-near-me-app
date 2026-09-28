@@ -1,3 +1,4 @@
+import { buildWatchTargets } from "@/lib/change-feed-watchlist";
 import { createFileRoute } from "@tanstack/react-router";
 import { createHmac, timingSafeEqual } from "crypto";
 
@@ -13,7 +14,7 @@ export const Route = createFileRoute("/api/public/ingest/watchlist")({
         if (!secret) return Response.json({ error: "Not configured" }, { status: 503 });
         const ts = request.headers.get("x-renm-timestamp") ?? "";
         const sig = request.headers.get("x-renm-signature") ?? "";
-        if (Math.abs(Date.now() / 1000 - Number(ts)) > 300) {
+        if (!/^\d{10}$/.test(ts) || !/^[a-f0-9]{64}$/i.test(sig) || Math.abs(Date.now() / 1000 - Number(ts)) > 300) {
           return Response.json({ error: "Stale or missing timestamp" }, { status: 401 });
         }
         const expected = createHmac("sha256", secret).update(`${ts}.watchlist`).digest();
@@ -28,13 +29,14 @@ export const Route = createFileRoute("/api/public/ingest/watchlist")({
         for (let from = 0; ; from += 1000) {
           const { data, error } = await supabaseAdmin
             .from("events")
-            .select("id, slug, name, date_from, organiser_url, entry_url")
+            .select("id, slug, name, date_from, sort_date, organiser_url, entry_url")
             .eq("status", "ACTIVE")
             .gte("sort_date", today)
             .order("sort_date")
+            .order("id")
             .range(from, from + 999);
           if (error) return Response.json({ error: "Read failed" }, { status: 500 });
-          out.push(...(data ?? []).filter((e) => e.organiser_url || e.entry_url));
+          out.push(...(data ?? []).map((e) => ({ ...e, watch_targets: buildWatchTargets(e) })).filter((e) => e.watch_targets.length > 0));
           if (!data || data.length < 1000) break;
         }
         return Response.json(
