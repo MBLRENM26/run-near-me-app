@@ -39,7 +39,13 @@ The GET control request uses the same endpoint and secret as POST intake, signin
 
 `run-pilot.py --runtime /absolute/private/runtime` launches an immutable local Docker image with the existing limits. The private directory contains `sources.json`, `pilot.json`, `deployment.json` (an image ID), `private/research-feed-secret` and `state/`. The secret is mounted read-only, never embedded in command arguments or the image. The wrapper stops only its named pilot container after a 15-minute timeout.
 
-Schedule this launcher in the approved chat every six hours. Due dates still enforce daily/weekly source intervals; this is a six-hour scheduling resolution, not six-hourly scraping. The local computer and desktop app must remain running for that scheduled chat to execute. Reports record actual attempts, so missed runs are visible and are not counted as successes. End the schedule after the 14-day window and review results before expansion. No OS timer is silently installed.
+For an explicitly approved unattended host deployment, run `python3 install-service.py --runtime /absolute/private/runtime --install`. This requires existing user lingering (`loginctl show-user USER -p Linger`) and Docker access for that user. It copies the host launcher into the private runtime and installs `renm-research-pilot.service` and `.timer` in the user systemd manager. With lingering enabled and the runtime on a boot-mounted disk, collection starts without a desktop login or Codex. No sudo or new package is required on the current Ubuntu host.
+
+The persistent timer runs at 00:00, 06:00, 12:00 and 18:00 UTC and two minutes after the user manager starts. Missed calendar triggers catch up once; daily/weekly due dates prevent catch-up bursts. A failed service retries after five minutes, including when Docker/network is not ready at boot. The pilot policy still stops all collection after fourteen days. A successful completion records the exact completed policy, and later timer firings skip it.
+
+The launcher takes a host lock and reconciles an orphan container only when its name, purpose label, image and state mount identify this runtime. It records launch failures in `state/launcher-status.json`, handles service termination and leaves SQLite work replayable. Other containers are untouched. Backups remain separate from container storage. Monitor both the launch status and worker report timestamps, since a failed launch may leave an older successful worker report.
+
+Use `systemctl --user status renm-research-pilot.timer`, `systemctl --user start renm-research-pilot.service`, and `journalctl --user -u renm-research-pilot.service`. Stop unattended execution with `systemctl --user disable --now renm-research-pilot.timer` followed by `systemctl --user stop renm-research-pilot.service`. The state/PAUSED marker also pauses network work. Codex's scheduled follow-up only reviews reports and findings; it must not run a competing collection loop. Host recovery tests use isolated state and timer fixtures; they do not require rebooting a shared machine.
 
 Example policy (generate actual dates and the canonical source-config SHA locally):
 
@@ -47,4 +53,12 @@ Example policy (generate actual dates and the canonical source-config SHA locall
 {"start_at":"2026-09-29T19:00:00+00:00","end_at":"2026-10-13T19:00:00+00:00","endpoint":"https://runningeventsnearme.com/api/public/ingest/research","source_config_sha256":"64 hex characters"}
 ```
 
-Run both test files: `python -m unittest -v test_monitor.py test_pilot.py`.
+Run the worker, operating and recovery tests: `python -m unittest -v test_monitor.py test_pilot.py test_service.py`.
+
+## Off-host backup
+
+An optional private `backup.json` selects an existing SSH alias and a bounded destination, for example `{"ssh_host":"m5","remote_directory":".local/share/renm-pilot-backups/2026-09-29"}`. The launcher uploads a daily recovery archive after a fresh worker report, including a checked SQLite backup, source configuration, pilot policy, image reference and run reports. It excludes the signing secret and SSH credentials. SSH uses strict host-key checking and no desktop agent; configure an already-trusted key before enabling this option.
+
+The upload is verified by SHA-256 before replacing that day's remote archive. Transfer errors fail the service and trigger its retry. Data already collected stays in SQLite; unchanged/due-source checks prevent repeated fetching merely because a backup failed. Archives have private permissions; SSH encrypts transport. At-rest protection depends on the destination host's disk configuration. This bounded pilot creates at most one final archive per calendar day; agree retention before extending it.
+
+For recovery, first stop this pilot's timer and service. Download a verified archive, restore its snapshot to a separate runtime and check SQLite integrity/outbox counts. Restore source IDs and the original policy, rebuild the pinned worker from the recorded repository revision if its local image was lost, and re-provision the signing secret securely. Validate the image and configuration before switching the service to recovered state. Never overwrite the active database during a restore drill. An expired pilot remains expired after restoration.
