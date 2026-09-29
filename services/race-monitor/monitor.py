@@ -175,6 +175,10 @@ def connect(path):
       create table if not exists sources(id text primary key, url text not null, last_hash text,
         last_attempt real, last_success real, next_due real not null default 0, failures integer not null default 0, error text);
       create table if not exists outbox(id text primary key, payload text not null, delivered integer not null default 0);
+      create table if not exists source_captures(
+        source_id text not null, content_sha256 text not null, text_content text not null,
+        final_url text not null, first_captured_at real not null, last_seen_at real not null,
+        primary key(source_id,content_sha256));
     """)
     return db
 
@@ -202,6 +206,9 @@ def observe(db, source, fetch=fetch_page, now=None):
         digest = hashlib.sha256(text.encode()).hexdigest()
         changed = not row or digest != row[1]
         with db:
+            # The small review-feed summary can end in navigation. Retain the full
+            # bounded visible text locally so future extraction can cite actual evidence.
+            db.execute("insert into source_captures values(?,?,?,?,?,?) on conflict(source_id,content_sha256) do update set last_seen_at=excluded.last_seen_at,final_url=excluded.final_url", (sid,digest,text,final_url,now,now))
             if changed:
                 oid = str(uuid4())
                 item = {"id": oid, "source_id": sid, "run_id": str(uuid4()), "evidence": {
