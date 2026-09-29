@@ -30,3 +30,21 @@ Set `RENM_SOURCE_CONFIG` and `RENM_STATE_DIR` to private absolute paths, and `RE
 Pause by disabling the source in both registry and local config, or stop invoking the worker. A failed fetch retains the last successful hash and backs off from 15 minutes to 24 hours. Failure is never evidence of cancellation. Restore by stopping worker invocations, copying a consistent SQLite backup to a new private state path, and running status first. A restored outbox can be replayed; server-side IDs prevent duplicates. Use the original source configuration/IDs alongside the backup.
 
 Tests: `python -m unittest -v test_monitor.py`. Do not run SQL bootstrap fixtures against an existing database.
+
+## Scheduled six-source operating pilot
+
+`pilot.py` performs one controlled cycle: verify the fixed configuration and 14-day window, fetch signed source controls, deliver the existing outbox, collect due sources, deliver new observations, write a report and verify a consistent daily SQLite backup. An admin pause takes effect at the next cycle; missing/mismatched controls fail closed. It stops new collection at 30 pending/held review items or 50 locally undelivered observations. Runtime storage is limited to 5 GB with at least 2 GB free; the latest 14 dated backups are retained. A `PAUSED` file in the state directory pauses collection and delivery. An expired pilot performs no network work.
+
+The GET control request uses the same endpoint and secret as POST intake, signing `${timestamp}.sources`. The server returns only source IDs/URLs, enabled flags, intervals and the outstanding review count, with `Cache-Control: no-store`. The local allowlist cannot expand through this response, remotely disabled sources stay paused, and remote intervals cannot accelerate local policy. Failure is not evidence of race cancellation.
+
+`run-pilot.py --runtime /absolute/private/runtime` launches an immutable local Docker image with the existing limits. The private directory contains `sources.json`, `pilot.json`, `deployment.json` (an image ID), `private/research-feed-secret` and `state/`. The secret is mounted read-only, never embedded in command arguments or the image. The wrapper stops only its named pilot container after a 15-minute timeout.
+
+Schedule this launcher in the approved chat every six hours. Due dates still enforce daily/weekly source intervals; this is a six-hour scheduling resolution, not six-hourly scraping. The local computer and desktop app must remain running for that scheduled chat to execute. Reports record actual attempts, so missed runs are visible and are not counted as successes. End the schedule after the 14-day window and review results before expansion. No OS timer is silently installed.
+
+Example policy (generate actual dates and the canonical source-config SHA locally):
+
+```json
+{"start_at":"2026-09-29T19:00:00+00:00","end_at":"2026-10-13T19:00:00+00:00","endpoint":"https://runningeventsnearme.com/api/public/ingest/research","source_config_sha256":"64 hex characters"}
+```
+
+Run both test files: `python -m unittest -v test_monitor.py test_pilot.py`.
