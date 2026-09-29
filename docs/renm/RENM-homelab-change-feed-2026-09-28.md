@@ -1,6 +1,6 @@
 # Homelab change-feed contract (28 Sep 2026)
 
-Status: review-only intake. Reports enter a private queue at `/admin/change-reports`. Accept is disabled in both the UI and server until transactional updates, stale-state checks and date-field consistency are implemented. This document describes the server contract; it does not establish that a homelab worker is running.
+Status: review-only intake. Reports retain their existing private storage and appear alongside research evidence at `/admin/source-research`; `/admin/change-reports` redirects there. Accept is disabled in both the UI and server until transactional updates, stale-state checks and date-field consistency are implemented. This document describes the server contract; it does not establish that a homelab worker is running.
 
 ## Signing
 Every request carries:
@@ -49,4 +49,8 @@ requests.post(f"{BASE}/api/public/ingest/change-report", data=body,
 The proposed write path is not enabled. Before enabling it, acceptance must atomically validate the expected old value, update every dependent date field, and persist the audit entry. A successful intake response means queued for review, never that the public race changed.
 
 ## Rollback
-Remove `CHANGE_FEED_SECRET` (the entry point then answers 503). The queue table can be dropped with no effect on the public pages.
+Remove `CHANGE_FEED_SECRET` (the entry point then answers 503). Retain the queue table and its review history; the unified research review view depends on it. Disabling intake requires no table deletion.
+
+## Research integration
+
+The existing endpoints remain supported. The shared review screen identifies these reports as reported changes without a captured page or verified occurrence snapshot. Hold/reject are available; preparing a fresh evidenced correction uses the research contract and the existing ORL acceptance path for organiser relationships. See `RENM-source-research-contract-v1.md`.

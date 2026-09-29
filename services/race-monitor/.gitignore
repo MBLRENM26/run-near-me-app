@@ -1,0 +1,6 @@
+__pycache__/
+*.sqlite*
+sources.json
+outbox*.json
+state/
+.env

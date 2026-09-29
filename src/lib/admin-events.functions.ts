@@ -468,36 +468,13 @@ export const updateAdminEvent = createServerFn({ method: "POST" })
     if (patchEntries.length === 0) return { ok: true as const, changed: 0 };
     const patch = Object.fromEntries(patchEntries);
 
-    // Fetch current row to compute diff
-    const { data: before, error: beforeErr } = await supabaseAdmin
-      .from("events")
-      .select("*")
-      .eq("id", data.id)
-      .maybeSingle();
-    if (beforeErr) throw new Error(beforeErr.message);
-    if (!before) throw new Error("Event not found");
-
-    const beforeRec = before as unknown as Record<string, unknown>;
-    const diff: Record<string, { from: unknown; to: unknown }> = {};
-    for (const [k, v] of patchEntries) {
-      const prev = beforeRec[k];
-      if (prev !== v) diff[k] = { from: prev, to: v };
-    }
-    if (Object.keys(diff).length === 0) return { ok: true as const, changed: 0 };
-
-    const { error: updErr } = await supabaseAdmin
-      .from("events")
-      .update(patch as never)
-      .eq("id", data.id);
-    if (updErr) throw new Error(updErr.message);
-
-    await supabaseAdmin.from("event_edits").insert({
-      event_id: data.id,
-      changes: diff as never,
-      note: data.note ?? null,
+    const { data: result, error } = await (
+      supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient
+    ).rpc("update_admin_event_checked", {
+      _id: data.id, _patch: patch, _note: data.note ?? null,
     });
-
-    return { ok: true as const, changed: Object.keys(diff).length };
+    if (error) throw new Error(error.message);
+    return result as { ok: true; changed: number };
   });
 
 // ---- Delete (soft via status, hard for manual only) ----
@@ -1051,10 +1028,11 @@ export const backfillScottishOrganiserUrls = createServerFn({ method: "POST" })
         continue;
       }
       matched++;
-      const { error: upErr } = await supabaseAdmin
-        .from("events")
-        .update({ organiser_url: hit })
-        .eq("id", ev.id);
+      const { error: upErr } = await (
+        supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient
+      ).rpc("update_admin_event_checked", {
+        _id: ev.id, _patch: { organiser_url: hit }, _note: "Organiser URL enrichment",
+      });
       if (!upErr) updated++;
     }
 
