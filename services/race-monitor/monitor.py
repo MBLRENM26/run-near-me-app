@@ -242,6 +242,34 @@ def deliver(db, endpoint, secret):
     return len(observations)
 
 
+def source_controls(endpoint, secret, config):
+    """Fresh remote pause state; a missing/mismatched source fails closed."""
+    ts = str(int(time.time()))
+    sig = hmac.new(secret.encode(), (ts+".sources").encode(), hashlib.sha256).hexdigest()
+    status, _, raw = request(endpoint, headers={"x-renm-timestamp":ts,"x-renm-signature":sig})
+    if status != 200:
+        raise ValueError(f"source_controls_failed_{status}")
+    manifest = json.loads(raw)
+    if manifest.get("version") != 1 or not isinstance(manifest.get("sources"),list) or len(manifest["sources"]) > 1000:
+        raise ValueError("invalid_source_manifest")
+    rows = {s["id"]:s for s in manifest["sources"]}
+    if len(rows) != len(manifest["sources"]):
+        raise ValueError("duplicate_source_controls")
+    pending_review = manifest.get("pending_review")
+    if type(pending_review) is not int or pending_review < 0:
+        raise ValueError("invalid_review_count")
+    sources = []
+    for source in config["sources"]:
+        remote = rows.get(source["id"])
+        if not remote or remote.get("url") != source["url"] or type(remote.get("enabled")) is not bool:
+            raise ValueError("source_controls_mismatch")
+        interval = remote.get("interval_hours")
+        if type(interval) is not int or not 24 <= interval <= 2160:
+            raise ValueError("invalid_remote_interval")
+        sources.append({**source,"enabled":source["enabled"] and remote["enabled"],"interval_hours":max(source["interval_hours"],interval)})
+    return sources, pending_review
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("command", choices=["run", "export", "deliver", "status", "backup"])
