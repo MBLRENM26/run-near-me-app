@@ -42,6 +42,19 @@ describe("source research contract", () => {
       }).success,
     ).toBe(false);
   });
+  it("can replace a malformed imported old URL without weakening new destination validation", () => {
+    expect(
+      researchEnvelope.safeParse({
+        version: 1,
+        observations: [
+          {
+            ...observation,
+            proposal: { ...observation.proposal, expected_value: "www.Alcester10k.co.uk" },
+          },
+        ],
+      }).success,
+    ).toBe(true);
+  });
   it("rejects executable and credential-bearing destinations", () => {
     for (const proposed_value of [
       "javascript:alert(1)",

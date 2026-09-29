@@ -49,7 +49,8 @@ const change = z
     event_id: uuid,
     expected_date: date,
     field: z.enum(["entry_url", "organiser_url"]),
-    expected_value: researchUrl.nullable(),
+    // Imported old values may be malformed; compare them exactly without normalising.
+    expected_value: z.string().max(2000).nullable(),
     proposed_value: researchUrl,
   })
   .strict();

@@ -576,6 +576,124 @@ export type Database = {
           },
         ]
       }
+      event_review_conflicts: {
+        Row: {
+          attempted_value: Json
+          attempts: number
+          event_id: string
+          field: string
+          first_seen_at: string
+          id: string
+          last_seen_at: string
+          observation_id: string
+          protected_value: Json
+        }
+        Insert: {
+          attempted_value: Json
+          attempts?: number
+          event_id: string
+          field: string
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          observation_id: string
+          protected_value: Json
+        }
+        Update: {
+          attempted_value?: Json
+          attempts?: number
+          event_id?: string
+          field?: string
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          observation_id?: string
+          protected_value?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_review_conflicts_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_review_conflicts_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_public_v1"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_review_conflicts_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "public_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_review_conflicts_observation_id_fkey"
+            columns: ["observation_id"]
+            isOneToOne: false
+            referencedRelation: "source_research_observations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_reviewed_fields: {
+        Row: {
+          event_id: string
+          field: string
+          observation_id: string
+          occurrence: Json
+          value: Json
+        }
+        Insert: {
+          event_id: string
+          field: string
+          observation_id: string
+          occurrence: Json
+          value: Json
+        }
+        Update: {
+          event_id?: string
+          field?: string
+          observation_id?: string
+          occurrence?: Json
+          value?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_reviewed_fields_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_reviewed_fields_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_public_v1"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_reviewed_fields_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "public_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_reviewed_fields_observation_id_fkey"
+            columns: ["observation_id"]
+            isOneToOne: false
+            referencedRelation: "source_research_observations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           country: string | null
@@ -862,6 +980,65 @@ export type Database = {
           },
         ]
       }
+      organisation_club_links: {
+        Row: {
+          club_id: string
+          evidence_id: string
+          id: string
+          organisation_id: string
+          review_status: string
+          reviewed_at: string | null
+          reviewer_identity: string | null
+        }
+        Insert: {
+          club_id: string
+          evidence_id: string
+          id?: string
+          organisation_id: string
+          review_status?: string
+          reviewed_at?: string | null
+          reviewer_identity?: string | null
+        }
+        Update: {
+          club_id?: string
+          evidence_id?: string
+          id?: string
+          organisation_id?: string
+          review_status?: string
+          reviewed_at?: string | null
+          reviewer_identity?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organisation_club_links_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organisation_club_links_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "public_clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organisation_club_links_evidence_id_fkey"
+            columns: ["evidence_id"]
+            isOneToOne: false
+            referencedRelation: "identity_evidence"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organisation_club_links_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organisation_event_link_evidence: {
         Row: {
           created_at: string
@@ -1123,6 +1300,70 @@ export type Database = {
           },
         ]
       }
+      research_sources: {
+        Row: {
+          club_id: string | null
+          created_at: string
+          enabled: boolean
+          id: string
+          interval_hours: number
+          label: string
+          organisation_id: string | null
+          page_type: string
+          policy_note: string
+          role: string
+          url: string
+        }
+        Insert: {
+          club_id?: string | null
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          interval_hours?: number
+          label: string
+          organisation_id?: string | null
+          page_type: string
+          policy_note: string
+          role: string
+          url: string
+        }
+        Update: {
+          club_id?: string | null
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          interval_hours?: number
+          label?: string
+          organisation_id?: string | null
+          page_type?: string
+          policy_note?: string
+          role?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "research_sources_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "research_sources_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "public_clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "research_sources_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       search_clicks: {
         Row: {
           clicked_slug: string
@@ -1248,6 +1489,104 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "public_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      source_research_observations: {
+        Row: {
+          applied_after: Json | null
+          applied_before: Json | null
+          conflicts: Json
+          created_at: string
+          evidence: Json
+          id: string
+          orl_link_id: string | null
+          prior_locks: Json | null
+          proposal: Json
+          review_note: string | null
+          run_id: string
+          source_id: string
+          status: string
+        }
+        Insert: {
+          applied_after?: Json | null
+          applied_before?: Json | null
+          conflicts?: Json
+          created_at?: string
+          evidence: Json
+          id: string
+          orl_link_id?: string | null
+          prior_locks?: Json | null
+          proposal: Json
+          review_note?: string | null
+          run_id: string
+          source_id: string
+          status?: string
+        }
+        Update: {
+          applied_after?: Json | null
+          applied_before?: Json | null
+          conflicts?: Json
+          created_at?: string
+          evidence?: Json
+          id?: string
+          orl_link_id?: string | null
+          prior_locks?: Json | null
+          proposal?: Json
+          review_note?: string | null
+          run_id?: string
+          source_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_research_observations_orl_link_id_fkey"
+            columns: ["orl_link_id"]
+            isOneToOne: false
+            referencedRelation: "organisation_event_links"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_research_observations_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "research_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      source_research_reviews: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          note: string
+          observation_id: string
+          reviewer_identity: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          note: string
+          observation_id: string
+          reviewer_identity: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          note?: string
+          observation_id?: string
+          reviewer_identity?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_research_reviews_observation_id_fkey"
+            columns: ["observation_id"]
+            isOneToOne: false
+            referencedRelation: "source_research_observations"
             referencedColumns: ["id"]
           },
         ]
@@ -1834,11 +2173,36 @@ export type Database = {
         }
         Relationships: []
       }
+      research_review_queue: {
+        Row: {
+          conflicts: Json | null
+          created_at: string | null
+          evidence: Json | null
+          id: string | null
+          origin: string | null
+          proposal: Json | null
+          review_note: string | null
+          run_id: string | null
+          source_id: string | null
+          status: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       accept_and_apply_organiser: {
         Args: { _link_id: string; _note?: string; _reviewer_identity?: string }
         Returns: Json
+      }
+      approve_research_club_identity: {
+        Args: {
+          _club_id: string
+          _fact: string
+          _organisation_id: string
+          _reviewer: string
+          _source_url: string
+        }
+        Returns: string
       }
       consume_login_rate: {
         Args: { _key_hash: string }
@@ -1914,6 +2278,7 @@ export type Database = {
           town: string
         }[]
       }
+      ingest_source_research: { Args: { _observations: Json }; Returns: Json }
       log_mcp_tool_call: {
         Args: {
           _client_hint: string
@@ -1950,6 +2315,10 @@ export type Database = {
         }
         Returns: string
       }
+      review_source_research: {
+        Args: { _action: string; _id: string; _note: string; _reviewer: string }
+        Returns: Json
+      }
       run_england_athletics_chunked: { Args: never; Returns: Json }
       search_clubs_v1: {
         Args: { lim?: number; q: string }
@@ -1981,6 +2350,10 @@ export type Database = {
       }
       set_import_secret: { Args: { p_value: string }; Returns: undefined }
       slugify: { Args: { input: string }; Returns: string }
+      update_admin_event_checked: {
+        Args: { _id: string; _note: string; _patch: Json }
+        Returns: Json
+      }
     }
     Enums: {
       event_governance:
