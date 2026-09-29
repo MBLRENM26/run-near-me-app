@@ -40,7 +40,12 @@ const evidence = z
     captured_at: z.iso.datetime({ offset: true }),
     content_sha256: z.string().regex(/^[a-f0-9]{64}$/),
     extractor: z.string().min(1).max(100),
-    summary: z.string().trim().min(1).max(6000),
+    // Preserve captured evidence exactly for idempotent delivery and audit comparisons.
+    summary: z
+      .string()
+      .min(1)
+      .max(6000)
+      .refine((value) => value.trim().length > 0),
   })
   .strict();
 const change = z

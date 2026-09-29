@@ -26,6 +26,20 @@ const observation = {
   conflicts: [],
 };
 describe("source research contract", () => {
+  it("preserves evidence bytes on retry while rejecting blank summaries", () => {
+    const item = {
+      ...observation,
+      evidence: { ...observation.evidence, summary: "Captured page ends mid-word \n" },
+    };
+    const parsed = researchEnvelope.parse({ version: 1, observations: [item] });
+    expect(parsed.observations[0].evidence).toEqual(item.evidence);
+    expect(
+      researchEnvelope.safeParse({
+        version: 1,
+        observations: [{ ...item, evidence: { ...item.evidence, summary: " \n " } }],
+      }).success,
+    ).toBe(false);
+  });
   it("requires the occurrence and expected old value for corrections", () => {
     expect(researchEnvelope.safeParse({ version: 1, observations: [observation] }).success).toBe(
       true,
