@@ -1,0 +1,19 @@
+services:
+  research:
+    build: .
+    command: ["run", "--config", "/config/sources.json", "--state", "/state/monitor.sqlite"]
+    volumes:
+      - ${RENM_SOURCE_CONFIG:?Set the absolute private config path}:/config/sources.json:ro
+      - ${RENM_STATE_DIR:?Set the absolute private state directory}:/state
+    read_only: true
+    user: "${RENM_WORKER_UID:-1000}:${RENM_WORKER_GID:-1000}"
+    tmpfs: [/tmp:size=16m]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 1g
+    cpus: 1
+    pids_limit: 64
+    restart: "no"
+    logging:
+      driver: json-file
+      options: {max-size: "5m", max-file: "2"}

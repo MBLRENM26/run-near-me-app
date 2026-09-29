@@ -94,6 +94,12 @@ function AdminLayout() {
               Sync runs
             </Link>
             <Link
+              to="/admin/source-research"
+              className="text-sm font-medium text-foreground hover:text-primary"
+            >
+              Source research
+            </Link>
+            <Link
               to="/admin/change-reports"
               className="text-sm font-medium text-foreground hover:text-primary"
             >

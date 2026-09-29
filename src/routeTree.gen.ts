@@ -71,6 +71,7 @@ import { Route as ApiPublicImportEventsRouteImport } from './routes/api/public/i
 import { Route as ApiPublicImportClubsRouteImport } from './routes/api/public/import-clubs'
 import { Route as AdminShellAdminSyncRunsRouteImport } from './routes/_adminShell.admin.sync-runs'
 import { Route as AdminShellAdminSubscriptionsRouteImport } from './routes/_adminShell.admin.subscriptions'
+import { Route as AdminShellAdminSourceResearchRouteImport } from './routes/_adminShell.admin.source-research'
 import { Route as AdminShellAdminSearchRouteImport } from './routes/_adminShell.admin.search'
 import { Route as AdminShellAdminRevenueRouteImport } from './routes/_adminShell.admin.revenue'
 import { Route as AdminShellAdminRecurrenceRouteImport } from './routes/_adminShell.admin.recurrence'
@@ -86,6 +87,7 @@ import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lova
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicIngestWatchlistRouteImport } from './routes/api/public/ingest/watchlist'
+import { Route as ApiPublicIngestResearchRouteImport } from './routes/api/public/ingest/research'
 import { Route as ApiPublicIngestChangeReportRouteImport } from './routes/api/public/ingest/change-report'
 import { Route as ApiPublicHooksSendRaceRemindersRouteImport } from './routes/api/public/hooks/send-race-reminders'
 import { Route as ApiPublicHooksNotifyMissedSubmissionsRouteImport } from './routes/api/public/hooks/notify-missed-submissions'
@@ -424,6 +426,12 @@ const AdminShellAdminSubscriptionsRoute =
     path: '/admin/subscriptions',
     getParentRoute: () => AdminShellRoute,
   } as any)
+const AdminShellAdminSourceResearchRoute =
+  AdminShellAdminSourceResearchRouteImport.update({
+    id: '/admin/source-research',
+    path: '/admin/source-research',
+    getParentRoute: () => AdminShellRoute,
+  } as any)
 const AdminShellAdminSearchRoute = AdminShellAdminSearchRouteImport.update({
   id: '/admin/search',
   path: '/admin/search',
@@ -511,6 +519,11 @@ const ApiPublicIngestWatchlistRoute =
     path: '/api/public/ingest/watchlist',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicIngestResearchRoute = ApiPublicIngestResearchRouteImport.update({
+  id: '/api/public/ingest/research',
+  path: '/api/public/ingest/research',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicIngestChangeReportRoute =
   ApiPublicIngestChangeReportRouteImport.update({
     id: '/api/public/ingest/change-report',
@@ -665,6 +678,7 @@ export interface FileRoutesByFullPath {
   '/admin/recurrence': typeof AdminShellAdminRecurrenceRoute
   '/admin/revenue': typeof AdminShellAdminRevenueRoute
   '/admin/search': typeof AdminShellAdminSearchRoute
+  '/admin/source-research': typeof AdminShellAdminSourceResearchRoute
   '/admin/subscriptions': typeof AdminShellAdminSubscriptionsRoute
   '/admin/sync-runs': typeof AdminShellAdminSyncRunsRoute
   '/api/public/import-clubs': typeof ApiPublicImportClubsRoute
@@ -692,6 +706,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/notify-missed-submissions': typeof ApiPublicHooksNotifyMissedSubmissionsRoute
   '/api/public/hooks/send-race-reminders': typeof ApiPublicHooksSendRaceRemindersRoute
   '/api/public/ingest/change-report': typeof ApiPublicIngestChangeReportRoute
+  '/api/public/ingest/research': typeof ApiPublicIngestResearchRoute
   '/api/public/ingest/watchlist': typeof ApiPublicIngestWatchlistRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -759,6 +774,7 @@ export interface FileRoutesByTo {
   '/admin/recurrence': typeof AdminShellAdminRecurrenceRoute
   '/admin/revenue': typeof AdminShellAdminRevenueRoute
   '/admin/search': typeof AdminShellAdminSearchRoute
+  '/admin/source-research': typeof AdminShellAdminSourceResearchRoute
   '/admin/subscriptions': typeof AdminShellAdminSubscriptionsRoute
   '/admin/sync-runs': typeof AdminShellAdminSyncRunsRoute
   '/api/public/import-clubs': typeof ApiPublicImportClubsRoute
@@ -786,6 +802,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/notify-missed-submissions': typeof ApiPublicHooksNotifyMissedSubmissionsRoute
   '/api/public/hooks/send-race-reminders': typeof ApiPublicHooksSendRaceRemindersRoute
   '/api/public/ingest/change-report': typeof ApiPublicIngestChangeReportRoute
+  '/api/public/ingest/research': typeof ApiPublicIngestResearchRoute
   '/api/public/ingest/watchlist': typeof ApiPublicIngestWatchlistRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -855,6 +872,7 @@ export interface FileRoutesById {
   '/_adminShell/admin/recurrence': typeof AdminShellAdminRecurrenceRoute
   '/_adminShell/admin/revenue': typeof AdminShellAdminRevenueRoute
   '/_adminShell/admin/search': typeof AdminShellAdminSearchRoute
+  '/_adminShell/admin/source-research': typeof AdminShellAdminSourceResearchRoute
   '/_adminShell/admin/subscriptions': typeof AdminShellAdminSubscriptionsRoute
   '/_adminShell/admin/sync-runs': typeof AdminShellAdminSyncRunsRoute
   '/api/public/import-clubs': typeof ApiPublicImportClubsRoute
@@ -882,6 +900,7 @@ export interface FileRoutesById {
   '/api/public/hooks/notify-missed-submissions': typeof ApiPublicHooksNotifyMissedSubmissionsRoute
   '/api/public/hooks/send-race-reminders': typeof ApiPublicHooksSendRaceRemindersRoute
   '/api/public/ingest/change-report': typeof ApiPublicIngestChangeReportRoute
+  '/api/public/ingest/research': typeof ApiPublicIngestResearchRoute
   '/api/public/ingest/watchlist': typeof ApiPublicIngestWatchlistRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -951,6 +970,7 @@ export interface FileRouteTypes {
     | '/admin/recurrence'
     | '/admin/revenue'
     | '/admin/search'
+    | '/admin/source-research'
     | '/admin/subscriptions'
     | '/admin/sync-runs'
     | '/api/public/import-clubs'
@@ -978,6 +998,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/notify-missed-submissions'
     | '/api/public/hooks/send-race-reminders'
     | '/api/public/ingest/change-report'
+    | '/api/public/ingest/research'
     | '/api/public/ingest/watchlist'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
@@ -1045,6 +1066,7 @@ export interface FileRouteTypes {
     | '/admin/recurrence'
     | '/admin/revenue'
     | '/admin/search'
+    | '/admin/source-research'
     | '/admin/subscriptions'
     | '/admin/sync-runs'
     | '/api/public/import-clubs'
@@ -1072,6 +1094,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/notify-missed-submissions'
     | '/api/public/hooks/send-race-reminders'
     | '/api/public/ingest/change-report'
+    | '/api/public/ingest/research'
     | '/api/public/ingest/watchlist'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
@@ -1140,6 +1163,7 @@ export interface FileRouteTypes {
     | '/_adminShell/admin/recurrence'
     | '/_adminShell/admin/revenue'
     | '/_adminShell/admin/search'
+    | '/_adminShell/admin/source-research'
     | '/_adminShell/admin/subscriptions'
     | '/_adminShell/admin/sync-runs'
     | '/api/public/import-clubs'
@@ -1167,6 +1191,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/notify-missed-submissions'
     | '/api/public/hooks/send-race-reminders'
     | '/api/public/ingest/change-report'
+    | '/api/public/ingest/research'
     | '/api/public/ingest/watchlist'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
@@ -1245,6 +1270,7 @@ export interface RootRouteChildren {
   ApiPublicHooksNotifyMissedSubmissionsRoute: typeof ApiPublicHooksNotifyMissedSubmissionsRoute
   ApiPublicHooksSendRaceRemindersRoute: typeof ApiPublicHooksSendRaceRemindersRoute
   ApiPublicIngestChangeReportRoute: typeof ApiPublicIngestChangeReportRoute
+  ApiPublicIngestResearchRoute: typeof ApiPublicIngestResearchRoute
   ApiPublicIngestWatchlistRoute: typeof ApiPublicIngestWatchlistRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
@@ -1687,6 +1713,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminShellAdminSubscriptionsRouteImport
       parentRoute: typeof AdminShellRoute
     }
+    '/_adminShell/admin/source-research': {
+      id: '/_adminShell/admin/source-research'
+      path: '/admin/source-research'
+      fullPath: '/admin/source-research'
+      preLoaderRoute: typeof AdminShellAdminSourceResearchRouteImport
+      parentRoute: typeof AdminShellRoute
+    }
     '/_adminShell/admin/search': {
       id: '/_adminShell/admin/search'
       path: '/admin/search'
@@ -1790,6 +1823,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/ingest/watchlist'
       fullPath: '/api/public/ingest/watchlist'
       preLoaderRoute: typeof ApiPublicIngestWatchlistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/ingest/research': {
+      id: '/api/public/ingest/research'
+      path: '/api/public/ingest/research'
+      fullPath: '/api/public/ingest/research'
+      preLoaderRoute: typeof ApiPublicIngestResearchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/ingest/change-report': {
@@ -1931,6 +1971,7 @@ interface AdminShellRouteChildren {
   AdminShellAdminRecurrenceRoute: typeof AdminShellAdminRecurrenceRoute
   AdminShellAdminRevenueRoute: typeof AdminShellAdminRevenueRoute
   AdminShellAdminSearchRoute: typeof AdminShellAdminSearchRoute
+  AdminShellAdminSourceResearchRoute: typeof AdminShellAdminSourceResearchRoute
   AdminShellAdminSubscriptionsRoute: typeof AdminShellAdminSubscriptionsRoute
   AdminShellAdminSyncRunsRoute: typeof AdminShellAdminSyncRunsRoute
   AdminShellAdminClubsIdRoute: typeof AdminShellAdminClubsIdRoute
@@ -1953,6 +1994,7 @@ const AdminShellRouteChildren: AdminShellRouteChildren = {
   AdminShellAdminRecurrenceRoute: AdminShellAdminRecurrenceRoute,
   AdminShellAdminRevenueRoute: AdminShellAdminRevenueRoute,
   AdminShellAdminSearchRoute: AdminShellAdminSearchRoute,
+  AdminShellAdminSourceResearchRoute: AdminShellAdminSourceResearchRoute,
   AdminShellAdminSubscriptionsRoute: AdminShellAdminSubscriptionsRoute,
   AdminShellAdminSyncRunsRoute: AdminShellAdminSyncRunsRoute,
   AdminShellAdminClubsIdRoute: AdminShellAdminClubsIdRoute,
@@ -2056,6 +2098,7 @@ const rootRouteChildren: RootRouteChildren = {
     ApiPublicHooksNotifyMissedSubmissionsRoute,
   ApiPublicHooksSendRaceRemindersRoute: ApiPublicHooksSendRaceRemindersRoute,
   ApiPublicIngestChangeReportRoute: ApiPublicIngestChangeReportRoute,
+  ApiPublicIngestResearchRoute: ApiPublicIngestResearchRoute,
   ApiPublicIngestWatchlistRoute: ApiPublicIngestWatchlistRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,

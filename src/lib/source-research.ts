@@ -1,0 +1,116 @@
+import { z } from "zod";
+
+// URLs are destinations/evidence, never instructions or fetch authorisation.
+export const researchUrl = z
+  .string()
+  .url()
+  .max(2000)
+  .refine((value) => {
+    const u = new URL(value);
+    return ["http:", "https:"].includes(u.protocol) && !u.username && !u.password;
+  }, "Use an HTTP(S) URL without credentials");
+const uuid = z.string().uuid();
+const date = z.iso.date();
+export const sourceSchema = z
+  .object({
+    id: uuid,
+    label: z.string().trim().min(1).max(200),
+    url: researchUrl,
+    role: z.enum([
+      "club",
+      "organiser",
+      "entry_provider",
+      "governing_body",
+      "community",
+      "unresolved",
+    ]),
+    page_type: z.enum(["listing", "race", "entry", "other"]),
+    organisation_id: uuid.nullable(),
+    club_id: uuid.nullable(),
+    policy_note: z.string().trim().min(1).max(2000),
+    enabled: z.boolean().default(false),
+    interval_hours: z.number().int().min(24).max(2160).default(168),
+  })
+  .strict();
+
+const evidence = z
+  .object({
+    source_url: researchUrl,
+    final_url: researchUrl,
+    captured_at: z.iso.datetime({ offset: true }),
+    content_sha256: z.string().regex(/^[a-f0-9]{64}$/),
+    extractor: z.string().min(1).max(100),
+    summary: z.string().trim().min(1).max(6000),
+  })
+  .strict();
+const change = z
+  .object({
+    kind: z.literal("event_change"),
+    event_id: uuid,
+    expected_date: date,
+    field: z.enum(["entry_url", "organiser_url"]),
+    expected_value: researchUrl.nullable(),
+    proposed_value: researchUrl,
+  })
+  .strict();
+const relationship = z
+  .object({
+    kind: z.literal("club_relationship"),
+    event_id: uuid,
+    expected_date: date,
+    organisation_id: uuid,
+    club_id: uuid,
+    expected_organiser: z.string().max(500).nullable(),
+    expected_club_id: uuid.nullable(),
+  })
+  .strict();
+const discovery = z
+  .object({
+    kind: z.literal("new_occurrence"),
+    name: z.string().trim().min(1).max(300),
+    date: date.nullable(),
+    location: z.string().max(500),
+    schedule: z.string().max(500).nullable(),
+    entry_url: researchUrl.nullable(),
+  })
+  .strict();
+const pageChange = z.object({ kind: z.literal("page_change") }).strict();
+export const observationSchema = z
+  .object({
+    id: uuid,
+    source_id: uuid,
+    run_id: uuid,
+    evidence,
+    proposal: z.discriminatedUnion("kind", [change, relationship, discovery, pageChange]),
+    conflicts: z.array(z.string().trim().min(1).max(1000)).max(20),
+  })
+  .strict()
+  .refine(
+    (r) => Date.parse(r.evidence.captured_at) <= Date.now() + 300_000,
+    "Capture time is in the future",
+  );
+export const researchEnvelope = z
+  .object({
+    version: z.literal(1),
+    observations: z.array(observationSchema).min(1).max(50),
+  })
+  .strict()
+  .refine(
+    (b) => new Set(b.observations.map((o) => o.id)).size === b.observations.length,
+    "Duplicate observation IDs",
+  );
+export type ResearchObservation = z.infer<typeof observationSchema>;
+export type ResearchSource = z.infer<typeof sourceSchema>;
+export type ResearchRow = ResearchObservation & {
+  status: "pending" | "held" | "applied" | "rejected" | "reverted";
+  created_at: string;
+  review_note: string | null;
+  current_event: Record<string, unknown> | null;
+};
+export function canApplyResearch(
+  row: Pick<ResearchObservation, "proposal" | "conflicts">,
+): boolean {
+  return (
+    row.conflicts.length === 0 && ["event_change", "club_relationship"].includes(row.proposal.kind)
+  );
+}
