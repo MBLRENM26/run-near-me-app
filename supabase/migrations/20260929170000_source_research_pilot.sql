@@ -86,6 +86,9 @@ begin
     -- previous occurrence. Keep the row intact and record that conflict.
     attempted := jsonb_build_object('date_from',new.date_from,'date_to',to_jsonb(new)->'date_to','sort_date',new.sort_date);
     if attempted is distinct from g.occurrence then
+      if current_setting('renm.review_write_mode',true)='strict' then
+        raise exception 'Reviewed race dates are protected. Resolve or reverse the correction in Sources and race research before changing the occurrence.';
+      end if;
       insert into public.event_review_conflicts(event_id,field,protected_value,attempted_value,observation_id)
       values(old.id,'occurrence_dates',g.occurrence,attempted,g.observation_id)
       on conflict(event_id,field,observation_id,attempted_value) do update
@@ -93,7 +96,10 @@ begin
       return old;
     end if;
     attempted := to_jsonb(new)->g.field;
-    if attempted is distinct from g.value then
+    if attempted is distinct from g.value and attempted is distinct from to_jsonb(old)->g.field then
+      if current_setting('renm.review_write_mode',true)='strict' then
+        raise exception 'Reviewed field % is protected. Resolve or reverse its correction in Sources and race research before editing it.',g.field;
+      end if;
       insert into public.event_review_conflicts(event_id,field,protected_value,attempted_value,observation_id)
       values(old.id,g.field,g.value,attempted,g.observation_id)
       on conflict(event_id,field,observation_id,attempted_value) do update

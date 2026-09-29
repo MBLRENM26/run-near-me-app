@@ -60,7 +60,8 @@ function SourceResearchPage() {
       <p>
         Review evidence from club, organiser and entry pages. New race discoveries and conflicting
         information stay here until resolved. Applying a supported correction protects the reviewed
-        fields from later imports and records a reversible audit.
+        fields from later imports and records a reversible audit. Existing homelab change reports
+        appear in this same queue; they need source and occurrence verification before application.
       </p>
       {error && (
         <p role="alert" className="text-destructive">
@@ -180,7 +181,7 @@ function SourceResearchPage() {
       {isLoading && <p>Loading…</p>}
       {data?.rows.length === 0 && <p>No {status} observations.</p>}
       {data?.rows.map((r) => (
-        <article key={r.id} className="space-y-3 rounded border p-4">
+        <article key={`${r.origin}:${r.id}`} className="space-y-3 rounded border p-4">
           <h2 className="font-semibold">
             {(r.current_event?.name as string) ??
               ("name" in r.proposal ? r.proposal.name : "Page evidence")}{" "}
@@ -220,14 +221,15 @@ function SourceResearchPage() {
             </div>
           </div>
           {r.review_note && <p>Review: {r.review_note}</p>}
-          {(["pending", "held", "applied"] as string[]).includes(r.status) && (
+          {((["pending", "held"] as string[]).includes(r.status) ||
+            (r.status === "applied" && r.origin === "research")) && (
             <>
               <label className="block">
                 Review note
                 <input
                   className="mt-1 w-full rounded border bg-background p-2"
-                  value={notes[r.id] ?? ""}
-                  onChange={(e) => setNotes({ ...notes, [r.id]: e.target.value })}
+                  value={notes[`${r.origin}:${r.id}`] ?? ""}
+                  onChange={(e) => setNotes({ ...notes, [`${r.origin}:${r.id}`]: e.target.value })}
                 />
               </label>
               <div className="flex flex-wrap gap-2">
@@ -237,10 +239,19 @@ function SourceResearchPage() {
                 ).map((action) => (
                   <Button
                     key={action}
-                    disabled={busy || !notes[r.id]?.trim()}
+                    disabled={busy || !notes[`${r.origin}:${r.id}`]?.trim()}
                     variant={action === "apply" ? "default" : "outline"}
                     onClick={() =>
-                      act(() => review({ data: { id: r.id, action, note: notes[r.id] } }))
+                      act(() =>
+                        review({
+                          data: {
+                            id: r.id,
+                            origin: r.origin,
+                            action,
+                            note: notes[`${r.origin}:${r.id}`],
+                          },
+                        }),
+                      )
                     }
                   >
                     {action === "apply"

@@ -331,25 +331,16 @@ export const applyDateEnrichments = createServerFn({ method: "POST" })
         continue;
       }
 
-      const { error: updErr } = await supabaseAdmin
-        .from("events")
-        .update(patch as never)
-        .eq("id", row.id);
+      const { error: updErr } = await (
+        supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient
+      ).rpc("update_admin_event_checked", {
+        _id: row.id, _patch: patch,
+        _note: `date enrichment import${syncRunId ? ` (run ${syncRunId})` : ""}`,
+      });
       if (updErr) {
         failed++;
         errors.push({ id: row.id, message: updErr.message });
         continue;
-      }
-
-      // Best-effort audit trail per event.
-      try {
-        await supabaseAdmin.from("event_edits").insert({
-          event_id: row.id,
-          changes: patch as never,
-          note: `date enrichment import${syncRunId ? ` (run ${syncRunId})` : ""}`,
-        });
-      } catch {
-        /* edit log is best-effort */
       }
 
       written++;

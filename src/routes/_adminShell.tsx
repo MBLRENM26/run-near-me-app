@@ -97,13 +97,7 @@ function AdminLayout() {
               to="/admin/source-research"
               className="text-sm font-medium text-foreground hover:text-primary"
             >
-              Source research
-            </Link>
-            <Link
-              to="/admin/change-reports"
-              className="text-sm font-medium text-foreground hover:text-primary"
-            >
-              Change reports
+              Sources and race research
             </Link>
             <Link
               to="/admin/recurrence"

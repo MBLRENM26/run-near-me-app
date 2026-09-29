@@ -54,12 +54,17 @@ export const listSourceResearch = createServerFn({ method: "GET" })
     const db = await adminDb();
     const [observations, sources, conflicts, reviews] = await Promise.all([
       db
-        .from("source_research_observations")
-        .select("id,source_id,run_id,evidence,proposal,conflicts,status,review_note,created_at", {
-          count: "exact",
-        })
+        .from("research_review_queue")
+        .select(
+          "id,origin,source_id,run_id,evidence,proposal,conflicts,status,review_note,created_at",
+          {
+            count: "exact",
+          },
+        )
         .eq("status", data.status)
         .order("created_at", { ascending: false })
+        .order("origin")
+        .order("id")
         .range(data.offset, data.offset + 49),
       db.from("research_sources").select("*").order("label").limit(200),
       db
@@ -138,12 +143,28 @@ export const reviewSourceResearch = createServerFn({ method: "POST" })
       .object({
         id: z.string().uuid(),
         action: z.enum(["hold", "reject", "apply", "revert"]),
+        origin: z.enum(["research", "change_feed"]),
         note: z.string().trim().min(1).max(2000),
       })
       .parse(v),
   )
   .handler(async ({ data }) => {
     const db = await adminDb();
+    if (data.origin === "change_feed") {
+      if (!["hold", "reject"].includes(data.action))
+        throw new Error("Verify source evidence and occurrence before preparing a correction.");
+      const { error } = await db
+        .from("source_change_reports")
+        .update({
+          status: data.action === "hold" ? "unknown" : "rejected",
+          admin_note: data.note,
+          reviewed_at: new Date().toISOString(),
+        })
+        .eq("id", data.id)
+        .in("status", ["pending", "unknown"]);
+      if (error) throw new Error(error.message);
+      return { ok: true };
+    }
     const { error } = await db.rpc("review_source_research", {
       _id: data.id,
       _action: data.action,

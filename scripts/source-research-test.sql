@@ -33,6 +33,21 @@ do $$ declare obs jsonb; result jsonb; rejected boolean; before_count int; begin
   perform review_source_research((obs->>'id')::uuid,'apply','Verified source and occurrence','test');
   assert (select entry_url='https://entries.example/race' from events limit 1),'destination applied';
   select count(*) into before_count from event_edits;
+  rejected:=false;
+  begin perform update_admin_event_checked('22222222-2222-4222-8222-222222222222','{"entry_url":"https://wrong.example","name":"Should roll back"}','Manual conflict');
+  exception when others then rejected:=sqlerrm like 'Reviewed field%'; end;
+  assert rejected,'manual correction has explicit conflict';
+  assert (select name='Fixture Race' from events limit 1),'whole manual patch rolled back';
+  assert (select count(*)=before_count from event_edits),'refused manual edit has no misleading audit';
+  rejected:=false;
+  begin perform update_admin_event_checked('22222222-2222-4222-8222-222222222222','{"date_from":"2028-02-07","sort_date":"2028-02-07"}','Date conflict');
+  exception when others then rejected:=sqlerrm like 'Reviewed race dates%'; end;
+  assert rejected,'manual date change has explicit conflict';
+  perform update_admin_event_checked('22222222-2222-4222-8222-222222222222','{"name":"Updated fixture"}','Unrelated field');
+  assert (select name='Updated fixture' from events limit 1),'unrelated edits still work';
+  assert (select entry_url='https://entries.example/race' from events limit 1),'manual unrelated edit retains reviewed URL';
+  assert coalesce(current_setting('renm.review_write_mode',true),'')='','strict mode does not leak into imports';
+  select count(*) into before_count from event_edits;
   perform review_source_research((obs->>'id')::uuid,'apply','Retry','test');
   assert (select count(*)=before_count from event_edits),'apply retry has no duplicate audit';
   update events set entry_url='https://old-import.example/race';
@@ -100,6 +115,31 @@ do $$ declare obs jsonb; result jsonb; rejected boolean; before_count int; begin
   perform review_source_research((obs->>'id')::uuid,'hold','Resolve conflicting editions','test');
   assert (select status='held' from source_research_observations where id=(obs->>'id')::uuid),'discovery held';
   assert (select count(*)=1 from events),'no new event created by research';
+  insert into source_change_reports(event_id,field,old_value,new_value,source_url,observed_at,fingerprint)
+    values('22222222-2222-4222-8222-222222222222','entry_url',null,'https://legacy.example','https://club.example/race',now(),'fixture');
+  assert (select count(*)=1 from research_review_queue where origin='change_feed' and status='pending'),'existing endpoint reports join same queue';
+  assert not exists(select 1 from research_review_queue where origin='change_feed' and evidence ? 'content_sha256'),'do not invent page capture hashes';
+  update source_change_reports set status='unknown' where fingerprint='fixture';
+  assert (select count(*)=1 from research_review_queue where origin='change_feed' and status='held'),'old status maps to shared review filter';
+  assert not has_table_privilege('anon','public.research_review_queue','SELECT'),'unified queue private';
+  assert not has_function_privilege('authenticated','public.update_admin_event_checked(uuid,jsonb,text)','EXECUTE'),'manual RPC service only';
+end $$;
+-- Exercise the original ORL entry point, including a guard conflict after its
+-- initial audit insert. A failure must roll back the acceptance and both audits.
+do $$ declare link_id uuid; n integer; refused boolean:=false; result jsonb; begin
+  select id into link_id from organisation_event_links limit 1;
+  insert into event_reviewed_fields(event_id,field,value,occurrence,observation_id)
+    select id,'organiser','"Protected identity"'::jsonb,jsonb_build_object('date_from',date_from,'date_to',to_jsonb(events)->'date_to','sort_date',sort_date),'88888888-8888-4888-8888-888888888888' from events limit 1;
+  select count(*) into n from organisation_event_link_reviews;
+  begin perform accept_and_apply_organiser(link_id,'Existing ORL conflict test','test');
+  exception when others then refused:=sqlerrm like 'Reviewed field%'; end;
+  assert refused,'original ORL entry point must report protection conflict';
+  assert (select review_status='reopened' from organisation_event_links where id=link_id),'ORL refusal rolls back acceptance';
+  assert (select count(*)=n from organisation_event_link_reviews),'ORL refusal rolls back audit';
+  delete from event_reviewed_fields where field='organiser';
+  result:=accept_and_apply_organiser(link_id,'Existing ORL compatibility test','test');
+  assert result->>'ok'='true','original ORL acceptance remains usable';
+  assert (select organiser='Fixture Running Club' and organiser_club_id is null from events limit 1),'original ORL still projects name only';
 end $$;
 rollback;
 select 'Source research transactional checks passed' as result;

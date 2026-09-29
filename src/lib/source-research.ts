@@ -101,15 +101,24 @@ export const researchEnvelope = z
   );
 export type ResearchObservation = z.infer<typeof observationSchema>;
 export type ResearchSource = z.infer<typeof sourceSchema>;
-export type ResearchRow = ResearchObservation & {
+export type ResearchRow = Omit<ResearchObservation, "proposal" | "evidence"> & {
+  origin: "research" | "change_feed";
+  proposal:
+    | ResearchObservation["proposal"]
+    | {
+        kind: "legacy_report";
+        event_id: string;
+        field: string;
+        expected_value: string | null;
+        proposed_value: string | null;
+      };
+  evidence: Omit<ResearchObservation["evidence"], "content_sha256"> & { content_sha256?: string };
   status: "pending" | "held" | "applied" | "rejected" | "reverted";
   created_at: string;
   review_note: string | null;
   current_event: Record<string, unknown> | null;
 };
-export function canApplyResearch(
-  row: Pick<ResearchObservation, "proposal" | "conflicts">,
-): boolean {
+export function canApplyResearch(row: Pick<ResearchRow, "proposal" | "conflicts">): boolean {
   return (
     row.conflicts.length === 0 && ["event_change", "club_relationship"].includes(row.proposal.kind)
   );

@@ -41,9 +41,8 @@ export const listChangeReports = createServerFn({ method: "GET" })
     return { rows: (rows ?? []) as unknown as ChangeReportRow[], total: count ?? 0 };
   });
 
-// Only date_from and entry_url are ever written to events. entries_status and
-// event_status (cancelled/postponed) are recorded as an audited edit note only:
-// lifecycle transitions stay a separate, manual decision per the contract.
+// Compatibility handler for old clients. Acceptance remains disabled;
+// supported corrections use the unified research review transaction.
 export const reviewChangeReport = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
     z
@@ -65,40 +64,6 @@ export const reviewChangeReport = createServerFn({ method: "POST" })
       .single();
     if (error || !r) throw new Error("Report not found");
     if (r.status !== "pending") return { ok: true, alreadyReviewed: true };
-
-    if (data.decision === "accepted") {
-      const patch: Record<string, string | null> = {};
-      if (r.field === "date_from") {
-        if (!r.new_value || !/^\d{4}-\d{2}-\d{2}$/.test(r.new_value)) {
-          throw new Error("New date must be YYYY-MM-DD");
-        }
-        patch.date_from = r.new_value;
-        patch.sort_date = r.new_value;
-      } else if (r.field === "entry_url") {
-        patch.entry_url = r.new_value;
-      }
-      if (Object.keys(patch).length) {
-        const { error: upErr } = await supabaseAdmin
-          .from("events")
-          .update(patch as never)
-          .eq("id", r.event_id);
-        if (upErr) throw new Error(upErr.message);
-      }
-      await supabaseAdmin.from("event_edits").insert({
-        event_id: r.event_id,
-        changes: {
-          source: "change-feed",
-          report_id: r.id,
-          field: r.field,
-          old: r.old_value,
-          new: r.new_value,
-          evidence_url: r.source_url,
-          observed_at: r.observed_at,
-          applied: Object.keys(patch),
-        },
-        note: data.note ?? null,
-      });
-    }
 
     const { error: stErr } = await supabaseAdmin
       .from("source_change_reports")

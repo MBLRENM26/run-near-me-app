@@ -70,6 +70,20 @@ describe("source research contract", () => {
     expect(researchEnvelope.safeParse({ version: 1, observations: [item] }).success).toBe(true);
     expect(canApplyResearch(item)).toBe(false);
   });
+  it("keeps original change reports review-only without inventing capture evidence", () => {
+    const report = {
+      ...observation,
+      proposal: {
+        kind: "legacy_report" as const,
+        event_id: id,
+        field: "entry_url",
+        expected_value: null,
+        proposed_value: "https://entry.example/new",
+      },
+    };
+    expect(canApplyResearch(report)).toBe(false);
+    expect(researchEnvelope.safeParse({ version: 1, observations: [report] }).success).toBe(false);
+  });
   it("blocks mixed-year conflicts and duplicate observation IDs", () => {
     expect(canApplyResearch({ ...observation, conflicts: ["2027 header, 2026 body"] })).toBe(false);
     expect(
