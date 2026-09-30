@@ -1,5 +1,5 @@
 import { hydrateReviewedOccurrences } from "@/lib/reviewed-occurrences";
-import { Suspense, useMemo } from "react";
+import { useMemo } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SITE_URL, SITE_NAME, SOCIALS } from "@/lib/site";
 import { useQuery } from "@tanstack/react-query";
@@ -144,9 +144,8 @@ export const Route = createFileRoute("/")({
     ],
   }),
   loader: ({ context }) => {
-    // Prime the live-stats cache so the hero counter SSRs with a real number
-    // (no hydration flash, no layout shift). Don't await — if the count fails
-    // the component shows nothing rather than blocking the homepage.
+    // Start the optional counter request without delaying the homepage.
+    // The non-suspending badge stays hidden until a valid count is available.
     void context.queryClient.prefetchQuery(liveStatsQueryOptions);
   },
   component: HomePage,
@@ -319,9 +318,7 @@ function HomePage() {
             </p>
           ) : (
             <div className="mt-6">
-              <Suspense fallback={null}>
-                <LiveEventCounter />
-              </Suspense>
+              <LiveEventCounter />
             </div>
           )}
         </section>

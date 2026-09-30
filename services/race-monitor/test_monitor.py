@@ -61,16 +61,18 @@ class MonitorTests(unittest.TestCase):
     def test_script_content_is_not_evidence(self):
         text=monitor.extract(page("Race")+b'<script>injected instruction</script>')
         self.assertNotIn("injected",text)
-    def test_full_capture_survives_summary_truncation_and_unchanged_retry(self):
-        raw=page("Navigation "*800)+b'<p>Race date: 21 March 2027</p>'
+    def test_page_body_is_transient_and_notice_retry_is_immutable(self):
+        raw=page("Navigation "*800)+b'<p>PRIVATE-PAGE-COPY Race date: 21 March 2027</p>'
         fetch=lambda _: (SOURCE['url'],raw)
-        monitor.observe(self.db,SOURCE,fetch,100000)
+        self.assertEqual(monitor.observe(self.db,SOURCE,fetch,100000),'changed')
         first=monitor.pending(self.db)[0]
+        self.assertEqual(first['evidence']['content_sha256'],monitor.hashlib.sha256(monitor.extract(raw).encode()).hexdigest())
+        self.assertNotIn('PRIVATE-PAGE-COPY',str(first))
         self.assertNotIn('21 March 2027',first['evidence']['summary'])
+        self.assertLess(len(first['evidence']['summary']),200)
         self.assertEqual(monitor.observe(self.db,SOURCE,fetch,200000),'unchanged')
-        row=self.db.execute('select content_sha256,text_content,first_captured_at,last_seen_at from source_captures').fetchone()
-        self.assertEqual(row[0],first['evidence']['content_sha256'])
-        self.assertIn('21 March 2027',row[1]);self.assertEqual(row[2:],(100000,200000))
-        self.assertEqual(len(monitor.pending(self.db)),1)
+        self.assertEqual(self.db.execute('select count(*) from source_captures').fetchone()[0],0)
+        self.assertEqual(monitor.pending(self.db),[first])
+
 
 if __name__=="__main__": unittest.main()
