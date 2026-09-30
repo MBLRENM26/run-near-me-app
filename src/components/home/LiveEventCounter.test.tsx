@@ -31,6 +31,13 @@ describe("optional homepage race count", () => {
     expect(html).toContain("Search races");
     expect(html).not.toContain("UK races live right now");
   });
+  it("renders the page when the server explicitly reports unavailable", () => {
+    const c = client();
+    c.setQueryData(liveStatsQueryOptions.queryKey, null);
+    const html = render(c);
+    expect(html).toContain("Search races");
+    expect(html).not.toContain("UK races live right now");
+  });
   it("keeps the page available after the initial count request rejects", async () => {
     const c = client();
     await c
