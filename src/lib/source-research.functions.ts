@@ -1,6 +1,7 @@
 import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
+import { researchEventFields } from "@/lib/research-event-facts";
 import {
   researchEnvelope,
   researchUrl,
@@ -91,10 +92,45 @@ export const listSourceResearch = createServerFn({ method: "GET" })
           .in("id", ids)
       : { data: [], error: null };
     if (events.error) throw new Error(events.error.message);
+    const urls = [
+      ...new Set(
+        rows
+          .filter((r) => r.proposal.kind === "page_change" && r.proposal.extraction)
+          .flatMap((r) => [r.evidence.source_url, r.evidence.final_url]),
+      ),
+    ];
+    const candidateResults = urls.length
+      ? await Promise.all(
+          ["source_url", "entry_url", "organiser_url"].map((column) =>
+            db
+              .from("events")
+              .select(["id", "slug", "status", "source_url", ...researchEventFields].join(","))
+              .in(column, urls)
+              .order("id")
+              .limit(101),
+          ),
+        )
+      : [];
+    for (const result of candidateResults) if (result.error) throw new Error(result.error.message);
+    const candidates = candidateResults.flatMap((result) => result.data ?? []) as unknown as Record<
+      string,
+      string | number | boolean | null
+    >[];
     return {
       rows: rows.map((r) => {
         const eventId = "event_id" in r.proposal ? r.proposal.event_id : null;
-        return { ...r, current_event: events.data?.find((e) => e.id === eventId) ?? null };
+        const matching = candidates.filter((event) =>
+          ["source_url", "entry_url", "organiser_url"].some(
+            (field) =>
+              event[field] === r.evidence.source_url || event[field] === r.evidence.final_url,
+          ),
+        );
+        return {
+          ...r,
+          current_event: events.data?.find((e) => e.id === eventId) ?? null,
+          candidate_events: [...new Map(matching.map((event) => [event.id, event])).values()],
+          candidate_search_limited: candidateResults.some((result) => result.data?.length === 101),
+        };
       }),
       total: observations.count ?? 0,
       sources: (sources.data ?? []) as ResearchSource[],

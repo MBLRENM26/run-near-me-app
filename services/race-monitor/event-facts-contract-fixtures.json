@@ -1,0 +1,213 @@
+[
+  {
+    "html": "<h1>Local Race</h1><p>Sunday 11 October 2026</p><a href=\"https://entry.example/race\">Enter</a>",
+    "url": "https://club.example/race",
+    "expected": {
+      "version": 1,
+      "facts": [
+        {
+          "field": "date_from",
+          "value": "2026-10-11",
+          "quote": "Sunday 11 October 2026",
+          "locator": "text:block[1]"
+        },
+        {
+          "field": "date_raw",
+          "value": "11 October 2026",
+          "quote": "Sunday 11 October 2026",
+          "locator": "text:block[1]"
+        },
+        {
+          "field": "entry_url",
+          "value": "https://entry.example/race",
+          "quote": "Enter",
+          "locator": "html:a[href]"
+        },
+        {
+          "field": "name",
+          "value": "Local Race",
+          "quote": "Local Race",
+          "locator": "text:heading"
+        }
+      ],
+      "missing_fields": [
+        "country",
+        "county",
+        "date_to",
+        "discipline",
+        "distances",
+        "entry_fee",
+        "is_recurring",
+        "lat",
+        "licensed",
+        "lng",
+        "location_raw",
+        "organiser",
+        "organiser_url",
+        "town"
+      ],
+      "issues": []
+    }
+  },
+  {
+    "html": "<h1>Local parkrun</h1><p>Every Saturday at 9am</p>",
+    "url": "https://club.example/race",
+    "expected": {
+      "version": 1,
+      "facts": [
+        {
+          "field": "date_raw",
+          "value": "Every Saturday at 9am",
+          "quote": "Every Saturday at 9am",
+          "locator": "text:weekly-schedule"
+        },
+        {
+          "field": "is_recurring",
+          "value": true,
+          "quote": "Every Saturday at 9am",
+          "locator": "text:weekly-schedule"
+        },
+        {
+          "field": "name",
+          "value": "Local parkrun",
+          "quote": "Local parkrun",
+          "locator": "text:heading"
+        }
+      ],
+      "missing_fields": [
+        "country",
+        "county",
+        "date_from",
+        "date_to",
+        "discipline",
+        "distances",
+        "entry_fee",
+        "entry_url",
+        "lat",
+        "licensed",
+        "lng",
+        "location_raw",
+        "organiser",
+        "organiser_url",
+        "town"
+      ],
+      "issues": []
+    }
+  },
+  {
+    "html": "<h1>Half Marathon</h1><p>Sunday 21 Mar 2027</p><p>Sunday 15 March 2026</p>",
+    "url": "https://club.example/race",
+    "expected": {
+      "version": 1,
+      "facts": [
+        {
+          "field": "date_from",
+          "value": "2026-03-15",
+          "quote": "Sunday 15 March 2026",
+          "locator": "text:block[2]"
+        },
+        {
+          "field": "date_from",
+          "value": "2027-03-21",
+          "quote": "Sunday 21 Mar 2027",
+          "locator": "text:block[1]"
+        },
+        {
+          "field": "date_raw",
+          "value": "15 March 2026",
+          "quote": "Sunday 15 March 2026",
+          "locator": "text:block[2]"
+        },
+        {
+          "field": "date_raw",
+          "value": "21 Mar 2027",
+          "quote": "Sunday 21 Mar 2027",
+          "locator": "text:block[1]"
+        },
+        {
+          "field": "distances",
+          "value": "Half Marathon",
+          "quote": "Half Marathon",
+          "locator": "text:heading"
+        },
+        {
+          "field": "name",
+          "value": "Half Marathon",
+          "quote": "Half Marathon",
+          "locator": "text:heading"
+        }
+      ],
+      "missing_fields": [
+        "country",
+        "county",
+        "date_to",
+        "discipline",
+        "entry_fee",
+        "entry_url",
+        "is_recurring",
+        "lat",
+        "licensed",
+        "lng",
+        "location_raw",
+        "organiser",
+        "organiser_url",
+        "town"
+      ],
+      "issues": [
+        "Multiple date_from candidates; confirm race and edition before use."
+      ]
+    }
+  },
+  {
+    "html": "<script type=\"application/ld+json\">{\"@type\":\"SportsEvent\",\"name\":\"10K\",\"location\":{\"geo\":{\"latitude\":51.8,\"longitude\":0.7}},\"offers\":{\"price\":25,\"priceCurrency\":\"GBP\"}}</script>",
+    "url": "https://club.example/race",
+    "expected": {
+      "version": 1,
+      "facts": [
+        {
+          "field": "entry_fee",
+          "value": "GBP 25",
+          "quote": "offers.price/priceCurrency: GBP 25",
+          "locator": "jsonld.offers.price/priceCurrency"
+        },
+        {
+          "field": "lat",
+          "value": 51.8,
+          "quote": "location.geo.latitude: 51.8",
+          "locator": "jsonld.location.geo.latitude"
+        },
+        {
+          "field": "lng",
+          "value": 0.7,
+          "quote": "location.geo.longitude: 0.7",
+          "locator": "jsonld.location.geo.longitude"
+        },
+        {
+          "field": "name",
+          "value": "10K",
+          "quote": "name: 10K",
+          "locator": "jsonld.name"
+        }
+      ],
+      "missing_fields": [
+        "country",
+        "county",
+        "date_from",
+        "date_raw",
+        "date_to",
+        "discipline",
+        "distances",
+        "entry_url",
+        "is_recurring",
+        "licensed",
+        "location_raw",
+        "organiser",
+        "organiser_url",
+        "town"
+      ],
+      "issues": [
+        "No confirmed dated occurrence extracted; inspect source or rendered page."
+      ]
+    }
+  }
+]

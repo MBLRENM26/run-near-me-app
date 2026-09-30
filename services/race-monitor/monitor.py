@@ -21,10 +21,11 @@ from html.parser import HTMLParser
 from urllib.parse import urljoin, urlsplit
 from urllib.robotparser import RobotFileParser
 from uuid import UUID, uuid4
+from event_extractor import extract_event_facts, VERSION
 
 AGENT = "RENMResearch/1.0 (+https://runningeventsnearme.com)"
 MAX_BODY = 2_000_000
-EXTRACTOR = "html-visible-v1"
+EXTRACTOR = VERSION
 
 
 def public_addresses(host):
@@ -175,6 +176,7 @@ def connect(path):
       create table if not exists sources(id text primary key, url text not null, last_hash text,
         last_attempt real, last_success real, next_due real not null default 0, failures integer not null default 0, error text);
       create table if not exists outbox(id text primary key, payload text not null, delivered integer not null default 0);
+      create table if not exists source_extractions(source_id text primary key, facts_hash text not null);
       create table if not exists source_captures(
         source_id text not null, content_sha256 text not null, text_content text not null,
         final_url text not null, first_captured_at real not null, last_seen_at real not null,
@@ -202,21 +204,27 @@ def observe(db, source, fetch=fetch_page, now=None):
         return "not_due"
     try:
         final_url, raw = fetch(source["url"])
-        text = extract(raw)
-        digest = hashlib.sha256(text.encode()).hexdigest()
+        digest = hashlib.sha256(raw).hexdigest()
+        extraction, facts_hash = extract_event_facts(raw, final_url)
+        if not extraction["facts"]:
+            extract(raw)  # Reject empty/browser-only responses instead of erasing evidence.
+        previous = db.execute("select facts_hash from source_extractions where source_id=?", (sid,)).fetchone()
+        facts_changed = not previous or previous[0] != facts_hash
         changed = not row or digest != row[1]
         with db:
-            # Page text is transient input for change detection, not an archive.
-            # Keep existing audit/outbox records immutable; new notices contain no page body.
-            if changed:
+            # A changed menu/footer does not create a review item. The first due
+            # fetch after extractor upgrades emits a mapped baseline even if the
+            # source body is unchanged. No page body is retained.
+            if facts_changed:
                 oid = str(uuid4())
                 item = {"id": oid, "source_id": sid, "run_id": str(uuid4()), "evidence": {
                     "source_url": source["url"], "final_url": final_url,
                     "captured_at": datetime.fromtimestamp(now, timezone.utc).isoformat(),
                     "content_sha256": digest, "extractor": EXTRACTOR,
-                    "summary": "Source content changed. Review the source for race dates, entry links and status; no page body retained."},
-                    "proposal": {"kind": "page_change"}, "conflicts": []}
+                    "summary": f"{'Initial mapped baseline' if not previous else 'Mapped facts changed'}: {len(extraction['facts'])} candidates. Confirm race, edition and destination roles before preparing a correction. Missing fields do not clear existing data."},
+                    "proposal": {"kind": "page_change", "extraction": extraction}, "conflicts": extraction["issues"]}
                 db.execute("insert into outbox(id,payload) values(?,?)", (oid, json.dumps(item, ensure_ascii=False)))
+            db.execute("insert into source_extractions(source_id,facts_hash) values(?,?) on conflict(source_id) do update set facts_hash=excluded.facts_hash", (sid, facts_hash))
             db.execute("insert into sources(id,url,last_hash,last_attempt,last_success,next_due,failures,error) values(?,?,?,?,?,?,0,null) on conflict(id) do update set last_hash=excluded.last_hash,last_attempt=excluded.last_attempt,last_success=excluded.last_success,next_due=excluded.next_due,failures=0,error=null", (sid,source["url"],digest,now,now,now+interval*3600))
         return "changed" if changed else "unchanged"
     except Exception as exc:
@@ -235,9 +243,15 @@ def deliver(db, endpoint, secret):
     observations = pending(db)
     if not observations:
         return 0
-    body = json.dumps({"version": 1, "observations": observations}, ensure_ascii=False, separators=(",", ":")).encode()
-    if len(body) > 512_000:
-        raise ValueError("batch_too_large")
+    # Select a bounded prefix without editing immutable observations. Large fact
+    # cards must not prevent a backlog from draining on subsequent host cycles.
+    while observations:
+        body = json.dumps({"version": 1, "observations": observations}, ensure_ascii=False, separators=(",", ":")).encode()
+        if len(body) <= 512_000:
+            break
+        observations.pop()
+    if not observations:
+        raise ValueError("observation_too_large")
     ts = str(int(time.time()))
     signature = hmac.new(secret.encode(), ts.encode()+b"."+body, hashlib.sha256).hexdigest()
     status, _, raw = request(endpoint, "POST", body, {"Content-Type":"application/json", "x-renm-timestamp":ts,"x-renm-signature":signature})
