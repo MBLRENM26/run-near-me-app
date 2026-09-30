@@ -6,7 +6,7 @@ from unittest.mock import patch
 import monitor
 
 SOURCE={"id":"11111111-1111-4111-8111-111111111111","url":"https://club.example/race","enabled":True,"interval_hours":24,"policy_note":"Public race page pilot"}
-def page(label): return ("<h1>"+label+"</h1><p>Official information about the local running race and how to find the organiser and the current entry page.</p>").encode()
+def page(label): return ("<h1>Race "+label+"</h1><p>Official information about the local running race and how to find the organiser and the current entry page.</p>").encode()
 
 class MonitorTests(unittest.TestCase):
     def setUp(self):
@@ -62,17 +62,46 @@ class MonitorTests(unittest.TestCase):
         text=monitor.extract(page("Race")+b'<script>injected instruction</script>')
         self.assertNotIn("injected",text)
     def test_page_body_is_transient_and_notice_retry_is_immutable(self):
-        raw=page("Navigation "*800)+b'<p>PRIVATE-PAGE-COPY Race date: 21 March 2027</p>'
+        raw=page("Local 10K")+b'<nav>PRIVATE-PAGE-COPY Navigation junk</nav><p>Race date: 21 March 2027</p>'
         fetch=lambda _: (SOURCE['url'],raw)
         self.assertEqual(monitor.observe(self.db,SOURCE,fetch,100000),'changed')
         first=monitor.pending(self.db)[0]
-        self.assertEqual(first['evidence']['content_sha256'],monitor.hashlib.sha256(monitor.extract(raw).encode()).hexdigest())
+        self.assertEqual(first['evidence']['content_sha256'],monitor.hashlib.sha256(raw).hexdigest())
         self.assertNotIn('PRIVATE-PAGE-COPY',str(first))
         self.assertNotIn('21 March 2027',first['evidence']['summary'])
         self.assertLess(len(first['evidence']['summary']),200)
         self.assertEqual(monitor.observe(self.db,SOURCE,fetch,200000),'unchanged')
         self.assertEqual(self.db.execute('select count(*) from source_captures').fetchone()[0],0)
         self.assertEqual(monitor.pending(self.db),[first])
+
+    def test_noise_suppression_link_changes_and_extractor_baseline(self):
+        a=page('Local 10K')+b'<p>Enter <a href="https://entry.example/2026">here</a></p>'
+        fetch=lambda raw: lambda _: (SOURCE['url'],raw)
+        monitor.observe(self.db,SOURCE,fetch(a),100000)
+        monitor.observe(self.db,SOURCE,fetch(a+b'<nav>New menu</nav>'),200000)
+        self.assertEqual(len(monitor.pending(self.db)),1)
+        monitor.observe(self.db,SOURCE,fetch(a.replace(b'/2026',b'/2027')),300000)
+        self.assertEqual(len(monitor.pending(self.db)),2)
+        self.db.execute('delete from source_extractions');self.db.commit()
+        # No due-date reset needed for upgrading from the metadata-only observer.
+        monitor.observe(self.db,SOURCE,fetch(a.replace(b'/2026',b'/2027')),400000)
+        self.assertEqual(len(monitor.pending(self.db)),3)
+
+    def test_delivery_batches_by_utf8_bytes_without_mutating_pending_payloads(self):
+        for i in range(50):
+            self.db.execute('insert into outbox(id,payload) values(?,?)',(str(i),json.dumps({'id':str(i),'fixture_padding':'é'*6000})))
+        self.db.commit()
+        original=monitor.pending(self.db)
+        with patch('monitor.request',return_value=(200,{},b'{"ok":true}')) as request:
+            delivered=monitor.deliver(self.db,'https://example.org/api','fixture')
+        self.assertGreater(delivered,0);self.assertLess(delivered,50)
+        self.assertLessEqual(len(request.call_args.args[2]),512000)
+        self.assertEqual(monitor.pending(self.db),original[delivered:])
+
+    def test_structured_event_on_a_thin_page_is_still_extracted(self):
+        raw=b'<script type="application/ld+json">{"@type":"SportsEvent","name":"Race","startDate":"2026-10-11"}</script>'
+        self.assertEqual(monitor.observe(self.db,SOURCE,lambda _: (SOURCE['url'],raw),100000),'changed')
+        self.assertTrue(any(f['field']=='date_from' for f in monitor.pending(self.db)[0]['proposal']['extraction']['facts']))
 
 
 if __name__=="__main__": unittest.main()

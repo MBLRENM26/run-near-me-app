@@ -1,6 +1,6 @@
 # Source capture mapped to the existing database
 
-Verified 30 September 2026 against the live PostgreSQL schema, generated database types, the admin create/edit validator, England Athletics import mapping, source enrichment, and existing research/ORL review contracts. This is the extraction implementation specification; the current observer only reports page changes. It does not yet implement this complete fact extraction.
+Verified 30 September 2026 against the live PostgreSQL schema, generated database types, the admin create/edit validator, England Athletics import mapping, source enrichment, and existing research/ORL review contracts. This is the authoritative target mapping. The database-mapped extractor implements bounded source-fact capture against it; derived, identity, editorial and lifecycle decisions remain in their existing workflows. See `RENM-database-mapped-extractor-2026-09-30.md` for coverage and operational limits.
 
 ## Authoritative targets
 
@@ -59,4 +59,4 @@ Course geometry/media have their own existing course-source and review contracts
 4. Apply existing date, URL, region, enum, coordinate and identity rules. Check edition conflicts and compare against current values and protected fields. Keep absent evidence distinct from an explicit source correction.
 5. Propose only the changed/new facts for private review. Use existing audited application paths and ORL for accepted changes. Discard temporary page bodies after processing.
 
-Until this extractor is implemented and validated, the six-source worker is deliberately a metadata-only change detector. Its new notices retain source/final URL, checked time, fingerprint and a short notice, not page text. Historical baseline payloads and backups remain unchanged for audit/idempotency. There were zero full-text capture rows when this reduction was prepared. This specification does not claim the fact-extraction stage is already running.
+The six-source worker now attaches typed field candidates to the existing review-only `page_change` proposal. It retains provenance, short field evidence and fingerprints, with no whole-page archive. Historical baseline payloads and backups remain unchanged for audit/idempotency. The first successful due fetch under the new extractor creates a mapped baseline, separately from the six original baseline captures. Deployment and first live-cycle verification are recorded in the private pilot operations log.

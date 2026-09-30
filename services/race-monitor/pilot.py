@@ -1,4 +1,4 @@
-"""One bounded pilot cycle. Invoked by the approved scheduled chat task."""
+"""One bounded pilot cycle. Owned by the boot-enabled host systemd timer."""
 import argparse
 from collections import Counter
 from datetime import datetime, timezone
@@ -49,6 +49,10 @@ def inventory(db):
       'pending_observations':db.execute('select count(*) from outbox where delivered=0').fetchone()[0],
       'delivered_observations':db.execute('select count(*) from outbox where delivered=1').fetchone()[0],
       'oldest_pending_capture':db.execute("select min(json_extract(payload,'$.evidence.captured_at')) from outbox where delivered=0").fetchone()[0],
+      'mapped_sources':db.execute('select count(*) from source_extractions').fetchone()[0],
+      'mapped_observations':db.execute("select count(*) from outbox where json_type(payload,'$.proposal.extraction')='object'").fetchone()[0],
+      'mapped_payload_bytes':db.execute("select coalesce(sum(length(cast(payload as blob))),0) from outbox where json_type(payload,'$.proposal.extraction')='object'").fetchone()[0],
+      'retained_page_captures':db.execute('select count(*) from source_captures').fetchone()[0],
     }
 
 

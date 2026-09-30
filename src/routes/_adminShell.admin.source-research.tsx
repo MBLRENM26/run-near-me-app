@@ -12,6 +12,7 @@ import {
   approveResearchClubIdentity,
 } from "@/lib/source-research.functions";
 import { Button } from "@/components/ui/button";
+import { ResearchEventFacts } from "@/components/admin/ResearchEventFacts";
 
 export const Route = createFileRoute("/_adminShell/admin/source-research")({
   head: () => ({
@@ -206,20 +207,28 @@ function SourceResearchPage() {
               ))}
             </ul>
           )}
-          <div className="grid gap-3 md:grid-cols-2">
-            <div>
-              <h3 className="font-medium">Current record</h3>
-              <pre className="overflow-auto whitespace-pre-wrap text-xs">
-                {JSON.stringify(r.current_event, null, 2)}
-              </pre>
+          {r.proposal.kind === "page_change" && r.proposal.extraction ? (
+            <ResearchEventFacts
+              extraction={r.proposal.extraction}
+              candidates={r.candidate_events}
+              limited={r.candidate_search_limited}
+            />
+          ) : (
+            <div className="grid gap-3 md:grid-cols-2">
+              <div>
+                <h3 className="font-medium">Current record</h3>
+                <pre className="overflow-auto whitespace-pre-wrap text-xs">
+                  {JSON.stringify(r.current_event, null, 2)}
+                </pre>
+              </div>
+              <div>
+                <h3 className="font-medium">Proposed finding</h3>
+                <pre className="overflow-auto whitespace-pre-wrap text-xs">
+                  {JSON.stringify(r.proposal, null, 2)}
+                </pre>
+              </div>
             </div>
-            <div>
-              <h3 className="font-medium">Proposed finding</h3>
-              <pre className="overflow-auto whitespace-pre-wrap text-xs">
-                {JSON.stringify(r.proposal, null, 2)}
-              </pre>
-            </div>
-          </div>
+          )}
           {r.review_note && <p>Review: {r.review_note}</p>}
           {((["pending", "held"] as string[]).includes(r.status) ||
             (r.status === "applied" && r.origin === "research")) && (

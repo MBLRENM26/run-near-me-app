@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { eventExtractionSchema } from "./research-event-facts";
 
 // URLs are destinations/evidence, never instructions or fetch authorisation.
 export const researchUrl = z
@@ -80,7 +81,11 @@ const discovery = z
     entry_url: researchUrl.nullable(),
   })
   .strict();
-const pageChange = z.object({ kind: z.literal("page_change") }).strict();
+// Additive evidence on the existing review-only kind; historical notices and
+// SQL review gates remain valid, with no events/ORL migration or new write path.
+const pageChange = z
+  .object({ kind: z.literal("page_change"), extraction: eventExtractionSchema.optional() })
+  .strict();
 export const observationSchema = z
   .object({
     id: uuid,
@@ -123,6 +128,8 @@ export type ResearchRow = Omit<ResearchObservation, "proposal" | "evidence"> & {
   created_at: string;
   review_note: string | null;
   current_event: Record<string, unknown> | null;
+  candidate_events?: Record<string, unknown>[];
+  candidate_search_limited?: boolean;
 };
 export function canApplyResearch(row: Pick<ResearchRow, "proposal" | "conflicts">): boolean {
   return (

@@ -1,0 +1,20 @@
+{
+  "name": {"type": "string", "max": 300},
+  "date_raw": {"type": "string", "max": 200},
+  "date_from": {"type": "date"},
+  "date_to": {"type": "date"},
+  "is_recurring": {"type": "boolean"},
+  "location_raw": {"type": "string", "max": 500},
+  "town": {"type": "string", "max": 200},
+  "county": {"type": "string", "max": 200},
+  "country": {"type": "string", "max": 100},
+  "lat": {"type": "number", "min": -90, "max": 90},
+  "lng": {"type": "number", "min": -180, "max": 180},
+  "distances": {"type": "string", "max": 500},
+  "discipline": {"type": "string", "max": 100},
+  "entry_fee": {"type": "string", "max": 200},
+  "organiser": {"type": "string", "max": 300},
+  "organiser_url": {"type": "url", "max": 1000},
+  "entry_url": {"type": "url", "max": 1000},
+  "licensed": {"type": "string", "max": 50}
+}

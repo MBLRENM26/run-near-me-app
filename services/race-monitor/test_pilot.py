@@ -41,6 +41,10 @@ class PilotTests(unittest.TestCase):
             report=pilot.run(self.config,self.policy,self.root,self.secret,self.now+2)
         self.assertEqual(report['status'],'ok');self.assertEqual(report['delivered'],1);self.assertEqual(report['pending_observations'],0)
         self.assertEqual(report['fetch'],{'not_due':1})
+        self.assertEqual(report['mapped_sources'],1)
+        self.assertEqual(report['mapped_observations'],1)
+        self.assertGreater(report['mapped_payload_bytes'],0)
+        self.assertEqual(report['retained_page_captures'],0)
     def test_review_backlog_stops_new_fetches(self):
         with patch('monitor.source_controls',return_value=([SOURCE],30)),patch('monitor.observe') as observe:
             report=pilot.run(self.config,self.policy,self.root,self.secret,self.now)
