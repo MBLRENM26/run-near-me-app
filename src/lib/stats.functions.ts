@@ -25,9 +25,12 @@ export const getLiveStats = createServerFn({ method: "GET" }).handler(
 
     if (error) {
       console.error("[getLiveStats] failed", error);
-      return { activeEvents: 0, updatedAt: new Date().toISOString() };
+      throw new Error("Race count temporarily unavailable");
     }
 
-    return { activeEvents: data ?? 0, updatedAt: new Date().toISOString() };
+    if (!Number.isSafeInteger(data) || data < 0) {
+      throw new Error("Invalid race count response");
+    }
+    return { activeEvents: data, updatedAt: new Date().toISOString() };
   },
 );

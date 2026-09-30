@@ -206,16 +206,15 @@ def observe(db, source, fetch=fetch_page, now=None):
         digest = hashlib.sha256(text.encode()).hexdigest()
         changed = not row or digest != row[1]
         with db:
-            # The small review-feed summary can end in navigation. Retain the full
-            # bounded visible text locally so future extraction can cite actual evidence.
-            db.execute("insert into source_captures values(?,?,?,?,?,?) on conflict(source_id,content_sha256) do update set last_seen_at=excluded.last_seen_at,final_url=excluded.final_url", (sid,digest,text,final_url,now,now))
+            # Page text is transient input for change detection, not an archive.
+            # Keep existing audit/outbox records immutable; new notices contain no page body.
             if changed:
                 oid = str(uuid4())
                 item = {"id": oid, "source_id": sid, "run_id": str(uuid4()), "evidence": {
                     "source_url": source["url"], "final_url": final_url,
                     "captured_at": datetime.fromtimestamp(now, timezone.utc).isoformat(),
                     "content_sha256": digest, "extractor": EXTRACTOR,
-                    "summary": "Page text changed; facts require review.\n\n" + text[:5800]},
+                    "summary": "Source content changed. Review the source for race dates, entry links and status; no page body retained."},
                     "proposal": {"kind": "page_change"}, "conflicts": []}
                 db.execute("insert into outbox(id,payload) values(?,?)", (oid, json.dumps(item, ensure_ascii=False)))
             db.execute("insert into sources(id,url,last_hash,last_attempt,last_success,next_due,failures,error) values(?,?,?,?,?,?,0,null) on conflict(id) do update set last_hash=excluded.last_hash,last_attempt=excluded.last_attempt,last_success=excluded.last_success,next_due=excluded.next_due,failures=0,error=null", (sid,source["url"],digest,now,now,now+interval*3600))

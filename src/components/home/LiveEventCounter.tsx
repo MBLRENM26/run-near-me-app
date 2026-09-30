@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { getLiveStats } from "@/lib/stats.functions";
 
 const LIVE_STATS_KEY = ["live-stats"] as const;
 export const liveStatsQueryOptions = {
   queryKey: LIVE_STATS_KEY,
   queryFn: () => getLiveStats(),
+  // This optional badge must never send the whole homepage to its error boundary.
+  throwOnError: false,
+  retry: 1,
   // Refetch every 60s so the number visibly ticks during a session if cron
   // publishes new events or an admin flips a hidden one live.
   refetchInterval: 60_000,
@@ -52,8 +55,13 @@ function useCountUp(target: number, durationMs = 800) {
 }
 
 export function LiveEventCounter() {
-  const { data } = useSuspenseQuery(liveStatsQueryOptions);
-  const value = useCountUp(data.activeEvents);
+  const { data } = useQuery(liveStatsQueryOptions);
+  if (!data || !Number.isSafeInteger(data.activeEvents) || data.activeEvents < 0) return null;
+  return <CounterValue count={data.activeEvents} />;
+}
+
+function CounterValue({ count }: { count: number }) {
+  const value = useCountUp(count);
   const formatted = value.toLocaleString("en-GB");
 
   return (
@@ -61,16 +69,11 @@ export function LiveEventCounter() {
       className="inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-4 py-1.5 text-sm text-muted-foreground"
       aria-live="polite"
     >
-      <span
-        className="relative flex h-2 w-2"
-        aria-hidden="true"
-      >
+      <span className="relative flex h-2 w-2" aria-hidden="true">
         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/60 opacity-75" />
         <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
       </span>
-      <span className="font-semibold tabular-nums text-foreground">
-        {formatted}
-      </span>
+      <span className="font-semibold tabular-nums text-foreground">{formatted}</span>
       <span>UK races live right now</span>
     </div>
   );
