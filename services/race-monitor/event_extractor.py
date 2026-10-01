@@ -13,7 +13,7 @@ from pathlib import Path
 import re
 from urllib.parse import urljoin, urlsplit
 
-VERSION = "events-mapped-v1"
+VERSION = "events-mapped-v2"
 FIELDS = json.loads(Path(__file__).with_name("event-fields.json").read_text())
 MAX_FACTS = 32
 MAX_QUOTES = 4000
@@ -59,12 +59,17 @@ class Page(HTMLParser):
     def __init__(self):
         super().__init__(convert_charrefs=True)
         self.stack = []
+        self.excluded = []
         self.parts = []
         self.lines = []
+        self.line_sections = []
+        self.sections = []
         self.headings = []
         self.anchors = []
         self.anchor = None
         self.json_script = None
+        self.calendar_script = None
+        self.calendar_rows = []
         self.documents = []
         self.heading = None
         self.title = []
@@ -73,21 +78,30 @@ class Page(HTMLParser):
         line = clean(" ".join(self.parts))
         if line:
             self.lines.append(line)
+            self.line_sections.append(list(self.sections))
         self.parts = []
 
     def hidden(self):
-        return any(t in {"script", "style", "noscript", "svg", "nav", "footer", "aside"} for t in self.stack)
+        return any(self.excluded) or any(t in {"script", "style", "noscript", "svg", "nav", "footer", "aside"} for t in self.stack)
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
         if tag in BLOCKS:
             self.flush()
         if tag not in {"br", "img", "meta", "link", "input", "hr", "source", "wbr", "area", "embed", "param", "track", "col"}:
+            # Site banners, Divi race-menu cards and historical result tables
+            # are not evidence for the current race edition.
+            self.excluded.append(
+                (tag == "header" and not any(t in {"main", "article"} for t in self.stack))
+                or attrs.get("role") in {"navigation", "complementary"}
+                or bool({"teb-custom-blog-for-sub-menu", "teb-rr-table"} & set(attrs.get("class", "").split())))
             self.stack.append(tag)
         if tag == "script" and attrs.get("type", "").lower() == "application/ld+json":
             self.json_script = []
+        if tag == "script" and attrs.get("id") == "pass-php-to-javascript-js-extra":
+            self.calendar_script = []
         if not self.hidden():
-            if tag in {"h1", "h2"}:
+            if tag in {"h1", "h2", "h3", "h4"}:
                 self.heading = []
             if tag == "a":
                 self.anchor = [attrs.get("href", ""), [], " ".join(self.parts)[-100:]]
@@ -95,6 +109,8 @@ class Page(HTMLParser):
     def handle_data(self, value):
         if self.json_script is not None:
             self.json_script.append(value)
+        if self.calendar_script is not None:
+            self.calendar_script.append(value)
         if not self.hidden():
             if "title" in self.stack:
                 self.title.append(value)
@@ -106,6 +122,19 @@ class Page(HTMLParser):
                 self.anchor[1].append(value)
 
     def handle_endtag(self, tag):
+        if tag == "script" and self.calendar_script is not None:
+            body = "".join(self.calendar_script)
+            self.calendar_script = None
+            # This adapter reads a JSON assignment only. Never execute JavaScript.
+            match = re.fullmatch(r"\s*var\s+plugin_name_ajax_object\s*=\s*(\{.*\})\s*;?\s*(?://# sourceURL=pass-php-to-javascript-js-extra\s*)?", body, re.S) if len(body) <= 200_000 else None
+            if match:
+                try:
+                    rows = json.loads(match[1]).get("table_events_array")
+                    if isinstance(rows, list):
+                        self.calendar_rows.extend(r for r in rows[:100] if isinstance(r, dict))
+                        self.calendar_rows = self.calendar_rows[:100]
+                except (ValueError, RecursionError, AttributeError):
+                    pass
         if tag == "script" and self.json_script is not None:
             body = "".join(self.json_script)
             self.json_script = None
@@ -114,8 +143,13 @@ class Page(HTMLParser):
                     self.documents.append(json.loads(body))
                 except (ValueError, RecursionError):
                     pass
-        if tag in {"h1", "h2"} and self.heading is not None:
-            self.headings.append(clean(" ".join(self.heading)))
+        if tag in {"h1", "h2", "h3", "h4"} and self.heading is not None:
+            heading = clean(" ".join(self.heading))
+            if tag in {"h1", "h2"}:
+                self.headings.append(heading)
+            level = int(tag[1])
+            self.sections = [(n, h) for n, h in self.sections if n < level]
+            self.sections.append((level, heading))
             self.heading = None
         if tag == "a" and self.anchor is not None:
             self.anchors.append((self.anchor[0], clean(" ".join(self.anchor[1])), clean(self.anchor[2])))
@@ -125,6 +159,7 @@ class Page(HTMLParser):
         if tag in self.stack:
             # Repair common malformed nesting without making hidden data visible.
             self.stack = self.stack[:len(self.stack) - 1 - self.stack[::-1].index(tag)]
+            self.excluded = self.excluded[:len(self.stack)]
 
 
 class Findings:
@@ -242,6 +277,47 @@ def structured(out, event, path, base, weekly):
         out.issue(f"Lifecycle review required: {status[-160:]}")
 
 
+def race_name(heading):
+    # Keep the original headline as evidence; remove only explicit presentation
+    # suffixes, never infer the event's canonical identity from the URL.
+    name = re.split(r"\s+Licen[cs]e Number\s*:", heading, maxsplit=1, flags=re.I)[0]
+    dated_suffix = re.search(r"\s+[–—-]\s+(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\b", name, re.I)
+    if dated_suffix and DATE.search(name[dated_suffix.start():]):
+        name = name[:dated_suffix.start()]
+        name = re.sub(r"\s+Returns$", "", name, flags=re.I)
+    return clean(name)
+
+
+def calendar_facts(out, page, base, title, weekly):
+    # The observed Stowmarket calendar uses this exact data contract. Other
+    # scripts/sites require their own verified adapter, not speculative parsing.
+    if weekly or (urlsplit(base).hostname or "").lower() not in {"stowmarketstriders.org.uk", "www.stowmarketstriders.org.uk"}:
+        return
+    def identity(value):
+        return re.sub(r"[^a-z0-9]", "", clean(value).lower())
+    expected = identity(title)
+    for i, row in enumerate(page.calendar_rows):
+        if not expected or identity(row.get("title")) != expected:
+            continue
+        raw_date = clean(row.get("date"))
+        match = DATE.search(raw_date)
+        if not match:
+            continue
+        day, month, year = (int(match[1]), MONTHS[match[2].lower()], int(match[3])) if match[1] else (int(match[4]), int(match[5]), int(match[6]))
+        try:
+            value = date(year, month, day).isoformat()
+        except ValueError:
+            out.issue("Invalid explicit date in source; review required.")
+            continue
+        loc = f"calendar:table_events_array[{i}]"
+        quote = clean(row.get("title")) + ": " + raw_date
+        out.add("date_from", value, quote, loc + ".date")
+        out.add("date_raw", match[0], quote, loc + ".date")
+        location = clean(row.get("location"))
+        if location:
+            out.add("location_raw", location, clean(row.get("title")) + ": " + location, loc + ".location")
+
+
 def extract_event_facts(raw, base):
     page = Page()
     page.feed(raw.decode("utf-8", errors="replace"))
@@ -260,14 +336,18 @@ def extract_event_facts(raw, base):
     if len(nodes) > 4:
         out.issue("Extraction limit reached; inspect source for remaining fields.")
     # A headline is a title candidate, never an event identity match.
-    title = next((h for h in page.headings if h and re.search(r"\b(race|run|parkrun|mile|marathon|scenic|\d+k)\b", h, re.I)), None)
+    title = next((h for h in page.headings if h and not re.search(r"\b(results?|news|reviews?|awards?|winners?)\b", h, re.I) and re.search(r"\b(race|run|parkrun|mile|marathon|scenic|\d+k)\b", h, re.I)), None)
+    title_locator = "text:heading"
     if not title:
-        title = clean(" ".join(page.title)) or None
+        # Document titles commonly append a site name after a spaced separator.
+        title = re.split(r"\s+[|–—-]\s+", clean(" ".join(page.title)), maxsplit=1)[0] or None
+        title_locator = "html:title"
     if title:
-        out.add("name", title, title, "text:heading")
+        out.add("name", race_name(title), title, title_locator)
         matches = DISTANCE.findall(title)
         if matches:
-            out.add("distances", ", ".join(dict.fromkeys(matches)), title, "text:heading")
+            out.add("distances", ", ".join(dict.fromkeys(matches)), title, title_locator)
+    calendar_facts(out, page, base, race_name(title or ""), weekly)
     for i, line in enumerate(page.lines):
         loc = f"text:block[{i}]"
         # Date-only headings/table rows are candidates. Dates in entry deadlines,
@@ -302,7 +382,11 @@ def extract_event_facts(raw, base):
             if distance_race:
                 out.add("distances", distance_race[1], line, loc)
         if "£" in line and len(line) <= 200 and (re.search(r"\b(entry fee|online entry|affiliated|unaffiliated)\b", line, re.I) or re.match(r"^£\d.*(?:member|club)", line, re.I)):
-            out.add("entry_fee", line, line, loc)
+            # A subordinate distance heading scopes the fee to that race. The
+            # next same/higher-level heading ends the scope, including Entries.
+            section = next((h for level, h in reversed(page.line_sections[i]) if level >= 2 and DISTANCE.search(h)), None)
+            fee = clean(section + ": " + line) if section else line
+            out.add("entry_fee", fee, fee, loc + (":section-heading" if section else ""))
         if re.search(r"\b(cancelled|canceled|postponed|sold out|race (?:now )?full|register (?:your )?interest)\b", line, re.I) and not re.search(r"\b(if|eventuality|refund|policy|should the|your place|your entry)\b", line, re.I):
             out.issue("Lifecycle/entry availability needs review: " + line[:180])
     for href, label, before in page.anchors:

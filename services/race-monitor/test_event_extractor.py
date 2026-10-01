@@ -10,6 +10,59 @@ def values(result, field):
     return [f['value'] for f in result['facts'] if f['field']==field]
 
 class EventExtractorTests(unittest.TestCase):
+    def test_scenic_native_structure_excludes_theme_cards_and_matches_calendar(self):
+        # Minimal reconstructed markup; no retained page body or plugin secrets.
+        rows = [{'title': 'Scenic 7', 'date': 'Sunday 08 Nov 2026, 00:00', 'location': 'Mid Suffolk Leisure Centre'},
+                {'title': 'Half Marathon', 'date': 'Sunday 21 Mar 2027, 00:00', 'location': 'Other HQ'}]
+        html = ('<title>Scenic 7 - Stowmarket Striders</title>'
+                '<header><h2>Wrong 10K</h2><a href="/wrong">Enter</a></header>'
+                '<div class="teb-custom-blog-for-sub-menu teb-custom-blog-for-side-bar"><h2>Stowmarket Half Marathon &amp; 10K</h2></div>'
+                '<p>A picturesque 7 mile road race</p><h2>Scenic 7 2025 - Full Senior Results</h2>'
+                '<h2>Scenic 7 2024 - Award Winners</h2>'
+                '<table class="teb-rr-table"><tr><td><h2>Scenic 7 2024 - Suffolk GP Individual</h2><p>Sunday 3 November 2024</p></td></tr></table>'
+                '<p>Enter the 2026 race <a href="/current">HERE</a>.</p>'
+                '<a href="/old">Enter Here</a>'
+                '<script id="pass-php-to-javascript-js-extra">var plugin_name_ajax_object = '
+                + json.dumps({'table_events_array': rows, 'unrelated': 'DO NOT RETAIN'})
+                + ';\n//# sourceURL=pass-php-to-javascript-js-extra\n</script>')
+        result = extract(html, 'https://stowmarketstriders.org.uk/club-races/scenic-7/')
+        self.assertEqual(values(result, 'name'), ['Scenic 7'])
+        self.assertEqual(values(result, 'distances'), ['7 mile'])
+        self.assertEqual(values(result, 'date_from'), ['2026-11-08'])
+        self.assertEqual(values(result, 'location_raw'), ['Mid Suffolk Leisure Centre'])
+        self.assertEqual(len(values(result, 'entry_url')), 2)
+        self.assertTrue(any('Multiple entry_url' in s for s in result['issues']))
+        self.assertNotIn('DO NOT RETAIN', json.dumps(result))
+        self.assertEqual(values(extract(html), 'date_from'), [])
+
+    def test_calendar_accepts_only_json_and_preserves_mixed_editions(self):
+        script = '<script id="pass-php-to-javascript-js-extra">var plugin_name_ajax_object = '
+        data = json.dumps({'table_events_array': [{'title': 'Scenic 7', 'date': '08 Nov 2026'}, {'title': 'Scenic 7', 'date': '07 Nov 2027'}]})
+        base = 'https://stowmarketstriders.org.uk/club-races/scenic-7/'
+        result = extract('<h1>Scenic 7</h1>' + script + data + ';</script>', base)
+        self.assertEqual(values(result, 'date_from'), ['2026-11-08', '2027-11-07'])
+        self.assertTrue(any('Multiple date_from' in s for s in result['issues']))
+        for body in [data + '; executeSomething();', '{table_events_array: []}', data.replace('08 Nov 2026', '31 Nov 2026').replace('07 Nov 2027', 'Sunday 7 November')]:
+            self.assertEqual(values(extract('<h1>Scenic 7</h1>' + script + body + '</script>', base), 'date_from'), [])
+
+    def test_hadleigh_fees_keep_distance_context_and_reset_at_next_section(self):
+        result = extract('<h1>HADLEIGH 2k, 5 AND 10 MILE RACE 2026 Licence Number:</h1>'
+                         '<h3>Hadleigh 10 Mile Road Race</h3><p>Affiliated: £25</p><p>Unaffiliated: £23</p>'
+                         '<h3>Hadleigh 5 Mile Road Race</h3><p>Affiliated: £19</p><p>Unaffiliated: £21</p>'
+                         '<h3>2km Junior Fun Run</h3><p>Entry fee: £6</p>'
+                         '<h2>Entries</h2><p>Entry fee: £10</p>')
+        self.assertEqual(values(result, 'name'), ['HADLEIGH 2k, 5 AND 10 MILE RACE 2026'])
+        self.assertEqual(values(result, 'entry_fee'), ['2km Junior Fun Run: Entry fee: £6', 'Entry fee: £10',
+                         'Hadleigh 10 Mile Road Race: Affiliated: £25', 'Hadleigh 10 Mile Road Race: Unaffiliated: £23',
+                         'Hadleigh 5 Mile Road Race: Affiliated: £19', 'Hadleigh 5 Mile Road Race: Unaffiliated: £21'])
+
+    def test_dated_title_is_cleaned_but_quote_and_date_are_preserved(self):
+        title = 'The Tiptree 10 Mile Returns – Sunday 11th October 2026, 10:30 a.m.'
+        result = extract('<main><header><h2>' + title + '</h2></header></main>')
+        self.assertEqual(values(result, 'name'), ['The Tiptree 10 Mile'])
+        self.assertEqual(values(result, 'date_from'), ['2026-10-11'])
+        self.assertEqual(next(f['quote'] for f in result['facts'] if f['field'] == 'name'), title)
+
     def test_cross_language_contract_fixtures_match_python_output(self):
         fixtures=json.loads(Path(__file__).with_name('event-facts-contract-fixtures.json').read_text())
         for fixture in fixtures:
