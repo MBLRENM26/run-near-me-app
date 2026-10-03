@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { UK_BOUNDS_OR_NULL } from "./events-query";
 import { hasDiscoverableLink } from "@/lib/link-trust";
 import {
   EXPLORER_DATE_MODES,
@@ -169,7 +170,11 @@ export const getExplorerEvents = createServerFn({ method: "GET" })
       if (!searchIds.length) return { events: [], total: 0, capped: false };
     }
 
-    let query = db.from("events_public_v1").select(EXPLORER_COLUMNS).limit(FETCH_LIMIT);
+    let query = db
+      .from("events_public_v1")
+      .select(EXPLORER_COLUMNS)
+      .or(UK_BOUNDS_OR_NULL)
+      .limit(FETCH_LIMIT);
 
     if (searchIds) query = query.in("id", searchIds);
 

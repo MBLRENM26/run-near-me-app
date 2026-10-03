@@ -1,3 +1,5 @@
+import { UK_BOUNDS, UK_COUNTRIES } from "./event-geography";
+
 /**
  * Shared query fragments for the events table.
  *
@@ -24,11 +26,11 @@ export const DISCOVERY_EVENT_COLUMNS =
   "id, slug, name, date_raw, sort_date, town, county, region, distances, distance_tags, terrain_tags, entry_fee, entry_url, organiser_url, is_featured, date_is_estimated, is_recurring, governance, organiser_type, race_profile";
 
 /**
- * PostgREST `.or(...)` fragment that keeps rows either inside the UK
- * mainland bounding box or with a null lat/lng (un-geocoded events stay
- * visible — they're geocoded later by the sync pipeline).
+ * UK discovery only: an explicit overseas country fails even with null
+ * coordinates or a mistaken UK point. Missing-country and un-geocoded UK
+ * records retain their previous eligibility. This is not the detail-page,
+ * lifecycle, indexability or public-view contract.
  *
  * Use as: `.or(UK_BOUNDS_OR_NULL)` after `.eq("status", "ACTIVE")`.
  */
-export const UK_BOUNDS_OR_NULL =
-  "lat.is.null,and(lat.gte.49.9,lat.lte.60.9,lng.gte.-8.6,lng.lte.1.8)";
+export const UK_BOUNDS_OR_NULL = `and(or(country.is.null,country.eq.,${UK_COUNTRIES.map((c) => `country.ilike.${c}`).join(",")}),or(lat.is.null,and(lat.gte.${UK_BOUNDS.south},lat.lte.${UK_BOUNDS.north},lng.gte.${UK_BOUNDS.west},lng.lte.${UK_BOUNDS.east})))`;
