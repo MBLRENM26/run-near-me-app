@@ -391,7 +391,7 @@ function EventDetailPage() {
   const orgLink = classifyEventLink(e.organiser_url);
 
   const dateLabel = formatEventDate(e);
-  const loc = locationLabel(e.town, e.county);
+  const loc = e.location_raw?.trim() || locationLabel(e.town, e.county);
   const distance = e.distances?.trim() || null;
   const terrainLabel = formatTerrain(e.terrain_tags, e.discipline);
   const regionSlug = regionSlugFromName(e.region);
