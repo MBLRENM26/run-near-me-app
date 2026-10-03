@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { hasDiscoverableLink } from "@/lib/link-trust";
-import { DISCOVERY_EVENT_COLUMNS } from "@/lib/events-query";
+import { DISCOVERY_EVENT_COLUMNS, UK_BOUNDS_OR_NULL } from "@/lib/events-query";
 import { sortEstimatedLastWithinMonth } from "@/lib/month-filter";
 import { CITIES, CITY_RADIUS_KM, cityBySlug, haversineKm } from "@/lib/cities";
 import type { CityConfig } from "@/lib/cities";
@@ -72,6 +72,7 @@ async function fetchEventsNearCity(city: CityConfig): Promise<{
     const { data: rows, error } = await supabaseAdmin
       .from("events_public_v1")
       .select(`${DISCOVERY_EVENT_COLUMNS}, lat, lng`)
+      .or(UK_BOUNDS_OR_NULL)
       .gte("lat", minLat)
       .lte("lat", maxLat)
       .gte("lng", minLng)
@@ -159,6 +160,7 @@ export const getCityEventCounts = createServerFn({ method: "GET" }).handler(
       const { data: rows, error } = await supabaseAdmin
         .from("events_public_v1")
         .select(`${DISCOVERY_EVENT_COLUMNS}, lat, lng`)
+        .or(UK_BOUNDS_OR_NULL)
         .not("lat", "is", null)
         .not("lng", "is", null)
         .or(`sort_date.gte.${today},sort_date.is.null`)
