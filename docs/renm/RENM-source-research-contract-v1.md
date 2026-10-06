@@ -43,6 +43,25 @@ Deploy the migration before this application release and register reviewed sourc
 
 Application tests cover contract validation, recurrence, conflicts, byte-bounded request reading and HMAC verification. Worker tests cover restart, unchanged pages, A→B→A, failure/backoff, paused sources, private-DNS rejection and delivery retries. `scripts/source-research-test-bootstrap.sql` is for a disposable Postgres database only, followed by the existing ORL migrations, this migration and `scripts/source-research-test.sql`. Those transaction tests exercise real SQL acceptance, stale rejection, import protection, occurrence rollover refusal, nested reversal, ORL projection/reopen and discovery holds. Production fixtures are never used in these tests.
 
+### Reviewed distance text (6 October 2026)
+
+`event_change` also accepts `field: "distances"`, with a nonblank string of at most 500 characters. It uses the same expected-value/date checks, human review, audit, import-conflict recording and reversal as destination corrections. It does not authorise a date change, merge, ORL relationship, automatic publication or source monitoring. Distance tags are a separate field and are not changed by this correction.
+
+To reproduce SQL regression checks in an empty disposable PostgreSQL 16 database, run these files in order with `ON_ERROR_STOP=on`:
+
+1. `scripts/source-research-test-bootstrap.sql`
+2. `supabase/migrations/20260717185719_e9588572-2a89-48de-899c-16579891c5f7.sql`
+3. `supabase/migrations/20260717194131_0afb2fc0-37f5-4d10-9547-e5ce88d25226.sql`
+4. `supabase/migrations/20260918230000_orl_accept_and_apply_organiser.sql`
+5. `supabase/migrations/20260928161159_6dfabb8e-ea21-497b-b407-31f40a9c17bc.sql`
+6. `supabase/migrations/20260929170000_source_research_pilot.sql`
+7. `supabase/migrations/20260929171000_research_workflow_compatibility.sql`
+8. `supabase/migrations/20261006173000_reviewed_distances.sql`
+9. `scripts/source-research-test.sql`
+10. `scripts/reviewed-distances-test.sql`
+
+Both test files roll back their fixtures. The distance checks cover null imports, repeated conflicts, unrelated updates, manual conflicts, occurrence rollover, nested reversal, malformed SQL inputs and unchanged execution privileges.
+
 ## Existing workflow compatibility (29 September release)
 
 `/admin/source-research` is the single review screen. `/admin/change-reports` redirects there. The private `research_review_queue` view combines existing `source_change_reports` and new evidence observations without copying records. The existing signed watchlist/change-report endpoints and their storage remain compatible. Old pending/unknown/accepted statuses display as pending/held/applied. Legacy reports have no captured page hash or verified occurrence snapshot: the UI identifies that limitation, permits hold/reject only, and requires fresh evidenced research before an applicable correction can be prepared. Historical acceptance is not given a fabricated reversal capability.
