@@ -26,6 +26,20 @@ const observation = {
   conflicts: [],
 };
 describe("source research contract", () => {
+  it("allows reviewed distance text without weakening URL fields", () => {
+    const parse = (field: string, proposed_value: unknown) =>
+      researchEnvelope.safeParse({
+        version: 1,
+        observations: [
+          { ...observation, proposal: { ...observation.proposal, field, proposed_value } },
+        ],
+      }).success;
+    expect(parse("distances", "U16: 2 km; U18: 3 km; seniors: 4 km")).toBe(true);
+    for (const value of ["", "   ", "x".repeat(501), null, 5, {}])
+      expect(parse("distances", value)).toBe(false);
+    expect(parse("entry_url", "10 km")).toBe(false);
+    expect(parse("organiser", "A club")).toBe(false);
+  });
   it("preserves evidence bytes on retry while rejecting blank summaries", () => {
     const item = {
       ...observation,

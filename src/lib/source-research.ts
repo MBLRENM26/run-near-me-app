@@ -7,8 +7,12 @@ export const researchUrl = z
   .url()
   .max(2000)
   .refine((value) => {
-    const u = new URL(value);
-    return ["http:", "https:"].includes(u.protocol) && !u.username && !u.password;
+    try {
+      const u = new URL(value);
+      return ["http:", "https:"].includes(u.protocol) && !u.username && !u.password;
+    } catch {
+      return false;
+    }
   }, "Use an HTTP(S) URL without credentials");
 const uuid = z.string().uuid();
 const date = z.iso.date();
@@ -54,12 +58,19 @@ const change = z
     kind: z.literal("event_change"),
     event_id: uuid,
     expected_date: date,
-    field: z.enum(["entry_url", "organiser_url"]),
+    field: z.enum(["entry_url", "organiser_url", "distances"]),
     // Imported old values may be malformed; compare them exactly without normalising.
     expected_value: z.string().max(2000).nullable(),
-    proposed_value: researchUrl,
+    proposed_value: z.string().max(2000),
   })
-  .strict();
+  .strict()
+  .refine(
+    (change) =>
+      change.field === "distances"
+        ? change.proposed_value.trim().length > 0 && change.proposed_value.length <= 500
+        : researchUrl.safeParse(change.proposed_value).success,
+    "Use a valid destination URL or nonblank distance text of at most 500 characters",
+  );
 const relationship = z
   .object({
     kind: z.literal("club_relationship"),
