@@ -15,6 +15,7 @@ import {
 import { getClubPageData } from "@/lib/clubs.functions";
 import { classifyEventLink, isTrustedLink } from "@/lib/link-trust";
 import { SITE_URL, SITE_NAME } from "@/lib/site";
+import { formatEventDate } from "@/lib/date";
 import { track } from "@/lib/analytics";
 import { fromSearchValidator } from "@/lib/from-search";
 import { BackToSearchBar } from "@/components/site/BackToSearchBar";
@@ -158,7 +159,7 @@ function FullShell({ children }: { children: React.ReactNode }) {
 }
 
 function ClubDetailPage() {
-  const { club: c } = Route.useLoaderData();
+  const { club: c, races } = Route.useLoaderData();
   const websiteLink = classifyEventLink(c.website_url);
   const showWebsite = isTrustedLink(websiteLink);
   const place =
@@ -262,6 +263,43 @@ function ClubDetailPage() {
               <ExternalLink className="ml-2 h-4 w-4" />
             </a>
           </Button>
+        )}
+      </section>
+
+      <section className="mt-6" aria-labelledby="club-races-heading">
+        <h2 id="club-races-heading" className="text-xl font-semibold text-foreground">
+          Upcoming races organised by {c.name}
+        </h2>
+        {races === null ? (
+          <p className="mt-2 text-sm text-muted-foreground">
+            We couldn’t load the races just now. Please try refreshing this page.
+          </p>
+        ) : races.length === 0 ? (
+          <p className="mt-2 text-sm text-muted-foreground">
+            We haven’t confirmed any upcoming races for this club yet.
+          </p>
+        ) : (
+          <>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Races we’ve linked to this club. More may be listed on the club’s website.
+            </p>
+            <ul className="mt-3 divide-y divide-border rounded-xl border border-border bg-card">
+              {races.map((race) => (
+                <li key={race.id}>
+                  <Link
+                    to="/events/$slug"
+                    params={{ slug: race.slug }}
+                    className="block rounded-xl p-4 hover:bg-muted/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                  >
+                    <span className="font-medium text-primary">{race.name}</span>
+                    <span className="mt-1 block text-sm text-muted-foreground">
+                      {[formatEventDate(race), race.town, race.distances].filter(Boolean).join(" · ")}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </>
         )}
       </section>
 

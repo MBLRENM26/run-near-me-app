@@ -96,9 +96,11 @@ export const getClubPageData = createServerFn({ method: "GET" })
       .maybeSingle();
 
     if (error) throw new Error(error.message);
-    if (!club) throw notFound();
+    if (!club?.id) throw notFound();
 
-    return { club: club as unknown as ClubDetail };
+    const { loadClubRaces } = await import("@/lib/club-races.server");
+    const races = await loadClubRaces(club.id);
+    return { club: club as unknown as ClubDetail, races };
   });
 
 export const getAllClubSlugs = createServerFn({ method: "GET" }).handler(async () => {
