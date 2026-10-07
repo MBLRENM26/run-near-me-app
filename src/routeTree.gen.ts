@@ -9,235 +9,129 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as WelshAthleticsPermittedRacesRouteImport } from './routes/welsh-athletics-permitted-races'
-import { Route as UltraMarathonsRouteImport } from './routes/ultra-marathons'
-import { Route as TrailRunningEventsRouteImport } from './routes/trail-running-events'
-import { Route as TraPermittedRacesRouteImport } from './routes/tra-permitted-races'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as SearchRouteImport } from './routes/search'
-import { Route as ScottishAthleticsPermittedRacesRouteImport } from './routes/scottish-athletics-permitted-races'
-import { Route as RunningEventsThisWeekendRouteImport } from './routes/running-events-this-weekend'
-import { Route as RunningEventsNextWeekendRouteImport } from './routes/running-events-next-weekend'
-import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
-import { Route as RoadRacesRouteImport } from './routes/road-races'
-import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as MultiTerrainRacesRouteImport } from './routes/multi-terrain-races'
-import { Route as McpRouteImport } from './routes/mcp'
-import { Route as MarathonsRouteImport } from './routes/marathons'
-import { Route as ListYourEventRouteImport } from './routes/list-your-event'
-import { Route as JuniorParkrunEventsRouteImport } from './routes/junior-parkrun-events'
-import { Route as IndexDothtmlRouteImport } from './routes/index[.]html'
-import { Route as HalfMarathonsRouteImport } from './routes/half-marathons'
-import { Route as ForRunnersRouteImport } from './routes/for-runners'
-import { Route as ForOrganisersRouteImport } from './routes/for-organisers'
-import { Route as ForClubsRouteImport } from './routes/for-clubs'
-import { Route as FellRacesRouteImport } from './routes/fell-races'
-import { Route as ExploreRouteImport } from './routes/explore'
-import { Route as EnglandAthleticsPermittedRacesRouteImport } from './routes/england-athletics-permitted-races'
-import { Route as ClubOrganisedRacesRouteImport } from './routes/club-organised-races'
-import { Route as AthleticsNiPermittedRacesRouteImport } from './routes/athletics-ni-permitted-races'
-import { Route as AboutRouteImport } from './routes/about'
-import { Route as AdminShellRouteImport } from './routes/_adminShell'
-import { Route as R5kRacesRouteImport } from './routes/5k-races'
-import { Route as R10kRacesRouteImport } from './routes/10k-races'
-import { Route as SlugRouteImport } from './routes/$slug'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as RunningClubsIndexRouteImport } from './routes/running-clubs.index'
-import { Route as ParkrunEventsIndexRouteImport } from './routes/parkrun-events.index'
-import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as UltraMarathonsMonthRouteImport } from './routes/ultra-marathons_.$month'
-import { Route as RunningEventsSlugRouteImport } from './routes/running-events.$slug'
-import { Route as RunningEventsInCountyRouteImport } from './routes/running-events-in.$county'
-import { Route as RunningEventsInCityCityRouteImport } from './routes/running-events-in-city.$city'
-import { Route as RunningClubsSlugRouteImport } from './routes/running-clubs.$slug'
-import { Route as ParkrunEventsSlugRouteImport } from './routes/parkrun-events.$slug'
-import { Route as MarathonsMonthRouteImport } from './routes/marathons_.$month'
-import { Route as HalfMarathonsMonthRouteImport } from './routes/half-marathons_.$month'
-import { Route as EventsSlugRouteImport } from './routes/events.$slug'
-import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
-import { Route as AdminLoginRouteImport } from './routes/admin.login'
-import { Route as R5kRacesMonthRouteImport } from './routes/5k-races_.$month'
-import { Route as R10kRacesMonthRouteImport } from './routes/10k-races_.$month'
-import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
+import { Route as SlugRouteImport } from './routes/$slug'
+import { Route as R10kRacesRouteImport } from './routes/10k-races'
+import { Route as R5kRacesRouteImport } from './routes/5k-races'
+import { Route as AdminShellRouteImport } from './routes/_adminShell'
+import { Route as AboutRouteImport } from './routes/about'
+import { Route as AthleticsNiPermittedRacesRouteImport } from './routes/athletics-ni-permitted-races'
+import { Route as ClubOrganisedRacesRouteImport } from './routes/club-organised-races'
+import { Route as EnglandAthleticsPermittedRacesRouteImport } from './routes/england-athletics-permitted-races'
+import { Route as ExploreRouteImport } from './routes/explore'
+import { Route as FellRacesRouteImport } from './routes/fell-races'
+import { Route as ForClubsRouteImport } from './routes/for-clubs'
+import { Route as ForOrganisersRouteImport } from './routes/for-organisers'
+import { Route as ForRunnersRouteImport } from './routes/for-runners'
+import { Route as HalfMarathonsRouteImport } from './routes/half-marathons'
+import { Route as IndexDothtmlRouteImport } from './routes/index[.]html'
+import { Route as JuniorParkrunEventsRouteImport } from './routes/junior-parkrun-events'
+import { Route as ListYourEventRouteImport } from './routes/list-your-event'
+import { Route as MarathonsRouteImport } from './routes/marathons'
+import { Route as McpRouteImport } from './routes/mcp'
+import { Route as MultiTerrainRacesRouteImport } from './routes/multi-terrain-races'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as RoadRacesRouteImport } from './routes/road-races'
+import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
+import { Route as RunningEventsNextWeekendRouteImport } from './routes/running-events-next-weekend'
+import { Route as RunningEventsThisWeekendRouteImport } from './routes/running-events-this-weekend'
+import { Route as ScottishAthleticsPermittedRacesRouteImport } from './routes/scottish-athletics-permitted-races'
+import { Route as SearchRouteImport } from './routes/search'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as TraPermittedRacesRouteImport } from './routes/tra-permitted-races'
+import { Route as TrailRunningEventsRouteImport } from './routes/trail-running-events'
+import { Route as UltraMarathonsRouteImport } from './routes/ultra-marathons'
+import { Route as WelshAthleticsPermittedRacesRouteImport } from './routes/welsh-athletics-permitted-races'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
-import { Route as RunningEventsSlugDistanceRouteImport } from './routes/running-events.$slug_.$distance'
-import { Route as RunningClubsSlugClaimRouteImport } from './routes/running-clubs.$slug.claim'
-import { Route as ParkrunEventsRegionRegionRouteImport } from './routes/parkrun-events.region.$region'
-import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
-import { Route as EventsSlugReportRouteImport } from './routes/events_.$slug.report'
-import { Route as ApiPublicTrackSearchClickRouteImport } from './routes/api/public/track-search-click'
-import { Route as ApiPublicTrackSearchRouteImport } from './routes/api/public/track-search'
-import { Route as ApiPublicImportEventsRouteImport } from './routes/api/public/import-events'
-import { Route as ApiPublicImportClubsRouteImport } from './routes/api/public/import-clubs'
-import { Route as AdminShellAdminSyncRunsRouteImport } from './routes/_adminShell.admin.sync-runs'
-import { Route as AdminShellAdminSubscriptionsRouteImport } from './routes/_adminShell.admin.subscriptions'
-import { Route as AdminShellAdminSourceResearchRouteImport } from './routes/_adminShell.admin.source-research'
-import { Route as AdminShellAdminSearchRouteImport } from './routes/_adminShell.admin.search'
-import { Route as AdminShellAdminRevenueRouteImport } from './routes/_adminShell.admin.revenue'
-import { Route as AdminShellAdminRecurrenceRouteImport } from './routes/_adminShell.admin.recurrence'
-import { Route as AdminShellAdminOrganiserIdentitiesRouteImport } from './routes/_adminShell.admin.organiser-identities'
-import { Route as AdminShellAdminOrganiserGapRouteImport } from './routes/_adminShell.admin.organiser-gap'
-import { Route as AdminShellAdminClubClaimsRouteImport } from './routes/_adminShell.admin.club-claims'
-import { Route as AdminShellAdminClaimsRouteImport } from './routes/_adminShell.admin.claims'
-import { Route as AdminShellAdminChangeReportsRouteImport } from './routes/_adminShell.admin.change-reports'
+import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
+import { Route as R10kRacesMonthRouteImport } from './routes/10k-races_.$month'
+import { Route as R5kRacesMonthRouteImport } from './routes/5k-races_.$month'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
+import { Route as EventsSlugRouteImport } from './routes/events.$slug'
+import { Route as HalfMarathonsMonthRouteImport } from './routes/half-marathons_.$month'
+import { Route as MarathonsMonthRouteImport } from './routes/marathons_.$month'
+import { Route as ParkrunEventsIndexRouteImport } from './routes/parkrun-events.index'
+import { Route as ParkrunEventsSlugRouteImport } from './routes/parkrun-events.$slug'
+import { Route as RunningClubsIndexRouteImport } from './routes/running-clubs.index'
+import { Route as RunningClubsSlugRouteImport } from './routes/running-clubs.$slug'
+import { Route as RunningEventsInCityCityRouteImport } from './routes/running-events-in-city.$city'
+import { Route as RunningEventsInCountyRouteImport } from './routes/running-events-in.$county'
+import { Route as RunningEventsSlugRouteImport } from './routes/running-events.$slug'
+import { Route as UltraMarathonsMonthRouteImport } from './routes/ultra-marathons_.$month'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
-import { Route as AdminShellAdminEventsIndexRouteImport } from './routes/_adminShell.admin.events.index'
+import { Route as AdminShellAdminChangeReportsRouteImport } from './routes/_adminShell.admin.change-reports'
+import { Route as AdminShellAdminClaimsRouteImport } from './routes/_adminShell.admin.claims'
+import { Route as AdminShellAdminClubClaimsRouteImport } from './routes/_adminShell.admin.club-claims'
+import { Route as AdminShellAdminOrganiserGapRouteImport } from './routes/_adminShell.admin.organiser-gap'
+import { Route as AdminShellAdminOrganiserIdentitiesRouteImport } from './routes/_adminShell.admin.organiser-identities'
+import { Route as AdminShellAdminRecurrenceRouteImport } from './routes/_adminShell.admin.recurrence'
+import { Route as AdminShellAdminRevenueRouteImport } from './routes/_adminShell.admin.revenue'
+import { Route as AdminShellAdminSearchRouteImport } from './routes/_adminShell.admin.search'
+import { Route as AdminShellAdminSourceResearchRouteImport } from './routes/_adminShell.admin.source-research'
+import { Route as AdminShellAdminSubscriptionsRouteImport } from './routes/_adminShell.admin.subscriptions'
+import { Route as AdminShellAdminSyncRunsRouteImport } from './routes/_adminShell.admin.sync-runs'
+import { Route as ApiPublicImportClubsRouteImport } from './routes/api/public/import-clubs'
+import { Route as ApiPublicImportEventsRouteImport } from './routes/api/public/import-events'
+import { Route as ApiPublicTrackSearchRouteImport } from './routes/api/public/track-search'
+import { Route as ApiPublicTrackSearchClickRouteImport } from './routes/api/public/track-search-click'
+import { Route as EventsSlugReportRouteImport } from './routes/events_.$slug.report'
+import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
+import { Route as ParkrunEventsRegionRegionRouteImport } from './routes/parkrun-events.region.$region'
+import { Route as RunningClubsSlugClaimRouteImport } from './routes/running-clubs.$slug.claim'
+import { Route as RunningEventsSlugDistanceRouteImport } from './routes/running-events.$slug_.$distance'
 import { Route as AdminShellAdminClubsIndexRouteImport } from './routes/_adminShell.admin.clubs.index'
-import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
-import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
-import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
-import { Route as ApiPublicIngestWatchlistRouteImport } from './routes/api/public/ingest/watchlist'
-import { Route as ApiPublicIngestResearchRouteImport } from './routes/api/public/ingest/research'
-import { Route as ApiPublicIngestChangeReportRouteImport } from './routes/api/public/ingest/change-report'
-import { Route as ApiPublicHooksSendRaceRemindersRouteImport } from './routes/api/public/hooks/send-race-reminders'
-import { Route as ApiPublicHooksNotifyMissedSubmissionsRouteImport } from './routes/api/public/hooks/notify-missed-submissions'
-import { Route as ApiPublicAdminSyncScottishAthleticsClubsRouteImport } from './routes/api/public/admin/sync-scottish-athletics-clubs'
-import { Route as ApiPublicAdminSyncScottishAthleticsRouteImport } from './routes/api/public/admin/sync-scottish-athletics'
-import { Route as ApiPublicAdminSyncEnglandAthleticsRouteImport } from './routes/api/public/admin/sync-england-athletics'
-import { Route as ApiPublicAdminIndexabilityStatsRouteImport } from './routes/api/public/admin/indexability-stats'
-import { Route as ApiPublicAdminFixEventUrlsRouteImport } from './routes/api/public/admin/fix-event-urls'
-import { Route as ApiPublicAdminBackfillOrganiserMatchRouteImport } from './routes/api/public/admin/backfill-organiser-match'
-import { Route as AdminShellAdminOrganiserIdentitiesUnresolvedRouteImport } from './routes/_adminShell.admin.organiser-identities.unresolved'
-import { Route as AdminShellAdminEventsNewRouteImport } from './routes/_adminShell.admin.events.new'
-import { Route as AdminShellAdminEventsEnrichDatesRouteImport } from './routes/_adminShell.admin.events.enrich-dates'
-import { Route as AdminShellAdminEventsDuplicatesRouteImport } from './routes/_adminShell.admin.events.duplicates'
-import { Route as AdminShellAdminEventsIdRouteImport } from './routes/_adminShell.admin.events.$id'
-import { Route as AdminShellAdminClubsNewRouteImport } from './routes/_adminShell.admin.clubs.new'
 import { Route as AdminShellAdminClubsIdRouteImport } from './routes/_adminShell.admin.clubs.$id'
+import { Route as AdminShellAdminClubsNewRouteImport } from './routes/_adminShell.admin.clubs.new'
+import { Route as AdminShellAdminEventsIndexRouteImport } from './routes/_adminShell.admin.events.index'
+import { Route as AdminShellAdminEventsIdRouteImport } from './routes/_adminShell.admin.events.$id'
+import { Route as AdminShellAdminEventsDuplicatesRouteImport } from './routes/_adminShell.admin.events.duplicates'
+import { Route as AdminShellAdminEventsEnrichDatesRouteImport } from './routes/_adminShell.admin.events.enrich-dates'
+import { Route as AdminShellAdminEventsNewRouteImport } from './routes/_adminShell.admin.events.new'
+import { Route as AdminShellAdminOrganiserIdentitiesUnresolvedRouteImport } from './routes/_adminShell.admin.organiser-identities.unresolved'
+import { Route as ApiPublicAdminBackfillOrganiserMatchRouteImport } from './routes/api/public/admin/backfill-organiser-match'
+import { Route as ApiPublicAdminFixEventUrlsRouteImport } from './routes/api/public/admin/fix-event-urls'
+import { Route as ApiPublicAdminIndexabilityStatsRouteImport } from './routes/api/public/admin/indexability-stats'
+import { Route as ApiPublicAdminSyncEnglandAthleticsRouteImport } from './routes/api/public/admin/sync-england-athletics'
+import { Route as ApiPublicAdminSyncScottishAthleticsRouteImport } from './routes/api/public/admin/sync-scottish-athletics'
+import { Route as ApiPublicAdminSyncScottishAthleticsClubsRouteImport } from './routes/api/public/admin/sync-scottish-athletics-clubs'
+import { Route as ApiPublicHooksNotifyMissedSubmissionsRouteImport } from './routes/api/public/hooks/notify-missed-submissions'
+import { Route as ApiPublicHooksSendRaceRemindersRouteImport } from './routes/api/public/hooks/send-race-reminders'
+import { Route as ApiPublicIngestChangeReportRouteImport } from './routes/api/public/ingest/change-report'
+import { Route as ApiPublicIngestResearchRouteImport } from './routes/api/public/ingest/research'
+import { Route as ApiPublicIngestWatchlistRouteImport } from './routes/api/public/ingest/watchlist'
+import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
+import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
+import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 
-const WelshAthleticsPermittedRacesRoute =
-  WelshAthleticsPermittedRacesRouteImport.update({
-    id: '/welsh-athletics-permitted-races',
-    path: '/welsh-athletics-permitted-races',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const UltraMarathonsRoute = UltraMarathonsRouteImport.update({
-  id: '/ultra-marathons',
-  path: '/ultra-marathons',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TrailRunningEventsRoute = TrailRunningEventsRouteImport.update({
-  id: '/trail-running-events',
-  path: '/trail-running-events',
+const SlugRoute = SlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TraPermittedRacesRoute = TraPermittedRacesRouteImport.update({
-  id: '/tra-permitted-races',
-  path: '/tra-permitted-races',
+const R10kRacesRoute = R10kRacesRouteImport.update({
+  id: '/10k-races',
+  path: '/10k-races',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
+const R5kRacesRoute = R5kRacesRouteImport.update({
+  id: '/5k-races',
+  path: '/5k-races',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SearchRoute = SearchRouteImport.update({
-  id: '/search',
-  path: '/search',
+const AdminShellRoute = AdminShellRouteImport.update({
+  id: '/_adminShell',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ScottishAthleticsPermittedRacesRoute =
-  ScottishAthleticsPermittedRacesRouteImport.update({
-    id: '/scottish-athletics-permitted-races',
-    path: '/scottish-athletics-permitted-races',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const RunningEventsThisWeekendRoute =
-  RunningEventsThisWeekendRouteImport.update({
-    id: '/running-events-this-weekend',
-    path: '/running-events-this-weekend',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const RunningEventsNextWeekendRoute =
-  RunningEventsNextWeekendRouteImport.update({
-    id: '/running-events-next-weekend',
-    path: '/running-events-next-weekend',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
-  id: '/robots.txt',
-  path: '/robots.txt',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RoadRacesRoute = RoadRacesRouteImport.update({
-  id: '/road-races',
-  path: '/road-races',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrivacyRoute = PrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MultiTerrainRacesRoute = MultiTerrainRacesRouteImport.update({
-  id: '/multi-terrain-races',
-  path: '/multi-terrain-races',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const McpRoute = McpRouteImport.update({
-  id: '/mcp',
-  path: '/mcp',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MarathonsRoute = MarathonsRouteImport.update({
-  id: '/marathons',
-  path: '/marathons',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ListYourEventRoute = ListYourEventRouteImport.update({
-  id: '/list-your-event',
-  path: '/list-your-event',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const JuniorParkrunEventsRoute = JuniorParkrunEventsRouteImport.update({
-  id: '/junior-parkrun-events',
-  path: '/junior-parkrun-events',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IndexDothtmlRoute = IndexDothtmlRouteImport.update({
-  id: '/index.html',
-  path: '/index.html',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HalfMarathonsRoute = HalfMarathonsRouteImport.update({
-  id: '/half-marathons',
-  path: '/half-marathons',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ForRunnersRoute = ForRunnersRouteImport.update({
-  id: '/for-runners',
-  path: '/for-runners',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ForOrganisersRoute = ForOrganisersRouteImport.update({
-  id: '/for-organisers',
-  path: '/for-organisers',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ForClubsRoute = ForClubsRouteImport.update({
-  id: '/for-clubs',
-  path: '/for-clubs',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FellRacesRoute = FellRacesRouteImport.update({
-  id: '/fell-races',
-  path: '/fell-races',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ExploreRoute = ExploreRouteImport.update({
-  id: '/explore',
-  path: '/explore',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const EnglandAthleticsPermittedRacesRoute =
-  EnglandAthleticsPermittedRacesRouteImport.update({
-    id: '/england-athletics-permitted-races',
-    path: '/england-athletics-permitted-races',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ClubOrganisedRacesRoute = ClubOrganisedRacesRouteImport.update({
-  id: '/club-organised-races',
-  path: '/club-organised-races',
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AthleticsNiPermittedRacesRoute =
@@ -246,119 +140,139 @@ const AthleticsNiPermittedRacesRoute =
     path: '/athletics-ni-permitted-races',
     getParentRoute: () => rootRouteImport,
   } as any)
-const AboutRoute = AboutRouteImport.update({
-  id: '/about',
-  path: '/about',
+const ClubOrganisedRacesRoute = ClubOrganisedRacesRouteImport.update({
+  id: '/club-organised-races',
+  path: '/club-organised-races',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminShellRoute = AdminShellRouteImport.update({
-  id: '/_adminShell',
+const EnglandAthleticsPermittedRacesRoute =
+  EnglandAthleticsPermittedRacesRouteImport.update({
+    id: '/england-athletics-permitted-races',
+    path: '/england-athletics-permitted-races',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ExploreRoute = ExploreRouteImport.update({
+  id: '/explore',
+  path: '/explore',
   getParentRoute: () => rootRouteImport,
 } as any)
-const R5kRacesRoute = R5kRacesRouteImport.update({
-  id: '/5k-races',
-  path: '/5k-races',
+const FellRacesRoute = FellRacesRouteImport.update({
+  id: '/fell-races',
+  path: '/fell-races',
   getParentRoute: () => rootRouteImport,
 } as any)
-const R10kRacesRoute = R10kRacesRouteImport.update({
-  id: '/10k-races',
-  path: '/10k-races',
+const ForClubsRoute = ForClubsRouteImport.update({
+  id: '/for-clubs',
+  path: '/for-clubs',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SlugRoute = SlugRouteImport.update({
-  id: '/$slug',
-  path: '/$slug',
+const ForOrganisersRoute = ForOrganisersRouteImport.update({
+  id: '/for-organisers',
+  path: '/for-organisers',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const ForRunnersRoute = ForRunnersRouteImport.update({
+  id: '/for-runners',
+  path: '/for-runners',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RunningClubsIndexRoute = RunningClubsIndexRouteImport.update({
-  id: '/running-clubs/',
-  path: '/running-clubs/',
+const HalfMarathonsRoute = HalfMarathonsRouteImport.update({
+  id: '/half-marathons',
+  path: '/half-marathons',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ParkrunEventsIndexRoute = ParkrunEventsIndexRouteImport.update({
-  id: '/parkrun-events/',
-  path: '/parkrun-events/',
+const IndexDothtmlRoute = IndexDothtmlRouteImport.update({
+  id: '/index.html',
+  path: '/index.html',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminIndexRoute = AdminIndexRouteImport.update({
-  id: '/admin/',
-  path: '/admin/',
+const JuniorParkrunEventsRoute = JuniorParkrunEventsRouteImport.update({
+  id: '/junior-parkrun-events',
+  path: '/junior-parkrun-events',
   getParentRoute: () => rootRouteImport,
 } as any)
-const UltraMarathonsMonthRoute = UltraMarathonsMonthRouteImport.update({
-  id: '/ultra-marathons_/$month',
-  path: '/ultra-marathons/$month',
+const ListYourEventRoute = ListYourEventRouteImport.update({
+  id: '/list-your-event',
+  path: '/list-your-event',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RunningEventsSlugRoute = RunningEventsSlugRouteImport.update({
-  id: '/running-events/$slug',
-  path: '/running-events/$slug',
+const MarathonsRoute = MarathonsRouteImport.update({
+  id: '/marathons',
+  path: '/marathons',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RunningEventsInCountyRoute = RunningEventsInCountyRouteImport.update({
-  id: '/running-events-in/$county',
-  path: '/running-events-in/$county',
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RunningEventsInCityCityRoute = RunningEventsInCityCityRouteImport.update({
-  id: '/running-events-in-city/$city',
-  path: '/running-events-in-city/$city',
+const MultiTerrainRacesRoute = MultiTerrainRacesRouteImport.update({
+  id: '/multi-terrain-races',
+  path: '/multi-terrain-races',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RunningClubsSlugRoute = RunningClubsSlugRouteImport.update({
-  id: '/running-clubs/$slug',
-  path: '/running-clubs/$slug',
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ParkrunEventsSlugRoute = ParkrunEventsSlugRouteImport.update({
-  id: '/parkrun-events/$slug',
-  path: '/parkrun-events/$slug',
+const RoadRacesRoute = RoadRacesRouteImport.update({
+  id: '/road-races',
+  path: '/road-races',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MarathonsMonthRoute = MarathonsMonthRouteImport.update({
-  id: '/marathons_/$month',
-  path: '/marathons/$month',
+const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
+  id: '/robots.txt',
+  path: '/robots.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
-const HalfMarathonsMonthRoute = HalfMarathonsMonthRouteImport.update({
-  id: '/half-marathons_/$month',
-  path: '/half-marathons/$month',
+const RunningEventsNextWeekendRoute =
+  RunningEventsNextWeekendRouteImport.update({
+    id: '/running-events-next-weekend',
+    path: '/running-events-next-weekend',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const RunningEventsThisWeekendRoute =
+  RunningEventsThisWeekendRouteImport.update({
+    id: '/running-events-this-weekend',
+    path: '/running-events-this-weekend',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ScottishAthleticsPermittedRacesRoute =
+  ScottishAthleticsPermittedRacesRouteImport.update({
+    id: '/scottish-athletics-permitted-races',
+    path: '/scottish-athletics-permitted-races',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const SearchRoute = SearchRouteImport.update({
+  id: '/search',
+  path: '/search',
   getParentRoute: () => rootRouteImport,
 } as any)
-const EventsSlugRoute = EventsSlugRouteImport.update({
-  id: '/events/$slug',
-  path: '/events/$slug',
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
-const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
-  id: '/email/unsubscribe',
-  path: '/email/unsubscribe',
+const TraPermittedRacesRoute = TraPermittedRacesRouteImport.update({
+  id: '/tra-permitted-races',
+  path: '/tra-permitted-races',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminLoginRoute = AdminLoginRouteImport.update({
-  id: '/admin/login',
-  path: '/admin/login',
+const TrailRunningEventsRoute = TrailRunningEventsRouteImport.update({
+  id: '/trail-running-events',
+  path: '/trail-running-events',
   getParentRoute: () => rootRouteImport,
 } as any)
-const R5kRacesMonthRoute = R5kRacesMonthRouteImport.update({
-  id: '/5k-races_/$month',
-  path: '/5k-races/$month',
+const UltraMarathonsRoute = UltraMarathonsRouteImport.update({
+  id: '/ultra-marathons',
+  path: '/ultra-marathons',
   getParentRoute: () => rootRouteImport,
 } as any)
-const R10kRacesMonthRoute = R10kRacesMonthRouteImport.update({
-  id: '/10k-races_/$month',
-  path: '/10k-races/$month',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const Char91DotwellKnownChar93OauthProtectedResourceRoute =
-  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
-    id: '/.well-known/oauth-protected-resource',
-    path: '/.well-known/oauth-protected-resource',
+const WelshAthleticsPermittedRacesRoute =
+  WelshAthleticsPermittedRacesRouteImport.update({
+    id: '/welsh-athletics-permitted-races',
+    path: '/welsh-athletics-permitted-races',
     getParentRoute: () => rootRouteImport,
   } as any)
 const Char91DotmcpChar93ListToolsRoute =
@@ -367,91 +281,113 @@ const Char91DotmcpChar93ListToolsRoute =
     path: '/.mcp/list-tools',
     getParentRoute: () => rootRouteImport,
   } as any)
-const RunningEventsSlugDistanceRoute =
-  RunningEventsSlugDistanceRouteImport.update({
-    id: '/running-events/$slug_/$distance',
-    path: '/running-events/$slug/$distance',
+const Char91DotwellKnownChar93OauthProtectedResourceRoute =
+  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
+    id: '/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
     getParentRoute: () => rootRouteImport,
   } as any)
-const RunningClubsSlugClaimRoute = RunningClubsSlugClaimRouteImport.update({
-  id: '/claim',
-  path: '/claim',
-  getParentRoute: () => RunningClubsSlugRoute,
+const R10kRacesMonthRoute = R10kRacesMonthRouteImport.update({
+  id: '/10k-races_/$month',
+  path: '/10k-races/$month',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const ParkrunEventsRegionRegionRoute =
-  ParkrunEventsRegionRegionRouteImport.update({
-    id: '/parkrun-events/region/$region',
-    path: '/parkrun-events/region/$region',
+const R5kRacesMonthRoute = R5kRacesMonthRouteImport.update({
+  id: '/5k-races_/$month',
+  path: '/5k-races/$month',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/admin/login',
+  path: '/admin/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
+  id: '/email/unsubscribe',
+  path: '/email/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EventsSlugRoute = EventsSlugRouteImport.update({
+  id: '/events/$slug',
+  path: '/events/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HalfMarathonsMonthRoute = HalfMarathonsMonthRouteImport.update({
+  id: '/half-marathons_/$month',
+  path: '/half-marathons/$month',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MarathonsMonthRoute = MarathonsMonthRouteImport.update({
+  id: '/marathons_/$month',
+  path: '/marathons/$month',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParkrunEventsIndexRoute = ParkrunEventsIndexRouteImport.update({
+  id: '/parkrun-events/',
+  path: '/parkrun-events/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParkrunEventsSlugRoute = ParkrunEventsSlugRouteImport.update({
+  id: '/parkrun-events/$slug',
+  path: '/parkrun-events/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RunningClubsIndexRoute = RunningClubsIndexRouteImport.update({
+  id: '/running-clubs/',
+  path: '/running-clubs/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RunningClubsSlugRoute = RunningClubsSlugRouteImport.update({
+  id: '/running-clubs/$slug',
+  path: '/running-clubs/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RunningEventsInCityCityRoute = RunningEventsInCityCityRouteImport.update({
+  id: '/running-events-in-city/$city',
+  path: '/running-events-in-city/$city',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RunningEventsInCountyRoute = RunningEventsInCountyRouteImport.update({
+  id: '/running-events-in/$county',
+  path: '/running-events-in/$county',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RunningEventsSlugRoute = RunningEventsSlugRouteImport.update({
+  id: '/running-events/$slug',
+  path: '/running-events/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UltraMarathonsMonthRoute = UltraMarathonsMonthRouteImport.update({
+  id: '/ultra-marathons_/$month',
+  path: '/ultra-marathons/$month',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Char91DotmcpChar93InvokeToolToolRoute =
+  Char91DotmcpChar93InvokeToolToolRouteImport.update({
+    id: '/.mcp/invoke-tool/$tool',
+    path: '/.mcp/invoke-tool/$tool',
     getParentRoute: () => rootRouteImport,
   } as any)
-const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
-  id: '/lovable/email/suppression',
-  path: '/lovable/email/suppression',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const EventsSlugReportRoute = EventsSlugReportRouteImport.update({
-  id: '/events_/$slug/report',
-  path: '/events/$slug/report',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicTrackSearchClickRoute =
-  ApiPublicTrackSearchClickRouteImport.update({
-    id: '/api/public/track-search-click',
-    path: '/api/public/track-search-click',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicTrackSearchRoute = ApiPublicTrackSearchRouteImport.update({
-  id: '/api/public/track-search',
-  path: '/api/public/track-search',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicImportEventsRoute = ApiPublicImportEventsRouteImport.update({
-  id: '/api/public/import-events',
-  path: '/api/public/import-events',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicImportClubsRoute = ApiPublicImportClubsRouteImport.update({
-  id: '/api/public/import-clubs',
-  path: '/api/public/import-clubs',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminShellAdminSyncRunsRoute = AdminShellAdminSyncRunsRouteImport.update({
-  id: '/admin/sync-runs',
-  path: '/admin/sync-runs',
-  getParentRoute: () => AdminShellRoute,
-} as any)
-const AdminShellAdminSubscriptionsRoute =
-  AdminShellAdminSubscriptionsRouteImport.update({
-    id: '/admin/subscriptions',
-    path: '/admin/subscriptions',
+const AdminShellAdminChangeReportsRoute =
+  AdminShellAdminChangeReportsRouteImport.update({
+    id: '/admin/change-reports',
+    path: '/admin/change-reports',
     getParentRoute: () => AdminShellRoute,
   } as any)
-const AdminShellAdminSourceResearchRoute =
-  AdminShellAdminSourceResearchRouteImport.update({
-    id: '/admin/source-research',
-    path: '/admin/source-research',
-    getParentRoute: () => AdminShellRoute,
-  } as any)
-const AdminShellAdminSearchRoute = AdminShellAdminSearchRouteImport.update({
-  id: '/admin/search',
-  path: '/admin/search',
+const AdminShellAdminClaimsRoute = AdminShellAdminClaimsRouteImport.update({
+  id: '/admin/claims',
+  path: '/admin/claims',
   getParentRoute: () => AdminShellRoute,
 } as any)
-const AdminShellAdminRevenueRoute = AdminShellAdminRevenueRouteImport.update({
-  id: '/admin/revenue',
-  path: '/admin/revenue',
-  getParentRoute: () => AdminShellRoute,
-} as any)
-const AdminShellAdminRecurrenceRoute =
-  AdminShellAdminRecurrenceRouteImport.update({
-    id: '/admin/recurrence',
-    path: '/admin/recurrence',
-    getParentRoute: () => AdminShellRoute,
-  } as any)
-const AdminShellAdminOrganiserIdentitiesRoute =
-  AdminShellAdminOrganiserIdentitiesRouteImport.update({
-    id: '/admin/organiser-identities',
-    path: '/admin/organiser-identities',
+const AdminShellAdminClubClaimsRoute =
+  AdminShellAdminClubClaimsRouteImport.update({
+    id: '/admin/club-claims',
+    path: '/admin/club-claims',
     getParentRoute: () => AdminShellRoute,
   } as any)
 const AdminShellAdminOrganiserGapRoute =
@@ -460,34 +396,92 @@ const AdminShellAdminOrganiserGapRoute =
     path: '/admin/organiser-gap',
     getParentRoute: () => AdminShellRoute,
   } as any)
-const AdminShellAdminClubClaimsRoute =
-  AdminShellAdminClubClaimsRouteImport.update({
-    id: '/admin/club-claims',
-    path: '/admin/club-claims',
+const AdminShellAdminOrganiserIdentitiesRoute =
+  AdminShellAdminOrganiserIdentitiesRouteImport.update({
+    id: '/admin/organiser-identities',
+    path: '/admin/organiser-identities',
     getParentRoute: () => AdminShellRoute,
   } as any)
-const AdminShellAdminClaimsRoute = AdminShellAdminClaimsRouteImport.update({
-  id: '/admin/claims',
-  path: '/admin/claims',
+const AdminShellAdminRecurrenceRoute =
+  AdminShellAdminRecurrenceRouteImport.update({
+    id: '/admin/recurrence',
+    path: '/admin/recurrence',
+    getParentRoute: () => AdminShellRoute,
+  } as any)
+const AdminShellAdminRevenueRoute = AdminShellAdminRevenueRouteImport.update({
+  id: '/admin/revenue',
+  path: '/admin/revenue',
   getParentRoute: () => AdminShellRoute,
 } as any)
-const AdminShellAdminChangeReportsRoute =
-  AdminShellAdminChangeReportsRouteImport.update({
-    id: '/admin/change-reports',
-    path: '/admin/change-reports',
+const AdminShellAdminSearchRoute = AdminShellAdminSearchRouteImport.update({
+  id: '/admin/search',
+  path: '/admin/search',
+  getParentRoute: () => AdminShellRoute,
+} as any)
+const AdminShellAdminSourceResearchRoute =
+  AdminShellAdminSourceResearchRouteImport.update({
+    id: '/admin/source-research',
+    path: '/admin/source-research',
     getParentRoute: () => AdminShellRoute,
   } as any)
-const Char91DotmcpChar93InvokeToolToolRoute =
-  Char91DotmcpChar93InvokeToolToolRouteImport.update({
-    id: '/.mcp/invoke-tool/$tool',
-    path: '/.mcp/invoke-tool/$tool',
+const AdminShellAdminSubscriptionsRoute =
+  AdminShellAdminSubscriptionsRouteImport.update({
+    id: '/admin/subscriptions',
+    path: '/admin/subscriptions',
+    getParentRoute: () => AdminShellRoute,
+  } as any)
+const AdminShellAdminSyncRunsRoute = AdminShellAdminSyncRunsRouteImport.update({
+  id: '/admin/sync-runs',
+  path: '/admin/sync-runs',
+  getParentRoute: () => AdminShellRoute,
+} as any)
+const ApiPublicImportClubsRoute = ApiPublicImportClubsRouteImport.update({
+  id: '/api/public/import-clubs',
+  path: '/api/public/import-clubs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicImportEventsRoute = ApiPublicImportEventsRouteImport.update({
+  id: '/api/public/import-events',
+  path: '/api/public/import-events',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicTrackSearchRoute = ApiPublicTrackSearchRouteImport.update({
+  id: '/api/public/track-search',
+  path: '/api/public/track-search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicTrackSearchClickRoute =
+  ApiPublicTrackSearchClickRouteImport.update({
+    id: '/api/public/track-search-click',
+    path: '/api/public/track-search-click',
     getParentRoute: () => rootRouteImport,
   } as any)
-const AdminShellAdminEventsIndexRoute =
-  AdminShellAdminEventsIndexRouteImport.update({
-    id: '/admin/events/',
-    path: '/admin/events/',
-    getParentRoute: () => AdminShellRoute,
+const EventsSlugReportRoute = EventsSlugReportRouteImport.update({
+  id: '/events_/$slug/report',
+  path: '/events/$slug/report',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
+  id: '/lovable/email/suppression',
+  path: '/lovable/email/suppression',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParkrunEventsRegionRegionRoute =
+  ParkrunEventsRegionRegionRouteImport.update({
+    id: '/parkrun-events/region/$region',
+    path: '/parkrun-events/region/$region',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const RunningClubsSlugClaimRoute = RunningClubsSlugClaimRouteImport.update({
+  id: '/claim',
+  path: '/claim',
+  getParentRoute: () => RunningClubsSlugRoute,
+} as any)
+const RunningEventsSlugDistanceRoute =
+  RunningEventsSlugDistanceRouteImport.update({
+    id: '/running-events/$slug_/$distance',
+    path: '/running-events/$slug/$distance',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const AdminShellAdminClubsIndexRoute =
   AdminShellAdminClubsIndexRouteImport.update({
@@ -495,99 +489,31 @@ const AdminShellAdminClubsIndexRoute =
     path: '/admin/clubs/',
     getParentRoute: () => AdminShellRoute,
   } as any)
-const LovableEmailTransactionalSendRoute =
-  LovableEmailTransactionalSendRouteImport.update({
-    id: '/lovable/email/transactional/send',
-    path: '/lovable/email/transactional/send',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableEmailTransactionalPreviewRoute =
-  LovableEmailTransactionalPreviewRouteImport.update({
-    id: '/lovable/email/transactional/preview',
-    path: '/lovable/email/transactional/preview',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableEmailQueueProcessRoute =
-  LovableEmailQueueProcessRouteImport.update({
-    id: '/lovable/email/queue/process',
-    path: '/lovable/email/queue/process',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicIngestWatchlistRoute =
-  ApiPublicIngestWatchlistRouteImport.update({
-    id: '/api/public/ingest/watchlist',
-    path: '/api/public/ingest/watchlist',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicIngestResearchRoute = ApiPublicIngestResearchRouteImport.update({
-  id: '/api/public/ingest/research',
-  path: '/api/public/ingest/research',
-  getParentRoute: () => rootRouteImport,
+const AdminShellAdminClubsIdRoute = AdminShellAdminClubsIdRouteImport.update({
+  id: '/admin/clubs/$id',
+  path: '/admin/clubs/$id',
+  getParentRoute: () => AdminShellRoute,
 } as any)
-const ApiPublicIngestChangeReportRoute =
-  ApiPublicIngestChangeReportRouteImport.update({
-    id: '/api/public/ingest/change-report',
-    path: '/api/public/ingest/change-report',
-    getParentRoute: () => rootRouteImport,
+const AdminShellAdminClubsNewRoute = AdminShellAdminClubsNewRouteImport.update({
+  id: '/admin/clubs/new',
+  path: '/admin/clubs/new',
+  getParentRoute: () => AdminShellRoute,
+} as any)
+const AdminShellAdminEventsIndexRoute =
+  AdminShellAdminEventsIndexRouteImport.update({
+    id: '/admin/events/',
+    path: '/admin/events/',
+    getParentRoute: () => AdminShellRoute,
   } as any)
-const ApiPublicHooksSendRaceRemindersRoute =
-  ApiPublicHooksSendRaceRemindersRouteImport.update({
-    id: '/api/public/hooks/send-race-reminders',
-    path: '/api/public/hooks/send-race-reminders',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksNotifyMissedSubmissionsRoute =
-  ApiPublicHooksNotifyMissedSubmissionsRouteImport.update({
-    id: '/api/public/hooks/notify-missed-submissions',
-    path: '/api/public/hooks/notify-missed-submissions',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicAdminSyncScottishAthleticsClubsRoute =
-  ApiPublicAdminSyncScottishAthleticsClubsRouteImport.update({
-    id: '/api/public/admin/sync-scottish-athletics-clubs',
-    path: '/api/public/admin/sync-scottish-athletics-clubs',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicAdminSyncScottishAthleticsRoute =
-  ApiPublicAdminSyncScottishAthleticsRouteImport.update({
-    id: '/api/public/admin/sync-scottish-athletics',
-    path: '/api/public/admin/sync-scottish-athletics',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicAdminSyncEnglandAthleticsRoute =
-  ApiPublicAdminSyncEnglandAthleticsRouteImport.update({
-    id: '/api/public/admin/sync-england-athletics',
-    path: '/api/public/admin/sync-england-athletics',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicAdminIndexabilityStatsRoute =
-  ApiPublicAdminIndexabilityStatsRouteImport.update({
-    id: '/api/public/admin/indexability-stats',
-    path: '/api/public/admin/indexability-stats',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicAdminFixEventUrlsRoute =
-  ApiPublicAdminFixEventUrlsRouteImport.update({
-    id: '/api/public/admin/fix-event-urls',
-    path: '/api/public/admin/fix-event-urls',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicAdminBackfillOrganiserMatchRoute =
-  ApiPublicAdminBackfillOrganiserMatchRouteImport.update({
-    id: '/api/public/admin/backfill-organiser-match',
-    path: '/api/public/admin/backfill-organiser-match',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const AdminShellAdminOrganiserIdentitiesUnresolvedRoute =
-  AdminShellAdminOrganiserIdentitiesUnresolvedRouteImport.update({
-    id: '/unresolved',
-    path: '/unresolved',
-    getParentRoute: () => AdminShellAdminOrganiserIdentitiesRoute,
-  } as any)
-const AdminShellAdminEventsNewRoute =
-  AdminShellAdminEventsNewRouteImport.update({
-    id: '/admin/events/new',
-    path: '/admin/events/new',
+const AdminShellAdminEventsIdRoute = AdminShellAdminEventsIdRouteImport.update({
+  id: '/admin/events/$id',
+  path: '/admin/events/$id',
+  getParentRoute: () => AdminShellRoute,
+} as any)
+const AdminShellAdminEventsDuplicatesRoute =
+  AdminShellAdminEventsDuplicatesRouteImport.update({
+    id: '/admin/events/duplicates',
+    path: '/admin/events/duplicates',
     getParentRoute: () => AdminShellRoute,
   } as any)
 const AdminShellAdminEventsEnrichDatesRoute =
@@ -596,27 +522,101 @@ const AdminShellAdminEventsEnrichDatesRoute =
     path: '/admin/events/enrich-dates',
     getParentRoute: () => AdminShellRoute,
   } as any)
-const AdminShellAdminEventsDuplicatesRoute =
-  AdminShellAdminEventsDuplicatesRouteImport.update({
-    id: '/admin/events/duplicates',
-    path: '/admin/events/duplicates',
+const AdminShellAdminEventsNewRoute =
+  AdminShellAdminEventsNewRouteImport.update({
+    id: '/admin/events/new',
+    path: '/admin/events/new',
     getParentRoute: () => AdminShellRoute,
   } as any)
-const AdminShellAdminEventsIdRoute = AdminShellAdminEventsIdRouteImport.update({
-  id: '/admin/events/$id',
-  path: '/admin/events/$id',
-  getParentRoute: () => AdminShellRoute,
+const AdminShellAdminOrganiserIdentitiesUnresolvedRoute =
+  AdminShellAdminOrganiserIdentitiesUnresolvedRouteImport.update({
+    id: '/unresolved',
+    path: '/unresolved',
+    getParentRoute: () => AdminShellAdminOrganiserIdentitiesRoute,
+  } as any)
+const ApiPublicAdminBackfillOrganiserMatchRoute =
+  ApiPublicAdminBackfillOrganiserMatchRouteImport.update({
+    id: '/api/public/admin/backfill-organiser-match',
+    path: '/api/public/admin/backfill-organiser-match',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicAdminFixEventUrlsRoute =
+  ApiPublicAdminFixEventUrlsRouteImport.update({
+    id: '/api/public/admin/fix-event-urls',
+    path: '/api/public/admin/fix-event-urls',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicAdminIndexabilityStatsRoute =
+  ApiPublicAdminIndexabilityStatsRouteImport.update({
+    id: '/api/public/admin/indexability-stats',
+    path: '/api/public/admin/indexability-stats',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicAdminSyncEnglandAthleticsRoute =
+  ApiPublicAdminSyncEnglandAthleticsRouteImport.update({
+    id: '/api/public/admin/sync-england-athletics',
+    path: '/api/public/admin/sync-england-athletics',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicAdminSyncScottishAthleticsRoute =
+  ApiPublicAdminSyncScottishAthleticsRouteImport.update({
+    id: '/api/public/admin/sync-scottish-athletics',
+    path: '/api/public/admin/sync-scottish-athletics',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicAdminSyncScottishAthleticsClubsRoute =
+  ApiPublicAdminSyncScottishAthleticsClubsRouteImport.update({
+    id: '/api/public/admin/sync-scottish-athletics-clubs',
+    path: '/api/public/admin/sync-scottish-athletics-clubs',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksNotifyMissedSubmissionsRoute =
+  ApiPublicHooksNotifyMissedSubmissionsRouteImport.update({
+    id: '/api/public/hooks/notify-missed-submissions',
+    path: '/api/public/hooks/notify-missed-submissions',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksSendRaceRemindersRoute =
+  ApiPublicHooksSendRaceRemindersRouteImport.update({
+    id: '/api/public/hooks/send-race-reminders',
+    path: '/api/public/hooks/send-race-reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicIngestChangeReportRoute =
+  ApiPublicIngestChangeReportRouteImport.update({
+    id: '/api/public/ingest/change-report',
+    path: '/api/public/ingest/change-report',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicIngestResearchRoute = ApiPublicIngestResearchRouteImport.update({
+  id: '/api/public/ingest/research',
+  path: '/api/public/ingest/research',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AdminShellAdminClubsNewRoute = AdminShellAdminClubsNewRouteImport.update({
-  id: '/admin/clubs/new',
-  path: '/admin/clubs/new',
-  getParentRoute: () => AdminShellRoute,
-} as any)
-const AdminShellAdminClubsIdRoute = AdminShellAdminClubsIdRouteImport.update({
-  id: '/admin/clubs/$id',
-  path: '/admin/clubs/$id',
-  getParentRoute: () => AdminShellRoute,
-} as any)
+const ApiPublicIngestWatchlistRoute =
+  ApiPublicIngestWatchlistRouteImport.update({
+    id: '/api/public/ingest/watchlist',
+    path: '/api/public/ingest/watchlist',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableEmailQueueProcessRoute =
+  LovableEmailQueueProcessRouteImport.update({
+    id: '/lovable/email/queue/process',
+    path: '/lovable/email/queue/process',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableEmailTransactionalPreviewRoute =
+  LovableEmailTransactionalPreviewRouteImport.update({
+    id: '/lovable/email/transactional/preview',
+    path: '/lovable/email/transactional/preview',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableEmailTransactionalSendRoute =
+  LovableEmailTransactionalSendRouteImport.update({
+    id: '/lovable/email/transactional/send',
+    path: '/lovable/email/transactional/send',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -1279,221 +1279,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/welsh-athletics-permitted-races': {
-      id: '/welsh-athletics-permitted-races'
-      path: '/welsh-athletics-permitted-races'
-      fullPath: '/welsh-athletics-permitted-races'
-      preLoaderRoute: typeof WelshAthleticsPermittedRacesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/ultra-marathons': {
-      id: '/ultra-marathons'
-      path: '/ultra-marathons'
-      fullPath: '/ultra-marathons'
-      preLoaderRoute: typeof UltraMarathonsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/trail-running-events': {
-      id: '/trail-running-events'
-      path: '/trail-running-events'
-      fullPath: '/trail-running-events'
-      preLoaderRoute: typeof TrailRunningEventsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/tra-permitted-races': {
-      id: '/tra-permitted-races'
-      path: '/tra-permitted-races'
-      fullPath: '/tra-permitted-races'
-      preLoaderRoute: typeof TraPermittedRacesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/search': {
-      id: '/search'
-      path: '/search'
-      fullPath: '/search'
-      preLoaderRoute: typeof SearchRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/scottish-athletics-permitted-races': {
-      id: '/scottish-athletics-permitted-races'
-      path: '/scottish-athletics-permitted-races'
-      fullPath: '/scottish-athletics-permitted-races'
-      preLoaderRoute: typeof ScottishAthleticsPermittedRacesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/running-events-this-weekend': {
-      id: '/running-events-this-weekend'
-      path: '/running-events-this-weekend'
-      fullPath: '/running-events-this-weekend'
-      preLoaderRoute: typeof RunningEventsThisWeekendRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/running-events-next-weekend': {
-      id: '/running-events-next-weekend'
-      path: '/running-events-next-weekend'
-      fullPath: '/running-events-next-weekend'
-      preLoaderRoute: typeof RunningEventsNextWeekendRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/robots.txt': {
-      id: '/robots.txt'
-      path: '/robots.txt'
-      fullPath: '/robots.txt'
-      preLoaderRoute: typeof RobotsDottxtRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/road-races': {
-      id: '/road-races'
-      path: '/road-races'
-      fullPath: '/road-races'
-      preLoaderRoute: typeof RoadRacesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/privacy': {
-      id: '/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof PrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/multi-terrain-races': {
-      id: '/multi-terrain-races'
-      path: '/multi-terrain-races'
-      fullPath: '/multi-terrain-races'
-      preLoaderRoute: typeof MultiTerrainRacesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/mcp': {
-      id: '/mcp'
-      path: '/mcp'
-      fullPath: '/mcp'
-      preLoaderRoute: typeof McpRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/marathons': {
-      id: '/marathons'
-      path: '/marathons'
-      fullPath: '/marathons'
-      preLoaderRoute: typeof MarathonsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/list-your-event': {
-      id: '/list-your-event'
-      path: '/list-your-event'
-      fullPath: '/list-your-event'
-      preLoaderRoute: typeof ListYourEventRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/junior-parkrun-events': {
-      id: '/junior-parkrun-events'
-      path: '/junior-parkrun-events'
-      fullPath: '/junior-parkrun-events'
-      preLoaderRoute: typeof JuniorParkrunEventsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/index.html': {
-      id: '/index.html'
-      path: '/index.html'
-      fullPath: '/index.html'
-      preLoaderRoute: typeof IndexDothtmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/half-marathons': {
-      id: '/half-marathons'
-      path: '/half-marathons'
-      fullPath: '/half-marathons'
-      preLoaderRoute: typeof HalfMarathonsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/for-runners': {
-      id: '/for-runners'
-      path: '/for-runners'
-      fullPath: '/for-runners'
-      preLoaderRoute: typeof ForRunnersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/for-organisers': {
-      id: '/for-organisers'
-      path: '/for-organisers'
-      fullPath: '/for-organisers'
-      preLoaderRoute: typeof ForOrganisersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/for-clubs': {
-      id: '/for-clubs'
-      path: '/for-clubs'
-      fullPath: '/for-clubs'
-      preLoaderRoute: typeof ForClubsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/fell-races': {
-      id: '/fell-races'
-      path: '/fell-races'
-      fullPath: '/fell-races'
-      preLoaderRoute: typeof FellRacesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/explore': {
-      id: '/explore'
-      path: '/explore'
-      fullPath: '/explore'
-      preLoaderRoute: typeof ExploreRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/england-athletics-permitted-races': {
-      id: '/england-athletics-permitted-races'
-      path: '/england-athletics-permitted-races'
-      fullPath: '/england-athletics-permitted-races'
-      preLoaderRoute: typeof EnglandAthleticsPermittedRacesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/club-organised-races': {
-      id: '/club-organised-races'
-      path: '/club-organised-races'
-      fullPath: '/club-organised-races'
-      preLoaderRoute: typeof ClubOrganisedRacesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/athletics-ni-permitted-races': {
-      id: '/athletics-ni-permitted-races'
-      path: '/athletics-ni-permitted-races'
-      fullPath: '/athletics-ni-permitted-races'
-      preLoaderRoute: typeof AthleticsNiPermittedRacesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/about': {
-      id: '/about'
-      path: '/about'
-      fullPath: '/about'
-      preLoaderRoute: typeof AboutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_adminShell': {
-      id: '/_adminShell'
-      path: ''
+    '/': {
+      id: '/'
+      path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof AdminShellRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/5k-races': {
-      id: '/5k-races'
-      path: '/5k-races'
-      fullPath: '/5k-races'
-      preLoaderRoute: typeof R5kRacesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/10k-races': {
-      id: '/10k-races'
-      path: '/10k-races'
-      fullPath: '/10k-races'
-      preLoaderRoute: typeof R10kRacesRouteImport
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$slug': {
@@ -1503,130 +1293,221 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
+    '/10k-races': {
+      id: '/10k-races'
+      path: '/10k-races'
+      fullPath: '/10k-races'
+      preLoaderRoute: typeof R10kRacesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/5k-races': {
+      id: '/5k-races'
+      path: '/5k-races'
+      fullPath: '/5k-races'
+      preLoaderRoute: typeof R5kRacesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_adminShell': {
+      id: '/_adminShell'
+      path: ''
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+      preLoaderRoute: typeof AdminShellRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/running-clubs/': {
-      id: '/running-clubs/'
-      path: '/running-clubs'
-      fullPath: '/running-clubs/'
-      preLoaderRoute: typeof RunningClubsIndexRouteImport
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/parkrun-events/': {
-      id: '/parkrun-events/'
-      path: '/parkrun-events'
-      fullPath: '/parkrun-events/'
-      preLoaderRoute: typeof ParkrunEventsIndexRouteImport
+    '/athletics-ni-permitted-races': {
+      id: '/athletics-ni-permitted-races'
+      path: '/athletics-ni-permitted-races'
+      fullPath: '/athletics-ni-permitted-races'
+      preLoaderRoute: typeof AthleticsNiPermittedRacesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/': {
-      id: '/admin/'
-      path: '/admin'
-      fullPath: '/admin/'
-      preLoaderRoute: typeof AdminIndexRouteImport
+    '/club-organised-races': {
+      id: '/club-organised-races'
+      path: '/club-organised-races'
+      fullPath: '/club-organised-races'
+      preLoaderRoute: typeof ClubOrganisedRacesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/ultra-marathons_/$month': {
-      id: '/ultra-marathons_/$month'
-      path: '/ultra-marathons/$month'
-      fullPath: '/ultra-marathons/$month'
-      preLoaderRoute: typeof UltraMarathonsMonthRouteImport
+    '/england-athletics-permitted-races': {
+      id: '/england-athletics-permitted-races'
+      path: '/england-athletics-permitted-races'
+      fullPath: '/england-athletics-permitted-races'
+      preLoaderRoute: typeof EnglandAthleticsPermittedRacesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/running-events/$slug': {
-      id: '/running-events/$slug'
-      path: '/running-events/$slug'
-      fullPath: '/running-events/$slug'
-      preLoaderRoute: typeof RunningEventsSlugRouteImport
+    '/explore': {
+      id: '/explore'
+      path: '/explore'
+      fullPath: '/explore'
+      preLoaderRoute: typeof ExploreRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/running-events-in/$county': {
-      id: '/running-events-in/$county'
-      path: '/running-events-in/$county'
-      fullPath: '/running-events-in/$county'
-      preLoaderRoute: typeof RunningEventsInCountyRouteImport
+    '/fell-races': {
+      id: '/fell-races'
+      path: '/fell-races'
+      fullPath: '/fell-races'
+      preLoaderRoute: typeof FellRacesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/running-events-in-city/$city': {
-      id: '/running-events-in-city/$city'
-      path: '/running-events-in-city/$city'
-      fullPath: '/running-events-in-city/$city'
-      preLoaderRoute: typeof RunningEventsInCityCityRouteImport
+    '/for-clubs': {
+      id: '/for-clubs'
+      path: '/for-clubs'
+      fullPath: '/for-clubs'
+      preLoaderRoute: typeof ForClubsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/running-clubs/$slug': {
-      id: '/running-clubs/$slug'
-      path: '/running-clubs/$slug'
-      fullPath: '/running-clubs/$slug'
-      preLoaderRoute: typeof RunningClubsSlugRouteImport
+    '/for-organisers': {
+      id: '/for-organisers'
+      path: '/for-organisers'
+      fullPath: '/for-organisers'
+      preLoaderRoute: typeof ForOrganisersRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/parkrun-events/$slug': {
-      id: '/parkrun-events/$slug'
-      path: '/parkrun-events/$slug'
-      fullPath: '/parkrun-events/$slug'
-      preLoaderRoute: typeof ParkrunEventsSlugRouteImport
+    '/for-runners': {
+      id: '/for-runners'
+      path: '/for-runners'
+      fullPath: '/for-runners'
+      preLoaderRoute: typeof ForRunnersRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/marathons_/$month': {
-      id: '/marathons_/$month'
-      path: '/marathons/$month'
-      fullPath: '/marathons/$month'
-      preLoaderRoute: typeof MarathonsMonthRouteImport
+    '/half-marathons': {
+      id: '/half-marathons'
+      path: '/half-marathons'
+      fullPath: '/half-marathons'
+      preLoaderRoute: typeof HalfMarathonsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/half-marathons_/$month': {
-      id: '/half-marathons_/$month'
-      path: '/half-marathons/$month'
-      fullPath: '/half-marathons/$month'
-      preLoaderRoute: typeof HalfMarathonsMonthRouteImport
+    '/index.html': {
+      id: '/index.html'
+      path: '/index.html'
+      fullPath: '/index.html'
+      preLoaderRoute: typeof IndexDothtmlRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/events/$slug': {
-      id: '/events/$slug'
-      path: '/events/$slug'
-      fullPath: '/events/$slug'
-      preLoaderRoute: typeof EventsSlugRouteImport
+    '/junior-parkrun-events': {
+      id: '/junior-parkrun-events'
+      path: '/junior-parkrun-events'
+      fullPath: '/junior-parkrun-events'
+      preLoaderRoute: typeof JuniorParkrunEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/email/unsubscribe': {
-      id: '/email/unsubscribe'
-      path: '/email/unsubscribe'
-      fullPath: '/email/unsubscribe'
-      preLoaderRoute: typeof EmailUnsubscribeRouteImport
+    '/list-your-event': {
+      id: '/list-your-event'
+      path: '/list-your-event'
+      fullPath: '/list-your-event'
+      preLoaderRoute: typeof ListYourEventRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/login': {
-      id: '/admin/login'
-      path: '/admin/login'
-      fullPath: '/admin/login'
-      preLoaderRoute: typeof AdminLoginRouteImport
+    '/marathons': {
+      id: '/marathons'
+      path: '/marathons'
+      fullPath: '/marathons'
+      preLoaderRoute: typeof MarathonsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/5k-races_/$month': {
-      id: '/5k-races_/$month'
-      path: '/5k-races/$month'
-      fullPath: '/5k-races/$month'
-      preLoaderRoute: typeof R5kRacesMonthRouteImport
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/10k-races_/$month': {
-      id: '/10k-races_/$month'
-      path: '/10k-races/$month'
-      fullPath: '/10k-races/$month'
-      preLoaderRoute: typeof R10kRacesMonthRouteImport
+    '/multi-terrain-races': {
+      id: '/multi-terrain-races'
+      path: '/multi-terrain-races'
+      fullPath: '/multi-terrain-races'
+      preLoaderRoute: typeof MultiTerrainRacesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/.well-known/oauth-protected-resource': {
-      id: '/.well-known/oauth-protected-resource'
-      path: '/.well-known/oauth-protected-resource'
-      fullPath: '/.well-known/oauth-protected-resource'
-      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/road-races': {
+      id: '/road-races'
+      path: '/road-races'
+      fullPath: '/road-races'
+      preLoaderRoute: typeof RoadRacesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/robots.txt': {
+      id: '/robots.txt'
+      path: '/robots.txt'
+      fullPath: '/robots.txt'
+      preLoaderRoute: typeof RobotsDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/running-events-next-weekend': {
+      id: '/running-events-next-weekend'
+      path: '/running-events-next-weekend'
+      fullPath: '/running-events-next-weekend'
+      preLoaderRoute: typeof RunningEventsNextWeekendRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/running-events-this-weekend': {
+      id: '/running-events-this-weekend'
+      path: '/running-events-this-weekend'
+      fullPath: '/running-events-this-weekend'
+      preLoaderRoute: typeof RunningEventsThisWeekendRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/scottish-athletics-permitted-races': {
+      id: '/scottish-athletics-permitted-races'
+      path: '/scottish-athletics-permitted-races'
+      fullPath: '/scottish-athletics-permitted-races'
+      preLoaderRoute: typeof ScottishAthleticsPermittedRacesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/search': {
+      id: '/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tra-permitted-races': {
+      id: '/tra-permitted-races'
+      path: '/tra-permitted-races'
+      fullPath: '/tra-permitted-races'
+      preLoaderRoute: typeof TraPermittedRacesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/trail-running-events': {
+      id: '/trail-running-events'
+      path: '/trail-running-events'
+      fullPath: '/trail-running-events'
+      preLoaderRoute: typeof TrailRunningEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ultra-marathons': {
+      id: '/ultra-marathons'
+      path: '/ultra-marathons'
+      fullPath: '/ultra-marathons'
+      preLoaderRoute: typeof UltraMarathonsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/welsh-athletics-permitted-races': {
+      id: '/welsh-athletics-permitted-races'
+      path: '/welsh-athletics-permitted-races'
+      fullPath: '/welsh-athletics-permitted-races'
+      preLoaderRoute: typeof WelshAthleticsPermittedRacesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/.mcp/list-tools': {
@@ -1636,130 +1517,137 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/running-events/$slug_/$distance': {
-      id: '/running-events/$slug_/$distance'
-      path: '/running-events/$slug/$distance'
-      fullPath: '/running-events/$slug/$distance'
-      preLoaderRoute: typeof RunningEventsSlugDistanceRouteImport
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/running-clubs/$slug/claim': {
-      id: '/running-clubs/$slug/claim'
-      path: '/claim'
-      fullPath: '/running-clubs/$slug/claim'
-      preLoaderRoute: typeof RunningClubsSlugClaimRouteImport
-      parentRoute: typeof RunningClubsSlugRoute
-    }
-    '/parkrun-events/region/$region': {
-      id: '/parkrun-events/region/$region'
-      path: '/parkrun-events/region/$region'
-      fullPath: '/parkrun-events/region/$region'
-      preLoaderRoute: typeof ParkrunEventsRegionRegionRouteImport
+    '/10k-races_/$month': {
+      id: '/10k-races_/$month'
+      path: '/10k-races/$month'
+      fullPath: '/10k-races/$month'
+      preLoaderRoute: typeof R10kRacesMonthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/lovable/email/suppression': {
-      id: '/lovable/email/suppression'
-      path: '/lovable/email/suppression'
-      fullPath: '/lovable/email/suppression'
-      preLoaderRoute: typeof LovableEmailSuppressionRouteImport
+    '/5k-races_/$month': {
+      id: '/5k-races_/$month'
+      path: '/5k-races/$month'
+      fullPath: '/5k-races/$month'
+      preLoaderRoute: typeof R5kRacesMonthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/events_/$slug/report': {
-      id: '/events_/$slug/report'
-      path: '/events/$slug/report'
-      fullPath: '/events/$slug/report'
-      preLoaderRoute: typeof EventsSlugReportRouteImport
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/track-search-click': {
-      id: '/api/public/track-search-click'
-      path: '/api/public/track-search-click'
-      fullPath: '/api/public/track-search-click'
-      preLoaderRoute: typeof ApiPublicTrackSearchClickRouteImport
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/admin/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/track-search': {
-      id: '/api/public/track-search'
-      path: '/api/public/track-search'
-      fullPath: '/api/public/track-search'
-      preLoaderRoute: typeof ApiPublicTrackSearchRouteImport
+    '/email/unsubscribe': {
+      id: '/email/unsubscribe'
+      path: '/email/unsubscribe'
+      fullPath: '/email/unsubscribe'
+      preLoaderRoute: typeof EmailUnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/import-events': {
-      id: '/api/public/import-events'
-      path: '/api/public/import-events'
-      fullPath: '/api/public/import-events'
-      preLoaderRoute: typeof ApiPublicImportEventsRouteImport
+    '/events/$slug': {
+      id: '/events/$slug'
+      path: '/events/$slug'
+      fullPath: '/events/$slug'
+      preLoaderRoute: typeof EventsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/import-clubs': {
-      id: '/api/public/import-clubs'
-      path: '/api/public/import-clubs'
-      fullPath: '/api/public/import-clubs'
-      preLoaderRoute: typeof ApiPublicImportClubsRouteImport
+    '/half-marathons_/$month': {
+      id: '/half-marathons_/$month'
+      path: '/half-marathons/$month'
+      fullPath: '/half-marathons/$month'
+      preLoaderRoute: typeof HalfMarathonsMonthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_adminShell/admin/sync-runs': {
-      id: '/_adminShell/admin/sync-runs'
-      path: '/admin/sync-runs'
-      fullPath: '/admin/sync-runs'
-      preLoaderRoute: typeof AdminShellAdminSyncRunsRouteImport
-      parentRoute: typeof AdminShellRoute
+    '/marathons_/$month': {
+      id: '/marathons_/$month'
+      path: '/marathons/$month'
+      fullPath: '/marathons/$month'
+      preLoaderRoute: typeof MarathonsMonthRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_adminShell/admin/subscriptions': {
-      id: '/_adminShell/admin/subscriptions'
-      path: '/admin/subscriptions'
-      fullPath: '/admin/subscriptions'
-      preLoaderRoute: typeof AdminShellAdminSubscriptionsRouteImport
-      parentRoute: typeof AdminShellRoute
+    '/parkrun-events/': {
+      id: '/parkrun-events/'
+      path: '/parkrun-events'
+      fullPath: '/parkrun-events/'
+      preLoaderRoute: typeof ParkrunEventsIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_adminShell/admin/source-research': {
-      id: '/_adminShell/admin/source-research'
-      path: '/admin/source-research'
-      fullPath: '/admin/source-research'
-      preLoaderRoute: typeof AdminShellAdminSourceResearchRouteImport
-      parentRoute: typeof AdminShellRoute
+    '/parkrun-events/$slug': {
+      id: '/parkrun-events/$slug'
+      path: '/parkrun-events/$slug'
+      fullPath: '/parkrun-events/$slug'
+      preLoaderRoute: typeof ParkrunEventsSlugRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_adminShell/admin/search': {
-      id: '/_adminShell/admin/search'
-      path: '/admin/search'
-      fullPath: '/admin/search'
-      preLoaderRoute: typeof AdminShellAdminSearchRouteImport
-      parentRoute: typeof AdminShellRoute
+    '/running-clubs/': {
+      id: '/running-clubs/'
+      path: '/running-clubs'
+      fullPath: '/running-clubs/'
+      preLoaderRoute: typeof RunningClubsIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_adminShell/admin/revenue': {
-      id: '/_adminShell/admin/revenue'
-      path: '/admin/revenue'
-      fullPath: '/admin/revenue'
-      preLoaderRoute: typeof AdminShellAdminRevenueRouteImport
-      parentRoute: typeof AdminShellRoute
+    '/running-clubs/$slug': {
+      id: '/running-clubs/$slug'
+      path: '/running-clubs/$slug'
+      fullPath: '/running-clubs/$slug'
+      preLoaderRoute: typeof RunningClubsSlugRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_adminShell/admin/recurrence': {
-      id: '/_adminShell/admin/recurrence'
-      path: '/admin/recurrence'
-      fullPath: '/admin/recurrence'
-      preLoaderRoute: typeof AdminShellAdminRecurrenceRouteImport
-      parentRoute: typeof AdminShellRoute
+    '/running-events-in-city/$city': {
+      id: '/running-events-in-city/$city'
+      path: '/running-events-in-city/$city'
+      fullPath: '/running-events-in-city/$city'
+      preLoaderRoute: typeof RunningEventsInCityCityRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_adminShell/admin/organiser-identities': {
-      id: '/_adminShell/admin/organiser-identities'
-      path: '/admin/organiser-identities'
-      fullPath: '/admin/organiser-identities'
-      preLoaderRoute: typeof AdminShellAdminOrganiserIdentitiesRouteImport
-      parentRoute: typeof AdminShellRoute
+    '/running-events-in/$county': {
+      id: '/running-events-in/$county'
+      path: '/running-events-in/$county'
+      fullPath: '/running-events-in/$county'
+      preLoaderRoute: typeof RunningEventsInCountyRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_adminShell/admin/organiser-gap': {
-      id: '/_adminShell/admin/organiser-gap'
-      path: '/admin/organiser-gap'
-      fullPath: '/admin/organiser-gap'
-      preLoaderRoute: typeof AdminShellAdminOrganiserGapRouteImport
-      parentRoute: typeof AdminShellRoute
+    '/running-events/$slug': {
+      id: '/running-events/$slug'
+      path: '/running-events/$slug'
+      fullPath: '/running-events/$slug'
+      preLoaderRoute: typeof RunningEventsSlugRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_adminShell/admin/club-claims': {
-      id: '/_adminShell/admin/club-claims'
-      path: '/admin/club-claims'
-      fullPath: '/admin/club-claims'
-      preLoaderRoute: typeof AdminShellAdminClubClaimsRouteImport
+    '/ultra-marathons_/$month': {
+      id: '/ultra-marathons_/$month'
+      path: '/ultra-marathons/$month'
+      fullPath: '/ultra-marathons/$month'
+      preLoaderRoute: typeof UltraMarathonsMonthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.mcp/invoke-tool/$tool': {
+      id: '/.mcp/invoke-tool/$tool'
+      path: '/.mcp/invoke-tool/$tool'
+      fullPath: '/.mcp/invoke-tool/$tool'
+      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_adminShell/admin/change-reports': {
+      id: '/_adminShell/admin/change-reports'
+      path: '/admin/change-reports'
+      fullPath: '/admin/change-reports'
+      preLoaderRoute: typeof AdminShellAdminChangeReportsRouteImport
       parentRoute: typeof AdminShellRoute
     }
     '/_adminShell/admin/claims': {
@@ -1769,26 +1657,131 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminShellAdminClaimsRouteImport
       parentRoute: typeof AdminShellRoute
     }
-    '/_adminShell/admin/change-reports': {
-      id: '/_adminShell/admin/change-reports'
-      path: '/admin/change-reports'
-      fullPath: '/admin/change-reports'
-      preLoaderRoute: typeof AdminShellAdminChangeReportsRouteImport
+    '/_adminShell/admin/club-claims': {
+      id: '/_adminShell/admin/club-claims'
+      path: '/admin/club-claims'
+      fullPath: '/admin/club-claims'
+      preLoaderRoute: typeof AdminShellAdminClubClaimsRouteImport
       parentRoute: typeof AdminShellRoute
     }
-    '/.mcp/invoke-tool/$tool': {
-      id: '/.mcp/invoke-tool/$tool'
-      path: '/.mcp/invoke-tool/$tool'
-      fullPath: '/.mcp/invoke-tool/$tool'
-      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
+    '/_adminShell/admin/organiser-gap': {
+      id: '/_adminShell/admin/organiser-gap'
+      path: '/admin/organiser-gap'
+      fullPath: '/admin/organiser-gap'
+      preLoaderRoute: typeof AdminShellAdminOrganiserGapRouteImport
+      parentRoute: typeof AdminShellRoute
+    }
+    '/_adminShell/admin/organiser-identities': {
+      id: '/_adminShell/admin/organiser-identities'
+      path: '/admin/organiser-identities'
+      fullPath: '/admin/organiser-identities'
+      preLoaderRoute: typeof AdminShellAdminOrganiserIdentitiesRouteImport
+      parentRoute: typeof AdminShellRoute
+    }
+    '/_adminShell/admin/recurrence': {
+      id: '/_adminShell/admin/recurrence'
+      path: '/admin/recurrence'
+      fullPath: '/admin/recurrence'
+      preLoaderRoute: typeof AdminShellAdminRecurrenceRouteImport
+      parentRoute: typeof AdminShellRoute
+    }
+    '/_adminShell/admin/revenue': {
+      id: '/_adminShell/admin/revenue'
+      path: '/admin/revenue'
+      fullPath: '/admin/revenue'
+      preLoaderRoute: typeof AdminShellAdminRevenueRouteImport
+      parentRoute: typeof AdminShellRoute
+    }
+    '/_adminShell/admin/search': {
+      id: '/_adminShell/admin/search'
+      path: '/admin/search'
+      fullPath: '/admin/search'
+      preLoaderRoute: typeof AdminShellAdminSearchRouteImport
+      parentRoute: typeof AdminShellRoute
+    }
+    '/_adminShell/admin/source-research': {
+      id: '/_adminShell/admin/source-research'
+      path: '/admin/source-research'
+      fullPath: '/admin/source-research'
+      preLoaderRoute: typeof AdminShellAdminSourceResearchRouteImport
+      parentRoute: typeof AdminShellRoute
+    }
+    '/_adminShell/admin/subscriptions': {
+      id: '/_adminShell/admin/subscriptions'
+      path: '/admin/subscriptions'
+      fullPath: '/admin/subscriptions'
+      preLoaderRoute: typeof AdminShellAdminSubscriptionsRouteImport
+      parentRoute: typeof AdminShellRoute
+    }
+    '/_adminShell/admin/sync-runs': {
+      id: '/_adminShell/admin/sync-runs'
+      path: '/admin/sync-runs'
+      fullPath: '/admin/sync-runs'
+      preLoaderRoute: typeof AdminShellAdminSyncRunsRouteImport
+      parentRoute: typeof AdminShellRoute
+    }
+    '/api/public/import-clubs': {
+      id: '/api/public/import-clubs'
+      path: '/api/public/import-clubs'
+      fullPath: '/api/public/import-clubs'
+      preLoaderRoute: typeof ApiPublicImportClubsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_adminShell/admin/events/': {
-      id: '/_adminShell/admin/events/'
-      path: '/admin/events'
-      fullPath: '/admin/events/'
-      preLoaderRoute: typeof AdminShellAdminEventsIndexRouteImport
-      parentRoute: typeof AdminShellRoute
+    '/api/public/import-events': {
+      id: '/api/public/import-events'
+      path: '/api/public/import-events'
+      fullPath: '/api/public/import-events'
+      preLoaderRoute: typeof ApiPublicImportEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/track-search': {
+      id: '/api/public/track-search'
+      path: '/api/public/track-search'
+      fullPath: '/api/public/track-search'
+      preLoaderRoute: typeof ApiPublicTrackSearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/track-search-click': {
+      id: '/api/public/track-search-click'
+      path: '/api/public/track-search-click'
+      fullPath: '/api/public/track-search-click'
+      preLoaderRoute: typeof ApiPublicTrackSearchClickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/events_/$slug/report': {
+      id: '/events_/$slug/report'
+      path: '/events/$slug/report'
+      fullPath: '/events/$slug/report'
+      preLoaderRoute: typeof EventsSlugReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/suppression': {
+      id: '/lovable/email/suppression'
+      path: '/lovable/email/suppression'
+      fullPath: '/lovable/email/suppression'
+      preLoaderRoute: typeof LovableEmailSuppressionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/parkrun-events/region/$region': {
+      id: '/parkrun-events/region/$region'
+      path: '/parkrun-events/region/$region'
+      fullPath: '/parkrun-events/region/$region'
+      preLoaderRoute: typeof ParkrunEventsRegionRegionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/running-clubs/$slug/claim': {
+      id: '/running-clubs/$slug/claim'
+      path: '/claim'
+      fullPath: '/running-clubs/$slug/claim'
+      preLoaderRoute: typeof RunningClubsSlugClaimRouteImport
+      parentRoute: typeof RunningClubsSlugRoute
+    }
+    '/running-events/$slug_/$distance': {
+      id: '/running-events/$slug_/$distance'
+      path: '/running-events/$slug/$distance'
+      fullPath: '/running-events/$slug/$distance'
+      preLoaderRoute: typeof RunningEventsSlugDistanceRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_adminShell/admin/clubs/': {
       id: '/_adminShell/admin/clubs/'
@@ -1797,137 +1790,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminShellAdminClubsIndexRouteImport
       parentRoute: typeof AdminShellRoute
     }
-    '/lovable/email/transactional/send': {
-      id: '/lovable/email/transactional/send'
-      path: '/lovable/email/transactional/send'
-      fullPath: '/lovable/email/transactional/send'
-      preLoaderRoute: typeof LovableEmailTransactionalSendRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/email/transactional/preview': {
-      id: '/lovable/email/transactional/preview'
-      path: '/lovable/email/transactional/preview'
-      fullPath: '/lovable/email/transactional/preview'
-      preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/email/queue/process': {
-      id: '/lovable/email/queue/process'
-      path: '/lovable/email/queue/process'
-      fullPath: '/lovable/email/queue/process'
-      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/ingest/watchlist': {
-      id: '/api/public/ingest/watchlist'
-      path: '/api/public/ingest/watchlist'
-      fullPath: '/api/public/ingest/watchlist'
-      preLoaderRoute: typeof ApiPublicIngestWatchlistRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/ingest/research': {
-      id: '/api/public/ingest/research'
-      path: '/api/public/ingest/research'
-      fullPath: '/api/public/ingest/research'
-      preLoaderRoute: typeof ApiPublicIngestResearchRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/ingest/change-report': {
-      id: '/api/public/ingest/change-report'
-      path: '/api/public/ingest/change-report'
-      fullPath: '/api/public/ingest/change-report'
-      preLoaderRoute: typeof ApiPublicIngestChangeReportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/send-race-reminders': {
-      id: '/api/public/hooks/send-race-reminders'
-      path: '/api/public/hooks/send-race-reminders'
-      fullPath: '/api/public/hooks/send-race-reminders'
-      preLoaderRoute: typeof ApiPublicHooksSendRaceRemindersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/notify-missed-submissions': {
-      id: '/api/public/hooks/notify-missed-submissions'
-      path: '/api/public/hooks/notify-missed-submissions'
-      fullPath: '/api/public/hooks/notify-missed-submissions'
-      preLoaderRoute: typeof ApiPublicHooksNotifyMissedSubmissionsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/admin/sync-scottish-athletics-clubs': {
-      id: '/api/public/admin/sync-scottish-athletics-clubs'
-      path: '/api/public/admin/sync-scottish-athletics-clubs'
-      fullPath: '/api/public/admin/sync-scottish-athletics-clubs'
-      preLoaderRoute: typeof ApiPublicAdminSyncScottishAthleticsClubsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/admin/sync-scottish-athletics': {
-      id: '/api/public/admin/sync-scottish-athletics'
-      path: '/api/public/admin/sync-scottish-athletics'
-      fullPath: '/api/public/admin/sync-scottish-athletics'
-      preLoaderRoute: typeof ApiPublicAdminSyncScottishAthleticsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/admin/sync-england-athletics': {
-      id: '/api/public/admin/sync-england-athletics'
-      path: '/api/public/admin/sync-england-athletics'
-      fullPath: '/api/public/admin/sync-england-athletics'
-      preLoaderRoute: typeof ApiPublicAdminSyncEnglandAthleticsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/admin/indexability-stats': {
-      id: '/api/public/admin/indexability-stats'
-      path: '/api/public/admin/indexability-stats'
-      fullPath: '/api/public/admin/indexability-stats'
-      preLoaderRoute: typeof ApiPublicAdminIndexabilityStatsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/admin/fix-event-urls': {
-      id: '/api/public/admin/fix-event-urls'
-      path: '/api/public/admin/fix-event-urls'
-      fullPath: '/api/public/admin/fix-event-urls'
-      preLoaderRoute: typeof ApiPublicAdminFixEventUrlsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/admin/backfill-organiser-match': {
-      id: '/api/public/admin/backfill-organiser-match'
-      path: '/api/public/admin/backfill-organiser-match'
-      fullPath: '/api/public/admin/backfill-organiser-match'
-      preLoaderRoute: typeof ApiPublicAdminBackfillOrganiserMatchRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_adminShell/admin/organiser-identities/unresolved': {
-      id: '/_adminShell/admin/organiser-identities/unresolved'
-      path: '/unresolved'
-      fullPath: '/admin/organiser-identities/unresolved'
-      preLoaderRoute: typeof AdminShellAdminOrganiserIdentitiesUnresolvedRouteImport
-      parentRoute: typeof AdminShellAdminOrganiserIdentitiesRoute
-    }
-    '/_adminShell/admin/events/new': {
-      id: '/_adminShell/admin/events/new'
-      path: '/admin/events/new'
-      fullPath: '/admin/events/new'
-      preLoaderRoute: typeof AdminShellAdminEventsNewRouteImport
-      parentRoute: typeof AdminShellRoute
-    }
-    '/_adminShell/admin/events/enrich-dates': {
-      id: '/_adminShell/admin/events/enrich-dates'
-      path: '/admin/events/enrich-dates'
-      fullPath: '/admin/events/enrich-dates'
-      preLoaderRoute: typeof AdminShellAdminEventsEnrichDatesRouteImport
-      parentRoute: typeof AdminShellRoute
-    }
-    '/_adminShell/admin/events/duplicates': {
-      id: '/_adminShell/admin/events/duplicates'
-      path: '/admin/events/duplicates'
-      fullPath: '/admin/events/duplicates'
-      preLoaderRoute: typeof AdminShellAdminEventsDuplicatesRouteImport
-      parentRoute: typeof AdminShellRoute
-    }
-    '/_adminShell/admin/events/$id': {
-      id: '/_adminShell/admin/events/$id'
-      path: '/admin/events/$id'
-      fullPath: '/admin/events/$id'
-      preLoaderRoute: typeof AdminShellAdminEventsIdRouteImport
+    '/_adminShell/admin/clubs/$id': {
+      id: '/_adminShell/admin/clubs/$id'
+      path: '/admin/clubs/$id'
+      fullPath: '/admin/clubs/$id'
+      preLoaderRoute: typeof AdminShellAdminClubsIdRouteImport
       parentRoute: typeof AdminShellRoute
     }
     '/_adminShell/admin/clubs/new': {
@@ -1937,12 +1804,145 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminShellAdminClubsNewRouteImport
       parentRoute: typeof AdminShellRoute
     }
-    '/_adminShell/admin/clubs/$id': {
-      id: '/_adminShell/admin/clubs/$id'
-      path: '/admin/clubs/$id'
-      fullPath: '/admin/clubs/$id'
-      preLoaderRoute: typeof AdminShellAdminClubsIdRouteImport
+    '/_adminShell/admin/events/': {
+      id: '/_adminShell/admin/events/'
+      path: '/admin/events'
+      fullPath: '/admin/events/'
+      preLoaderRoute: typeof AdminShellAdminEventsIndexRouteImport
       parentRoute: typeof AdminShellRoute
+    }
+    '/_adminShell/admin/events/$id': {
+      id: '/_adminShell/admin/events/$id'
+      path: '/admin/events/$id'
+      fullPath: '/admin/events/$id'
+      preLoaderRoute: typeof AdminShellAdminEventsIdRouteImport
+      parentRoute: typeof AdminShellRoute
+    }
+    '/_adminShell/admin/events/duplicates': {
+      id: '/_adminShell/admin/events/duplicates'
+      path: '/admin/events/duplicates'
+      fullPath: '/admin/events/duplicates'
+      preLoaderRoute: typeof AdminShellAdminEventsDuplicatesRouteImport
+      parentRoute: typeof AdminShellRoute
+    }
+    '/_adminShell/admin/events/enrich-dates': {
+      id: '/_adminShell/admin/events/enrich-dates'
+      path: '/admin/events/enrich-dates'
+      fullPath: '/admin/events/enrich-dates'
+      preLoaderRoute: typeof AdminShellAdminEventsEnrichDatesRouteImport
+      parentRoute: typeof AdminShellRoute
+    }
+    '/_adminShell/admin/events/new': {
+      id: '/_adminShell/admin/events/new'
+      path: '/admin/events/new'
+      fullPath: '/admin/events/new'
+      preLoaderRoute: typeof AdminShellAdminEventsNewRouteImport
+      parentRoute: typeof AdminShellRoute
+    }
+    '/_adminShell/admin/organiser-identities/unresolved': {
+      id: '/_adminShell/admin/organiser-identities/unresolved'
+      path: '/unresolved'
+      fullPath: '/admin/organiser-identities/unresolved'
+      preLoaderRoute: typeof AdminShellAdminOrganiserIdentitiesUnresolvedRouteImport
+      parentRoute: typeof AdminShellAdminOrganiserIdentitiesRoute
+    }
+    '/api/public/admin/backfill-organiser-match': {
+      id: '/api/public/admin/backfill-organiser-match'
+      path: '/api/public/admin/backfill-organiser-match'
+      fullPath: '/api/public/admin/backfill-organiser-match'
+      preLoaderRoute: typeof ApiPublicAdminBackfillOrganiserMatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/admin/fix-event-urls': {
+      id: '/api/public/admin/fix-event-urls'
+      path: '/api/public/admin/fix-event-urls'
+      fullPath: '/api/public/admin/fix-event-urls'
+      preLoaderRoute: typeof ApiPublicAdminFixEventUrlsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/admin/indexability-stats': {
+      id: '/api/public/admin/indexability-stats'
+      path: '/api/public/admin/indexability-stats'
+      fullPath: '/api/public/admin/indexability-stats'
+      preLoaderRoute: typeof ApiPublicAdminIndexabilityStatsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/admin/sync-england-athletics': {
+      id: '/api/public/admin/sync-england-athletics'
+      path: '/api/public/admin/sync-england-athletics'
+      fullPath: '/api/public/admin/sync-england-athletics'
+      preLoaderRoute: typeof ApiPublicAdminSyncEnglandAthleticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/admin/sync-scottish-athletics': {
+      id: '/api/public/admin/sync-scottish-athletics'
+      path: '/api/public/admin/sync-scottish-athletics'
+      fullPath: '/api/public/admin/sync-scottish-athletics'
+      preLoaderRoute: typeof ApiPublicAdminSyncScottishAthleticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/admin/sync-scottish-athletics-clubs': {
+      id: '/api/public/admin/sync-scottish-athletics-clubs'
+      path: '/api/public/admin/sync-scottish-athletics-clubs'
+      fullPath: '/api/public/admin/sync-scottish-athletics-clubs'
+      preLoaderRoute: typeof ApiPublicAdminSyncScottishAthleticsClubsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/notify-missed-submissions': {
+      id: '/api/public/hooks/notify-missed-submissions'
+      path: '/api/public/hooks/notify-missed-submissions'
+      fullPath: '/api/public/hooks/notify-missed-submissions'
+      preLoaderRoute: typeof ApiPublicHooksNotifyMissedSubmissionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/send-race-reminders': {
+      id: '/api/public/hooks/send-race-reminders'
+      path: '/api/public/hooks/send-race-reminders'
+      fullPath: '/api/public/hooks/send-race-reminders'
+      preLoaderRoute: typeof ApiPublicHooksSendRaceRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/ingest/change-report': {
+      id: '/api/public/ingest/change-report'
+      path: '/api/public/ingest/change-report'
+      fullPath: '/api/public/ingest/change-report'
+      preLoaderRoute: typeof ApiPublicIngestChangeReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/ingest/research': {
+      id: '/api/public/ingest/research'
+      path: '/api/public/ingest/research'
+      fullPath: '/api/public/ingest/research'
+      preLoaderRoute: typeof ApiPublicIngestResearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/ingest/watchlist': {
+      id: '/api/public/ingest/watchlist'
+      path: '/api/public/ingest/watchlist'
+      fullPath: '/api/public/ingest/watchlist'
+      preLoaderRoute: typeof ApiPublicIngestWatchlistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/queue/process': {
+      id: '/lovable/email/queue/process'
+      path: '/lovable/email/queue/process'
+      fullPath: '/lovable/email/queue/process'
+      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/transactional/preview': {
+      id: '/lovable/email/transactional/preview'
+      path: '/lovable/email/transactional/preview'
+      fullPath: '/lovable/email/transactional/preview'
+      preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/transactional/send': {
+      id: '/lovable/email/transactional/send'
+      path: '/lovable/email/transactional/send'
+      fullPath: '/lovable/email/transactional/send'
+      preLoaderRoute: typeof LovableEmailTransactionalSendRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
