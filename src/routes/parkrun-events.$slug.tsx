@@ -25,7 +25,7 @@ export const Route = createFileRoute("/parkrun-events/$slug")({
     }
     const p = loaderData;
     const isJunior = p.variant === "junior";
-    const schedule = isJunior ? "Sunday 9:30am" : "Saturday 9:00am";
+    const schedule = isJunior ? "Sunday morning" : "Saturday morning";
     const dist = p.distance ?? (isJunior ? "2K" : "5K");
     const town = p.town?.trim() || null;
     const county = p.county?.trim() || null;
@@ -33,12 +33,12 @@ export const Route = createFileRoute("/parkrun-events/$slug")({
     // Place segment: town when known, otherwise the coord-derived region.
     const place = town ?? regionName;
 
-    // Title: "{Name} — Free Weekly {5K|2K}, {Place} | Course & Start Time"
+    // Title: "{Name} — Free Weekly {5K|2K}, {Place} | Venue & Course"
     // (drop the place segment when unknown)
     const title =
       `${p.name} — Free Weekly ${dist}` +
       (place ? `, ${place}` : "") +
-      ` | Course & Start Time`;
+      ` | Venue & Course`;
 
     const locText = [town, county].filter(Boolean).join(", ") || regionName || "";
     const description =
@@ -59,14 +59,13 @@ export const Route = createFileRoute("/parkrun-events/$slug")({
         "@type": "Schedule",
         repeatFrequency: "P1W",
         byDay: isJunior ? "https://schema.org/Sunday" : "https://schema.org/Saturday",
-        startTime: isJunior ? "09:30" : "09:00",
       },
       offers: { "@type": "Offer", price: "0", priceCurrency: "GBP" },
     };
-    if (p.lat != null || p.lng != null || town || county || regionName) {
+    if (p.venue || p.lat != null || p.lng != null || town || county || regionName) {
       const location: Record<string, unknown> = {
         "@type": "Place",
-        name: p.name,
+        name: p.venue || p.name,
       };
       if (p.lat != null && p.lng != null) {
         location.geo = { "@type": "GeoCoordinates", latitude: p.lat, longitude: p.lng };
@@ -143,8 +142,8 @@ function ParkrunLocationPage() {
   const p: import("@/lib/parkrun.functions").ParkrunDetail = Route.useLoaderData();
   const isJunior = p.variant === "junior";
   const schedule = isJunior
-    ? "Every Sunday at 9:30am"
-    : "Every Saturday at 9:00am";
+    ? "Every Sunday morning"
+    : "Every Saturday morning";
   const distanceLabel = p.distance ?? (isJunior ? "2K" : "5K");
   const regionName = p.regionSlug ? REGION_BY_SLUG[p.regionSlug]?.name : null;
   // Prefer the town/county we hold; otherwise use the parkrun's own place
@@ -194,6 +193,15 @@ function ParkrunLocationPage() {
           </div>
 
           <p className="mt-4 text-base text-muted-foreground">{schedule}</p>
+          {p.venue && (
+            <p className="mt-2 flex items-start gap-2 text-foreground">
+              <MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+              <span>{p.venue}</span>
+            </p>
+          )}
+          <p className="mt-2 text-sm text-muted-foreground">
+            Check the official event page for the start time, meeting point and any cancellations before travelling.
+          </p>
 
           {p.organiserUrl && (
             <div className="mt-6">

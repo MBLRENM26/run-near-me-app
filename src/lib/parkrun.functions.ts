@@ -133,6 +133,7 @@ export interface NearbyRace {
 }
 
 export interface ParkrunDetail extends ParkrunLocation {
+  venue: string | null;
   town: string | null;
   county: string | null;
   nearby: (ParkrunLocation & { distanceMiles: number })[];
@@ -188,9 +189,10 @@ export const getParkrunBySlug = createServerFn({ method: "GET" })
     // Location fields for SEO title/description and JSON-LD address.
     const { data: locRow } = await supabaseAdmin
       .from("events")
-      .select("town, county")
+      .select("location_raw, town, county")
       .eq("id", me.id)
       .maybeSingle();
+    const venue = (locRow?.location_raw as string | null)?.trim() || null;
     const town = (locRow?.town as string | null)?.trim() || null;
     const county = (locRow?.county as string | null)?.trim() || null;
 
@@ -257,6 +259,6 @@ export const getParkrunBySlug = createServerFn({ method: "GET" })
         .slice(0, 8);
     }
 
-    return { ...me, town, county, nearby, nearbyRaces };
+    return { ...me, venue, town, county, nearby, nearbyRaces };
 
   });

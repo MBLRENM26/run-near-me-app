@@ -4,8 +4,8 @@ export const ADULT_PARKRUN_CONFIG: ParkrunHubConfig = {
   variant: "adult",
   h1: "Parkrun Locations in the UK",
   intro:
-    "Free, weekly, timed 5K runs every Saturday morning. Browse every parkrun across the UK — find your local event and turn up at 9am.",
-  scheduleLine: "Every Saturday at 9:00am",
+    "Free, weekly, timed 5K runs every Saturday morning. Browse every parkrun across the UK — find your local event and check its official page for the start time.",
+  scheduleLine: "Every Saturday morning",
   siblingLink: { to: "/junior-parkrun-events", label: "Junior parkrun (2K)" },
   faqs: [
     {
@@ -18,7 +18,7 @@ export const ADULT_PARKRUN_CONFIG: ParkrunHubConfig = {
     },
     {
       q: "How do I sign up for parkrun?",
-      a: "Register for free at parkrun.org.uk, print your personal barcode, then turn up to any UK parkrun at 8:50am on a Saturday. Bring the barcode to be scanned at the finish.",
+      a: "Register for free at parkrun.org.uk, print your personal barcode, then check your chosen event’s official page for the Saturday start time and first-timer briefing. Bring the barcode to be scanned at the finish.",
     },
     {
       q: "Where is my nearest parkrun?",
@@ -32,16 +32,16 @@ export const JUNIOR_PARKRUN_CONFIG: ParkrunHubConfig = {
   h1: "Junior parkrun Locations in the UK",
   intro:
     "Free, weekly, timed 2K runs for children aged 4–14, every Sunday morning. A friendly first running event for kids and a great Sunday morning out for the whole family.",
-  scheduleLine: "Every Sunday at 9:30am",
+  scheduleLine: "Every Sunday morning",
   siblingLink: { to: "/parkrun-events", label: "Adult parkrun (5K)" },
   faqs: [
     {
       q: "What is junior parkrun?",
-      a: "Junior parkrun is a free, weekly, timed 2 kilometre run for children aged 4 to 14, held every Sunday morning at 9:30am. It's organised by volunteers in parks across the UK.",
+      a: "Junior parkrun is a free, weekly, timed 2 kilometre run for children aged 4 to 14, held every Sunday morning. Check the official event page for its start time. It's organised by volunteers in parks across the UK.",
     },
     {
       q: "How old do you have to be for junior parkrun?",
-      a: "Children must be aged 4 to 14 to take part. Under-11s should run with an adult; children of all ages must be accompanied by a parent or guardian who is present at the event.",
+      a: "Children must be aged 4 to 14 to take part. Children can run the junior course without an adult. Under-11s must be accompanied to and from the event by a responsible adult who stays for its duration.",
     },
     {
       q: "Is junior parkrun free?",
