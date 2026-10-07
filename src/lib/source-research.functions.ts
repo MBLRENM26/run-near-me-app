@@ -87,7 +87,7 @@ export const listSourceResearch = createServerFn({ method: "GET" })
       ? await db
           .from("events")
           .select(
-            "id,name,date_from,sort_date,status,entry_url,organiser_url,organiser,organiser_club_id,distances",
+            "id,name,date_from,sort_date,status,entry_url,organiser_url,organiser,organiser_club_id,distances,location_raw,town,county,region,country,lat,lng",
           )
           .in("id", ids)
       : { data: [], error: null };

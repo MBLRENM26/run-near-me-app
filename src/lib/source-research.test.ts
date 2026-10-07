@@ -26,6 +26,25 @@ const observation = {
   conflicts: [],
 };
 describe("source research contract", () => {
+  it("supports reviewed location and literal organiser facts with typed coordinates", () => {
+    const parse = (field: string, proposed_value: unknown) =>
+      researchEnvelope.safeParse({
+        version: 1,
+        observations: [
+          { ...observation, proposal: { ...observation.proposal, field, proposed_value } },
+        ],
+      }).success;
+    expect(parse("organiser", "Stilton Stumble Committee")).toBe(true);
+    expect(parse("location_raw", "Memorial Hall, Cropwell Bishop")).toBe(true);
+    expect(parse("lat", 55.823776)).toBe(true);
+    expect(parse("lng", -4.303952)).toBe(true);
+    for (const value of ["55.8", 91, -91, null]) expect(parse("lat", value)).toBe(false);
+    for (const value of [181, -181, null]) expect(parse("lng", value)).toBe(false);
+    for (const value of ["", " ", 4, null, "x".repeat(501)])
+      expect(parse("location_raw", value)).toBe(false);
+    expect(parse("organiser_club_id", id)).toBe(false); // ORL still requires its relationship workflow.
+    expect(parse("status", "CANCELLED")).toBe(false);
+  });
   it("allows reviewed names and distance text without weakening URL fields", () => {
     const parse = (field: string, proposed_value: unknown) =>
       researchEnvelope.safeParse({
@@ -42,7 +61,7 @@ describe("source research contract", () => {
     for (const value of ["", "   ", "x".repeat(501), null, 5, {}])
       expect(parse("distances", value)).toBe(false);
     expect(parse("entry_url", "10 km")).toBe(false);
-    expect(parse("organiser", "A club")).toBe(false);
+    expect(parse("organiser", "A club")).toBe(true);
   });
   it("preserves evidence bytes on retry while rejecting blank summaries", () => {
     const item = {

@@ -1848,6 +1848,7 @@ export type Database = {
       }
       sync_runs: {
         Row: {
+          review_integrity: Json | null
           active: number | null
           created_at: string
           duration_ms: number | null
@@ -1866,6 +1867,7 @@ export type Database = {
           written: number | null
         }
         Insert: {
+          review_integrity?: Json | null
           active?: number | null
           created_at?: string
           duration_ms?: number | null
@@ -1884,6 +1886,7 @@ export type Database = {
           written?: number | null
         }
         Update: {
+          review_integrity?: Json | null
           active?: number | null
           created_at?: string
           duration_ms?: number | null
@@ -2315,6 +2318,7 @@ export type Database = {
         }
         Returns: string
       }
+      get_sync_review_snapshot: { Args: Record<PropertyKey, never>; Returns: Json }
       review_source_research: {
         Args: { _action: string; _id: string; _note: string; _reviewer: string }
         Returns: Json

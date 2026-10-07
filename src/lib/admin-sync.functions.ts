@@ -1,15 +1,13 @@
 import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
+import type { SyncReviewIntegrity } from "@/lib/sync-review-integrity";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 // Loaded lazily so the server-only session module never enters the client
 // import graph (route components statically import this module).
 const isAdminAuthenticated = createServerOnlyFn(async () => {
-  const { isAdminAuthenticated: impl } = await import(
-    "@/lib/admin-session.server"
-  );
+  const { isAdminAuthenticated: impl } = await import("@/lib/admin-session.server");
   return impl();
 });
-
 
 async function requireAdminMutation() {
   if (!(await isAdminAuthenticated())) throw new Error("Unauthorized");
@@ -24,6 +22,7 @@ export const SYNC_SOURCES = [
 export type SyncSource = (typeof SYNC_SOURCES)[number];
 
 export type SyncRun = {
+  review_integrity: SyncReviewIntegrity | null;
   id: string;
   source: string;
   status: string;
@@ -108,12 +107,12 @@ export const getSyncRuns = createServerFn({ method: "GET" }).handler(
     const { data, error } = await supabaseAdmin
       .from("sync_runs")
       .select(
-        "id, source, status, started_at, finished_at, duration_ms, fetched, active, written, new_events, updated_existing, skipped_dupes, skipped_no_date, failed_pages, error_message",
+        "id, source, status, started_at, finished_at, duration_ms, fetched, active, written, new_events, updated_existing, skipped_dupes, skipped_no_date, failed_pages, error_message, review_integrity",
       )
       .order("started_at", { ascending: false })
       .limit(50);
     if (error) throw new Error(error.message);
-    return (data ?? []) as SyncRun[];
+    return (data ?? []) as unknown as SyncRun[];
   },
 );
 
@@ -150,9 +149,7 @@ export const triggerSyncRun = createServerFn({ method: "POST" })
       fetched: number;
     }> = (async () => {
       if (data.source === "england-athletics") {
-        const { runEnglandAthleticsSync } = await import(
-          "@/lib/sync-england-athletics.server"
-        );
+        const { runEnglandAthleticsSync } = await import("@/lib/sync-england-athletics.server");
         const r = await runEnglandAthleticsSync({});
         return {
           newEvents: r.newEvents,
@@ -162,9 +159,8 @@ export const triggerSyncRun = createServerFn({ method: "POST" })
         };
       }
       if (data.source === "scottish-athletics-clubs") {
-        const { runScottishAthleticsClubsSync } = await import(
-          "@/lib/sync-scottish-athletics-clubs.server"
-        );
+        const { runScottishAthleticsClubsSync } =
+          await import("@/lib/sync-scottish-athletics-clubs.server");
         const r = await runScottishAthleticsClubsSync();
         return {
           newEvents: r.newClubs,
@@ -173,9 +169,7 @@ export const triggerSyncRun = createServerFn({ method: "POST" })
           fetched: r.fetched,
         };
       }
-      const { runScottishAthleticsSync } = await import(
-        "@/lib/sync-scottish-athletics.server"
-      );
+      const { runScottishAthleticsSync } = await import("@/lib/sync-scottish-athletics.server");
       const r = await runScottishAthleticsSync();
       return {
         newEvents: r.newEvents,
@@ -241,9 +235,7 @@ export const triggerEnglandAthleticsChunk = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }): Promise<EnglandAthleticsChunkResult> => {
     await requireAdminMutation();
-    const { runEnglandAthleticsSync } = await import(
-      "@/lib/sync-england-athletics.server"
-    );
+    const { runEnglandAthleticsSync } = await import("@/lib/sync-england-athletics.server");
     const r = await runEnglandAthleticsSync({
       fromPage: data.fromPage,
       toPage: data.toPage,
@@ -292,9 +284,7 @@ export const triggerRunThroughCourseChunk = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }): Promise<RunThroughCourseChunkResult> => {
     await requireAdminMutation();
-    const { runRunThroughCourseChunk } = await import(
-      "@/lib/sync-runthrough-courses.server"
-    );
+    const { runRunThroughCourseChunk } = await import("@/lib/sync-runthrough-courses.server");
     const result = await runRunThroughCourseChunk(data);
     return { ok: true, ...result };
   });
@@ -302,8 +292,8 @@ export const triggerRunThroughCourseChunk = createServerFn({ method: "POST" })
 // One-off bootstrap: copy the current IMPORT_SECRET env value into
 // vault.secrets as `import_secret` so the weekly pg_cron jobs can send
 // it as the x-admin-secret header. Safe to re-run; updates in place.
-export const seedImportSecretInVault = createServerFn({ method: "POST" })
-  .handler(async (): Promise<{ ok: true }> => {
+export const seedImportSecretInVault = createServerFn({ method: "POST" }).handler(
+  async (): Promise<{ ok: true }> => {
     await requireAdminMutation();
     const value = process.env.IMPORT_SECRET;
     if (!value) throw new Error("IMPORT_SECRET env var not set on server");
@@ -312,7 +302,5 @@ export const seedImportSecretInVault = createServerFn({ method: "POST" })
     });
     if (error) throw new Error(error.message);
     return { ok: true as const };
-  });
-
-
-
+  },
+);

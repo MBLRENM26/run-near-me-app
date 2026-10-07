@@ -58,20 +58,40 @@ const change = z
     kind: z.literal("event_change"),
     event_id: uuid,
     expected_date: date,
-    field: z.enum(["entry_url", "organiser_url", "distances", "name"]),
+    field: z.enum([
+      "entry_url",
+      "organiser_url",
+      "distances",
+      "name",
+      "organiser",
+      "location_raw",
+      "town",
+      "county",
+      "region",
+      "country",
+      "lat",
+      "lng",
+    ]),
     // Imported old values may be malformed; compare them exactly without normalising.
-    expected_value: z.string().max(2000).nullable(),
-    proposed_value: z.string().max(2000),
+    expected_value: z.union([z.string().max(2000), z.number().finite()]).nullable(),
+    proposed_value: z.union([z.string().max(2000), z.number().finite()]),
   })
   .strict()
-  .refine(
-    (change) =>
-      change.field === "distances" || change.field === "name"
-        ? change.proposed_value.trim().length > 0 &&
-          change.proposed_value.length <= (change.field === "name" ? 300 : 500)
-        : researchUrl.safeParse(change.proposed_value).success,
-    "Use a valid destination URL, a nonblank name up to 300 characters, or distance text up to 500 characters",
-  );
+  .refine((change) => {
+    const value = change.proposed_value;
+    if (change.field === "lat" || change.field === "lng")
+      return typeof value === "number" && Math.abs(value) <= (change.field === "lat" ? 90 : 180);
+    if (typeof value !== "string") return false;
+    if (change.field === "entry_url" || change.field === "organiser_url")
+      return researchUrl.safeParse(value).success;
+    const limit =
+      change.field === "name"
+        ? 300
+        : ["organiser", "location_raw", "distances"].includes(change.field)
+          ? 500
+          : 200;
+    return value.trim().length > 0 && value.length <= limit;
+  }, "Use a valid field value: HTTP(S) destination, bounded nonblank text, or numeric coordinates within range");
 const relationship = z
   .object({
     kind: z.literal("club_relationship"),
