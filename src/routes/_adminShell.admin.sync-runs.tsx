@@ -259,6 +259,7 @@ function AdminSyncRunsPage() {
                 <th className="px-3 py-2 font-medium text-right">Fetched</th>
                 <th className="px-3 py-2 font-medium text-right">Skipped</th>
                 <th className="px-3 py-2 font-medium text-right">Failed pages</th>
+                <th className="px-3 py-2 font-medium">Reviewed data</th>
                 <th className="px-3 py-2 font-medium">Error</th>
               </tr>
             </thead>
@@ -395,6 +396,44 @@ function Row({ r }: { r: SyncRun }) {
         {skipped > 0 ? skipped.toLocaleString() : "—"}
       </td>
       <td className="px-3 py-2 text-right text-muted-foreground">{fmt(r.failed_pages)}</td>
+      <td className="px-3 py-2 text-xs max-w-[360px]">
+        {r.review_integrity ? (
+          <details>
+            <summary
+              className={
+                r.review_integrity.status === "passed" ? "text-green-700" : "text-amber-700"
+              }
+            >
+              {r.review_integrity.status.replaceAll("_", " ")} ·{" "}
+              {r.review_integrity.after?.checked_events ??
+                r.review_integrity.before?.checked_events ??
+                0}{" "}
+              records
+            </summary>
+            <p>
+              Before / after violations:{" "}
+              {r.review_integrity.before?.violation_count ?? "not checked"} /{" "}
+              {r.review_integrity.after?.violation_count ?? "not checked"}
+            </p>
+            <p>
+              Protected source conflicts observed during this run:{" "}
+              {r.review_integrity.conflict_attempts_added ?? "unknown"}. Concurrent imports may
+              share this count.
+            </p>
+            <a href="/admin/source-research" className="underline">
+              Review source conflicts
+            </a>
+            {r.review_integrity.error && <p>{r.review_integrity.error}</p>}
+            {!!r.review_integrity.after?.violation_count && (
+              <pre className="max-h-64 overflow-auto whitespace-pre-wrap">
+                {JSON.stringify(r.review_integrity.after.violations, null, 2)}
+              </pre>
+            )}
+          </details>
+        ) : (
+          "Not recorded"
+        )}
+      </td>
       <td className="px-3 py-2 text-xs text-destructive max-w-[280px] truncate">
         {r.error_message ?? ""}
       </td>
