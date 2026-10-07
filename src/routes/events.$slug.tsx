@@ -34,6 +34,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { DISTANCE_PAGES } from "@/lib/distance-filters";
+import { eventNameWithYear } from "@/lib/event-title";
 import {
   formatEventDate,
   eventYear,
@@ -199,7 +200,7 @@ export const Route = createFileRoute("/events/$slug")({
       .filter(Boolean)
       .join(", ");
     // Keep under ~60 chars for SERP display: drop mid-segments first, then year.
-    const nameYear = [e.name, year].filter(Boolean).join(" ");
+    const nameYear = eventNameWithYear(e.name, year);
     let titleSpec = mid ? `${nameYear} — ${mid}` : nameYear;
     if (titleSpec.length > 60) {
       const shorter = shortDate
