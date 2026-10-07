@@ -21,7 +21,7 @@
       {
         "name": "search_events",
         "title": "Search UK running events",
-        "description": "Search upcoming UK running events by keyword, region, distance tag (5k, 10k, half-marathon, marathon, ultra), terrain tag (road, trail, fell, multi-terrain), or month (YYYY-MM). Returns active events only, filtered to those with an organiser-owned link (never aggregator-only listings).",
+        "description": "Search upcoming UK running events by keyword, region, distance tag (5k, 10k, half-marathon, marathon, ultra), terrain tag (road, trail, fell, multi-terrain), or month (YYYY-MM). Returns active events only, filtered using the site discovery policy, including occurrence-specific reviewed entry providers and listings.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
