@@ -51,16 +51,19 @@ To reproduce SQL regression checks in an empty disposable PostgreSQL 16 database
 
 1. `scripts/source-research-test-bootstrap.sql`
 2. `supabase/migrations/20260717185719_e9588572-2a89-48de-899c-16579891c5f7.sql`
-3. `supabase/migrations/20260717194131_0afb2fc0-37f5-4d10-9547-e5ce88d25226.sql`
-4. `supabase/migrations/20260918230000_orl_accept_and_apply_organiser.sql`
-5. `supabase/migrations/20260928161159_6dfabb8e-ea21-497b-b407-31f40a9c17bc.sql`
-6. `supabase/migrations/20260929170000_source_research_pilot.sql`
-7. `supabase/migrations/20260929171000_research_workflow_compatibility.sql`
-8. `supabase/migrations/20261006173000_reviewed_distances.sql`
-9. `scripts/source-research-test.sql`
-10. `scripts/reviewed-distances-test.sql`
+3. `supabase/migrations/20260717190958_25b782ef-2a76-4afe-8042-579a5c3ab65d.sql`
+4. `supabase/migrations/20260717194131_0afb2fc0-37f5-4d10-9547-e5ce88d25226.sql`
+5. `supabase/migrations/20260918230000_orl_accept_and_apply_organiser.sql`
+6. `supabase/migrations/20260928161159_6dfabb8e-ea21-497b-b407-31f40a9c17bc.sql`
+7. `supabase/migrations/20260929170000_source_research_pilot.sql`
+8. `supabase/migrations/20260929171000_research_workflow_compatibility.sql`
+9. `supabase/migrations/20261006173000_reviewed_distances.sql`
+10. `supabase/migrations/20261007070000_reviewed_names.sql`
+11. `scripts/source-research-test.sql`
+12. `scripts/reviewed-distances-test.sql`
+13. `scripts/reviewed-names-test.sql`
 
-Both test files roll back their fixtures. The distance checks cover null imports, repeated conflicts, unrelated updates, manual conflicts, occurrence rollover, nested reversal, malformed SQL inputs and unchanged execution privileges.
+All test files roll back their fixtures. The distance checks cover null imports, repeated conflicts, unrelated updates, manual conflicts, occurrence rollover, nested reversal, malformed SQL inputs and unchanged execution privileges.
 
 ## Existing workflow compatibility (29 September release)
 
@@ -75,3 +78,7 @@ Install both `20260929170000_source_research_pilot.sql` and `20260929171000_rese
 ## Signed worker controls
 
 GET `/api/public/ingest/research` authenticates with `RESEARCH_FEED_SECRET` over `${timestamp}.sources`, using the same five-minute timestamp checks as POST. It returns version 1, source records (`id`, `url`, `enabled`, `interval_hours`) and `pending_review` (pending plus held items in the combined queue). Responses are non-cacheable. No event writes or review actions are exposed. A worker must retain its own approved source allowlist and refuse collection if controls are missing or invalid.
+
+## Reviewed display names (7 October 2026)
+
+`event_change` accepts `name` as nonblank text up to 300 characters. This corrects a confirmed current occurrence whose imported title retains an old year. It preserves source IDs and public slugs and uses the existing human review, expected-value/date checks, conflict audit and reversible field protection. It does not infer editions from name years or alter dates. The name SQL regression checks stale feed overwrite, unrelated-field updates, occurrence rollover, manual conflicts, nested reversal, invalid values and unchanged execution grants.

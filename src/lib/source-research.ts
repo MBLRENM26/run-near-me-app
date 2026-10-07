@@ -58,7 +58,7 @@ const change = z
     kind: z.literal("event_change"),
     event_id: uuid,
     expected_date: date,
-    field: z.enum(["entry_url", "organiser_url", "distances"]),
+    field: z.enum(["entry_url", "organiser_url", "distances", "name"]),
     // Imported old values may be malformed; compare them exactly without normalising.
     expected_value: z.string().max(2000).nullable(),
     proposed_value: z.string().max(2000),
@@ -66,10 +66,11 @@ const change = z
   .strict()
   .refine(
     (change) =>
-      change.field === "distances"
-        ? change.proposed_value.trim().length > 0 && change.proposed_value.length <= 500
+      change.field === "distances" || change.field === "name"
+        ? change.proposed_value.trim().length > 0 &&
+          change.proposed_value.length <= (change.field === "name" ? 300 : 500)
         : researchUrl.safeParse(change.proposed_value).success,
-    "Use a valid destination URL or nonblank distance text of at most 500 characters",
+    "Use a valid destination URL, a nonblank name up to 300 characters, or distance text up to 500 characters",
   );
 const relationship = z
   .object({

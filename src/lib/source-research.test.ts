@@ -26,7 +26,7 @@ const observation = {
   conflicts: [],
 };
 describe("source research contract", () => {
-  it("allows reviewed distance text without weakening URL fields", () => {
+  it("allows reviewed names and distance text without weakening URL fields", () => {
     const parse = (field: string, proposed_value: unknown) =>
       researchEnvelope.safeParse({
         version: 1,
@@ -35,6 +35,10 @@ describe("source research contract", () => {
         ],
       }).success;
     expect(parse("distances", "U16: 2 km; U18: 3 km; seniors: 4 km")).toBe(true);
+    expect(parse("name", "Brodie Castle 10K 2026")).toBe(true);
+    expect(parse("name", "x".repeat(300))).toBe(true);
+    for (const value of ["", "   ", "x".repeat(301), null, 5, {}])
+      expect(parse("name", value)).toBe(false);
     for (const value of ["", "   ", "x".repeat(501), null, 5, {}])
       expect(parse("distances", value)).toBe(false);
     expect(parse("entry_url", "10 km")).toBe(false);
