@@ -305,7 +305,7 @@ function ClubDetailPage() {
 
       {!c.is_claimed && (
         <aside className="mt-6 rounded-xl border border-border bg-muted/30 p-5">
-          <h2 className="font-semibold text-foreground">Run this club?</h2>
+          <h2 className="font-semibold text-foreground">Are you a club official?</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Claim your listing to update details and verify your club.
           </p>
@@ -314,7 +314,7 @@ function ClubDetailPage() {
             params={{ slug: c.slug }}
             className="mt-3 inline-flex items-center text-sm font-medium text-primary hover:underline"
           >
-            Claim this club →
+            Claim this listing →
           </Link>
         </aside>
       )}
