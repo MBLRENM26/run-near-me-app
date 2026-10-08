@@ -39,7 +39,7 @@ export function distancePlural(key: DistanceKey): string {
     case "marathon":
       return "marathons";
     case "trail":
-      return "trail races";
+      return "trail and off-road races";
     case "ultra":
       return "ultra marathons";
   }
@@ -64,6 +64,8 @@ export type AboutEventInput = {
   date_raw?: string | null;
   date_is_estimated?: boolean | null;
   distanceKey: DistanceKey | null;
+  /** Factual description can be narrower than the broad related-race bucket. */
+  descriptionDistanceKey?: DistanceKey | null;
   hasOfficialLink: boolean;
   /** Live count of same-distance (or all, when unbucketed) upcoming events in the region. */
   regionCount: number;
@@ -89,7 +91,9 @@ export function buildAboutParagraph(e: AboutEventInput): AboutParagraph | null {
 
   const name = e.name.trim();
   const subject = /^the\s/i.test(name) ? name : `The ${name}`;
-  const what = e.distanceKey ? distanceSingular(e.distanceKey) : "a running event";
+  const descriptionKey = e.descriptionDistanceKey === undefined
+    ? e.distanceKey : e.descriptionDistanceKey;
+  const what = descriptionKey ? distanceSingular(descriptionKey) : "a running event";
   const sameTownCounty =
     e.town && e.county && e.town.trim().toLowerCase() === e.county.trim().toLowerCase();
   const loc = (sameTownCounty ? [e.town] : [e.town, e.county])
@@ -193,4 +197,3 @@ export function listingPublishedISO(
   if (isNaN(dt.getTime())) return null;
   return dt.toISOString().slice(0, 10);
 }
-
