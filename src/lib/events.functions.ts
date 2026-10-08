@@ -1,4 +1,5 @@
 import { hydrateReviewedOccurrences } from "@/lib/reviewed-occurrences";
+import { hasCurrentOrganiserReview } from "@/lib/event-organiser-review";
 import { createServerFn } from "@tanstack/react-start";
 import { setResponseHeader } from "@tanstack/react-start/server";
 import { notFound, redirect } from "@tanstack/react-router";
@@ -636,6 +637,10 @@ export type OtherRaceByOrganiserEvent = {
 export type EventPageData = {
   gone?: false;
   event: EventDetail;
+  /** Confirmation applies only to a matching reviewed name and edition. */
+  organiserReviewed: boolean;
+  /** Numeric distance or explicit trail tag, not the broad navigation bucket. */
+  descriptionDistanceKey: DistanceKey | null;
   related: RelatedEvents;
   /** Other upcoming events in the same town as the current event. */
   sameTown: SameTownEvent[];
@@ -790,6 +795,19 @@ export const getEventPageData = createServerFn({ method: "GET" })
     void _source;
     void _source_url;
     const event = eventPublic as EventDetail;
+
+    const { data: organiserReview, error: organiserReviewError } = await supabaseAdmin
+      .from("event_reviewed_fields")
+      .select("value, occurrence")
+      .eq("event_id", event.id)
+      .eq("field", "organiser")
+      .maybeSingle();
+    // Missing/unavailable evidence must retain the listing with qualified wording.
+    const organiserReviewed = !organiserReviewError &&
+      hasCurrentOrganiserReview(event, organiserReview);
+    const descriptionDistanceKey =
+      primaryDistanceKeyFromTags(eventDistanceTags, (eventTerrainTags ?? []).filter((tag) => tag === "trail")) ??
+      primaryDistanceKey(event.distances);
 
     const { data: courseRows, error: courseError } = await supabaseAdmin
       .from("event_course_sources")
@@ -1271,6 +1289,8 @@ export const getEventPageData = createServerFn({ method: "GET" })
     return {
       event,
       related,
+      organiserReviewed,
+      descriptionDistanceKey,
       sameTown,
       sameWeekendNearby,
       matchingClub,
@@ -1368,4 +1388,3 @@ export const getEventsByTaxonomy = createServerFn({ method: "GET" })
       total: trusted.length,
     };
   });
-
