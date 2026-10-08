@@ -41,6 +41,27 @@ describe("hasMeaningfulOrganiser", () => {
 });
 
 describe("sibling eligibility", () => {
+  it("keeps a forthcoming annual race indexable when its slug ends in race-year", () => {
+    const beacon = ev({
+      id: "beacon",
+      name: "Worcestershire Beacon Race 2026",
+      slug: "worcestershire-beacon-race-2026",
+      sort_date: "2026-10-10",
+      organiser: "Worcester Athletic Club",
+    });
+    expect(computeIndexability(beacon, [beacon], "2026-10-08")).toEqual({
+      indexable: true,
+      reason: null,
+    });
+    // A year suffix must still obey the independent past-event rule.
+    expect(computeIndexability(beacon, [beacon], "2026-10-11").reason).toBe("past");
+  });
+
+  it("retains noindex for genuinely numbered series races", () => {
+    const race = ev({ id: "series", slug: "trunce-series-race-8" });
+    expect(computeIndexability(race, [race], TODAY).reason).toBe("slug-suffix-duplicate");
+  });
+
   const october = ev({
     id: "oct",
     slug: "regents-park-5k-10k-october",

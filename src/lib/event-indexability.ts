@@ -24,13 +24,15 @@
 const MONTH_PATTERN =
   "(january|february|march|april|may|june|july|august|september|october|november|december)";
 
-// Only `-race-N` is a near-certain templated series member. A trailing
+// Only `-race-N` is a near-certain templated series member. A 20xx year
+// (such as `beacon-race-2026`) identifies an annual edition, not race N.
+// A trailing
 // month name is NOT: 82 future singleton events ("Rock Up 'n' Run Bingley
 // August", "Thurlby 10K … September") were noindexed by that clause with
 // no duplicate at all. Genuine month-suffixed series are still caught by
 // the duplicate-sibling rule below, which normalises month names out of
 // the event name before grouping.
-const SLUG_SUFFIX_DUPLICATE_RE = /-race-\d+$/i;
+const SLUG_SUFFIX_DUPLICATE_RE = /-race-(?!20\d{2}$)\d+$/i;
 
 const NAME_NORMALISE_STRIP = new RegExp(
   // Strip trailing year (2024…2099), month names, and "race N" tokens
@@ -51,7 +53,7 @@ export function normaliseEventName(name: string): string {
     .trim();
 }
 
-/** True when the slug ends with `-race-N` or a `-{month}` suffix. */
+/** True for numbered `-race-N` series suffixes, excluding 20xx edition years. */
 export function slugIsSuffixDuplicate(slug: string): boolean {
   return SLUG_SUFFIX_DUPLICATE_RE.test(slug);
 }
