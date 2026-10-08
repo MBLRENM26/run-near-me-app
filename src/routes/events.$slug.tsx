@@ -115,17 +115,19 @@ function hostnameOf(url: string | null | undefined): string | undefined {
 function OrganiserLine({
   organiser,
   matchingClub,
+  reviewed,
   className,
 }: {
   organiser: string | null | undefined;
   matchingClub: { slug: string; name: string } | null | undefined;
+  reviewed: boolean;
   className?: string;
 }) {
   const organiserName = (organiser ?? "").trim();
   if (!hasMeaningfulOrganiser(organiserName)) return null;
   return (
     <p className={`${className ?? ""} text-sm text-foreground`.trim()}>
-      Organised by:{" "}
+      {reviewed ? "Organised by:" : "Listed organiser:"}{" "}
       {matchingClub ? (
         <Link
           to="/running-clubs/$slug"
@@ -136,6 +138,9 @@ function OrganiserLine({
         </Link>
       ) : (
         <span className="font-medium">{organiserName}</span>
+      )}
+      {!reviewed && (
+        <span className="text-muted-foreground"> — confirmation pending</span>
       )}
     </p>
   );
@@ -380,6 +385,8 @@ function EventDetailPage() {
     sameTown,
     sameWeekendNearby,
     matchingClub,
+    organiserReviewed,
+    descriptionDistanceKey,
     otherRacesByOrganiser,
     courseProfile,
     destinations,
@@ -467,6 +474,7 @@ function EventDetailPage() {
     date_raw: e.date_raw,
     date_is_estimated: e.date_is_estimated,
     distanceKey: related.distanceKey,
+    descriptionDistanceKey,
     hasOfficialLink: !!primaryCta || !!destinations?.length,
     regionCount: related.totalCount,
   });
@@ -642,6 +650,7 @@ function EventDetailPage() {
             <OrganiserLine
               organiser={e.organiser}
               matchingClub={matchingClub}
+              reviewed={organiserReviewed}
               className="mt-6"
             />
           )}
@@ -703,6 +712,7 @@ function EventDetailPage() {
               <OrganiserLine
                 organiser={e.organiser}
                 matchingClub={matchingClub}
+                reviewed={organiserReviewed}
                 className="mt-3"
               />
 
