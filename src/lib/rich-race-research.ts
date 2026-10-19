@@ -50,7 +50,7 @@ export function validateRichResearch(factsCsv: string, evidenceCsv: string) {
     if (row.confidence !== "verified" && row.confidence !== "plausible_needs_review") { quarantined = true; caveats.push("Unknown researcher confidence"); }
     const siblings = evidence.filter((e) => e.slug === row.slug && e.field === row.field);
     if (new Set(siblings.map((e) => e.value)).size > 1) { quarantined = true; caveats.push("Contradictory assertions"); }
-    return { ...row, candidate_value: typed.value, caveats, quarantined };
+    return { slug: row.slug, field: row.field, value: row.value, evidence_quote: row.evidence_quote, source_url: row.source_url, checked_at: row.checked_at, confidence: row.confidence, candidate_value: typed.value, caveats, quarantined };
   });
   for (const row of facts) for (const field of richRaceFields) {
     if (row[field]?.trim() && !evidence.some((e) => e.slug === row.slug && e.field === field)) throw new Error("A populated fact has no supporting evidence");

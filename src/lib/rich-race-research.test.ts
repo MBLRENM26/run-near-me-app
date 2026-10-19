@@ -13,7 +13,7 @@ describe("private typed race research", () => {
     expect(typeRichFact("ugr_licence", "yes; UKA licence TBC").caveats).toContain("Pending or unknown licence");
   });
   it("quarantines mismatched slugs and CSV values", () => {
-    expect(validateRichResearch(facts, evidence.replace("race-2026,dogs_allowed", "other-2026,dogs_allowed")).assertions[0].quarantined).toBe(true);
+    expect(() => validateRichResearch(facts, evidence.replace("race-2026,dogs_allowed", "other-2026,dogs_allowed"))).toThrow("no supporting evidence");
     expect(validateRichResearch(facts, evidence.replace("dogs_allowed,no,", "dogs_allowed,yes,")).assertions[0].quarantined).toBe(true);
   });
   it("retains contradictions and flags them rather than overwriting", () => {
