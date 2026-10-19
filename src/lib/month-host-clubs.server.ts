@@ -9,11 +9,11 @@ export async function loadMonthHostClubs(eventIds: string[]): Promise<MonthHostC
     const events: { id: string; organiser_club_id: string | null }[] = [];
     for (let offset = 0; offset < eventIds.length; offset += 100) {
       const ids = eventIds.slice(offset, offset + 100);
-      const eventResult = await db.from("events").select("id,organiser_club_id")
+      const eventResult = await db.from("events").select("id,organiser_club_id,date_from,sort_date")
         .in("id", ids).is("duplicate_of", null).eq("date_is_estimated", false)
         .gte("sort_date", new Date().toISOString().slice(0, 10));
       if (eventResult.error) throw eventResult.error;
-      events.push(...(eventResult.data ?? []));
+      events.push(...(eventResult.data ?? []).filter((e) => e.date_from && e.date_from === e.sort_date));
       for (let page = 0; ; page += 1000) {
         const result = await db.from("organisation_event_links")
           .select("event_id,organisation_id,relationship,review_status,confidence")
