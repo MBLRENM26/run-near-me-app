@@ -12,8 +12,10 @@ import {
 } from "@/lib/distance-filters";
 import { eventMatchesDistanceKey } from "@/lib/event-tags";
 import type { DistanceEvent } from "@/lib/events.functions";
+import type { MonthHostClub } from "@/lib/month-host-clubs";
 
 export type MonthPageData = {
+  hostClubs: MonthHostClub[];
   events: DistanceEvent[];
   total: number;
   /** "YYYY-MM" */
@@ -188,7 +190,8 @@ export const getEventsForMonth = createServerFn({ method: "GET" })
     }
 
     const ids = filtered.map((r) => r.id);
-    const [courseRes, syncRes, prevTotal, nextTotal] = await Promise.all([
+    const { loadMonthHostClubs } = await import("@/lib/month-host-clubs.server");
+    const [courseRes, syncRes, prevTotal, nextTotal, hostClubs] = await Promise.all([
       ids.length
         ? supabaseAdmin
             .from("event_course_sources")
@@ -205,6 +208,7 @@ export const getEventsForMonth = createServerFn({ method: "GET" })
         .limit(1),
       countMonth(shiftMonth(data.monthKey, -1), data.distanceKey),
       countMonth(shiftMonth(data.monthKey, 1), data.distanceKey),
+      loadMonthHostClubs(ids),
     ]);
     const courseMapIds = [
       ...new Set(((courseRes.data ?? []) as { event_id: string }[]).map((r) => r.event_id)),
@@ -223,6 +227,7 @@ export const getEventsForMonth = createServerFn({ method: "GET" })
     );
 
     return {
+      hostClubs,
       events: sorted,
       total: sorted.length,
       monthKey: data.monthKey,
