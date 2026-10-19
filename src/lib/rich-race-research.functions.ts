@@ -31,7 +31,7 @@ export const importRichRaceResearch = createServerFn({ method: "POST" })
       const event = matches.length === 1 ? matches[0] : null;
       const caveats = [...r.caveats];
       if (event?.date_is_estimated || event?.date_from !== event?.sort_date) caveats.push("Stored occurrence date uncertain or inconsistent");
-      const slugYears = r.slug.match(/(?:19|20)\d{2}/g) ?? [];
+      const slugYears: string[] = r.slug.match(/(?:19|20)\d{2}/g) ?? [];
       if (event?.date_from && slugYears.length && !slugYears.includes(event.date_from.slice(0, 4))) caveats.push("Slug year differs from stored edition");
       return { id: crypto.randomUUID(), batch_id: batchId, event_id: event?.id ?? null, slug: r.slug, field: r.field, candidate_value: r.candidate_value, raw_value: r.value, evidence_quote: r.evidence_quote, source_url: r.source_url, checked_at: r.checked_at, researcher_confidence: r.confidence, match_state: r.quarantined ? "quarantined" : event ? "needs_edition_review" : "unresolved", caveats, occurrence_snapshot: event };
     });
