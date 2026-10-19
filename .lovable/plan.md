@@ -1,37 +1,31 @@
-# Monthly club links, then safe race-fact staging
+# Stage rich race facts safely
 
-## Completed preflight
+Monthly verified club links are complete in preview. This is a separate approval for storing the uploaded research; it does not publish facts or contact anyone.
 
-- Archived six untouched September monitor tests with retained evidence and audit records; preserved the other 37 pending findings.
-- Checked the uploaded research. The 73 club matches are candidates, not verified host relationships. Existing reviewed work already includes 41 applied club relationships.
-- The 212 new race facts do not fit the current intake fields. They have not been forced into text dumps or published.
+## What to build
 
-## Package 1 — Clubs hosting races this month
+A private, typed research store for the 212 supplied assertions across 39 races. Preserve each original value, quote, source URL, checked time and researcher confidence. Keep reviewer acceptance separate from the agent's claim of verification.
 
-Add a compact section to existing monthly lists, linking club names to their RENM club pages and showing the number of eligible listed races they host.
+- Match slugs to existing occurrences; compare explicit edition/date evidence and flag unresolved identity or old editions.
+- Blanks remain unknown, never false. Licence pending/TBC statements remain uncertain.
+- Detect conflicting assertions and duplicate imports without overwriting evidence.
+- No public claims, entries-open buttons, pricing, course downloads or embeds are added.
+- Do not invent webpage hashes or final URLs absent from these files.
 
-- Use existing accepted, verified organising relationships and uniquely approved club identities only.
-- Respect the list's month, distance and active region/weekend filters.
-- Omit the section when no verified club-hosted races qualify.
-- No name matching, new identities, bulk import, contact details or public provenance.
-- Keep existing month totals unchanged and reuse the shared month-summary foundation.
+## Technical details
 
-### Technical details and acceptance
+Add private research-batch and fact-assertion tables with explicit service-role grants and RLS blocking public access. Store file hashes labelled as file hashes for idempotency, not captured-page hashes. Each assertion has an optional resolved event ID, field from an explicit rich-fact allowlist, typed candidate value, original raw value, source evidence, match/review state and caveats. Append review actions in a private audit table; corrections create new versions instead of erasing originals.
 
-Extend the month data with a narrow read-only public projection, following the identity and organising checks in the existing club-races reader. Never return raw ORL rows or evidence to the browser.
+Keep this separate from mapped event corrections: no changes to events, existing field locks or ORL acceptance. Integrate structured findings into the existing review screen only; do not turn CSVs into evidence-summary text dumps or widen the monitor payload contract Codex is repairing.
 
-Tests: accepted relationship included; proposed/rejected relationship excluded; ambiguous club crosswalk excluded; mismatched event club excluded; dates/distance/filters respected; distinct races counted once. Check a populated month end-to-end and at desktop/mobile sizes.
+## Import and verification
 
-Rollback: remove this read-only section and its query; no database mutation is needed. Keep deployment separately approved.
+Validate both CSVs together, including field/value agreement, timestamps, quotes, URLs, boolean/number formats and duplicate identities. Quarantine inconsistent assertions rather than silently coercing them. Review-only staging is not publication or independent verification.
 
-## Package 2 — Rich race facts, separate approval
+Tests cover blank/false distinction, idempotency, mismatched slugs/editions, contradictory facts, pending licences, denied public reads, append-only audit and unchanged event rows. Read staged facts back through the signed-in admin screen before declaring completion.
 
-After Package 1, propose a small typed fact-and-evidence store covering the supplied attributes, not changes to unrelated event columns.
+Rollback removes the new review integration and marks the import withdrawn; underlying evidence and audit remain private. Schema rollback and public projection require separate decisions.
 
-Preserve original slug/edition, quoted evidence, checked time and agent confidence separately from reviewer acceptance. Resolve existing event identity and dates, flag contradictions and retain unknowns. Do not invent captured-page hashes or reproduce course maps without permission.
+## Later, separately approved
 
-Stage the 39 researched races for review first. Public display, freshness rules, reversible acceptance and import-conflict behaviour require their own tested approval package before anything appears on race pages.
-
-## Not included
-
-No automated outreach, reminder activation, monitor changes, new SEO page types, bulk club acceptance or publishing in this package.
+Public display, freshness expiry, acceptance/reversal, protected event projection and course-map permissions. Publishing the current month-list layout, club links and IndexNow remains a separate deployment approval.

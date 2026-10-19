@@ -31,3 +31,9 @@ Existing database work already includes 41 applied club_relationship observation
 3. Publish month layout and IndexNow only on explicit deployment approval. Reminder sending remains off; Codex owns monitor payload repair.
 
 The earlier mandated package upgrade failed and was reverted in this conversation; it was not retried, per the dependency-update exception.
+
+## Package 1 preview acceptance
+
+Read-only monthly host-club links implemented using accepted verified organising relationships, unique approved crosswalks, active clubs and confirmed future canonical occurrences. Names/slugs/event IDs are the only public projection. Counts follow the visible race list through the shared month-summary module.
+
+19 focused tests passed. November 2026 preview displayed 24 host clubs on desktop and mobile. Selecting South East reduced the section to three clubs; following Beckenham Running Club opened its RENM club page. No private identity fields were found in rendered HTML. One intermittent header-search attribute hydration warning appeared during the second browser run; the initial run had no console errors. It did not affect the tested club links. Latest app build log: build OK. Not published.

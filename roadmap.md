@@ -10,7 +10,7 @@
 - [x] Archive six untouched September pilot notices through audited rejection; original evidence retained. Ten structured and 27 later supporting notices preserved.
 - [x] Validate uploaded research: 212 evidence rows across 39 races; 73 club matches are plausible candidates, not accepted identities. See docs/renm/RENM-research-staging-preflight-2026-10-19.md.
 - [ ] Stage rich race facts — blocked on separate approval of typed fact storage/review contract; current mapped-field intake cannot accept these attributes.
-- [ ] Add monthly host-club links from existing accepted relationships — bounded package awaiting plan approval; no reimport of already reviewed evidence.
+- [x] Add monthly host-club links from existing accepted verified relationships — tested and preview-checked (24 clubs in Nov 2026); needs publish.
 - [ ] Scottish Athletics import: add page retries like England Athletics (19 Oct run timed out — their site unresponsive) — awaiting Mike's yes
 - [ ] Publish pending changes — Mike to approve publish
 - [ ] Review flagged older security-definer view
