@@ -12,6 +12,8 @@ import { SITE_URL } from "@/lib/site";
 import { DISTANCE_PAGES, type DistanceKey } from "@/lib/distance-filters";
 import { isIndexableMonth, weekendSaturday } from "@/lib/month-summary";
 import { monthSlugFromKey } from "@/lib/month-slug";
+import { summarizeMonthHostClubs } from "@/lib/month-host-clubs";
+import { Button } from "@/components/ui/button";
 
 const SIBLINGS: { key: DistanceKey | "all"; label: string }[] = [
   { key: "all", label: "All races" },
@@ -132,8 +134,9 @@ export function MonthPage({ data, distanceKey }: Props) {
 
 function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button
+    <Button
       type="button"
+      variant="outline"
       onClick={onClick}
       aria-pressed={active}
       className={`rounded-full border px-3 py-1 text-sm transition-colors ${
@@ -143,7 +146,7 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
       }`}
     >
       {children}
-    </button>
+    </Button>
   );
 }
 
@@ -166,6 +169,8 @@ function MonthBody({
     });
   }, [events, region, terrain]);
 
+  const hostClubs = useMemo(() => summarizeMonthHostClubs(monthKey, shown, data.hostClubs ?? []), [monthKey, shown, data.hostClubs]);
+
   const groups = useMemo(() => {
     const map = new Map<string, { label: string; items: typeof shown }>();
     const order: string[] = [];
@@ -178,9 +183,13 @@ function MonthBody({
         else { key = e.sort_date; label = new Date(`${e.sort_date}T00:00:00Z`).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" }); }
       }
       if (!map.has(key)) { map.set(key, { label, items: [] }); order.push(key); }
-      map.get(key)!.items.push(e);
+      const group = map.get(key);
+      if (group) group.items.push(e);
     }
-    return order.sort().map((k) => map.get(k)!);
+    return order.sort().flatMap((k) => {
+      const group = map.get(k);
+      return group ? [group] : [];
+    });
   }, [shown]);
 
   const prev = data.neighbours?.prev;
@@ -267,6 +276,20 @@ function MonthBody({
             </div>
           </div>
         ))
+      )}
+
+      {hostClubs.length > 0 && (
+        <section aria-labelledby="month-host-clubs-heading" className="border-t border-border pt-6">
+          <h2 id="month-host-clubs-heading" className="text-lg font-semibold text-foreground mb-3">Clubs hosting races this month</h2>
+          <ul className="grid gap-x-8 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
+            {hostClubs.map((club) => (
+              <li key={club.id} className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                <Link to="/running-clubs/$slug" params={{ slug: club.slug }} className="text-primary hover:underline break-words">{club.name}</Link>
+                <span className="text-sm text-muted-foreground">{club.count} race{club.count === 1 ? "" : "s"}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       {data.siblingCounts && (

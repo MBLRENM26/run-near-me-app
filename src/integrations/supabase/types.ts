@@ -1300,6 +1300,170 @@ export type Database = {
           },
         ]
       }
+      race_research_assertions: {
+        Row: {
+          batch_id: string
+          candidate_value: Json | null
+          caveats: Json
+          checked_at: string
+          created_at: string
+          event_id: string | null
+          evidence_quote: string
+          field: string
+          id: string
+          match_state: string
+          occurrence_snapshot: Json | null
+          raw_value: string
+          researcher_confidence: string
+          slug: string
+          source_url: string
+          supersedes_id: string | null
+        }
+        Insert: {
+          batch_id: string
+          candidate_value?: Json | null
+          caveats?: Json
+          checked_at: string
+          created_at?: string
+          event_id?: string | null
+          evidence_quote: string
+          field: string
+          id: string
+          match_state: string
+          occurrence_snapshot?: Json | null
+          raw_value: string
+          researcher_confidence: string
+          slug: string
+          source_url: string
+          supersedes_id?: string | null
+        }
+        Update: {
+          batch_id?: string
+          candidate_value?: Json | null
+          caveats?: Json
+          checked_at?: string
+          created_at?: string
+          event_id?: string | null
+          evidence_quote?: string
+          field?: string
+          id?: string
+          match_state?: string
+          occurrence_snapshot?: Json | null
+          raw_value?: string
+          researcher_confidence?: string
+          slug?: string
+          source_url?: string
+          supersedes_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "race_research_assertions_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "race_research_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "race_research_assertions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "race_research_assertions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_public_v1"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "race_research_assertions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "public_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "race_research_assertions_supersedes_id_fkey"
+            columns: ["supersedes_id"]
+            isOneToOne: false
+            referencedRelation: "race_research_assertions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      race_research_batches: {
+        Row: {
+          assertion_count: number
+          created_at: string
+          evidence_file_sha256: string
+          file_sha256: string
+          id: string
+          label: string
+          limitations: string
+          row_count: number
+          status: string
+        }
+        Insert: {
+          assertion_count: number
+          created_at?: string
+          evidence_file_sha256: string
+          file_sha256: string
+          id: string
+          label: string
+          limitations: string
+          row_count: number
+          status?: string
+        }
+        Update: {
+          assertion_count?: number
+          created_at?: string
+          evidence_file_sha256?: string
+          file_sha256?: string
+          id?: string
+          label?: string
+          limitations?: string
+          row_count?: number
+          status?: string
+        }
+        Relationships: []
+      }
+      race_research_fact_reviews: {
+        Row: {
+          action: string
+          assertion_id: string
+          created_at: string
+          id: string
+          note: string
+          reviewer_identity: string
+        }
+        Insert: {
+          action: string
+          assertion_id: string
+          created_at?: string
+          id?: string
+          note: string
+          reviewer_identity: string
+        }
+        Update: {
+          action?: string
+          assertion_id?: string
+          created_at?: string
+          id?: string
+          note?: string
+          reviewer_identity?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "race_research_fact_reviews_assertion_id_fkey"
+            columns: ["assertion_id"]
+            isOneToOne: false
+            referencedRelation: "race_research_assertions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       research_sources: {
         Row: {
           club_id: string | null
