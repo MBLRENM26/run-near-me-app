@@ -92,6 +92,7 @@ import { Route as ApiPublicIngestResearchRouteImport } from './routes/api/public
 import { Route as ApiPublicIngestChangeReportRouteImport } from './routes/api/public/ingest/change-report'
 import { Route as ApiPublicHooksSendRaceRemindersRouteImport } from './routes/api/public/hooks/send-race-reminders'
 import { Route as ApiPublicHooksNotifyMissedSubmissionsRouteImport } from './routes/api/public/hooks/notify-missed-submissions'
+import { Route as ApiPublicHooksIndexnowPingRouteImport } from './routes/api/public/hooks/indexnow-ping'
 import { Route as ApiPublicAdminSyncScottishAthleticsClubsRouteImport } from './routes/api/public/admin/sync-scottish-athletics-clubs'
 import { Route as ApiPublicAdminSyncScottishAthleticsRouteImport } from './routes/api/public/admin/sync-scottish-athletics'
 import { Route as ApiPublicAdminSyncEnglandAthleticsRouteImport } from './routes/api/public/admin/sync-england-athletics'
@@ -548,6 +549,12 @@ const ApiPublicHooksNotifyMissedSubmissionsRoute =
     path: '/api/public/hooks/notify-missed-submissions',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksIndexnowPingRoute =
+  ApiPublicHooksIndexnowPingRouteImport.update({
+    id: '/api/public/hooks/indexnow-ping',
+    path: '/api/public/hooks/indexnow-ping',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicAdminSyncScottishAthleticsClubsRoute =
   ApiPublicAdminSyncScottishAthleticsClubsRouteImport.update({
     id: '/api/public/admin/sync-scottish-athletics-clubs',
@@ -710,6 +717,7 @@ export interface FileRoutesByFullPath {
   '/api/public/admin/sync-england-athletics': typeof ApiPublicAdminSyncEnglandAthleticsRoute
   '/api/public/admin/sync-scottish-athletics': typeof ApiPublicAdminSyncScottishAthleticsRoute
   '/api/public/admin/sync-scottish-athletics-clubs': typeof ApiPublicAdminSyncScottishAthleticsClubsRoute
+  '/api/public/hooks/indexnow-ping': typeof ApiPublicHooksIndexnowPingRoute
   '/api/public/hooks/notify-missed-submissions': typeof ApiPublicHooksNotifyMissedSubmissionsRoute
   '/api/public/hooks/send-race-reminders': typeof ApiPublicHooksSendRaceRemindersRoute
   '/api/public/ingest/change-report': typeof ApiPublicIngestChangeReportRoute
@@ -807,6 +815,7 @@ export interface FileRoutesByTo {
   '/api/public/admin/sync-england-athletics': typeof ApiPublicAdminSyncEnglandAthleticsRoute
   '/api/public/admin/sync-scottish-athletics': typeof ApiPublicAdminSyncScottishAthleticsRoute
   '/api/public/admin/sync-scottish-athletics-clubs': typeof ApiPublicAdminSyncScottishAthleticsClubsRoute
+  '/api/public/hooks/indexnow-ping': typeof ApiPublicHooksIndexnowPingRoute
   '/api/public/hooks/notify-missed-submissions': typeof ApiPublicHooksNotifyMissedSubmissionsRoute
   '/api/public/hooks/send-race-reminders': typeof ApiPublicHooksSendRaceRemindersRoute
   '/api/public/ingest/change-report': typeof ApiPublicIngestChangeReportRoute
@@ -906,6 +915,7 @@ export interface FileRoutesById {
   '/api/public/admin/sync-england-athletics': typeof ApiPublicAdminSyncEnglandAthleticsRoute
   '/api/public/admin/sync-scottish-athletics': typeof ApiPublicAdminSyncScottishAthleticsRoute
   '/api/public/admin/sync-scottish-athletics-clubs': typeof ApiPublicAdminSyncScottishAthleticsClubsRoute
+  '/api/public/hooks/indexnow-ping': typeof ApiPublicHooksIndexnowPingRoute
   '/api/public/hooks/notify-missed-submissions': typeof ApiPublicHooksNotifyMissedSubmissionsRoute
   '/api/public/hooks/send-race-reminders': typeof ApiPublicHooksSendRaceRemindersRoute
   '/api/public/ingest/change-report': typeof ApiPublicIngestChangeReportRoute
@@ -1005,6 +1015,7 @@ export interface FileRouteTypes {
     | '/api/public/admin/sync-england-athletics'
     | '/api/public/admin/sync-scottish-athletics'
     | '/api/public/admin/sync-scottish-athletics-clubs'
+    | '/api/public/hooks/indexnow-ping'
     | '/api/public/hooks/notify-missed-submissions'
     | '/api/public/hooks/send-race-reminders'
     | '/api/public/ingest/change-report'
@@ -1102,6 +1113,7 @@ export interface FileRouteTypes {
     | '/api/public/admin/sync-england-athletics'
     | '/api/public/admin/sync-scottish-athletics'
     | '/api/public/admin/sync-scottish-athletics-clubs'
+    | '/api/public/hooks/indexnow-ping'
     | '/api/public/hooks/notify-missed-submissions'
     | '/api/public/hooks/send-race-reminders'
     | '/api/public/ingest/change-report'
@@ -1200,6 +1212,7 @@ export interface FileRouteTypes {
     | '/api/public/admin/sync-england-athletics'
     | '/api/public/admin/sync-scottish-athletics'
     | '/api/public/admin/sync-scottish-athletics-clubs'
+    | '/api/public/hooks/indexnow-ping'
     | '/api/public/hooks/notify-missed-submissions'
     | '/api/public/hooks/send-race-reminders'
     | '/api/public/ingest/change-report'
@@ -1280,6 +1293,7 @@ export interface RootRouteChildren {
   ApiPublicAdminSyncEnglandAthleticsRoute: typeof ApiPublicAdminSyncEnglandAthleticsRoute
   ApiPublicAdminSyncScottishAthleticsRoute: typeof ApiPublicAdminSyncScottishAthleticsRoute
   ApiPublicAdminSyncScottishAthleticsClubsRoute: typeof ApiPublicAdminSyncScottishAthleticsClubsRoute
+  ApiPublicHooksIndexnowPingRoute: typeof ApiPublicHooksIndexnowPingRoute
   ApiPublicHooksNotifyMissedSubmissionsRoute: typeof ApiPublicHooksNotifyMissedSubmissionsRoute
   ApiPublicHooksSendRaceRemindersRoute: typeof ApiPublicHooksSendRaceRemindersRoute
   ApiPublicIngestChangeReportRoute: typeof ApiPublicIngestChangeReportRoute
@@ -1873,6 +1887,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksNotifyMissedSubmissionsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/indexnow-ping': {
+      id: '/api/public/hooks/indexnow-ping'
+      path: '/api/public/hooks/indexnow-ping'
+      fullPath: '/api/public/hooks/indexnow-ping'
+      preLoaderRoute: typeof ApiPublicHooksIndexnowPingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/admin/sync-scottish-athletics-clubs': {
       id: '/api/public/admin/sync-scottish-athletics-clubs'
       path: '/api/public/admin/sync-scottish-athletics-clubs'
@@ -2115,6 +2136,7 @@ const rootRouteChildren: RootRouteChildren = {
     ApiPublicAdminSyncScottishAthleticsRoute,
   ApiPublicAdminSyncScottishAthleticsClubsRoute:
     ApiPublicAdminSyncScottishAthleticsClubsRoute,
+  ApiPublicHooksIndexnowPingRoute: ApiPublicHooksIndexnowPingRoute,
   ApiPublicHooksNotifyMissedSubmissionsRoute:
     ApiPublicHooksNotifyMissedSubmissionsRoute,
   ApiPublicHooksSendRaceRemindersRoute: ApiPublicHooksSendRaceRemindersRoute,

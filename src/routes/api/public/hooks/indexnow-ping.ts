@@ -27,12 +27,19 @@ export const Route = createFileRoute("/api/public/hooks/indexnow-ping")({
         const { pingIndexNow } = await import("@/lib/indexnow.server");
         const since = new Date(Date.now() - 26 * 3600_000).toISOString();
         const today = new Date().toISOString().slice(0, 10);
-        const { data, error } = await supabaseAdmin
-          .from("events_public_v1" as "events")
-          .select("slug, sort_date")
+        const { data: changed, error: e1 } = await supabaseAdmin
+          .from("events")
+          .select("slug")
           .gte("updated_at", since)
           .gte("sort_date", today)
-          .limit(5000);
+          .not("slug", "is", null)
+          .limit(2000);
+        if (e1) return Response.json({ error: e1.message }, { status: 500 });
+        const slugs = (changed ?? []).map((r) => r.slug as string);
+        // Only ping pages that are actually public.
+        const { data, error } = slugs.length
+          ? await (supabaseAdmin as any).from("events_public_v1").select("slug, sort_date").in("slug", slugs.slice(0, 500))
+          : { data: [], error: null };
         if (error) return Response.json({ error: error.message }, { status: 500 });
         const urls: string[] = [];
         const months = new Set<string>();
