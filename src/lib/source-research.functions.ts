@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { researchEventFields } from "@/lib/research-event-facts";
 import {
-  researchEnvelope,
+  researchIntakeEnvelope,
   researchUrl,
   sourceSchema,
   type ResearchRow,
@@ -163,7 +163,7 @@ export const setResearchSourceEnabled = createServerFn({ method: "POST" })
   });
 
 export const importSourceResearch = createServerFn({ method: "POST" })
-  .inputValidator((v: unknown) => researchEnvelope.parse(v))
+  .inputValidator((v: unknown) => researchIntakeEnvelope.parse(v))
   .handler(async ({ data }) => {
     const db = await adminDb();
     const { data: result, error } = await db.rpc("ingest_source_research", {

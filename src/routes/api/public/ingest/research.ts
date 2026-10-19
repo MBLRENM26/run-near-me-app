@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { researchEnvelope } from "@/lib/source-research";
+import { researchIntakeEnvelope } from "@/lib/source-research";
 import { boundedResearchBody, validResearchSignature } from "@/lib/source-research-auth.server";
 
 export const Route = createFileRoute("/api/public/ingest/research")({
@@ -62,7 +62,7 @@ export const Route = createFileRoute("/api/public/ingest/research")({
         }
         let body;
         try {
-          body = researchEnvelope.parse(JSON.parse(raw));
+          body = researchIntakeEnvelope.parse(JSON.parse(raw));
         } catch {
           return Response.json({ error: "Invalid research payload" }, { status: 400 });
         }

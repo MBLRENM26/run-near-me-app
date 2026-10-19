@@ -22,6 +22,7 @@ from urllib.parse import urljoin, urlsplit
 from urllib.robotparser import RobotFileParser
 from uuid import UUID, uuid4
 from event_extractor import extract_event_facts, VERSION
+from research_payload import validate_observation
 
 AGENT = "RENMResearch/1.0 (+https://runningeventsnearme.com)"
 MAX_BODY = 2_000_000
@@ -223,6 +224,7 @@ def observe(db, source, fetch=fetch_page, now=None):
                     "content_sha256": digest, "extractor": EXTRACTOR,
                     "summary": f"{'Initial mapped baseline' if not previous else 'Mapped facts changed'}: {len(extraction['facts'])} candidates. Confirm race, edition and destination roles before preparing a correction. Missing fields do not clear existing data."},
                     "proposal": {"kind": "page_change", "extraction": extraction}, "conflicts": extraction["issues"]}
+                validate_observation(item)
                 db.execute("insert into outbox(id,payload) values(?,?)", (oid, json.dumps(item, ensure_ascii=False)))
             db.execute("insert into source_extractions(source_id,facts_hash) values(?,?) on conflict(source_id) do update set facts_hash=excluded.facts_hash", (sid, facts_hash))
             db.execute("insert into sources(id,url,last_hash,last_attempt,last_success,next_due,failures,error) values(?,?,?,?,?,?,0,null) on conflict(id) do update set last_hash=excluded.last_hash,last_attempt=excluded.last_attempt,last_success=excluded.last_success,next_due=excluded.next_due,failures=0,error=null", (sid,source["url"],digest,now,now,now+interval*3600))
