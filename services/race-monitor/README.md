@@ -2,11 +2,11 @@
 
 Python 3.12 standard library only; no package installation or local model is required. The Docker base is pinned to a digest. The worker uses public HTTPS sources from an explicit private configuration, checks robots for every page/redirect, resolves and validates all DNS answers, pins the connected IP with hostname TLS verification, and bounds requests and bodies. It does not execute page scripts or follow entry/registration forms.
 
-The worker extracts **database-mapped source candidates** with bounded field evidence and locators. It suppresses page-only noise when the mapped facts do not change. Evidence from HTML is untrusted; an administrator verifies the race, edition and destination roles before preparing a typed correction or discovery. JavaScript-only sources become explicit failures rather than inferred cancellations. The original six-source pilot has completed; do not restart it to test a payload repair.
+The worker records **page changes**, not extracted race facts. Evidence from HTML is untrusted text. An administrator reviews facts and prepares a typed correction or discovery separately. Dynamic pages can be noisy; measure this before expanding. JavaScript-only sources become explicit failures rather than inferred cancellations.
 
 ## Private configuration and state
 
-Keep runtime files outside the public checkout. `sources.json` is `{ "version": 1, "sources": [...] }` using the registry objects described in `docs/renm/RENM-source-research-contract-v1.md`. The generic observer allows at most 30 pages; the completed operating pilot remains pinned to its six approved sources. Minimum 24 hours per source. Paused sources are skipped. Replacing the URL under an existing source ID is refused. Runtime identity must have write access to its private state directory.
+Keep runtime files outside the public checkout. `sources.json` is `{ "version": 1, "sources": [...] }` using the registry objects described in `docs/renm/RENM-source-research-contract-v1.md`. Maximum 30 pages, minimum 24 hours per source. Paused sources are skipped. Replacing the URL under an existing source ID is refused. Runtime identity must have write access to its private state directory.
 
 ```sh
 python monitor.py run --config /private/renm/sources.json --state /private/renm/monitor.sqlite
@@ -65,13 +65,11 @@ For recovery, first stop this pilot's timer and service. Download a verified arc
 
 ## Minimal collection and local model benchmark
 
-The normal worker reads bounded page HTML/text transiently and extracts candidates into the existing `event-fields.json` contract. It retains compact field evidence, URLs, actual capture times, content hashes and delivery state. It does not persist whole page bodies. The legacy `source_captures` table and historical outbox payloads remain intact for audit/retry; they are not rewritten as newly verified evidence.
+The normal worker reads bounded page HTML/text transiently to calculate a content fingerprint. It retains the source URL, final URL, check times, hash and delivery state. A changed page produces a short metadata-only notice for private review; it does not store or upload the page body, descriptions, navigation or arbitrary excerpts. A page-change notice is not an extracted race fact and never changes a public race automatically.
 
-The database-mapped extractor shipped in PR #38 (30 September) and its context repair in PR #39 (1 October). Earlier metadata-only and “extractor still to be implemented” descriptions are superseded. The local model benchmark remains an offline experiment, not a deployed LLM pipeline.
+The existing `source_captures` table remains for compatibility with the earlier diagnostic release, but normal collection no longer writes to it. Existing outbox payloads and accepted evidence remain immutable for retry/audit compatibility. This change does not delete historical records or backup archives. The six-source deployment had zero full-text capture rows when the policy changed.
 
-New page research requires `proposal.extraction`, a plain-text summary of at most 400 characters, bounded facts/quotes/locators and the exact absent-field list. Empty extraction requires explicit issues; every issue also appears in `conflicts`. Both signed HTTP and authenticated admin imports enforce this contract. Python validates new monitor output before committing it to the outbox. Existing IDs, evidence and historical reviews stay immutable.
-
-For external research workflows, see [the handoff contract](../../docs/renm/RENM-research-payload-handoff.md). `research_payload.py build` wraps validated extraction and original capture metadata offline; `validate` checks an existing envelope without modifying it. Neither command contacts sources, signs requests or writes to the database. Unsupported enrichment facts must remain separate evidence until an explicit field/storage contract exists; never squeeze them into `summary`.
+The next fact-extraction stage must follow the verified existing-database mapping in `docs/renm/RENM-source-field-map-2026-09-30.md`, including existing import/edit validators and ORL. It must retain only field-specific evidence, distinguish absent information from a requested clear, and preserve protected values. Temporary raw inputs must not become permanent page archives. The mapping documents current intake gaps explicitly; this observer does not yet implement full fact extraction.
 
 `model_benchmark.py` runs at most twelve offline fixtures on an existing local llama.cpp endpoint, one at a time, with a ten-minute start budget and bounded request/output sizes. It stops if the model is busy. Fixtures carry reviewed expected fields for scoring, but the model receives only the named race, source URL and page text. Model results never reach the live research intake. Exact source quotes, known field types and date/recurrence/conflict rules are checked; a quote match alone does not establish semantic correctness. Fixtures are a development sample, not a held-out production accuracy estimate.
 

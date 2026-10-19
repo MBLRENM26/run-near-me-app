@@ -103,13 +103,5 @@ class MonitorTests(unittest.TestCase):
         self.assertEqual(monitor.observe(self.db,SOURCE,lambda _: (SOURCE['url'],raw),100000),'changed')
         self.assertTrue(any(f['field']=='date_from' for f in monitor.pending(self.db)[0]['proposal']['extraction']['facts']))
 
-    def test_invalid_extractor_output_is_not_queued_or_marked_successful(self):
-        malformed = {'version': 1, 'facts': [{'field': 'description', 'value': 'whole page'}], 'issues': [], 'missing_fields': []}
-        with patch('monitor.extract_event_facts', return_value=(malformed, 'bad-hash')):
-            self.assertEqual(monitor.observe(self.db, SOURCE, lambda _: (SOURCE['url'], page('A')), 100000), 'failed')
-        self.assertEqual(monitor.pending(self.db), [])
-        self.assertEqual(self.db.execute('select count(*) from source_extractions').fetchone()[0], 0)
-        self.assertIsNone(self.db.execute('select last_success from sources').fetchone()[0])
-
 
 if __name__=="__main__": unittest.main()

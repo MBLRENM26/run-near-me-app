@@ -16,7 +16,7 @@ Each observation contains UUID `id`, `source_id`, `run_id`; `evidence` with `sou
 
 Proposal variants:
 
-- `page_change`: structured `extraction` required on new intake; evidence only, no projection. Plain-text summary maximum 400 characters. See [the current handoff](RENM-research-payload-handoff.md). Historical observations remain readable under their original contract.
+- `page_change`: evidence only; no projection.
 - `new_occurrence`: `name`, nullable ISO `date`, `location`, nullable `schedule`, nullable `entry_url`. A recurring schedule can remain undated. Discovery always requires separate duplicate/occurrence review and never creates an event on intake or Apply.
 - `event_change`: existing `event_id`, `expected_date`, `field` (`entry_url` or `organiser_url`), nullable `expected_value`, HTTP(S) `proposed_value`.
 - `club_relationship`: existing `event_id`, `expected_date`, `organisation_id`, `club_id`, nullable `expected_organiser`, nullable `expected_club_id`.
@@ -35,7 +35,7 @@ Reverse checks both the current values and the protection owner. A newer correct
 
 ## Deliberate pilot limits
 
-Date changes, cancellation/postponement, entry availability, new-event creation, joint organisers and disputed crosswalks remain separate decisions. The legacy change-feed Accept gate stays disabled. `events.status` is not reinterpreted as race cancellation. A waiting-list observation does not promise that entries are open. The admin UI renders structured page research as a four-column comparison table after an existing record is explicitly selected. Historical unstructured evidence remains unchanged; it is not automatically converted or rejected. Richer editing and bulk review remain separate work.
+Date changes, cancellation/postponement, entry availability, new-event creation, joint organisers and disputed crosswalks remain separate decisions. The legacy change-feed Accept gate stays disabled. `events.status` is not reinterpreted as race cancellation. A waiting-list observation does not promise that entries are open. The initial admin UI accepts structured JSON; richer editing and bulk review need their own usability pass.
 
 Deploy the migration before this application release and register reviewed sources before importing observations. Operational seeds and evidence belong outside this public repository. The worker's delivery secret remains unset unless explicitly configured; file import supports the initial pilot.
 
