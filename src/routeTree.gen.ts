@@ -26,6 +26,7 @@ import { Route as McpRouteImport } from './routes/mcp'
 import { Route as MarathonsRouteImport } from './routes/marathons'
 import { Route as ListYourEventRouteImport } from './routes/list-your-event'
 import { Route as JuniorParkrunEventsRouteImport } from './routes/junior-parkrun-events'
+import { Route as IndexnowKeyDottxtRouteImport } from './routes/indexnow-key[.]txt'
 import { Route as IndexDothtmlRouteImport } from './routes/index[.]html'
 import { Route as HalfMarathonsRouteImport } from './routes/half-marathons'
 import { Route as ForRunnersRouteImport } from './routes/for-runners'
@@ -192,6 +193,11 @@ const ListYourEventRoute = ListYourEventRouteImport.update({
 const JuniorParkrunEventsRoute = JuniorParkrunEventsRouteImport.update({
   id: '/junior-parkrun-events',
   path: '/junior-parkrun-events',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndexnowKeyDottxtRoute = IndexnowKeyDottxtRouteImport.update({
+  id: '/indexnow-key.txt',
+  path: '/indexnow-key.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexDothtmlRoute = IndexDothtmlRouteImport.update({
@@ -634,6 +640,7 @@ export interface FileRoutesByFullPath {
   '/for-runners': typeof ForRunnersRoute
   '/half-marathons': typeof HalfMarathonsRoute
   '/index.html': typeof IndexDothtmlRoute
+  '/indexnow-key.txt': typeof IndexnowKeyDottxtRoute
   '/junior-parkrun-events': typeof JuniorParkrunEventsRoute
   '/list-your-event': typeof ListYourEventRoute
   '/marathons': typeof MarathonsRoute
@@ -730,6 +737,7 @@ export interface FileRoutesByTo {
   '/for-runners': typeof ForRunnersRoute
   '/half-marathons': typeof HalfMarathonsRoute
   '/index.html': typeof IndexDothtmlRoute
+  '/indexnow-key.txt': typeof IndexnowKeyDottxtRoute
   '/junior-parkrun-events': typeof JuniorParkrunEventsRoute
   '/list-your-event': typeof ListYourEventRoute
   '/marathons': typeof MarathonsRoute
@@ -828,6 +836,7 @@ export interface FileRoutesById {
   '/for-runners': typeof ForRunnersRoute
   '/half-marathons': typeof HalfMarathonsRoute
   '/index.html': typeof IndexDothtmlRoute
+  '/indexnow-key.txt': typeof IndexnowKeyDottxtRoute
   '/junior-parkrun-events': typeof JuniorParkrunEventsRoute
   '/list-your-event': typeof ListYourEventRoute
   '/marathons': typeof MarathonsRoute
@@ -926,6 +935,7 @@ export interface FileRouteTypes {
     | '/for-runners'
     | '/half-marathons'
     | '/index.html'
+    | '/indexnow-key.txt'
     | '/junior-parkrun-events'
     | '/list-your-event'
     | '/marathons'
@@ -1022,6 +1032,7 @@ export interface FileRouteTypes {
     | '/for-runners'
     | '/half-marathons'
     | '/index.html'
+    | '/indexnow-key.txt'
     | '/junior-parkrun-events'
     | '/list-your-event'
     | '/marathons'
@@ -1119,6 +1130,7 @@ export interface FileRouteTypes {
     | '/for-runners'
     | '/half-marathons'
     | '/index.html'
+    | '/indexnow-key.txt'
     | '/junior-parkrun-events'
     | '/list-your-event'
     | '/marathons'
@@ -1217,6 +1229,7 @@ export interface RootRouteChildren {
   ForRunnersRoute: typeof ForRunnersRoute
   HalfMarathonsRoute: typeof HalfMarathonsRoute
   IndexDothtmlRoute: typeof IndexDothtmlRoute
+  IndexnowKeyDottxtRoute: typeof IndexnowKeyDottxtRoute
   JuniorParkrunEventsRoute: typeof JuniorParkrunEventsRoute
   ListYourEventRoute: typeof ListYourEventRoute
   MarathonsRoute: typeof MarathonsRoute
@@ -1396,6 +1409,13 @@ declare module '@tanstack/react-router' {
       path: '/junior-parkrun-events'
       fullPath: '/junior-parkrun-events'
       preLoaderRoute: typeof JuniorParkrunEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/indexnow-key.txt': {
+      id: '/indexnow-key.txt'
+      path: '/indexnow-key.txt'
+      fullPath: '/indexnow-key.txt'
+      preLoaderRoute: typeof IndexnowKeyDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/index.html': {
@@ -2039,6 +2059,7 @@ const rootRouteChildren: RootRouteChildren = {
   ForRunnersRoute: ForRunnersRoute,
   HalfMarathonsRoute: HalfMarathonsRoute,
   IndexDothtmlRoute: IndexDothtmlRoute,
+  IndexnowKeyDottxtRoute: IndexnowKeyDottxtRoute,
   JuniorParkrunEventsRoute: JuniorParkrunEventsRoute,
   ListYourEventRoute: ListYourEventRoute,
   MarathonsRoute: MarathonsRoute,
