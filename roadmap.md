@@ -7,6 +7,8 @@
 - [ ] 3. Google long game, race by race: course maps (agent data), confirmed 2027 editions, verified organisers
 
 ## Other open work
+- [ ] Archive only unstructured stale pilot notices, retaining evidence and audit history; do not dismiss structured research.
+- [ ] Validate and stage uploaded race facts and club-host candidates through supported review contracts; no automatic public writes.
 - [ ] Scottish Athletics import: add page retries like England Athletics (19 Oct run timed out — their site unresponsive) — awaiting Mike's yes
 - [ ] Publish pending changes — Mike to approve publish
 - [ ] Review flagged older security-definer view
