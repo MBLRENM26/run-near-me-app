@@ -176,6 +176,7 @@ export const getEventsForMonth = createServerFn({ method: "GET" })
       date_is_estimated: !!r.date_is_estimated,
       is_recurring: !!r.is_recurring,
       governance: r.governance,
+      terrain_tags: r.terrain_tags,
     }));
 
     const sorted = sortEstimatedLastWithinMonth(events);

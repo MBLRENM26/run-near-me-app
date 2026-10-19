@@ -256,6 +256,7 @@ export type DistanceEvent = {
   date_is_estimated: boolean;
   is_recurring?: boolean;
   governance?: string | null;
+  terrain_tags?: string[] | null;
 };
 
 export type DistancePageData = {

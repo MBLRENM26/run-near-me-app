@@ -11,7 +11,7 @@ import { formatMonthYearLong } from "@/lib/month-slug";
 import { SITE_URL } from "@/lib/site";
 import { DISTANCE_PAGES, type DistanceKey } from "@/lib/distance-filters";
 import { isIndexableMonth, weekendSaturday } from "@/lib/month-summary";
-import { monthKeyToSlug } from "@/lib/month-slug";
+import { monthSlugFromKey } from "@/lib/month-slug";
 
 const SIBLINGS: { key: DistanceKey | "all"; label: string }[] = [
   { key: "all", label: "All races" },
@@ -23,7 +23,7 @@ const SIBLINGS: { key: DistanceKey | "all"; label: string }[] = [
 ];
 
 function monthHref(key: DistanceKey | "all", monthKey: string): string | null {
-  const slug = monthKeyToSlug(monthKey);
+  const slug = monthSlugFromKey(monthKey);
   if (key === "all") return `/running-events/${slug}`;
   if (key === "trail") return null;
   return `/${DISTANCE_PAGES[key].slug}/${slug}`;
@@ -159,7 +159,7 @@ function MonthBody({
     return featuredFirst(events).filter((e) => {
       if (region && e.region !== region) return false;
       if (terrain) {
-        const tags = (e as { terrain_tags?: string[] | null }).terrain_tags;
+        const tags = e.terrain_tags;
         if (!tags || !tags.some((t) => t.replace("-", " ").toLowerCase() === terrain.toLowerCase().replace("-", " "))) return false;
       }
       return true;
