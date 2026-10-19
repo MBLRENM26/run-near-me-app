@@ -13,10 +13,11 @@ import {
 } from "@/lib/source-research.functions";
 import { Button } from "@/components/ui/button";
 import { ResearchEventFacts } from "@/components/admin/ResearchEventFacts";
+import { RichRaceResearch } from "@/components/admin/RichRaceResearch";
 
 export const Route = createFileRoute("/_adminShell/admin/source-research")({
   head: () => ({
-    meta: [{ title: "Source research — Admin" }, { name: "robots", content: "noindex, nofollow" }],
+    meta: [{ title: "Race research review — RENM Admin" }, { name: "description", content: "Private review of race evidence and staged facts for Running Events Near Me." }, { property: "og:title", content: "Race research review — RENM Admin" }, { property: "og:description", content: "Private review of race evidence and staged facts for Running Events Near Me." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }, { name: "robots", content: "noindex, nofollow" }],
   }),
   component: SourceResearchPage,
 });
@@ -58,6 +59,7 @@ function SourceResearchPage() {
   return (
     <main className="mx-auto max-w-6xl space-y-6 p-6">
       <h1 className="text-2xl font-bold">Sources and race research</h1>
+      <RichRaceResearch />
       <p>
         Review evidence from club, organiser and entry pages. New race discoveries and conflicting
         information stay here until resolved. Applying a supported correction protects the reviewed
