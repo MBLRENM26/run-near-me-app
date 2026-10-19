@@ -1,7 +1,7 @@
-import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, redirect, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { adminLogout } from "@/lib/admin.functions";
+import { adminCheckSession, adminLogout } from "@/lib/admin.functions";
 import { getUnseenCounts } from "@/lib/admin-notify.functions";
 import { Button } from "@/components/ui/button";
 
@@ -12,6 +12,12 @@ export const Route = createFileRoute("/_adminShell")({
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
+  // Signed-out visitors go to the login page instead of hitting
+  // admin server functions that throw "Unauthorized".
+  beforeLoad: async () => {
+    const { authenticated } = await adminCheckSession();
+    if (!authenticated) throw redirect({ to: "/admin/login" });
+  },
   component: AdminLayout,
 });
 
