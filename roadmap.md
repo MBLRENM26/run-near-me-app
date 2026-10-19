@@ -1,10 +1,14 @@
-# Roadmap (28 Sep 2026)
+# Roadmap (19 Oct 2026)
 
-- [x] Run England/Scottish Athletics imports and missed-submissions check now
-- [ ] Publish (failure alert, fixed jobs, featured photos, change-feed) — Mike to approve publish
-- [ ] Confirm next Monday's automatic imports run unattended — waits on 5 Oct
+## Search recovery (agreed 19 Oct, from Plausible weekly report 18 Oct)
+- [ ] 1. Bing first: confirm Bing Webmaster Tools property (GSC import), then IndexNow ping on new/changed pages (separate approval)
+- [ ] 2. Month × distance pages as primary entrances: accurate counts, data-only summaries, neighbouring month/distance links, 2027 months as dates confirm
+- [ ] 3. Google long game, race by race: course maps (agent data), confirmed 2027 editions, verified organisers
+
+## Other open work
+- [ ] Scottish Athletics import: add page retries like England Athletics (19 Oct run timed out — their site unresponsive) — awaiting Mike's yes
+- [ ] Publish pending changes — Mike to approve publish
 - [ ] Review flagged older security-definer view
-- [x] Change-feed review queue, signed entry point, watchlist, admin page
 - [ ] Homelab checker script — Mike's homelab; needs CHANGE_FEED_SECRET
-- [ ] 2027 recurrence pages; course depth
+- [ ] Stage enrichment-agent results (dead sites, club-hosted races, verified organisers, course maps) slice by slice
 - [ ] Organiser TBC/Unknown review; Scottish club websites; 233 hidden records
