@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { hasDiscoverableLink } from "@/lib/link-trust";
 import { DISCOVERY_EVENT_COLUMNS, UK_BOUNDS_OR_NULL } from "@/lib/events-query";
 import { sortEstimatedLastWithinMonth } from "@/lib/month-filter";
+import { buildMonthSummary, shiftMonth, type MonthSummary } from "@/lib/month-summary";
 import {
   DISTANCE_PAGES,
   matchesDistance,
@@ -17,7 +18,18 @@ export type MonthPageData = {
   total: number;
   /** "YYYY-MM" */
   monthKey: string;
+  summary: MonthSummary;
+  /** Event ids with a published course map. */
+  courseMapIds: string[];
+  /** Same-month counts for every distance page (and "all"). */
+  siblingCounts: Partial<Record<DistanceKey | "all", number>>;
+  /** Counts for this page's filter in the previous / next month. */
+  neighbours: { prev: { monthKey: string; total: number }; next: { monthKey: string; total: number } };
+  /** Most recent finished, non-error import run (ISO). */
+  lastCheckedAt: string | null;
 };
+
+const ALL_DISTANCE_KEYS: DistanceKey[] = ["5k", "10k", "half-marathon", "marathon", "trail", "ultra"];
 
 const monthKeyRe = /^\d{4}-(0[1-9]|1[0-2])$/;
 
@@ -50,6 +62,40 @@ function rowMatches(
     (row.distance_tags?.length ?? 0) + (row.terrain_tags?.length ?? 0) > 0;
   if (hasTags) return eventMatchesDistanceKey(row, key);
   return matchesDistance(row.distances, DISTANCE_PAGES[key]);
+}
+
+/** Trusted-event count for one month (and optional distance), light columns. */
+async function countMonth(monthKey: string, distanceKey?: DistanceKey): Promise<number> {
+  const { from, to } = monthBounds(monthKey);
+  type Light = {
+    distances: string | null;
+    distance_tags: string[] | null;
+    terrain_tags: string[] | null;
+    entry_url: string | null;
+    organiser_url: string | null;
+    governance: string | null;
+  };
+  let n = 0;
+  const pageSize = 1000;
+  for (let o = 0; ; o += pageSize) {
+    const { data: rows, error } = await supabaseAdmin
+      .from("events")
+      .select("distances, distance_tags, terrain_tags, entry_url, organiser_url, governance")
+      .eq("status", "ACTIVE")
+      .gte("sort_date", from)
+      .lte("sort_date", to)
+      .or(UK_BOUNDS_OR_NULL)
+      .range(o, o + pageSize - 1);
+    if (error) return 0;
+    const r = (rows ?? []) as Light[];
+    for (const e of r) {
+      if (!hasDiscoverableLink(e.entry_url, e.organiser_url, e.governance, e)) continue;
+      if (distanceKey && !rowMatches(e, distanceKey)) continue;
+      n++;
+    }
+    if (r.length < pageSize) break;
+  }
+  return n;
 }
 
 export const getEventsForMonth = createServerFn({ method: "GET" })
@@ -130,10 +176,66 @@ export const getEventsForMonth = createServerFn({ method: "GET" })
       date_is_estimated: !!r.date_is_estimated,
       is_recurring: !!r.is_recurring,
       governance: r.governance,
+      terrain_tags: r.terrain_tags,
     }));
 
     const sorted = sortEstimatedLastWithinMonth(events);
-    return { events: sorted, total: sorted.length, monthKey: data.monthKey };
+
+    // Same-month counts for sibling distance pages (no extra query).
+    const siblingCounts: MonthPageData["siblingCounts"] = { all: trusted.length };
+    for (const k of ALL_DISTANCE_KEYS) {
+      siblingCounts[k] = trusted.filter((r) => rowMatches(r, k)).length;
+    }
+
+    const ids = filtered.map((r) => r.id);
+    const [courseRes, syncRes, prevTotal, nextTotal] = await Promise.all([
+      ids.length
+        ? supabaseAdmin
+            .from("event_course_sources")
+            .select("event_id")
+            .eq("status", "published")
+            .in("event_id", ids)
+        : Promise.resolve({ data: [] as { event_id: string }[], error: null }),
+      supabaseAdmin
+        .from("sync_runs")
+        .select("finished_at")
+        .not("finished_at", "is", null)
+        .not("status", "in", "(error,running,checking)")
+        .order("finished_at", { ascending: false })
+        .limit(1),
+      countMonth(shiftMonth(data.monthKey, -1), data.distanceKey),
+      countMonth(shiftMonth(data.monthKey, 1), data.distanceKey),
+    ]);
+    const courseMapIds = [
+      ...new Set(((courseRes.data ?? []) as { event_id: string }[]).map((r) => r.event_id)),
+    ];
+
+    const summary = buildMonthSummary(
+      data.monthKey,
+      filtered.map((r) => ({
+        id: r.id,
+        sort_date: r.sort_date,
+        date_is_estimated: r.date_is_estimated,
+        region: r.region,
+        terrain_tags: r.terrain_tags,
+      })),
+      new Set(courseMapIds),
+    );
+
+    return {
+      events: sorted,
+      total: sorted.length,
+      monthKey: data.monthKey,
+      summary,
+      courseMapIds,
+      siblingCounts,
+      neighbours: {
+        prev: { monthKey: shiftMonth(data.monthKey, -1), total: prevTotal },
+        next: { monthKey: shiftMonth(data.monthKey, 1), total: nextTotal },
+      },
+      lastCheckedAt:
+        ((syncRes.data ?? []) as { finished_at: string | null }[])[0]?.finished_at ?? null,
+    };
   });
 
 /**

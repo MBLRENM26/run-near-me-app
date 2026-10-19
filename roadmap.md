@@ -1,8 +1,9 @@
 # Roadmap (19 Oct 2026)
 
 ## Search recovery (agreed 19 Oct, from Plausible weekly report 18 Oct)
-- [ ] 1. Bing first: property verified + sitemap submitted 19 Oct (query/traffic data empty until Bing crawls — check back in ~1 week); IndexNow ping on new/changed pages (separate approval)
-- [ ] 2. Month × distance pages as primary entrances: accurate counts, data-only summaries, neighbouring month/distance links, 2027 months as dates confirm
+- [x] 1. Bing first: property verified + sitemap submitted 19 Oct (query/traffic data empty until Bing crawls — check back in ~1 week); IndexNow ping on new/changed pages (separate approval)
+- [x] 2a. Month pages: shared month summary + new layout (weekend strip, region/type filters, weekend groups, related links, <3 races = noindex) — built 19 Oct, needs publish
+- [ ] 2b. Later, separately: reuse month summary on region pages, Explorer, MCP; IndexNow on change
 - [ ] 3. Google long game, race by race: course maps (agent data), confirmed 2027 editions, verified organisers
 
 ## Other open work
