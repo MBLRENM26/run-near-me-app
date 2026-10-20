@@ -165,11 +165,11 @@ export const researchOverview = createServerFn({ method: "GET" }).handler(async 
   const { triageFact, AUTO_RULE } = await import("./research-auto-review");
   const { assertions, latest } = await runAutoReview(db);
   const needsYou: { id: string; slug: string; field: string; raw_value: string; evidence_quote: string; source_url: string; reason: string; others: { id: string; value: string }[] }[] = [];
-  const accepted: { slug: string; field: string; value: string; auto: boolean }[] = [];
+  const accepted: { slug: string; field: string; value: string; auto: boolean; checked_at: string }[] = [];
   let parked = 0, dismissed = 0, auto = 0;
   for (const a of assertions) {
     const rv = latest.get(a.id);
-    if (rv?.action === "accept" || rv?.action === "auto_accept") { accepted.push({ slug: a.slug, field: a.field, value: a.raw_value, auto: rv.action === "auto_accept" }); if (rv.action === "auto_accept") auto++; continue; }
+    if (rv?.action === "accept" || rv?.action === "auto_accept") { accepted.push({ slug: a.slug, field: a.field, value: a.raw_value, auto: rv.action === "auto_accept", checked_at: a.checked_at }); if (rv.action === "auto_accept") auto++; continue; }
     if (rv?.action === "reject") { dismissed++; continue; }
     const t = triageFact(a);
     if (t.kind === "parked") { parked++; continue; }

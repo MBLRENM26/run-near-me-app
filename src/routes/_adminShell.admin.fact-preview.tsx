@@ -7,7 +7,7 @@ export const Route = createFileRoute("/_adminShell/admin/fact-preview")({
   component: FactPreview,
 });
 
-type Fact = { slug: string; field: string; value: string; auto: boolean };
+type Fact = { slug: string; field: string; value: string; auto: boolean; checked_at: string };
 
 const GROUPS: { title: string; fields: [string, string][] }[] = [
   { title: "On the day", fields: [["start_time", "Start time"], ["cut_off", "Cut-off"], ["min_age", "Minimum age"], ["chip_timed", "Chip timed"], ["ugr_licence", "Race licence"]] },
@@ -35,16 +35,21 @@ function FactPreview() {
   }, []);
   const bySlug = useMemo(() => {
     const m = new Map<string, Map<string, string>>();
+    const checked = new Map<string, string>();
     for (const f of facts ?? []) {
       if (!m.has(f.slug)) m.set(f.slug, new Map());
       const cur = m.get(f.slug)!;
       cur.set(f.field, cur.has(f.field) && cur.get(f.field) !== f.value ? `${cur.get(f.field)}; ${f.value}` : f.value);
+      const prev = checked.get(f.slug);
+      if (!prev || f.checked_at > prev) checked.set(f.slug, f.checked_at);
     }
-    return m;
+    return { m, checked };
   }, [facts]);
-  const slugs = useMemo(() => [...bySlug.keys()].sort((a, b) => (bySlug.get(b)!.size - bySlug.get(a)!.size) || a.localeCompare(b)), [bySlug]);
+  const slugs = useMemo(() => [...bySlug.m.keys()].sort((a, b) => (bySlug.m.get(b)!.size - bySlug.m.get(a)!.size) || a.localeCompare(b)), [bySlug]);
   const current = slug || slugs[0] || "";
-  const row = bySlug.get(current);
+  const row = bySlug.m.get(current);
+  const lastChecked = bySlug.checked.get(current);
+  const lastCheckedText = lastChecked ? lastChecked.slice(0, 10).split("-").reverse().join("/") : "";
 
   if (err) return <p className="p-6 text-destructive">{err}</p>;
   if (!facts) return <p className="p-6 text-muted-foreground">Loading accepted facts…</p>;
@@ -57,15 +62,16 @@ function FactPreview() {
       <label className="block text-sm font-medium">
         Race
         <select className="mt-1 block w-full rounded-md border border-input bg-background p-2" value={current} onChange={(e) => setSlug(e.target.value)}>
-          {slugs.map((s) => <option key={s} value={s}>{pretty(s)} ({bySlug.get(s)!.size} facts)</option>)}
+          {slugs.map((s) => <option key={s} value={s}>{pretty(s)} ({bySlug.m.get(s)!.size} facts)</option>)}
         </select>
       </label>
 
       {row && (
         <article className="rounded-lg border border-border bg-card p-6 text-card-foreground shadow-sm">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">On the race page, below the date and location</p>
-          <h2 className="mt-1 text-2xl font-bold">Race facts</h2>
-          <p className="mt-1 text-sm text-muted-foreground">From the race's own website — worth a quick check before you travel.</p>
+          <h2 className="mt-1 text-2xl font-bold">What you need to know</h2>
+          <p className="mt-1 text-sm font-semibold">Race details</p>
+          <p className="mt-1 text-sm text-muted-foreground">Look out for announcements about changes, updates or amendments to this event.</p>
           <div className="mt-5 grid gap-5 sm:grid-cols-2">
             {GROUPS.map((g) => {
               const items = g.fields.filter(([k]) => row.has(k));
@@ -85,7 +91,7 @@ function FactPreview() {
               );
             })}
           </div>
-          <p className="mt-5 text-xs text-muted-foreground">Last checked from the organiser's website. Anything not listed hasn't been confirmed yet.</p>
+          <p className="mt-5 text-xs text-muted-foreground">{lastCheckedText ? `Data last checked ${lastCheckedText}. ` : ""}We will add further updates when available.</p>
         </article>
       )}
       <Link to="/admin/source-research" className="text-sm underline">Back to research</Link>
