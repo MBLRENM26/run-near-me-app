@@ -30,16 +30,23 @@ export function validateRichResearch(factsCsv: string, evidenceCsv: string) {
     if (!row.slug || bySlug.has(row.slug)) throw new Error("Missing or duplicate race slug");
     bySlug.set(row.slug, row);
   }
-  const seen = new Set<string>();
-  const assertions = evidence.map((row) => {
+  const seen = new Map<string, string>();
+  const extraQuotes = new Set<string>();
+  const unique = evidence.filter((row) => {
+    const key = JSON.stringify([row.slug, row.field, row.value, row.source_url, row.checked_at]);
+    const prior = seen.get(key);
+    if (prior === undefined) { seen.set(key, row.evidence_quote); return true; }
+    if (prior === row.evidence_quote) throw new Error("Duplicate evidence assertion");
+    extraQuotes.add(key); // same fact, same page, a second verbatim quote: keep the first, flag the rest
+    return false;
+  });
+  const assertions = unique.map((row) => {
     if (!richRaceFields.some((f) => f === row.field)) throw new Error("Unsupported research field");
     if (!row.evidence_quote?.trim() || row.evidence_quote.length > 240) throw new Error("Missing or excessive evidence quote");
     const url = new URL(row.source_url);
     if (!["http:", "https:"].includes(url.protocol) || url.username || url.password) throw new Error("Invalid evidence URL");
     if (!/^\d{4}-\d{2}-\d{2}T/.test(row.checked_at) || !Number.isFinite(Date.parse(row.checked_at)) || Date.parse(row.checked_at) > Date.now() + 300000) throw new Error("Invalid research check time");
     const key = JSON.stringify([row.slug, row.field, row.value, row.source_url, row.checked_at]);
-    if (seen.has(key)) throw new Error("Duplicate evidence assertion");
-    seen.add(key);
     const fact = bySlug.get(row.slug);
     const caveats = ["Edition and source evidence require human review"];
     let quarantined = !fact || fact[row.field] !== row.value;
