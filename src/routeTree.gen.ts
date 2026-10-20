@@ -78,6 +78,7 @@ import { Route as AdminShellAdminRevenueRouteImport } from './routes/_adminShell
 import { Route as AdminShellAdminRecurrenceRouteImport } from './routes/_adminShell.admin.recurrence'
 import { Route as AdminShellAdminOrganiserIdentitiesRouteImport } from './routes/_adminShell.admin.organiser-identities'
 import { Route as AdminShellAdminOrganiserGapRouteImport } from './routes/_adminShell.admin.organiser-gap'
+import { Route as AdminShellAdminFactPreviewRouteImport } from './routes/_adminShell.admin.fact-preview'
 import { Route as AdminShellAdminClubClaimsRouteImport } from './routes/_adminShell.admin.club-claims'
 import { Route as AdminShellAdminClaimsRouteImport } from './routes/_adminShell.admin.claims'
 import { Route as AdminShellAdminChangeReportsRouteImport } from './routes/_adminShell.admin.change-reports'
@@ -467,6 +468,12 @@ const AdminShellAdminOrganiserGapRoute =
     path: '/admin/organiser-gap',
     getParentRoute: () => AdminShellRoute,
   } as any)
+const AdminShellAdminFactPreviewRoute =
+  AdminShellAdminFactPreviewRouteImport.update({
+    id: '/admin/fact-preview',
+    path: '/admin/fact-preview',
+    getParentRoute: () => AdminShellRoute,
+  } as any)
 const AdminShellAdminClubClaimsRoute =
   AdminShellAdminClubClaimsRouteImport.update({
     id: '/admin/club-claims',
@@ -687,6 +694,7 @@ export interface FileRoutesByFullPath {
   '/admin/change-reports': typeof AdminShellAdminChangeReportsRoute
   '/admin/claims': typeof AdminShellAdminClaimsRoute
   '/admin/club-claims': typeof AdminShellAdminClubClaimsRoute
+  '/admin/fact-preview': typeof AdminShellAdminFactPreviewRoute
   '/admin/organiser-gap': typeof AdminShellAdminOrganiserGapRoute
   '/admin/organiser-identities': typeof AdminShellAdminOrganiserIdentitiesRouteWithChildren
   '/admin/recurrence': typeof AdminShellAdminRecurrenceRoute
@@ -785,6 +793,7 @@ export interface FileRoutesByTo {
   '/admin/change-reports': typeof AdminShellAdminChangeReportsRoute
   '/admin/claims': typeof AdminShellAdminClaimsRoute
   '/admin/club-claims': typeof AdminShellAdminClubClaimsRoute
+  '/admin/fact-preview': typeof AdminShellAdminFactPreviewRoute
   '/admin/organiser-gap': typeof AdminShellAdminOrganiserGapRoute
   '/admin/organiser-identities': typeof AdminShellAdminOrganiserIdentitiesRouteWithChildren
   '/admin/recurrence': typeof AdminShellAdminRecurrenceRoute
@@ -885,6 +894,7 @@ export interface FileRoutesById {
   '/_adminShell/admin/change-reports': typeof AdminShellAdminChangeReportsRoute
   '/_adminShell/admin/claims': typeof AdminShellAdminClaimsRoute
   '/_adminShell/admin/club-claims': typeof AdminShellAdminClubClaimsRoute
+  '/_adminShell/admin/fact-preview': typeof AdminShellAdminFactPreviewRoute
   '/_adminShell/admin/organiser-gap': typeof AdminShellAdminOrganiserGapRoute
   '/_adminShell/admin/organiser-identities': typeof AdminShellAdminOrganiserIdentitiesRouteWithChildren
   '/_adminShell/admin/recurrence': typeof AdminShellAdminRecurrenceRoute
@@ -985,6 +995,7 @@ export interface FileRouteTypes {
     | '/admin/change-reports'
     | '/admin/claims'
     | '/admin/club-claims'
+    | '/admin/fact-preview'
     | '/admin/organiser-gap'
     | '/admin/organiser-identities'
     | '/admin/recurrence'
@@ -1083,6 +1094,7 @@ export interface FileRouteTypes {
     | '/admin/change-reports'
     | '/admin/claims'
     | '/admin/club-claims'
+    | '/admin/fact-preview'
     | '/admin/organiser-gap'
     | '/admin/organiser-identities'
     | '/admin/recurrence'
@@ -1182,6 +1194,7 @@ export interface FileRouteTypes {
     | '/_adminShell/admin/change-reports'
     | '/_adminShell/admin/claims'
     | '/_adminShell/admin/club-claims'
+    | '/_adminShell/admin/fact-preview'
     | '/_adminShell/admin/organiser-gap'
     | '/_adminShell/admin/organiser-identities'
     | '/_adminShell/admin/recurrence'
@@ -1789,6 +1802,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminShellAdminOrganiserGapRouteImport
       parentRoute: typeof AdminShellRoute
     }
+    '/_adminShell/admin/fact-preview': {
+      id: '/_adminShell/admin/fact-preview'
+      path: '/admin/fact-preview'
+      fullPath: '/admin/fact-preview'
+      preLoaderRoute: typeof AdminShellAdminFactPreviewRouteImport
+      parentRoute: typeof AdminShellRoute
+    }
     '/_adminShell/admin/club-claims': {
       id: '/_adminShell/admin/club-claims'
       path: '/admin/club-claims'
@@ -2007,6 +2027,7 @@ interface AdminShellRouteChildren {
   AdminShellAdminChangeReportsRoute: typeof AdminShellAdminChangeReportsRoute
   AdminShellAdminClaimsRoute: typeof AdminShellAdminClaimsRoute
   AdminShellAdminClubClaimsRoute: typeof AdminShellAdminClubClaimsRoute
+  AdminShellAdminFactPreviewRoute: typeof AdminShellAdminFactPreviewRoute
   AdminShellAdminOrganiserGapRoute: typeof AdminShellAdminOrganiserGapRoute
   AdminShellAdminOrganiserIdentitiesRoute: typeof AdminShellAdminOrganiserIdentitiesRouteWithChildren
   AdminShellAdminRecurrenceRoute: typeof AdminShellAdminRecurrenceRoute
@@ -2029,6 +2050,7 @@ const AdminShellRouteChildren: AdminShellRouteChildren = {
   AdminShellAdminChangeReportsRoute: AdminShellAdminChangeReportsRoute,
   AdminShellAdminClaimsRoute: AdminShellAdminClaimsRoute,
   AdminShellAdminClubClaimsRoute: AdminShellAdminClubClaimsRoute,
+  AdminShellAdminFactPreviewRoute: AdminShellAdminFactPreviewRoute,
   AdminShellAdminOrganiserGapRoute: AdminShellAdminOrganiserGapRoute,
   AdminShellAdminOrganiserIdentitiesRoute:
     AdminShellAdminOrganiserIdentitiesRouteWithChildren,
