@@ -50,14 +50,18 @@ export function validateRichResearch(factsCsv: string, evidenceCsv: string) {
     const fact = bySlug.get(row.slug);
     const caveats = ["Edition and source evidence require human review"];
     if (extraQuotes.has(key)) caveats.push("Source page also gave a second supporting quote (not stored)");
-    let quarantined = !fact || fact[row.field] !== row.value;
+    const factParts = (fact?.[row.field] ?? "").split(";").map((p) => p.trim());
+    const isPart = fact?.[row.field] !== row.value && factParts.length > 1 && factParts.includes(row.value);
+    let quarantined = !fact || (fact[row.field] !== row.value && !isPart);
     if (quarantined) caveats.push("Evidence and facts CSV disagree");
+    if (isPart) caveats.push("One part of a multi-part fact (e.g. per distance)");
     const typed = typeRichFact(row.field, row.value);
     caveats.push(...typed.caveats);
     if (typed.value === null) quarantined = true;
     if (row.confidence !== "verified" && row.confidence !== "plausible_needs_review") { quarantined = true; caveats.push("Unknown researcher confidence"); }
     const siblings = evidence.filter((e) => e.slug === row.slug && e.field === row.field);
-    if (new Set(siblings.map((e) => e.value)).size > 1) { quarantined = true; caveats.push("Contradictory assertions"); }
+    const allParts = siblings.every((e) => e.value === fact?.[row.field] || factParts.includes(e.value));
+    if (new Set(siblings.map((e) => e.value)).size > 1 && !(allParts && factParts.length > 1)) { quarantined = true; caveats.push("Contradictory assertions"); }
     return { slug: row.slug, field: row.field, value: row.value, evidence_quote: row.evidence_quote, source_url: row.source_url, checked_at: row.checked_at, confidence: row.confidence, candidate_value: typed.value, caveats, quarantined };
   });
   for (const row of facts) for (const field of richRaceFields) {
