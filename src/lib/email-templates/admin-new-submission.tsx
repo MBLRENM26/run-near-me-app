@@ -13,9 +13,13 @@ import type { TemplateEntry } from './registry'
 
 interface AdminNewSubmissionProps {
   submitterEmail?: string
-  kind?: 'claim' | 'listing' | 'edit'
+  kind?: 'claim' | 'listing' | 'edit' | 'contact'
   claimSlug?: string | null
   submittedAt?: string
+  name?: string
+  topic?: string
+  raceLink?: string | null
+  message?: string
 }
 
 const SITE_NAME = 'Running Events Near Me'
@@ -39,13 +43,19 @@ const AdminNewSubmissionEmail = ({
   kind = 'listing',
   claimSlug = null,
   submittedAt,
+  name,
+  topic,
+  raceLink,
+  message,
 }: AdminNewSubmissionProps) => {
   const kindLabel =
     kind === 'claim'
       ? 'Listing claim'
       : kind === 'edit'
         ? 'Edit report'
-        : 'New listing'
+        : kind === 'contact'
+          ? 'Contact message'
+          : 'New listing'
   return (
     <Html lang="en" dir="ltr">
       <Head />
@@ -58,26 +68,49 @@ const AdminNewSubmissionEmail = ({
           </Text>
 
           <Section style={detailBox}>
+            {name && (
+              <Text style={detailRow}>
+                <strong>Name:</strong> {name}
+              </Text>
+            )}
             <Text style={detailRow}>
               <strong>Submitter:</strong> {submitterEmail}
             </Text>
             <Text style={detailRow}>
               <strong>Kind:</strong> {kind}
             </Text>
-            <Text style={detailRow}>
-              <strong>Claim slug:</strong> {claimSlug ?? '—'}
-            </Text>
+            {topic && (
+              <Text style={detailRow}>
+                <strong>Topic:</strong> {topic}
+              </Text>
+            )}
+            {raceLink && (
+              <Text style={detailRow}>
+                <strong>Race:</strong> {raceLink}
+              </Text>
+            )}
+            {kind !== 'contact' && (
+              <Text style={detailRow}>
+                <strong>Claim slug:</strong> {claimSlug ?? '—'}
+              </Text>
+            )}
             <Text style={detailRow}>
               <strong>Submitted:</strong> {formatDate(submittedAt)}
             </Text>
           </Section>
 
-          <Text style={text}>
-            Review and action it in the admin queue:{' '}
-            <Link href={REVIEW_URL} style={link}>
-              {REVIEW_URL}
-            </Link>
-          </Text>
+          {message && <Text style={{ ...text, whiteSpace: 'pre-wrap' }}>{message}</Text>}
+
+          {kind === 'contact' ? (
+            <Text style={text}>Reply directly to {submitterEmail}.</Text>
+          ) : (
+            <Text style={text}>
+              Review and action it in the admin queue:{' '}
+              <Link href={REVIEW_URL} style={link}>
+                {REVIEW_URL}
+              </Link>
+            </Text>
+          )}
 
           <Text style={footer}>— {SITE_NAME}</Text>
         </Container>
@@ -89,8 +122,9 @@ const AdminNewSubmissionEmail = ({
 export const template = {
   component: AdminNewSubmissionEmail,
   subject: (data: Record<string, any>) => {
-    const kind = data?.kind === 'claim' ? 'claim' : 'listing'
     const email = data?.submitterEmail ?? 'unknown'
+    if (data?.kind === 'contact') return `Contact message — ${email}`
+    const kind = data?.kind === 'claim' ? 'claim' : 'listing'
     return `New ${kind} — ${email}`
   },
   displayName: 'Admin: new submission',
