@@ -15,6 +15,13 @@
       "when": 1792505120970,
       "tag": "0001_race_research_auto_review_actions",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792522853885,
+      "tag": "0002_create_contact_messages",
+      "breakpoints": true
     }
   ]
 }

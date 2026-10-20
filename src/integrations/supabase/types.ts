@@ -209,6 +209,39 @@ export type Database = {
         }
         Relationships: []
       }
+      contact_messages: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+          race_link: string | null
+          status: string
+          topic: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+          race_link?: string | null
+          status?: string
+          topic: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          race_link?: string | null
+          status?: string
+          topic?: string
+        }
+        Relationships: []
+      }
       course_source_reviews: {
         Row: {
           detail: string | null

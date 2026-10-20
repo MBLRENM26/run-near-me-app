@@ -20,9 +20,13 @@ const TEMPLATE_NAME = 'admin-new-submission'
 export interface NewSubmissionPayload {
   id: string
   email: string
-  kind: 'claim' | 'listing' | 'edit'
+  kind: 'claim' | 'listing' | 'edit' | 'contact'
   claim_slug: string | null
   submitted_at: string
+  name?: string
+  topic?: string
+  race_link?: string | null
+  message?: string
 }
 
 export function adminNotifyMessageId(submissionId: string): string {
@@ -148,6 +152,10 @@ export async function sendNewSubmissionNotification(
       kind: data.kind,
       claimSlug: data.claim_slug,
       submittedAt: data.submitted_at,
+      name: data.name,
+      topic: data.topic,
+      raceLink: data.race_link,
+      message: data.message,
     }
     const element = React.createElement(entry.component, templateData)
     const html = await render(element)
