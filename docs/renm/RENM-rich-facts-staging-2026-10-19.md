@@ -27,3 +27,9 @@ Public acceptance/projection, freshness expiry and publication remain separate g
 - Event rows unchanged (fingerprint 06efcaaf… before and after). Nothing published.
 - Retry candidates: 81 in-window races (18 page did not load, 29 edition not confirmed, 34 facts not stated); 31 in-window blocked/not-allowed races excluded from retry.
 - Limitation: one inherited batch lacks robots/request-pacing logs; some agent notes reference a QC date after the check date.
+
+## Targeted retry — 20 Oct 2026
+
+- 81 retry candidates → 16 races / 44 facts staged as a third private batch; 0 flagged. Outcomes: 35 still unavailable, 5 stale edition, 25 nothing stated.
+- Request log archived at docs/renm/audit/race-facts-retry-request-log-2026-10-20.csv (160 requests, no sub-second intervals). The first unlogged attempt is recorded as a batch limitation.
+- Event fingerprint unchanged (06efcaaf…). Next pass: small rolling pass ~4 weeks before each race date rather than another full retry.
