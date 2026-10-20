@@ -3,15 +3,23 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { importRichRaceResearch, listRichRaceResearch, reviewRichRaceFact } from "@/lib/rich-race-research.functions";
+import { richRaceFields } from "@/lib/rich-race-research";
+
+type View = "all" | "flagged" | "upcoming" | "unresolved";
 
 export function RichRaceResearch() {
   const list = useServerFn(listRichRaceResearch), ingest = useServerFn(importRichRaceResearch), review = useServerFn(reviewRichRaceFact);
   const qc = useQueryClient();
-  const { data, error } = useQuery({ queryKey: ["rich-race-research"], queryFn: () => list(), retry: false });
+  const [batchId, setBatchId] = useState<string | undefined>();
+  const [view, setView] = useState<View>("all");
+  const [field, setField] = useState("");
+  const [search, setSearch] = useState("");
+  const [offset, setOffset] = useState(0);
+  const filters = { batchId, view, field: field || undefined, search: search || undefined, offset };
+  const { data, error } = useQuery({ queryKey: ["rich-race-research", filters], queryFn: () => list({ data: filters }), retry: false });
   const [facts, setFacts] = useState<File | null>(null), [evidence, setEvidence] = useState<File | null>(null);
   const [busy, setBusy] = useState(false), [message, setMessage] = useState("");
   const [notes, setNotes] = useState<Record<string, string>>({});
-  const [search, setSearch] = useState("");
   async function act(fn: () => Promise<unknown>) {
     setBusy(true); setMessage("");
     try { await fn(); await qc.invalidateQueries({ queryKey: ["rich-race-research"] }); }
@@ -19,10 +27,8 @@ export function RichRaceResearch() {
     finally { setBusy(false); }
   }
   const grouped = new Map<string, NonNullable<typeof data>["rows"]>();
-  for (const row of data?.rows ?? []) {
-    if (search && !row.slug.toLowerCase().includes(search.toLowerCase())) continue;
-    const rows = grouped.get(row.slug) ?? []; rows.push(row); grouped.set(row.slug, rows);
-  }
+  for (const row of data?.rows ?? []) { const rows = grouped.get(row.slug) ?? []; rows.push(row); grouped.set(row.slug, rows); }
+  const reset = () => setOffset(0);
   return <section aria-labelledby="rich-research-heading" className="space-y-4 border-t border-border pt-6">
     <h2 id="rich-research-heading" className="text-xl font-semibold">Race facts — awaiting review</h2>
     <details className="border border-border rounded p-4">
@@ -34,16 +40,23 @@ export function RichRaceResearch() {
       <Button disabled={busy || !facts || !evidence} onClick={() => act(async () => {
         if (!facts || !evidence) return;
         const result = await ingest({ data: { factsCsv: await facts.text(), evidenceCsv: await evidence.text() } });
-        setMessage(`${result.count} assertions staged privately.`);
-      })}>Stage race facts</Button>
+        setBatchId(result.batchId); reset();
+        setMessage(`${result.count} assertions staged privately (${result.quarantined} flagged).`);
+      })}>{busy ? "Staging…" : "Stage race facts"}</Button>
     </details>
     {(message || error) && <p role="status" className="text-sm">{message || error?.message}</p>}
-    {data?.batch && <>
-      <p className="text-sm text-muted-foreground">{data.batch.assertion_count} assertions · {new Set(data.rows.map((r) => r.slug)).size} races · not published</p>
+    {data?.batch && data.stats && <>
+      {data.batches.length > 1 && <label className="block text-sm">Research batch<select aria-label="Research batch" className="block mt-1 rounded border border-border bg-background p-2" value={data.batch.id} onChange={(e) => { setBatchId(e.target.value); reset(); }}>{data.batches.map((b) => <option key={b.id} value={b.id}>{b.label} · {b.assertion_count} facts</option>)}</select></label>}
+      <p className="text-sm">{data.stats.races} races · {data.stats.assertions} facts · {data.stats.quarantined} flagged · {data.stats.unresolved} not matched to a race · not published</p>
       <p className="text-sm text-muted-foreground">{data.batch.limitations}</p>
-      <label className="block text-sm">Find race<input aria-label="Find researched race" value={search} onChange={(e) => setSearch(e.target.value)} className="block mt-1 w-full rounded border border-border bg-background p-2" /></label>
+      <div className="flex flex-wrap gap-2">{(["all", "upcoming", "flagged", "unresolved"] as const).map((v) => <Button key={v} size="sm" variant={view === v ? "default" : "outline"} onClick={() => { setView(v); reset(); }}>{v === "all" ? "All" : v === "upcoming" ? "Upcoming races" : v === "flagged" ? "Flagged" : "Not matched"}</Button>)}</div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="block text-sm">Fact type<select aria-label="Fact type" value={field} onChange={(e) => { setField(e.target.value); reset(); }} className="block mt-1 w-full rounded border border-border bg-background p-2"><option value="">All facts</option>{richRaceFields.map((f) => <option key={f} value={f}>{f.replaceAll("_", " ")}</option>)}</select></label>
+        <label className="block text-sm">Find race<input aria-label="Find researched race" value={search} onChange={(e) => { setSearch(e.target.value); reset(); }} className="block mt-1 w-full rounded border border-border bg-background p-2" /></label>
+      </div>
+      <p className="text-sm text-muted-foreground">Showing {data.total ? offset + 1 : 0}–{Math.min(offset + 200, data.total)} of {data.total} facts</p>
       {[...grouped].map(([slug, rows]) => <details key={slug} className="rounded border border-border p-4">
-        <summary className="font-medium break-words">{slug.replaceAll("-", " ")} · {rows.length} facts</summary>
+        <summary className="font-medium break-words">{slug.replaceAll("-", " ")} · {rows.length} facts{rows.some((r) => r.match_state === "quarantined") ? " · flagged" : ""}</summary>
         <div className="mt-4 space-y-5">{rows.map((row) => {
           const latest = data.reviews.find((r) => r.assertion_id === row.id);
           return <article key={row.id} className="border-t border-border pt-4 space-y-2">
@@ -58,6 +71,10 @@ export function RichRaceResearch() {
           </article>;
         })}</div>
       </details>)}
+      <div className="flex gap-2">
+        <Button variant="outline" size="sm" disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - 200))}>Previous</Button>
+        <Button variant="outline" size="sm" disabled={offset + 200 >= data.total} onClick={() => setOffset(offset + 200)}>Next</Button>
+      </div>
     </>}
   </section>;
 }
