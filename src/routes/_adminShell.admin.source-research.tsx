@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ResearchEventFacts } from "@/components/admin/ResearchEventFacts";
 import { RichRaceResearch } from "@/components/admin/RichRaceResearch";
+import { ResearchInbox } from "@/components/admin/ResearchInbox";
 
 export const Route = createFileRoute("/_adminShell/admin/source-research")({
   head: () => ({
@@ -59,6 +60,10 @@ function SourceResearchPage() {
   return (
     <main className="mx-auto max-w-6xl space-y-6 p-6">
       <h1 className="text-2xl font-bold">Sources and race research</h1>
+      <ResearchInbox />
+      <details className="rounded border border-border p-4">
+        <summary className="font-medium">Technical: imports, all facts and site-monitor notices</summary>
+        <div className="mt-4 space-y-6">
       <RichRaceResearch />
       <p>
         Review evidence from club, organiser and entry pages. New race discoveries and conflicting
@@ -303,6 +308,8 @@ function SourceResearchPage() {
         <pre className="overflow-auto whitespace-pre-wrap text-xs">
           {JSON.stringify(data?.reviews ?? [], null, 2)}
         </pre>
+      </details>
+        </div>
       </details>
     </main>
   );
