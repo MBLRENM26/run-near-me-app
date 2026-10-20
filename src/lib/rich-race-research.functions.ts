@@ -137,7 +137,27 @@ const runAutoReview = createServerOnlyFn(async (db: Awaited<ReturnType<typeof db
     if (r.error) throw new Error(r.error.message);
     for (const a of part) latest.set(a.id, { action: "auto_accept", reviewer_identity: AUTO_RULE });
   }
-  return { assertions, latest, accepted: toAccept.length };
+  // Rule v2: newer pass wins; values confirmed more than once are accepted.
+  const { resolveGroup, AUTO_RULE_V2 } = await import("./research-auto-review");
+  const b = await db.from("race_research_batches").select("id,created_at");
+  if (b.error) throw new Error(b.error.message);
+  const batchAt = new Map((b.data ?? []).map((x) => [x.id as string, x.created_at as string]));
+  const groups = new Map<string, AssertionRow[]>();
+  for (const a of assertions) groups.set(`${a.slug}|${a.field}`, [...(groups.get(`${a.slug}|${a.field}`) ?? []), a]);
+  const v2: { assertion_id: string; action: string; note: string; reviewer_identity: string }[] = [];
+  for (const facts of groups.values()) {
+    if (facts.length < 2) continue;
+    const human = (id: string) => { const r = latest.get(id); return !!r && !r.reviewer_identity.startsWith("auto:"); };
+    const d = resolveGroup(facts.map((f) => ({ ...f, batch_created_at: batchAt.get(f.batch_id) ?? "", reviewed: human(f.id) })));
+    for (const id of d.accept) if (!["accept", "auto_accept"].includes(latest.get(id)?.action ?? "")) v2.push({ assertion_id: id, action: "auto_accept", note: "Newer pass or confirmed more than once", reviewer_identity: AUTO_RULE_V2 });
+    for (const id of d.supersede) if (latest.get(id)?.action !== "reject") v2.push({ assertion_id: id, action: "reject", note: "Superseded by newer pass", reviewer_identity: AUTO_RULE_V2 });
+  }
+  for (const part of chunk(v2, 500)) {
+    const r = await db.from("race_research_fact_reviews").insert(part);
+    if (r.error) throw new Error(r.error.message);
+    for (const x of part) latest.set(x.assertion_id, x);
+  }
+  return { assertions, latest, accepted: toAccept.length + v2.length };
 });
 
 export const researchOverview = createServerFn({ method: "GET" }).handler(async () => {
@@ -181,7 +201,7 @@ export const revokeAutoRule = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const db = await dbForAdmin();
     const { latest } = await loadAll(db);
-    const ids = [...latest].filter(([, r]) => r.action === "auto_accept" && r.reviewer_identity === data.rule).map(([id]) => id);
+    const ids = [...latest].filter(([, r]) => r.reviewer_identity === data.rule).map(([id]) => id);
     for (const part of chunk(ids, 500)) {
       const r = await db.from("race_research_fact_reviews").insert(part.map((id) => ({ assertion_id: id, action: "revoke", note: `Bulk undo of ${data.rule}`, reviewer_identity: "admin:cookie-session" })));
       if (r.error) throw new Error(r.error.message);
