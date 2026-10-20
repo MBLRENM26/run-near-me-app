@@ -34,7 +34,7 @@ export const importRichRaceResearch = createServerFn({ method: "POST" })
       const result = await db.from("race_research_batches").insert({ id: batchId, file_sha256: fileHash, evidence_file_sha256: evidenceHash, label: `Uploaded race facts — ${new Date().toISOString().slice(0, 10)}`, row_count: parsed.facts.length, assertion_count: compared.length, limitations: "Best-effort research. One inherited batch has unconfirmed robots/request-pacing logs; course-map reproduction terms not checked. Researcher confidence is not reviewer acceptance." });
       if (result.error) throw new Error(result.error.message);
     }
-    const events: { id: string; slug: string; date_from: string | null; sort_date: string | null; date_is_estimated: boolean | null }[] = [];
+    const events: { id: string; slug: string | null; date_from: string | null; sort_date: string | null; date_is_estimated: boolean | null }[] = [];
     for (const part of chunk(slugs, 200)) {
       const r = await db.from("events").select("id,slug,name,date_from,sort_date,status,date_is_estimated").in("slug", part);
       if (r.error) throw new Error(r.error.message);
