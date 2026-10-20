@@ -186,3 +186,15 @@ export const revokeAutoRule = createServerFn({ method: "POST" })
     }
     return { revoked: ids.length };
   });
+
+/** One click for a whole website's facts (e.g. a commercial organiser hosted on a booking platform). */
+export const decideMany = createServerFn({ method: "POST" })
+  .inputValidator((v: unknown) => z.object({ ids: z.array(z.uuid()).min(1).max(1000), decision: z.enum(["accept", "ignore"]), host: z.string().max(200) }).parse(v))
+  .handler(async ({ data }) => {
+    const db = await dbForAdmin();
+    for (const part of chunk(data.ids, 500)) {
+      const r = await db.from("race_research_fact_reviews").insert(part.map((id) => ({ assertion_id: id, action: data.decision === "accept" ? "accept" : "reject", note: `Admin ${data.decision === "accept" ? "accepted" : "ignored"} all facts from ${data.host}`, reviewer_identity: "admin:cookie-session" })));
+      if (r.error) throw new Error(r.error.message);
+    }
+    return { count: data.ids.length };
+  });
