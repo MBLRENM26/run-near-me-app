@@ -62,7 +62,7 @@ function FactPreview() {
       <label className="block text-sm font-medium">
         Race
         <select className="mt-1 block w-full rounded-md border border-input bg-background p-2" value={current} onChange={(e) => setSlug(e.target.value)}>
-          {slugs.map((s) => <option key={s} value={s}>{pretty(s)} ({bySlug.get(s)!.size} facts)</option>)}
+          {slugs.map((s) => <option key={s} value={s}>{pretty(s)} ({bySlug.m.get(s)!.size} facts)</option>)}
         </select>
       </label>
 
