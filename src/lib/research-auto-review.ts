@@ -56,3 +56,51 @@ export function triageFact(f: ReviewableFact): Triage {
   if (!snap?.date_from || snap.date_is_estimated) return { kind: "needs_you", reason: "Our race date is estimated, so we can't confirm it's the same year" };
   return { kind: "auto" };
 }
+
+/** Rule v2: newer pass wins; a value found more than once is accepted. */
+export const AUTO_RULE_V2 = "auto:rule-v2";
+const DIFFERS = "Differs from an earlier research batch";
+const SECOND_QUOTE = "Source page also gave a second supporting quote (not stored)";
+const WRONG_YEAR = "Slug year differs from stored edition";
+
+export type GroupFact = ReviewableFact & { id: string; raw_value: string; batch_created_at: string; reviewed: boolean };
+export type GroupDecision = { accept: string[]; supersede: string[] };
+
+const norm = (v: string) => v.trim().toLowerCase().replace(/\s+/g, " ");
+const caveatsOf = (f: ReviewableFact) => (Array.isArray(f.caveats) ? f.caveats.map(String) : []);
+const without = (f: ReviewableFact, drop: string[]) => ({ ...f, caveats: caveatsOf(f).filter((c) => !drop.includes(c)) });
+const organiserOwned = (u: string) => { const l = classifyEventLink(u); return isTrustedLink(l) && !isEntryPlatformHost(l.host); };
+
+/** Pure: decide one slug+field group. Human-reviewed facts are never touched. */
+export function resolveGroup(facts: GroupFact[]): GroupDecision {
+  const out: GroupDecision = { accept: [], supersede: [] };
+  if (!facts.length || NEVER_AUTO_FIELDS.has(facts[0].field)) return out;
+  const open = facts.filter((f) => !f.reviewed);
+  // Corroboration: same value seen on 2+ distinct sources or passes.
+  const byValue = new Map<string, GroupFact[]>();
+  for (const f of facts) byValue.set(norm(f.raw_value), [...(byValue.get(norm(f.raw_value)) ?? []), f]);
+  for (const same of byValue.values()) {
+    const distinct = new Set(same.map((f) => `${f.source_url}|${f.batch_created_at}`)).size;
+    if (distinct < 2 || !same.some((f) => organiserOwned(f.source_url))) continue;
+    for (const f of same) {
+      if (f.reviewed || caveatsOf(f).includes(WRONG_YEAR)) continue;
+      const g = without(f, [SECOND_QUOTE, DIFFERS]);
+      const t = triageFact(organiserOwned(f.source_url) ? g : { ...g, source_url: same.find((s) => organiserOwned(s.source_url))!.source_url });
+      if (t.kind === "auto") out.accept.push(f.id);
+    }
+  }
+  // Newer wins: newest batch's single value beats older differing values.
+  const newest = [...facts].sort((a, b) => b.batch_created_at.localeCompare(a.batch_created_at))[0].batch_created_at;
+  const latest = facts.filter((f) => f.batch_created_at === newest);
+  const values = new Set(latest.map((f) => norm(f.raw_value)));
+  if (values.size === 1) {
+    const winner = latest.find((f) => !f.reviewed && triageFact(without(f, [DIFFERS, SECOND_QUOTE])).kind === "auto");
+    const older = open.filter((f) => f.batch_created_at < newest && norm(f.raw_value) !== norm(winner?.raw_value ?? ""));
+    if (winner && older.length) {
+      if (!out.accept.includes(winner.id)) out.accept.push(winner.id);
+      out.supersede.push(...older.map((f) => f.id));
+    }
+  }
+  out.supersede = out.supersede.filter((id) => !out.accept.includes(id));
+  return out;
+}
