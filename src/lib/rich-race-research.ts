@@ -30,30 +30,50 @@ export function validateRichResearch(factsCsv: string, evidenceCsv: string) {
     if (!row.slug || bySlug.has(row.slug)) throw new Error("Missing or duplicate race slug");
     bySlug.set(row.slug, row);
   }
-  const seen = new Set<string>();
-  const assertions = evidence.map((row) => {
+  const seen = new Map<string, string>();
+  const extraQuotes = new Set<string>();
+  const unique = evidence.filter((row) => {
+    const key = JSON.stringify([row.slug, row.field, row.value, row.source_url, row.checked_at]);
+    const prior = seen.get(key);
+    if (prior === undefined) { seen.set(key, row.evidence_quote); return true; }
+    if (prior === row.evidence_quote) throw new Error("Duplicate evidence assertion");
+    extraQuotes.add(key); // same fact, same page, a second verbatim quote: keep the first, flag the rest
+    return false;
+  });
+  const assertions = unique.map((row) => {
     if (!richRaceFields.some((f) => f === row.field)) throw new Error("Unsupported research field");
     if (!row.evidence_quote?.trim() || row.evidence_quote.length > 240) throw new Error("Missing or excessive evidence quote");
     const url = new URL(row.source_url);
     if (!["http:", "https:"].includes(url.protocol) || url.username || url.password) throw new Error("Invalid evidence URL");
     if (!/^\d{4}-\d{2}-\d{2}T/.test(row.checked_at) || !Number.isFinite(Date.parse(row.checked_at)) || Date.parse(row.checked_at) > Date.now() + 300000) throw new Error("Invalid research check time");
     const key = JSON.stringify([row.slug, row.field, row.value, row.source_url, row.checked_at]);
-    if (seen.has(key)) throw new Error("Duplicate evidence assertion");
-    seen.add(key);
     const fact = bySlug.get(row.slug);
     const caveats = ["Edition and source evidence require human review"];
-    let quarantined = !fact || fact[row.field] !== row.value;
+    if (extraQuotes.has(key)) caveats.push("Source page also gave a second supporting quote (not stored)");
+    const factParts = (fact?.[row.field] ?? "").split(";").map((p) => p.trim());
+    const isPart = fact?.[row.field] !== row.value && factParts.length > 1 && factParts.includes(row.value);
+    let quarantined = !fact || (fact[row.field] !== row.value && !isPart);
     if (quarantined) caveats.push("Evidence and facts CSV disagree");
+    if (isPart) caveats.push("One part of a multi-part fact (e.g. per distance)");
     const typed = typeRichFact(row.field, row.value);
     caveats.push(...typed.caveats);
     if (typed.value === null) quarantined = true;
     if (row.confidence !== "verified" && row.confidence !== "plausible_needs_review") { quarantined = true; caveats.push("Unknown researcher confidence"); }
     const siblings = evidence.filter((e) => e.slug === row.slug && e.field === row.field);
-    if (new Set(siblings.map((e) => e.value)).size > 1) { quarantined = true; caveats.push("Contradictory assertions"); }
+    const allParts = siblings.every((e) => e.value === fact?.[row.field] || factParts.includes(e.value));
+    if (new Set(siblings.map((e) => e.value)).size > 1 && !(allParts && factParts.length > 1)) { quarantined = true; caveats.push("Contradictory assertions"); }
     return { slug: row.slug, field: row.field, value: row.value, evidence_quote: row.evidence_quote, source_url: row.source_url, checked_at: row.checked_at, confidence: row.confidence, candidate_value: typed.value, caveats, quarantined };
   });
   for (const row of facts) for (const field of richRaceFields) {
     if (row[field]?.trim() && !evidence.some((e) => e.slug === row.slug && e.field === field)) throw new Error("A populated fact has no supporting evidence");
   }
   return { facts, assertions };
+}/** Compare a new batch with earlier staged research; earlier rows are never changed. */
+export function compareWithEarlierBatches<T extends { slug: string; field: string; value: string; caveats: string[]; quarantined: boolean }>(rows: T[], earlier: { slug: string; field: string; raw_value: string }[]): T[] {
+  return rows.map((r) => {
+    const prior = earlier.filter((e) => e.slug === r.slug && e.field === r.field);
+    if (!prior.length) return r;
+    if (prior.some((e) => e.raw_value === r.value)) return { ...r, caveats: [...r.caveats, "Repeats an earlier research batch"] };
+    return { ...r, quarantined: true, caveats: [...r.caveats, "Differs from an earlier research batch"] };
+  });
 }
