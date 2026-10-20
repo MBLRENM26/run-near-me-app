@@ -118,7 +118,9 @@ const loadAll = createServerOnlyFn(async (db: Awaited<ReturnType<typeof dbForAdm
   }
   const latest = new Map<string, { action: string; reviewer_identity: string }>();
   for (let from = 0; ; from += 1000) {
-    const r = await db.from("race_research_fact_reviews").select("assertion_id,action,reviewer_identity,created_at").order("created_at", { ascending: true }).range(from, from + 999);
+    // Tie-break on id: hundreds of rows share one created_at (bulk inserts), and
+    // paging on a non-unique order silently skips/duplicates rows between pages.
+    const r = await db.from("race_research_fact_reviews").select("assertion_id,action,reviewer_identity,created_at").order("created_at", { ascending: true }).order("id", { ascending: true }).range(from, from + 999);
     if (r.error) throw new Error(r.error.message);
     for (const x of r.data ?? []) latest.set(x.assertion_id, x);
     if ((r.data ?? []).length < 1000) break;
