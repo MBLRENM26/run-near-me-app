@@ -142,7 +142,7 @@ export const researchOverview = createServerFn({ method: "GET" }).handler(async 
   const db = await dbForAdmin();
   const { triageFact, AUTO_RULE } = await import("./research-auto-review");
   const { assertions, latest } = await runAutoReview(db);
-  const needsYou: (AssertionRow & { reason: string; others: { id: string; value: string }[] })[] = [];
+  const needsYou: { id: string; slug: string; field: string; raw_value: string; evidence_quote: string; source_url: string; reason: string; others: { id: string; value: string }[] }[] = [];
   const accepted: { slug: string; field: string; value: string; auto: boolean }[] = [];
   let parked = 0, dismissed = 0, auto = 0;
   for (const a of assertions) {
@@ -153,7 +153,7 @@ export const researchOverview = createServerFn({ method: "GET" }).handler(async 
     if (t.kind === "parked") { parked++; continue; }
     const reason = t.kind === "needs_you" ? t.reason : rv?.action === "revoke" ? "Automatic acceptance was undone" : "Needs a look";
     const others = assertions.filter((o) => o.id !== a.id && o.slug === a.slug && o.field === a.field && o.raw_value !== a.raw_value).map((o) => ({ id: o.id, value: o.raw_value }));
-    needsYou.push({ ...a, reason, others });
+    needsYou.push({ id: a.id, slug: a.slug, field: a.field, raw_value: a.raw_value, evidence_quote: a.evidence_quote, source_url: a.source_url, reason, others });
   }
   needsYou.sort((x, y) => x.slug.localeCompare(y.slug) || x.field.localeCompare(y.field));
   return { total: assertions.length, auto, parked, dismissed, accepted, needsYou, rule: AUTO_RULE };
