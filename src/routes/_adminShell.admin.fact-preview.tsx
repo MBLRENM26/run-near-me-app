@@ -68,9 +68,8 @@ function FactPreview() {
 
       {row && (
         <article className="rounded-lg border border-border bg-card p-6 text-card-foreground shadow-sm">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">On the race page, below the date and location</p>
-          <h2 className="mt-1 text-2xl font-bold">What you need to know</h2>
-          <p className="mt-1 text-sm font-semibold">Race details</p>
+          <p className="text-sm text-muted-foreground">What you need to know</p>
+          <h2 className="mt-1 text-2xl font-bold">Race details</h2>
           <p className="mt-1 text-sm text-muted-foreground">Look out for announcements about changes, updates or amendments to this event.</p>
           <div className="mt-5 grid gap-5 sm:grid-cols-2">
             {GROUPS.map((g) => {
@@ -91,8 +90,14 @@ function FactPreview() {
               );
             })}
           </div>
-          <p className="mt-5 text-xs text-muted-foreground">{lastCheckedText ? `Data last checked ${lastCheckedText}. ` : ""}We will add further updates when available.</p>
+          {lastCheckedText && <p className="mt-5 text-xs text-muted-foreground">Data last checked {lastCheckedText}.</p>}
         </article>
+      )}
+      {row && (
+        <p className="text-sm text-muted-foreground">
+          We will add further updates when available.{" "}
+          <Link to="/contact" className="underline text-foreground">Contact us</Link> if you have more information about this event.
+        </p>
       )}
       <Link to="/admin/source-research" className="text-sm underline">Back to research</Link>
     </div>
