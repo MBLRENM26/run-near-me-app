@@ -103,3 +103,98 @@ export const reviewRichRaceFact = createServerFn({ method: "POST" })
     if (result.error) throw new Error(result.error.message);
     return { ok: true };
   });
+
+// ---- Exception-only review: clean facts accepted by rule, only problems go to the admin ----
+type AssertionRow = { id: string; batch_id: string; slug: string; field: string; raw_value: string; evidence_quote: string; source_url: string; checked_at: string; researcher_confidence: string; match_state: string; caveats: unknown; occurrence_snapshot: unknown };
+const ASSERTION_COLS = "id,batch_id,slug,field,raw_value,evidence_quote,source_url,checked_at,researcher_confidence,match_state,caveats,occurrence_snapshot";
+
+const loadAll = createServerOnlyFn(async (db: Awaited<ReturnType<typeof dbForAdmin>>) => {
+  const assertions: AssertionRow[] = [];
+  for (let from = 0; ; from += 1000) {
+    const r = await db.from("race_research_assertions").select(ASSERTION_COLS).order("id").range(from, from + 999);
+    if (r.error) throw new Error(r.error.message);
+    assertions.push(...((r.data ?? []) as AssertionRow[]));
+    if ((r.data ?? []).length < 1000) break;
+  }
+  const latest = new Map<string, { action: string; reviewer_identity: string }>();
+  for (let from = 0; ; from += 1000) {
+    const r = await db.from("race_research_fact_reviews").select("assertion_id,action,reviewer_identity,created_at").order("created_at", { ascending: true }).range(from, from + 999);
+    if (r.error) throw new Error(r.error.message);
+    for (const x of r.data ?? []) latest.set(x.assertion_id, x);
+    if ((r.data ?? []).length < 1000) break;
+  }
+  return { assertions, latest };
+});
+
+const runAutoReview = createServerOnlyFn(async (db: Awaited<ReturnType<typeof dbForAdmin>>) => {
+  const { triageFact, AUTO_RULE } = await import("./research-auto-review");
+  const { assertions, latest } = await loadAll(db);
+  const toAccept = assertions.filter((a) => !latest.has(a.id) && triageFact(a).kind === "auto");
+  for (const part of chunk(toAccept, 500)) {
+    const r = await db.from("race_research_fact_reviews").insert(part.map((a) => ({ assertion_id: a.id, action: "auto_accept", note: "Verified, quoted, organiser-owned source, matched edition, no conflicts", reviewer_identity: AUTO_RULE })));
+    if (r.error) throw new Error(r.error.message);
+    for (const a of part) latest.set(a.id, { action: "auto_accept", reviewer_identity: AUTO_RULE });
+  }
+  return { assertions, latest, accepted: toAccept.length };
+});
+
+export const researchOverview = createServerFn({ method: "GET" }).handler(async () => {
+  const db = await dbForAdmin();
+  const { triageFact, AUTO_RULE } = await import("./research-auto-review");
+  const { assertions, latest } = await runAutoReview(db);
+  const needsYou: { id: string; slug: string; field: string; raw_value: string; evidence_quote: string; source_url: string; reason: string; others: { id: string; value: string }[] }[] = [];
+  const accepted: { slug: string; field: string; value: string; auto: boolean }[] = [];
+  let parked = 0, dismissed = 0, auto = 0;
+  for (const a of assertions) {
+    const rv = latest.get(a.id);
+    if (rv?.action === "accept" || rv?.action === "auto_accept") { accepted.push({ slug: a.slug, field: a.field, value: a.raw_value, auto: rv.action === "auto_accept" }); if (rv.action === "auto_accept") auto++; continue; }
+    if (rv?.action === "reject") { dismissed++; continue; }
+    const t = triageFact(a);
+    if (t.kind === "parked") { parked++; continue; }
+    const reason = t.kind === "needs_you" ? t.reason : rv?.action === "revoke" ? "Automatic acceptance was undone" : "Needs a look";
+    const others = assertions.filter((o) => o.id !== a.id && o.slug === a.slug && o.field === a.field && o.raw_value !== a.raw_value).map((o) => ({ id: o.id, value: o.raw_value }));
+    needsYou.push({ id: a.id, slug: a.slug, field: a.field, raw_value: a.raw_value, evidence_quote: a.evidence_quote, source_url: a.source_url, reason, others });
+  }
+  needsYou.sort((x, y) => x.slug.localeCompare(y.slug) || x.field.localeCompare(y.field));
+  return { total: assertions.length, auto, parked, dismissed, accepted, needsYou, rule: AUTO_RULE };
+});
+
+export const decideFact = createServerFn({ method: "POST" })
+  .inputValidator((v: unknown) => z.object({ id: z.uuid(), decision: z.enum(["use_new", "keep_old", "ignore"]), otherIds: z.array(z.uuid()).max(50).default([]) }).parse(v))
+  .handler(async ({ data }) => {
+    const db = await dbForAdmin();
+    const rows: { assertion_id: string; action: string; note: string; reviewer_identity: string }[] = [];
+    const add = (id: string, action: string, note: string) => rows.push({ assertion_id: id, action, note, reviewer_identity: "admin:cookie-session" });
+    if (data.decision === "use_new") { add(data.id, "accept", "Admin chose this value"); data.otherIds.forEach((o) => add(o, "reject", "Admin chose a different value")); }
+    if (data.decision === "keep_old") { add(data.id, "reject", "Admin kept the earlier value"); data.otherIds.forEach((o) => add(o, "accept", "Admin kept this value")); }
+    if (data.decision === "ignore") add(data.id, "reject", "Admin ignored this fact");
+    const r = await db.from("race_research_fact_reviews").insert(rows);
+    if (r.error) throw new Error(r.error.message);
+    return { ok: true };
+  });
+
+/** Bulk undo: append a revoke for every fact whose latest review is this rule's auto-accept. */
+export const revokeAutoRule = createServerFn({ method: "POST" })
+  .inputValidator((v: unknown) => z.object({ rule: z.string().min(1).max(40) }).parse(v))
+  .handler(async ({ data }) => {
+    const db = await dbForAdmin();
+    const { latest } = await loadAll(db);
+    const ids = [...latest].filter(([, r]) => r.action === "auto_accept" && r.reviewer_identity === data.rule).map(([id]) => id);
+    for (const part of chunk(ids, 500)) {
+      const r = await db.from("race_research_fact_reviews").insert(part.map((id) => ({ assertion_id: id, action: "revoke", note: `Bulk undo of ${data.rule}`, reviewer_identity: "admin:cookie-session" })));
+      if (r.error) throw new Error(r.error.message);
+    }
+    return { revoked: ids.length };
+  });
+
+/** One click for a whole website's facts (e.g. a commercial organiser hosted on a booking platform). */
+export const decideMany = createServerFn({ method: "POST" })
+  .inputValidator((v: unknown) => z.object({ ids: z.array(z.uuid()).min(1).max(1000), decision: z.enum(["accept", "ignore"]), host: z.string().max(200) }).parse(v))
+  .handler(async ({ data }) => {
+    const db = await dbForAdmin();
+    for (const part of chunk(data.ids, 500)) {
+      const r = await db.from("race_research_fact_reviews").insert(part.map((id) => ({ assertion_id: id, action: data.decision === "accept" ? "accept" : "reject", note: `Admin ${data.decision === "accept" ? "accepted" : "ignored"} all facts from ${data.host}`, reviewer_identity: "admin:cookie-session" })));
+      if (r.error) throw new Error(r.error.message);
+    }
+    return { count: data.ids.length };
+  });

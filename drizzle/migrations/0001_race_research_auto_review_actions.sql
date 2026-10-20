@@ -1,0 +1,2 @@
+ALTER TABLE public.race_research_fact_reviews DROP CONSTRAINT race_research_fact_reviews_action_check;
+ALTER TABLE public.race_research_fact_reviews ADD CONSTRAINT race_research_fact_reviews_action_check CHECK (action = ANY (ARRAY['hold','reject','reopen','accept','auto_accept','revoke']));
