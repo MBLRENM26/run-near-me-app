@@ -65,7 +65,7 @@ function FactPreview() {
         <article className="rounded-lg border border-border bg-card p-6 text-card-foreground shadow-sm">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">On the race page, below the date and location</p>
           <h2 className="mt-1 text-2xl font-bold">Race facts</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Taken from the organiser's own website. Always check the official race page before you travel.</p>
+          <p className="mt-1 text-sm text-muted-foreground">From the race's own website — worth a quick check before you travel.</p>
           <div className="mt-5 grid gap-5 sm:grid-cols-2">
             {GROUPS.map((g) => {
               const items = g.fields.filter(([k]) => row.has(k));
