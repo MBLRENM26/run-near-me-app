@@ -49,6 +49,7 @@ export function validateRichResearch(factsCsv: string, evidenceCsv: string) {
     const key = JSON.stringify([row.slug, row.field, row.value, row.source_url, row.checked_at]);
     const fact = bySlug.get(row.slug);
     const caveats = ["Edition and source evidence require human review"];
+    if (extraQuotes.has(key)) caveats.push("Source page also gave a second supporting quote (not stored)");
     let quarantined = !fact || fact[row.field] !== row.value;
     if (quarantined) caveats.push("Evidence and facts CSV disagree");
     const typed = typeRichFact(row.field, row.value);
