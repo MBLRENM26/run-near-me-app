@@ -28,4 +28,27 @@ describe("private typed race research", () => {
     expect(typeRichFact("total_climb_m", "<100").value).toBe("<100");
     expect(typeRichFact("min_age", "17 (half); 15 (10k)").value).toBe("17 (half); 15 (10k)");
   });
+});import { compareWithEarlierBatches } from "./rich-race-research";
+describe("second research pass", () => {
+  const base = { slug: "r", field: "surface", value: "road", caveats: [] as string[], quarantined: false };
+  it("flags disagreement with earlier batch without changing it", () => {
+    const earlier = [{ slug: "r", field: "surface", raw_value: "trail" }];
+    expect(compareWithEarlierBatches([base], earlier)[0].quarantined).toBe(true);
+    expect(earlier[0].raw_value).toBe("trail");
+  });
+  it("marks repeats rather than quarantining", () => {
+    const out = compareWithEarlierBatches([base], [{ slug: "r", field: "surface", raw_value: "road" }])[0];
+    expect(out.quarantined).toBe(false);
+    expect(out.caveats).toContain("Repeats an earlier research batch");
+  });
+  it("accepts per-distance parts of a joined fact", () => {
+    const f = "slug,start_time\nr,Marathon: 09:00; Half: 10:00\n";
+    const e = "slug,field,value,evidence_quote,source_url,checked_at,confidence\nr,start_time,Marathon: 09:00,a,https://x.example/,2026-10-01T00:00:00Z,verified\nr,start_time,Half: 10:00,b,https://x.example/,2026-10-01T00:00:00Z,verified\n";
+    expect(validateRichResearch(f, e).assertions.every((a) => !a.quarantined)).toBe(true);
+  });
+  it("keeps one row when the same fact has two quotes", () => {
+    const f = "slug,surface\nr,road\n";
+    const e = "slug,field,value,evidence_quote,source_url,checked_at,confidence\nr,surface,road,a,https://x.example/,2026-10-01T00:00:00Z,verified\nr,surface,road,b,https://x.example/,2026-10-01T00:00:00Z,verified\n";
+    expect(validateRichResearch(f, e).assertions).toHaveLength(1);
+  });
 });

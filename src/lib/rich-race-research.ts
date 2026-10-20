@@ -68,4 +68,12 @@ export function validateRichResearch(factsCsv: string, evidenceCsv: string) {
     if (row[field]?.trim() && !evidence.some((e) => e.slug === row.slug && e.field === field)) throw new Error("A populated fact has no supporting evidence");
   }
   return { facts, assertions };
+}/** Compare a new batch with earlier staged research; earlier rows are never changed. */
+export function compareWithEarlierBatches<T extends { slug: string; field: string; value: string; caveats: string[]; quarantined: boolean }>(rows: T[], earlier: { slug: string; field: string; raw_value: string }[]): T[] {
+  return rows.map((r) => {
+    const prior = earlier.filter((e) => e.slug === r.slug && e.field === r.field);
+    if (!prior.length) return r;
+    if (prior.some((e) => e.raw_value === r.value)) return { ...r, caveats: [...r.caveats, "Repeats an earlier research batch"] };
+    return { ...r, quarantined: true, caveats: [...r.caveats, "Differs from an earlier research batch"] };
+  });
 }
