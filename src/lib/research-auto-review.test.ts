@@ -20,3 +20,32 @@ describe("triageFact", () => {
   it("never auto-accepts entry status", () => expect(triageFact({ ...base, field: "entries_status" }).kind).toBe("parked"));
   it("never auto-accepts course maps", () => expect(triageFact({ ...base, field: "course_map_url" }).kind).toBe("parked"));
 });
+
+import { resolveGroup, type GroupFact } from "./research-auto-review";
+const g = (id: string, value: string, batch: string, extra: Partial<GroupFact> = {}): GroupFact => ({ ...base, id, raw_value: value, batch_created_at: batch, reviewed: false, ...extra });
+
+describe("resolveGroup (rule v2)", () => {
+  it("newer pass wins over an older different value", () => {
+    const r = resolveGroup([g("old", "09:00", "2026-10-19"), g("new", "09:30", "2026-10-20", { caveats: ["Differs from an earlier research batch"] })]);
+    expect(r).toEqual({ accept: ["new"], supersede: ["old"] });
+  });
+  it("a newer value for the wrong year does not win", () => {
+    const r = resolveGroup([g("old", "09:00", "2026-10-19"), g("new", "09:30", "2026-10-20", { caveats: ["Slug year differs from stored edition"] })]);
+    expect(r.accept).toEqual([]);
+  });
+  it("accepts a value confirmed twice despite a second-quote flag", () => {
+    const r = resolveGroup([g("a", "Flat", "2026-10-19", { caveats: ["Source page also gave a second supporting quote (not stored)"] }), g("b", "flat", "2026-10-20")]);
+    expect(r.accept.sort()).toEqual(["a", "b"]);
+  });
+  it("a clash within one pass still comes to Mike", () => {
+    const r = resolveGroup([g("a", "09:00", "2026-10-20", { match_state: "quarantined" }), g("b", "10:00", "2026-10-20", { match_state: "quarantined" })]);
+    expect(r).toEqual({ accept: [], supersede: [] });
+  });
+  it("never overrides a human decision", () => {
+    const r = resolveGroup([g("old", "09:00", "2026-10-19", { reviewed: true }), g("new", "09:30", "2026-10-20", { reviewed: true })]);
+    expect(r).toEqual({ accept: [], supersede: [] });
+  });
+  it("never auto-accepts entry status or course maps", () => {
+    for (const field of ["entries_status", "course_map_url"]) expect(resolveGroup([g("a", "x", "1", { field }), g("b", "x", "2", { field })]).accept).toEqual([]);
+  });
+});
