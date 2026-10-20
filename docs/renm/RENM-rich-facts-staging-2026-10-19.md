@@ -20,3 +20,10 @@ The newly referenced `RENM-baseline-2026-10-19.md` and `RENM-research-payload-ha
 The current screen shows the latest staged batch with a bounded 1,000-assertion read. This supplied batch fits. Larger/multiple-batch administration requires a separate pagination package; do not assume unlimited intake.
 
 Public acceptance/projection, freshness expiry and publication remain separate gates. Candidate club matching is not approved identity. Rollback withdraws the batch and removes the UI integration while retaining private evidence/audit; no automatic deletion or event reversal is needed.
+## Second pass — 20 Oct 2026
+
+- Staged privately as a new batch: 3,704 assertions across 670 races (3,740 evidence rows; 36 same-fact second quotes collapsed with a caveat). First 39-race batch untouched.
+- 79 flagged: 54 differ from the earlier batch, 25 contradictory within the file. Per-distance parts of joined facts are accepted, not treated as contradictions.
+- Event rows unchanged (fingerprint 06efcaaf… before and after). Nothing published.
+- Retry candidates: 81 in-window races (18 page did not load, 29 edition not confirmed, 34 facts not stated); 31 in-window blocked/not-allowed races excluded from retry.
+- Limitation: one inherited batch lacks robots/request-pacing logs; some agent notes reference a QC date after the check date.
