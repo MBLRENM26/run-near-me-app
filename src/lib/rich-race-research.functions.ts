@@ -66,9 +66,18 @@ export const listRichRaceResearch = createServerFn({ method: "GET" })
     if (batches.error) throw new Error(batches.error.message);
     const batch = batches.data?.find((b) => b.id === data.batchId) ?? batches.data?.[0] ?? null;
     if (!batch) return { batches: [], batch: null, rows: [], reviews: [], total: 0, stats: null };
-    const stats = await db.from("race_research_assertions").select("slug,match_state,field").eq("batch_id", batch.id).limit(20000);
-    if (stats.error) throw new Error(stats.error.message);
-    const s = stats.data ?? [];
+    const countOf = async (state?: string) => {
+      let c = db.from("race_research_assertions").select("id", { count: "exact", head: true }).eq("batch_id", batch.id);
+      if (state) c = c.eq("match_state", state);
+      const r = await c; if (r.error) throw new Error(r.error.message); return r.count ?? 0;
+    };
+    const [assertions, quarantined, unresolved] = await Promise.all([countOf(), countOf("quarantined"), countOf("unresolved")]);
+    const slugSet = new Set<string>();
+    for (let from = 0; from < assertions; from += 1000) {
+      const r = await db.from("race_research_assertions").select("slug").eq("batch_id", batch.id).order("id").range(from, from + 999);
+      if (r.error) throw new Error(r.error.message);
+      for (const x of r.data ?? []) slugSet.add(x.slug);
+    }
     let q = db.from("race_research_assertions").select("*", { count: "exact" }).eq("batch_id", batch.id);
     if (data.view === "flagged") q = q.eq("match_state", "quarantined");
     if (data.view === "unresolved") q = q.eq("match_state", "unresolved");
@@ -82,7 +91,7 @@ export const listRichRaceResearch = createServerFn({ method: "GET" })
     if (reviews.error) throw new Error(reviews.error.message);
     return {
       batches: batches.data ?? [], batch, rows: rows.data ?? [], reviews: reviews.data ?? [], total: rows.count ?? 0,
-      stats: { races: new Set(s.map((r) => r.slug)).size, assertions: s.length, quarantined: s.filter((r) => r.match_state === "quarantined").length, unresolved: s.filter((r) => r.match_state === "unresolved").length },
+      stats: { races: slugSet.size, assertions, quarantined, unresolved },
     };
   });
 
