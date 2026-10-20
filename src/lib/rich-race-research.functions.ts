@@ -12,7 +12,7 @@ const sha256 = createServerOnlyFn(async (text: string) => [...new Uint8Array(awa
 const chunk = <T,>(xs: T[], n: number) => Array.from({ length: Math.ceil(xs.length / n) }, (_, i) => xs.slice(i * n, i * n + n));
 
 export const importRichRaceResearch = createServerFn({ method: "POST" })
-  .inputValidator((v: unknown) => z.object({ factsCsv: z.string().max(3000000), evidenceCsv: z.string().max(3000000) }).parse(v))
+  .inputValidator((v: unknown) => z.object({ factsCsv: z.string().max(3000000), evidenceCsv: z.string().max(3000000), note: z.string().trim().max(1000).optional() }).parse(v))
   .handler(async ({ data }) => {
     const db = await dbForAdmin();
     const parsed = validateRichResearch(data.factsCsv, data.evidenceCsv);
@@ -31,7 +31,7 @@ export const importRichRaceResearch = createServerFn({ method: "POST" })
     }
     const compared = compareWithEarlierBatches(parsed.assertions, earlier);
     if (!existing.data) {
-      const result = await db.from("race_research_batches").insert({ id: batchId, file_sha256: fileHash, evidence_file_sha256: evidenceHash, label: `Uploaded race facts — ${new Date().toISOString().slice(0, 10)}`, row_count: parsed.facts.length, assertion_count: compared.length, limitations: "Best-effort research. One inherited batch has unconfirmed robots/request-pacing logs; course-map reproduction terms not checked. Researcher confidence is not reviewer acceptance." });
+      const result = await db.from("race_research_batches").insert({ id: batchId, file_sha256: fileHash, evidence_file_sha256: evidenceHash, label: `Uploaded race facts — ${new Date().toISOString().slice(0, 10)}`, row_count: parsed.facts.length, assertion_count: compared.length, limitations: "Best-effort research. One inherited batch has unconfirmed robots/request-pacing logs; course-map reproduction terms not checked. Researcher confidence is not reviewer acceptance." + (data.note ? ` Batch note: ${data.note}` : "") });
       if (result.error) throw new Error(result.error.message);
     }
     const events: { id: string; slug: string | null; date_from: string | null; sort_date: string | null; date_is_estimated: boolean | null }[] = [];

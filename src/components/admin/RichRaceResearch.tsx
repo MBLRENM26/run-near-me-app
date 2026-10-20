@@ -18,6 +18,7 @@ export function RichRaceResearch() {
   const filters = { batchId, view, field: field || undefined, search: search || undefined, offset };
   const { data, error } = useQuery({ queryKey: ["rich-race-research", filters], queryFn: () => list({ data: filters }), retry: false });
   const [facts, setFacts] = useState<File | null>(null), [evidence, setEvidence] = useState<File | null>(null);
+  const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false), [message, setMessage] = useState("");
   const [notes, setNotes] = useState<Record<string, string>>({});
   async function act(fn: () => Promise<unknown>) {
@@ -37,9 +38,10 @@ export function RichRaceResearch() {
         <label className="text-sm">Race facts CSV<input aria-label="Race facts CSV" type="file" accept=".csv" className="block w-full mt-1" onChange={(e) => setFacts(e.target.files?.[0] ?? null)} /></label>
         <label className="text-sm">Fact evidence CSV<input aria-label="Fact evidence CSV" type="file" accept=".csv" className="block w-full mt-1" onChange={(e) => setEvidence(e.target.files?.[0] ?? null)} /></label>
       </div>
+      <label className="block text-sm mb-3">Batch limitations (optional)<input aria-label="Batch limitations" value={note} onChange={(e) => setNote(e.target.value)} className="block mt-1 w-full rounded border border-border bg-background p-2" /></label>
       <Button disabled={busy || !facts || !evidence} onClick={() => act(async () => {
         if (!facts || !evidence) return;
-        const result = await ingest({ data: { factsCsv: await facts.text(), evidenceCsv: await evidence.text() } });
+        const result = await ingest({ data: { factsCsv: await facts.text(), evidenceCsv: await evidence.text(), note: note || undefined } });
         setBatchId(result.batchId); reset();
         setMessage(`${result.count} assertions staged privately (${result.quarantined} flagged).`);
       })}>{busy ? "Staging…" : "Stage race facts"}</Button>
