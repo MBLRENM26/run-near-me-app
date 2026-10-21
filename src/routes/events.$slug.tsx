@@ -1,7 +1,7 @@
 import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
 import { Calendar, MapPin, Tag, ExternalLink, Mountain } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PreviewRaceFacts, PreviewRaceFactsContact, PreviewCheckedDate } from "@/components/event/RaceFactsBox";
+import { RaceFactsSection, RaceFactsContactLine, formatLastChecked } from "@/components/event/RaceFactsBox";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -391,6 +391,7 @@ function EventDetailPage() {
     otherRacesByOrganiser,
     courseProfile,
     destinations,
+    raceFacts,
   } = loaderData;
 
   // Site-wide link-trust policy: aggregator URLs are never rendered as
