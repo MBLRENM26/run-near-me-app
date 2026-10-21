@@ -1,6 +1,7 @@
 import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
 import { Calendar, MapPin, Tag, ExternalLink, Mountain } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PreviewRaceFacts, PreviewRaceFactsContact } from "@/components/event/RaceFactsBox";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -635,6 +636,8 @@ function EventDetailPage() {
             ) : null}
           </div>
 
+          <PreviewRaceFacts slug={e.slug} />
+
           <TrustProfileStrip
             governance={e.governance}
             licensed={e.licensed}
@@ -1099,7 +1102,7 @@ function EventDetailPage() {
             </p>
           </section>
 
-
+          <PreviewRaceFactsContact slug={e.slug} />
         </section>
 
       </main>
