@@ -1,6 +1,4 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { raceFactsPreview } from "@/lib/rich-race-research.functions";
 
 export const FACT_GROUPS: { title: string; fields: [string, string][] }[] = [
   { title: "On the day", fields: [["start_time", "Start time"], ["cut_off", "Cut-off"], ["min_age", "Minimum age"], ["chip_timed", "Chip timed"], ["ugr_licence", "Race licence"]] },
@@ -17,7 +15,11 @@ function show(field: string, v: string) {
   return v;
 }
 
-export function RaceFactsBox({ row }: { row: Map<string, string>; lastCheckedText?: string }) {
+export function formatLastChecked(iso: string): string {
+  return iso ? iso.slice(0, 10).split("-").reverse().join("/") : "";
+}
+
+export function RaceFactsBox({ row }: { row: Map<string, string> }) {
   return (
     <article className="rounded-lg border border-border bg-card p-6 text-card-foreground shadow-sm">
       <p className="text-sm text-muted-foreground">What you need to know</p>
@@ -55,39 +57,13 @@ export function RaceFactsContactLine() {
   );
 }
 
-/** Admin-only preview: active only with ?preview=facts and a valid admin session. */
-function usePreviewFacts(slug: string) {
-  const [data, setData] = useState<{ row: Map<string, string>; last: string } | { error: string } | null>(null);
-  useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("preview") !== "facts") return;
-    raceFactsPreview({ data: { slug } })
-      .then((r) => {
-        if (!r.authorized) { setData({ error: "Sign in to admin first, then reload this page." }); return; }
-        if (!r.facts.length) { setData({ error: "No accepted facts for this race yet." }); return; }
-        const row = new Map<string, string>();
-        for (const f of r.facts) row.set(f.field, row.has(f.field) && row.get(f.field) !== f.value ? `${row.get(f.field)}; ${f.value}` : f.value);
-        setData({ row, last: r.lastChecked ? r.lastChecked.slice(0, 10).split("-").reverse().join("/") : "" });
-      })
-      .catch(() => setData({ error: "Preview needs you signed in to admin in this tab." }));
-  }, [slug]);
-  return data;
-}
+/** Race facts data as loaded by the event page loader (server-side, accepted facts only). */
+export type RaceFactsProps = { facts: { field: string; value: string }[]; lastChecked: string };
 
-export function PreviewRaceFacts({ slug }: { slug: string }) {
-  const d = usePreviewFacts(slug);
-  if (!d) return null;
-  if ("error" in d) return <p className="mt-6 rounded-md border border-border bg-muted p-3 text-sm">Race details preview: {d.error}</p>;
-  return <div className="mt-6"><RaceFactsBox row={d.row} /></div>;
-}
-
-export function PreviewRaceFactsContact({ slug }: { slug: string }) {
-  const d = usePreviewFacts(slug);
-  if (!d || "error" in d) return null;
-  return <div className="mt-8"><RaceFactsContactLine /></div>;
-}
-
-export function PreviewCheckedDate({ slug }: { slug: string }) {
-  const d = usePreviewFacts(slug);
-  if (!d || "error" in d || !d.last) return null;
-  return <> · Data last checked {d.last}</>;
+/** Renders the race details box only when the race has accepted facts; null otherwise. */
+export function RaceFactsSection({ facts }: { facts: RaceFactsProps }) {
+  if (!facts.facts.length) return null;
+  const row = new Map<string, string>();
+  for (const f of facts.facts) row.set(f.field, row.has(f.field) && row.get(f.field) !== f.value ? `${row.get(f.field)}; ${f.value}` : f.value);
+  return <div className="mt-6"><RaceFactsBox row={row} /></div>;
 }

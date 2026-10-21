@@ -52,3 +52,14 @@ describe("second research pass", () => {
     expect(validateRichResearch(f, e).assertions).toHaveLength(1);
   });
 });
+import { isPublicRaceFact } from "./rich-race-research";
+describe("public race facts", () => {
+  it("never publishes entry status or course maps", () => {
+    expect(isPublicRaceFact("entries_status")).toBe(false);
+    expect(isPublicRaceFact("course_map_url")).toBe(false);
+  });
+  it("publishes checked stable facts", () => {
+    expect(isPublicRaceFact("start_time")).toBe(true);
+    expect(isPublicRaceFact("parking")).toBe(true);
+  });
+});

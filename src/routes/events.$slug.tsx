@@ -1,7 +1,7 @@
 import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
 import { Calendar, MapPin, Tag, ExternalLink, Mountain } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PreviewRaceFacts, PreviewRaceFactsContact, PreviewCheckedDate } from "@/components/event/RaceFactsBox";
+import { RaceFactsSection, RaceFactsContactLine, formatLastChecked } from "@/components/event/RaceFactsBox";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -391,6 +391,7 @@ function EventDetailPage() {
     otherRacesByOrganiser,
     courseProfile,
     destinations,
+    raceFacts,
   } = loaderData;
 
   // Site-wide link-trust policy: aggregator URLs are never rendered as
@@ -755,11 +756,13 @@ function EventDetailPage() {
             </div>
           )}
 
-          <PreviewRaceFacts slug={e.slug} />
+          <RaceFactsSection facts={raceFacts} />
 
           <div className="mt-2 text-xs text-muted-foreground">
             {listingAdded ? `Listed ${listingAdded}` : "Listed recently"}
-            <PreviewCheckedDate slug={e.slug} />
+            {raceFacts.lastChecked && (
+              <> · Data last checked {formatLastChecked(raceFacts.lastChecked)}</>
+            )}
           </div>
 
           {usefulLinks.length >= 1 && (
@@ -1104,7 +1107,11 @@ function EventDetailPage() {
             </p>
           </section>
 
-          <PreviewRaceFactsContact slug={e.slug} />
+          {raceFacts.facts.length > 0 && (
+            <div className="mt-8">
+              <RaceFactsContactLine />
+            </div>
+          )}
         </section>
 
       </main>
