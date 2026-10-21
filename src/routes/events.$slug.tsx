@@ -756,11 +756,13 @@ function EventDetailPage() {
             </div>
           )}
 
-          <PreviewRaceFacts slug={e.slug} />
+          <RaceFactsSection facts={raceFacts} />
 
           <div className="mt-2 text-xs text-muted-foreground">
             {listingAdded ? `Listed ${listingAdded}` : "Listed recently"}
-            <PreviewCheckedDate slug={e.slug} />
+            {raceFacts.lastChecked && (
+              <> · Data last checked {formatLastChecked(raceFacts.lastChecked)}</>
+            )}
           </div>
 
           {usefulLinks.length >= 1 && (
@@ -1105,7 +1107,11 @@ function EventDetailPage() {
             </p>
           </section>
 
-          <PreviewRaceFactsContact slug={e.slug} />
+          {raceFacts.facts.length > 0 && (
+            <div className="mt-8">
+              <RaceFactsContactLine />
+            </div>
+          )}
         </section>
 
       </main>
