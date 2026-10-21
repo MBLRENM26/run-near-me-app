@@ -17,7 +17,7 @@ function show(field: string, v: string) {
   return v;
 }
 
-export function RaceFactsBox({ row, lastCheckedText }: { row: Map<string, string>; lastCheckedText: string }) {
+export function RaceFactsBox({ row }: { row: Map<string, string>; lastCheckedText?: string }) {
   return (
     <article className="rounded-lg border border-border bg-card p-6 text-card-foreground shadow-sm">
       <p className="text-sm text-muted-foreground">What you need to know</p>
@@ -42,7 +42,6 @@ export function RaceFactsBox({ row, lastCheckedText }: { row: Map<string, string
           );
         })}
       </div>
-      {lastCheckedText && <p className="mt-5 text-xs text-muted-foreground">Data last checked {lastCheckedText}.</p>}
     </article>
   );
 }
@@ -78,11 +77,17 @@ export function PreviewRaceFacts({ slug }: { slug: string }) {
   const d = usePreviewFacts(slug);
   if (!d) return null;
   if ("error" in d) return <p className="mt-6 rounded-md border border-border bg-muted p-3 text-sm">Race details preview: {d.error}</p>;
-  return <div className="mt-6"><RaceFactsBox row={d.row} lastCheckedText={d.last} /></div>;
+  return <div className="mt-6"><RaceFactsBox row={d.row} /></div>;
 }
 
 export function PreviewRaceFactsContact({ slug }: { slug: string }) {
   const d = usePreviewFacts(slug);
   if (!d || "error" in d) return null;
   return <div className="mt-8"><RaceFactsContactLine /></div>;
+}
+
+export function PreviewCheckedDate({ slug }: { slug: string }) {
+  const d = usePreviewFacts(slug);
+  if (!d || "error" in d || !d.last) return null;
+  return <> · Data last checked {d.last}</>;
 }
