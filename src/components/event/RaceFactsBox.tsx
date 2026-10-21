@@ -63,6 +63,7 @@ function usePreviewFacts(slug: string) {
     if (new URLSearchParams(window.location.search).get("preview") !== "facts") return;
     raceFactsPreview({ data: { slug } })
       .then((r) => {
+        if (!r.authorized) { setData({ error: "Sign in to admin first, then reload this page." }); return; }
         if (!r.facts.length) { setData({ error: "No accepted facts for this race yet." }); return; }
         const row = new Map<string, string>();
         for (const f of r.facts) row.set(f.field, row.has(f.field) && row.get(f.field) !== f.value ? `${row.get(f.field)}; ${f.value}` : f.value);
