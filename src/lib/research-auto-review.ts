@@ -23,6 +23,7 @@ export type ReviewableFact = {
   match_state: string;
   caveats: unknown;
   occurrence_snapshot: unknown;
+  raw_value?: string;
 };
 
 export type Triage =
@@ -48,7 +49,9 @@ export function triageFact(f: ReviewableFact): Triage {
     const reason = problems.map((c) => plain[c] ?? c).join("; ") || "Contradicts another fact in the same research";
     return { kind: "needs_you", reason };
   }
-  if (f.researcher_confidence !== "verified") return { kind: "needs_you", reason: "Researcher wasn't sure" };
+  // Researcher hesitancy alone is not a flag: a quoted organiser-owned source is the evidence.
+  // Only an organiser's own "provisional" wording still needs a person.
+  if (/provisional|tbc|to be confirmed/i.test(`${f.raw_value ?? ""} ${f.evidence_quote}`)) return { kind: "needs_you", reason: "Organiser says this is provisional" };
   if (!f.evidence_quote.trim()) return { kind: "needs_you", reason: "No quote from the source" };
   const link = classifyEventLink(f.source_url);
   if (!isTrustedLink(link) || isEntryPlatformHost(link.host)) return { kind: "needs_you", reason: "Source isn't the organiser's own website" };
