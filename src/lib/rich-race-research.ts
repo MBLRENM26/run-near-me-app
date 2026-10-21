@@ -68,7 +68,13 @@ export function validateRichResearch(factsCsv: string, evidenceCsv: string) {
     if (row[field]?.trim() && !evidence.some((e) => e.slug === row.slug && e.field === field)) throw new Error("A populated fact has no supporting evidence");
   }
   return { facts, assertions };
-}/** Compare a new batch with earlier staged research; earlier rows are never changed. */
+}
+/** Fields never shown on public race pages: time-sensitive entry status, and course maps whose reproduction terms are unchecked. */
+const PUBLIC_RACE_FACT_EXCLUDED_FIELDS = new Set(["entries_status", "course_map_url"]);
+export function isPublicRaceFact(field: string): boolean {
+  return !PUBLIC_RACE_FACT_EXCLUDED_FIELDS.has(field);
+}
+/** Compare a new batch with earlier staged research; earlier rows are never changed. */
 export function compareWithEarlierBatches<T extends { slug: string; field: string; value: string; caveats: string[]; quarantined: boolean }>(rows: T[], earlier: { slug: string; field: string; raw_value: string }[]): T[] {
   return rows.map((r) => {
     const prior = earlier.filter((e) => e.slug === r.slug && e.field === r.field);
