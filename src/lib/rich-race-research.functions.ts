@@ -220,3 +220,27 @@ export const decideMany = createServerFn({ method: "POST" })
     }
     return { count: data.ids.length };
   });
+
+export const raceFactsPreview = createServerFn({ method: "GET" })
+  .inputValidator((d: { slug: string }) => z.object({ slug: z.string().regex(/^[a-z0-9-]+$/).max(200) }).parse(d))
+  .handler(async ({ data }) => {
+    const db = await dbForAdmin();
+    const { data: as, error } = await db.from("race_research_assertions").select("id, field, raw_value, checked_at").eq("slug", data.slug);
+    if (error) throw new Error(error.message);
+    const ids = (as ?? []).map((a) => a.id);
+    if (!ids.length) return { facts: [] as { field: string; value: string }[], lastChecked: "" };
+    const { data: rvs, error: e2 } = await db.from("race_research_fact_reviews").select("assertion_id, action, created_at, id").in("assertion_id", ids).order("created_at").order("id");
+    if (e2) throw new Error(e2.message);
+    const latest = new Map<string, string>();
+    for (const r of rvs ?? []) latest.set(r.assertion_id, r.action);
+    const facts: { field: string; value: string }[] = [];
+    let lastChecked = "";
+    for (const a of as ?? []) {
+      const act = latest.get(a.id);
+      if (act !== "accept" && act !== "auto_accept") continue;
+      if (a.field === "entries_status" || a.field === "course_map_url") continue;
+      facts.push({ field: a.field, value: a.raw_value });
+      if (a.checked_at > lastChecked) lastChecked = a.checked_at;
+    }
+    return { facts, lastChecked };
+  });

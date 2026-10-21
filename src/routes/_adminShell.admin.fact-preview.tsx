@@ -99,7 +99,12 @@ function FactPreview() {
           <Link to="/contact" className="underline text-foreground">Contact us</Link> if you have more information about this event.
         </p>
       )}
-      <Link to="/admin/source-research" className="text-sm underline">Back to research</Link>
+      {row && (
+        <a href={`/events/${current}?preview=facts`} target="_blank" rel="noreferrer" className="inline-block rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
+          View on full race page
+        </a>
+      )}
+      <Link to="/admin/source-research" className="block text-sm underline">Back to research</Link>
     </div>
   );
 }
