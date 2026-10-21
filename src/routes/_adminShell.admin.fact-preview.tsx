@@ -100,7 +100,7 @@ function FactPreview() {
         </p>
       )}
       {row && (
-        <a href={`/events/${current}?preview=facts`} target="_blank" rel="noreferrer" className="inline-block rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
+        <a href={`/events/${current}?preview=facts`} className="inline-block rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
           View on full race page
         </a>
       )}

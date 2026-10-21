@@ -58,17 +58,17 @@ export function RaceFactsContactLine() {
 
 /** Admin-only preview: active only with ?preview=facts and a valid admin session. */
 function usePreviewFacts(slug: string) {
-  const [data, setData] = useState<{ row: Map<string, string>; last: string } | null>(null);
+  const [data, setData] = useState<{ row: Map<string, string>; last: string } | { error: string } | null>(null);
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("preview") !== "facts") return;
     raceFactsPreview({ data: { slug } })
       .then((r) => {
-        if (!r.facts.length) return;
+        if (!r.facts.length) { setData({ error: "No accepted facts for this race yet." }); return; }
         const row = new Map<string, string>();
         for (const f of r.facts) row.set(f.field, row.has(f.field) && row.get(f.field) !== f.value ? `${row.get(f.field)}; ${f.value}` : f.value);
         setData({ row, last: r.lastChecked ? r.lastChecked.slice(0, 10).split("-").reverse().join("/") : "" });
       })
-      .catch(() => setData(null));
+      .catch(() => setData({ error: "Preview needs you signed in to admin in this tab." }));
   }, [slug]);
   return data;
 }
@@ -76,11 +76,12 @@ function usePreviewFacts(slug: string) {
 export function PreviewRaceFacts({ slug }: { slug: string }) {
   const d = usePreviewFacts(slug);
   if (!d) return null;
+  if ("error" in d) return <p className="mt-6 rounded-md border border-border bg-muted p-3 text-sm">Race details preview: {d.error}</p>;
   return <div className="mt-6"><RaceFactsBox row={d.row} lastCheckedText={d.last} /></div>;
 }
 
 export function PreviewRaceFactsContact({ slug }: { slug: string }) {
   const d = usePreviewFacts(slug);
-  if (!d) return null;
+  if (!d || "error" in d) return null;
   return <div className="mt-8"><RaceFactsContactLine /></div>;
 }
