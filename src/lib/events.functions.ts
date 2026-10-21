@@ -667,6 +667,8 @@ export type EventPageData = {
    * `robots` meta and decide whether to ship Event JSON-LD.
    */
   indexability: import("@/lib/event-indexability").IndexabilityResult;
+  /** Accepted research facts for the race details box (never includes entries_status / course_map_url). */
+  raceFacts: { facts: { field: string; value: string }[]; lastChecked: string };
 };
 
 /**
@@ -1287,6 +1289,35 @@ export const getEventPageData = createServerFn({ method: "GET" })
       }
     }
 
+    // ----- Accepted research facts for the race details box -----
+    // Only facts whose latest review is an explicit or rule-based acceptance
+    // are shown, and never entries_status or course_map_url (see
+    // isPublicRaceFact). Provenance (source_url, evidence quotes) stays in
+    // the private research tables.
+    const raceFacts: EventPageData["raceFacts"] = { facts: [], lastChecked: "" };
+    const { data: factRows, error: factsErr } = await supabaseAdmin
+      .from("race_research_assertions")
+      .select("id, field, raw_value, checked_at")
+      .eq("slug", event.slug);
+    if (!factsErr && factRows?.length) {
+      const { data: factReviews } = await supabaseAdmin
+        .from("race_research_fact_reviews")
+        .select("assertion_id, action")
+        .in("assertion_id", factRows.map((r) => r.id as string))
+        .order("created_at", { ascending: true })
+        .order("id", { ascending: true })
+        .limit(10000);
+      const latestFactReview = new Map<string, string>();
+      for (const r of factReviews ?? []) latestFactReview.set(r.assertion_id as string, r.action as string);
+      for (const r of factRows) {
+        const action = latestFactReview.get(r.id as string);
+        if (action !== "accept" && action !== "auto_accept") continue;
+        if (!isPublicRaceFact(r.field as string)) continue;
+        raceFacts.facts.push({ field: r.field as string, value: r.raw_value as string });
+        if ((r.checked_at as string) > raceFacts.lastChecked) raceFacts.lastChecked = r.checked_at as string;
+      }
+    }
+
     return {
       event,
       related,
@@ -1299,6 +1330,7 @@ export const getEventPageData = createServerFn({ method: "GET" })
       courseProfile,
       destinations,
       indexability,
+      raceFacts,
     };
   });
 
