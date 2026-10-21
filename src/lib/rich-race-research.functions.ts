@@ -224,11 +224,13 @@ export const decideMany = createServerFn({ method: "POST" })
 export const raceFactsPreview = createServerFn({ method: "GET" })
   .inputValidator((d: { slug: string }) => z.object({ slug: z.string().regex(/^[a-z0-9-]+$/).max(200) }).parse(d))
   .handler(async ({ data }) => {
-    const db = await dbForAdmin();
+    const { isAdminAuthenticated } = await import("./admin-session.server");
+    if (!(await isAdminAuthenticated())) return { authorized: false, facts: [] as { field: string; value: string }[], lastChecked: "" };
+    const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
     const { data: as, error } = await db.from("race_research_assertions").select("id, field, raw_value, checked_at").eq("slug", data.slug);
     if (error) throw new Error(error.message);
     const ids = (as ?? []).map((a) => a.id);
-    if (!ids.length) return { facts: [] as { field: string; value: string }[], lastChecked: "" };
+    if (!ids.length) return { authorized: true, facts: [] as { field: string; value: string }[], lastChecked: "" };
     const { data: rvs, error: e2 } = await db.from("race_research_fact_reviews").select("assertion_id, action, created_at, id").in("assertion_id", ids).order("created_at").order("id");
     if (e2) throw new Error(e2.message);
     const latest = new Map<string, string>();
@@ -242,5 +244,5 @@ export const raceFactsPreview = createServerFn({ method: "GET" })
       facts.push({ field: a.field, value: a.raw_value });
       if (a.checked_at > lastChecked) lastChecked = a.checked_at;
     }
-    return { facts, lastChecked };
+    return { authorized: true, facts, lastChecked };
   });
