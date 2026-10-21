@@ -636,7 +636,6 @@ function EventDetailPage() {
             ) : null}
           </div>
 
-          <PreviewRaceFacts slug={e.slug} />
 
           <TrustProfileStrip
             governance={e.governance}
@@ -755,6 +754,8 @@ function EventDetailPage() {
               )}
             </div>
           )}
+
+          <PreviewRaceFacts slug={e.slug} />
 
           <div className="mt-2 text-xs text-muted-foreground">
             {listingAdded ? `Listed ${listingAdded}` : "Listed recently"}
