@@ -12,7 +12,8 @@ describe("triageFact", () => {
   it("auto-accepts a clean verified fact from the organiser's site", () => expect(triageFact(base).kind).toBe("auto"));
   it("sends flagged facts to Mike", () => expect(triageFact({ ...base, match_state: "quarantined" }).kind).toBe("needs_you"));
   it("sends facts that differ from an earlier pass to Mike", () => expect(triageFact({ ...base, caveats: ["Differs from an earlier research batch"] }).kind).toBe("needs_you"));
-  it("sends unsure facts to Mike", () => expect(triageFact({ ...base, researcher_confidence: "plausible_needs_review" }).kind).toBe("needs_you"));
+  it("accepts quoted organiser facts even when the researcher was unsure", () => expect(triageFact({ ...base, researcher_confidence: "plausible_needs_review" }).kind).toBe("auto"));
+  it("sends provisional values to Mike", () => expect(triageFact({ ...base, raw_value: "Race 1: 19:00; Race 2: 19:05 (provisional)" }).kind).toBe("needs_you"));
   it("sends aggregator-sourced facts to Mike", () => expect(triageFact({ ...base, source_url: "https://www.runabc.co.uk/race/1" }).kind).toBe("needs_you"));
   it("sends entry-platform-sourced facts to Mike", () => expect(triageFact({ ...base, source_url: "https://www.sientries.co.uk/event.php?x=1" }).kind).toBe("needs_you"));
   it("sends facts for an estimated race date to Mike", () => expect(triageFact({ ...base, occurrence_snapshot: { date_from: "2026-11-08", date_is_estimated: true } }).kind).toBe("needs_you"));
