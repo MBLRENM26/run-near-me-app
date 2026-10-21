@@ -90,9 +90,9 @@ function FactPreview() {
               );
             })}
           </div>
-          {lastCheckedText && <p className="mt-5 text-xs text-muted-foreground">Data last checked {lastCheckedText}.</p>}
         </article>
       )}
+      {row && lastCheckedText && <p className="-mt-4 text-xs text-muted-foreground">Data last checked {lastCheckedText}</p>}
       {row && (
         <p className="text-sm text-muted-foreground">
           We will add further updates when available.{" "}

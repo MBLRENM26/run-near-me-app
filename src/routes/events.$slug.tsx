@@ -1,7 +1,7 @@
 import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
 import { Calendar, MapPin, Tag, ExternalLink, Mountain } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PreviewRaceFacts, PreviewRaceFactsContact } from "@/components/event/RaceFactsBox";
+import { PreviewRaceFacts, PreviewRaceFactsContact, PreviewCheckedDate } from "@/components/event/RaceFactsBox";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -759,6 +759,7 @@ function EventDetailPage() {
 
           <div className="mt-2 text-xs text-muted-foreground">
             {listingAdded ? `Listed ${listingAdded}` : "Listed recently"}
+            <PreviewCheckedDate slug={e.slug} />
           </div>
 
           {usefulLinks.length >= 1 && (
