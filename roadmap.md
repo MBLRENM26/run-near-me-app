@@ -12,7 +12,7 @@
 - [x] Stage rich race facts — 212 assertions / 39 races privately imported and read back through signed-in admin; no event projection. Public fact acceptance/display remains separate approval.
 - [x] Add monthly host-club links from existing accepted verified relationships — tested and preview-checked (24 clubs in Nov 2026); needs publish.
 - [ ] Scottish Athletics import: add page retries like England Athletics (19 Oct run timed out — their site unresponsive) — awaiting Mike's yes
-- [ ] Publish pending changes — Mike to approve publish
+- [x] Publish pending changes — published 21 Oct: race facts box on live event pages, month-page layout, host-club links, IndexNow daily ping verified live
 - [ ] Review flagged older security-definer view
 - [ ] Homelab checker script — Mike's homelab; needs CHANGE_FEED_SECRET
 - [ ] Stage enrichment-agent results (dead sites, club-hosted races, verified organisers, course maps) slice by slice
