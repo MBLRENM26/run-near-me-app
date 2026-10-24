@@ -19,3 +19,5 @@
 - [ ] Organiser TBC/Unknown review; Scottish club websites; 233 hidden records
 
 - [ ] Search traffic check-in ~31 Oct 2026: compare GSC (baseline 24 Sep–21 Oct: 60 clicks, 7,435 impr, pos 16.4) and Bing (baseline 20 Oct: 28 clicks, 726 impr); check month/race-details pages appearing. Blocked on: time.
+
+- [ ] Search snippet test (shipped 24 Oct 2026): race pages now show checked facts in Google title/description. Baseline: Great Bentley Half 2027 462 impr / 1 click (pos 9.2); Petts Wood 10K query 374 impr / 1 click (pos 7.8); Carnethy Skyloop 181 / 1. Compare at ~31 Oct and ~7 Nov.
