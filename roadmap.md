@@ -17,3 +17,5 @@
 - [ ] Homelab checker script — Mike's homelab; needs CHANGE_FEED_SECRET
 - [ ] Stage enrichment-agent results (dead sites, club-hosted races, verified organisers, course maps) slice by slice
 - [ ] Organiser TBC/Unknown review; Scottish club websites; 233 hidden records
+
+- [ ] Search traffic check-in ~31 Oct 2026: compare GSC (baseline 24 Sep–21 Oct: 60 clicks, 7,435 impr, pos 16.4) and Bing (baseline 20 Oct: 28 clicks, 726 impr); check month/race-details pages appearing. Blocked on: time.
