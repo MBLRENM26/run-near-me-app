@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/accordion";
 import { DISTANCE_PAGES } from "@/lib/distance-filters";
 import { eventNameWithYear } from "@/lib/event-title";
+import { buildUpcomingDescription, cleanStartTime, enrichTitle } from "@/lib/event-snippet";
 import {
   formatEventDate,
   eventYear,
@@ -219,6 +220,7 @@ export const Route = createFileRoute("/events/$slug")({
     const distance = distLabel || "running";
 
 
+    const headFacts = loaderData?.raceFacts?.facts ?? [];
     const headProximity = eventProximity(e);
     const headIsPast = headProximity === "past";
 
@@ -245,15 +247,9 @@ export const Route = createFileRoute("/events/$slug")({
           .filter(Boolean)
           .join(" ")
           .slice(0, 300)
-      : [
-          `${e.name} is a ${distance} race${loc ? ` in ${loc}` : ""}${when}.`,
-          hasRaceLink
-            ? "Follow the race links for entry information and current details."
-            : "See date, location and distance details, plus more races nearby.",
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .slice(0, 300);
+      : buildUpcomingDescription({ name: e.name ?? "", distance, loc, when, facts: headFacts });
+    if (!headIsPast) titleSpec = enrichTitle(titleSpec, headFacts);
+    void hasRaceLink;
 
     // Event JSON-LD: Google requires a full-precision startDate and a Place
     // location. Estimated (month-only) dates can't satisfy the date format,
@@ -278,7 +274,10 @@ export const Route = createFileRoute("/events/$slug")({
         eventStatus: "https://schema.org/EventScheduled",
         eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
         url: canonical,
-        startDate: startISO,
+        startDate: (() => {
+          const t = cleanStartTime(headFacts);
+          return t && /^\d{4}-\d{2}-\d{2}$/.test(startISO) ? `${startISO}T${t}` : startISO;
+        })(),
         // Google Event rich-result requires `image`. We don't have per-event
         // photography, so fall back to the sitewide OG image — permitted.
         image: [`${SITE_URL}/og-image.png`],
