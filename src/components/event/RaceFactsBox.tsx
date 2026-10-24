@@ -42,7 +42,8 @@ function show(field: string, v: string) {
   if (["true", "yes"].includes(t)) return field === "chip_timed" ? "Yes" : "Allowed";
   if (["false", "no"].includes(t)) return field === "chip_timed" ? "No" : "Not allowed";
   if (field === "total_climb_m" && /^\d+(\.\d+)?$/.test(t)) return `${v} m`;
-  return v;
+  const pretty = v.replace(/_/g, " ").trim();
+  return pretty.charAt(0).toUpperCase() + pretty.slice(1);
 }
 
 export function formatLastChecked(iso: string): string {
