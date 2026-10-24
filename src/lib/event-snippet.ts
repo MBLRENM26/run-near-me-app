@@ -53,6 +53,8 @@ export function buildUpcomingDescription(opts: {
     : "Date, distance and location, plus similar races nearby.";
   const full = `${lead} ${tail}`;
   if (full.length <= 160) return full;
+  const factsOnly = hl.length ? `${lead} ${hl.join(", ").replace(/^./, (c) => c.toUpperCase())}.` : lead;
+  if (factsOnly.length <= 160) return factsOnly;
   return lead.length <= 160 ? lead : `${lead.slice(0, 157).replace(/\s+\S*$/, "")}…`;
 }
 
