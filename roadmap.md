@@ -7,6 +7,7 @@
 - [ ] 3. Google long game, race by race: course maps (agent data), confirmed 2027 editions, verified organisers
 
 ## Other open work
+- [ ] Approved stale-edition corrections (24 Oct): verify Brecons Camp date, York 5K December fixture and Exeter Half duplicate identity; apply only evidenced changes with audit and rollback.
 - [x] Archive six untouched September pilot notices through audited rejection; original evidence retained. Ten structured and 27 later supporting notices preserved.
 - [x] Validate uploaded research: 212 evidence rows across 39 races; 73 club matches are plausible candidates, not accepted identities. See docs/renm/RENM-research-staging-preflight-2026-10-19.md.
 - [x] Stage rich race facts — 212 assertions / 39 races privately imported and read back through signed-in admin; no event projection. Public fact acceptance/display remains separate approval.
