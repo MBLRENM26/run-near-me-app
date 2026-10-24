@@ -49,9 +49,11 @@ export function buildUpcomingDescription(opts: {
   const lead = `${opts.name}: ${opts.distance} race${opts.loc ? ` in ${opts.loc}` : ""}${opts.when}.`;
   const hl = factHighlights(opts.facts, 4);
   const tail = hl.length
-    ? `${hl.join(", ").replace(/^./, (c) => c.toUpperCase())}. Course, access and travel details checked.`
+    ? `${hl.join(", ").replace(/^./, (c) => c.toUpperCase())}. Course and travel details inside.`
     : "Date, distance and location, plus similar races nearby.";
-  return `${lead} ${tail}`.slice(0, 160);
+  const full = `${lead} ${tail}`;
+  if (full.length <= 160) return full;
+  return lead.length <= 160 ? lead : `${lead.slice(0, 157).replace(/\s+\S*$/, "")}…`;
 }
 
 /** Title: appends one checked highlight when it fits within 60 chars. */
