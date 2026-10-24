@@ -274,7 +274,10 @@ export const Route = createFileRoute("/events/$slug")({
         eventStatus: "https://schema.org/EventScheduled",
         eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
         url: canonical,
-        startDate: startISO,
+        startDate: (() => {
+          const t = cleanStartTime(headFacts);
+          return t && /^\d{4}-\d{2}-\d{2}$/.test(startISO) ? `${startISO}T${t}` : startISO;
+        })(),
         // Google Event rich-result requires `image`. We don't have per-event
         // photography, so fall back to the sitewide OG image — permitted.
         image: [`${SITE_URL}/og-image.png`],
