@@ -112,6 +112,11 @@ export function DistancePage({ cfg, data }: DistancePageProps) {
               label={cfg.shortName === "5K" || cfg.shortName === "10K" ? `${cfg.shortName} races` : `${cfg.shortName.toLowerCase()}s`}
             />
           )}
+          {cfg.key === "half-marathon" && (
+            <p className="mt-3 text-sm">
+              <Link to="/flat-half-marathons" className="text-primary hover:underline">See flat half marathons →</Link>
+            </p>
+          )}
           <div className="mt-6">
             <DistanceNav active={cfg.key} />
           </div>
