@@ -4,6 +4,7 @@ import { loadScottishClubWebsiteMap } from "@/lib/sync-scottish-athletics-clubs.
 import { isUkOutwardCode, normalisePostcode } from "@/lib/postcode";
 import type { Coordinates } from "@/lib/source-enrichment";
 import { planScottishAthleticsBatch, type JustGoEvent } from "@/lib/sync-scottish-athletics-plan";
+import { requestScottishPage } from "@/lib/scottish-request-retry";
 
 // Syncs running events from the Scottish Athletics public event browser
 // (JustGo widget API) into the events table. Idempotent: upserts on norm_id.
@@ -65,17 +66,14 @@ async function fetchPage(pageNumber: number): Promise<JustGoEvent[]> {
     paths: ["commands"],
   };
 
-  const res = await fetch(JUSTGO_URL, {
+  const payload = await requestScottishPage(JUSTGO_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "X-Requested-With": "XMLHttpRequest",
     },
     body: JSON.stringify(body),
-    signal: AbortSignal.timeout(15000),
   });
-  if (!res.ok) throw new Error(`JustGo API returned ${res.status}`);
-  const payload = await res.json();
   const json = (typeof payload === "string" ? JSON.parse(payload) : payload) as Array<{
     IsSuccess: boolean;
     Result: { Result: { Data: JustGoEvent[] } };
