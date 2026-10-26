@@ -670,6 +670,8 @@ export type EventPageData = {
   indexability: import("@/lib/event-indexability").IndexabilityResult;
   /** Accepted research facts for the race details box (never includes entries_status / course_map_url). */
   raceFacts: { facts: { field: string; value: string }[]; lastChecked: string };
+  /** Trusted-race counts for this race's month page and distance-month page (null = not counted). */
+  monthCounts: { month: number | null; distance: number | null };
 };
 
 /**
@@ -1319,7 +1321,26 @@ export const getEventPageData = createServerFn({ method: "GET" })
       }
     }
 
+    // Same counting as the month pages, so links and page totals agree.
+    const monthCounts: EventPageData["monthCounts"] = { month: null, distance: null };
+    {
+      const { monthKeyForCounting } = await import("@/lib/event-internal-links");
+      const { eventProximity } = await import("@/lib/date");
+      const key = monthKeyForCounting(event, { isPast: eventProximity(event) === "past" });
+      if (key) {
+        const { countMonth } = await import("@/lib/month-page.functions");
+        const dk = related.distanceKey;
+        const [m, d] = await Promise.all([
+          countMonth(key),
+          dk && dk !== "trail" ? countMonth(key, dk) : Promise.resolve(null),
+        ]);
+        monthCounts.month = m;
+        monthCounts.distance = d;
+      }
+    }
+
     return {
+      monthCounts,
       event,
       related,
       organiserReviewed,
