@@ -1,7 +1,7 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, type Mock } from "vitest";
 import { requestScottishPage } from "./scottish-request-retry";
 
-function setup(fetcher: ReturnType<typeof vi.fn>) {
+function setup(fetcher: Mock<typeof fetch>) {
   return {
     fetch: fetcher,
     sleep: vi.fn(async (_ms: number) => {}),
