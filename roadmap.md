@@ -19,7 +19,7 @@
 - [ ] Stage enrichment-agent results (dead sites, club-hosted races, verified organisers, course maps) slice by slice
 - [ ] Organiser TBC/Unknown review; Scottish club websites; 233 hidden records
 
-- [ ] Search traffic check-in ~31 Oct 2026: compare GSC (baseline 24 Sep–21 Oct: 60 clicks, 7,435 impr, pos 16.4) and Bing (baseline 20 Oct: 28 clicks, 726 impr); check month/race-details pages appearing. Blocked on: time.
+- [ ] Search traffic check-in ~31 Oct 2026 (Google + Bing only; Plausible dropped): compare GSC (baseline 24 Sep–21 Oct: 60 clicks, 7,435 impr, pos 16.4; 26 Sep–23 Oct: 63 / 7,422) and Bing (20–23 Oct: 76 clicks, 3,291 impr); check month-page views/clicks since race pages gained "More races in [month]" links (26 Oct). Blocked on: time.
 
 - [ ] Search snippet test (shipped 24 Oct 2026): race pages now show checked facts in Google title/description. Baseline: Great Bentley Half 2027 462 impr / 1 click (pos 9.2); Petts Wood 10K query 374 impr / 1 click (pos 7.8); Carnethy Skyloop 181 / 1. Compare at ~31 Oct and ~7 Nov.
 

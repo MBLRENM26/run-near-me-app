@@ -52,7 +52,9 @@ import {
   monthLinkForEvent,
   distanceMonthLinkForEvent,
   terrainHubFor,
+  monthBrowseLinks,
 } from "@/lib/event-internal-links";
+import { isIndexableMonth } from "@/lib/month-summary";
 import { buildEventCtas } from "@/lib/event-ctas";
 import { DestinationPanel } from "@/components/events/DestinationPanel";
 
@@ -391,6 +393,7 @@ function EventDetailPage() {
     courseProfile,
     destinations,
     raceFacts,
+    monthCounts,
   } = loaderData;
 
   // Site-wide link-trust policy: aggregator URLs are never rendered as
@@ -415,6 +418,13 @@ function EventDetailPage() {
     e,
     related.distanceKey,
     { isPast },
+  );
+  const browseLinks = monthBrowseLinks(
+    e,
+    related.distanceKey,
+    { isPast },
+    monthCounts ?? { month: null, distance: null },
+    isIndexableMonth,
   );
   // Build linked terrain segments matching the visible terrainLabel order.
   const terrainSegments: Array<{ key: string; label: string; hub: ReturnType<typeof terrainHubFor> }> =
@@ -1105,6 +1115,27 @@ function EventDetailPage() {
               </Link>
             </p>
           </section>
+
+          {browseLinks.length > 0 && monthLink && (
+            <nav aria-label="More races this month" className="mt-8 rounded-lg border border-border p-4">
+              <h2 className="text-base font-semibold text-foreground">More races in {monthLink.label}</h2>
+              <ul className="mt-2 space-y-1">
+                {browseLinks.map((l) => (
+                  <li key={l.kind}>
+                    {l.kind === "month" ? (
+                      <Link to="/running-events/$slug" params={{ slug: monthLink.slug }} className="text-primary hover:underline">
+                        {l.label} ({l.count}) →
+                      </Link>
+                    ) : distanceMonthLink ? (
+                      <Link to={distanceMonthLink.to} params={distanceMonthLink.params} className="text-primary hover:underline">
+                        {l.label} ({l.count}) →
+                      </Link>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          )}
 
           {raceFacts.facts.length > 0 && (
             <div className="mt-8">
