@@ -67,7 +67,7 @@ function rowMatches(
 }
 
 /** Trusted-event count for one month (and optional distance), light columns. */
-async function countMonth(monthKey: string, distanceKey?: DistanceKey): Promise<number> {
+export async function countMonth(monthKey: string, distanceKey?: DistanceKey): Promise<number> {
   const { from, to } = monthBounds(monthKey);
   type Light = {
     distances: string | null;

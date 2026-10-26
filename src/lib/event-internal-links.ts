@@ -98,3 +98,42 @@ const TERRAIN_HUB: Record<string, TerrainHubLink> = {
 export function terrainHubFor(tag: string): TerrainHubLink | null {
   return TERRAIN_HUB[tag] ?? null;
 }
+
+export interface MonthBrowseLink {
+  kind: "month" | "distance";
+  label: string;
+  count: number;
+}
+
+/**
+ * "More races in …" links for an upcoming race page. Only months Google may
+ * index (≥ MIN_INDEXABLE_MONTH_EVENTS) are linked; past or uncertain-date
+ * races get nothing.
+ */
+export function monthBrowseLinks(
+  e: EventDateLike,
+  distanceKey: DistanceKey | null | undefined,
+  opts: { isPast: boolean },
+  counts: { month: number | null; distance: number | null },
+  isIndexable: (n: number) => boolean,
+): MonthBrowseLink[] {
+  const month = monthLinkForEvent(e, opts);
+  if (!month) return [];
+  const out: MonthBrowseLink[] = [];
+  if (counts.month != null && isIndexable(counts.month)) {
+    out.push({ kind: "month", label: `All races in ${month.label}`, count: counts.month });
+  }
+  const dist = distanceMonthLinkForEvent(e, distanceKey, opts);
+  if (dist && counts.distance != null && isIndexable(counts.distance)) {
+    const short = DISTANCE_SHORT_LABEL[distanceKey as DistanceKey];
+    const plural = short.charAt(0).toUpperCase() + short.slice(1) + (short.endsWith("K") ? " races" : "s");
+    out.push({ kind: "distance", label: `${plural} in ${month.label}`, count: counts.distance });
+  }
+  return out;
+}
+
+/** Month key used for counting, exposed for the page loader. */
+export function monthKeyForCounting(e: EventDateLike, opts: { isPast: boolean }): string | null {
+  if (opts.isPast) return null;
+  return monthKeyForEvent(e);
+}
