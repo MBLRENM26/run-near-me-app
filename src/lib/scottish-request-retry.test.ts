@@ -3,7 +3,7 @@ import { requestScottishPage } from "./scottish-request-retry";
 
 function setup(fetcher: ReturnType<typeof vi.fn>) {
   return {
-    fetch: fetcher as typeof fetch,
+    fetch: fetcher,
     sleep: vi.fn(async (_ms: number) => {}),
     timeout: vi.fn((_ms: number) => new AbortController().signal),
   };
