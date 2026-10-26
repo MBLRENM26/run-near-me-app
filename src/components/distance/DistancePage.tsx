@@ -105,6 +105,12 @@ export function DistancePage({ cfg, data }: DistancePageProps) {
             </span>{" "}
             upcoming {cfg.shortName === "5K" || cfg.shortName === "10K" ? cfg.shortName + " races" : cfg.shortName + "s"} across the UK
           </p>
+          {cfg.key !== "trail" && (
+            <NearYouBox
+              distanceKey={cfg.key}
+              label={cfg.shortName === "5K" || cfg.shortName === "10K" ? `${cfg.shortName} races` : `${cfg.shortName.toLowerCase()}s`}
+            />
+          )}
           <div className="mt-6">
             <DistanceNav active={cfg.key} />
           </div>
