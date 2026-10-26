@@ -47,7 +47,7 @@ describe("Scottish page retries", () => {
     const deps = setup(vi.fn().mockRejectedValueOnce(new TypeError("fetch failed"))
       .mockResolvedValueOnce(new Response("[]")));
     await requestScottishPage("https://example.org", { method: "POST", body: "page=2" }, deps);
-    expect(deps.fetch.mock.calls.map((call) => call[1].body)).toEqual(["page=2", "page=2"]);
-    expect(deps.fetch.mock.calls[0][1].signal).not.toBe(deps.fetch.mock.calls[1][1].signal);
+    expect(deps.fetch.mock.calls.map((call) => call[1]?.body)).toEqual(["page=2", "page=2"]);
+    expect(deps.fetch.mock.calls[0]?.[1]?.signal).not.toBe(deps.fetch.mock.calls[1]?.[1]?.signal);
   });
 });
