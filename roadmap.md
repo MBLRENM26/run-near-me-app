@@ -12,7 +12,7 @@
 - [x] Validate uploaded research: 212 evidence rows across 39 races; 73 club matches are plausible candidates, not accepted identities. See docs/renm/RENM-research-staging-preflight-2026-10-19.md.
 - [x] Stage rich race facts — 212 assertions / 39 races privately imported and read back through signed-in admin; no event projection. Public fact acceptance/display remains separate approval.
 - [x] Add monthly host-club links from existing accepted verified relationships — tested and preview-checked (24 clubs in Nov 2026); needs publish.
-- [ ] Scottish Athletics import: add page retries like England Athletics (19 Oct run timed out — their site unresponsive) — awaiting Mike's yes
+- [ ] Scottish Athletics import (approved 26 Oct): add three page retries with 30-second timeouts; move existing Monday job to 05:30 UTC; verify tests and schedule. Retry code requires publish.
 - [x] Publish pending changes — published 21 Oct: race facts box on live event pages, month-page layout, host-club links, IndexNow daily ping verified live
 - [ ] Review flagged older security-definer view
 - [ ] Homelab checker script — Mike's homelab; needs CHANGE_FEED_SECRET
