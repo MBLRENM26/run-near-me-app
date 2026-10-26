@@ -32,6 +32,7 @@ import { Route as HalfMarathonsRouteImport } from './routes/half-marathons'
 import { Route as ForRunnersRouteImport } from './routes/for-runners'
 import { Route as ForOrganisersRouteImport } from './routes/for-organisers'
 import { Route as ForClubsRouteImport } from './routes/for-clubs'
+import { Route as FlatHalfMarathonsRouteImport } from './routes/flat-half-marathons'
 import { Route as FellRacesRouteImport } from './routes/fell-races'
 import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as EnglandAthleticsPermittedRacesRouteImport } from './routes/england-athletics-permitted-races'
@@ -226,6 +227,11 @@ const ForOrganisersRoute = ForOrganisersRouteImport.update({
 const ForClubsRoute = ForClubsRouteImport.update({
   id: '/for-clubs',
   path: '/for-clubs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FlatHalfMarathonsRoute = FlatHalfMarathonsRouteImport.update({
+  id: '/flat-half-marathons',
+  path: '/flat-half-marathons',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FellRacesRoute = FellRacesRouteImport.update({
@@ -656,6 +662,7 @@ export interface FileRoutesByFullPath {
   '/england-athletics-permitted-races': typeof EnglandAthleticsPermittedRacesRoute
   '/explore': typeof ExploreRoute
   '/fell-races': typeof FellRacesRoute
+  '/flat-half-marathons': typeof FlatHalfMarathonsRoute
   '/for-clubs': typeof ForClubsRoute
   '/for-organisers': typeof ForOrganisersRoute
   '/for-runners': typeof ForRunnersRoute
@@ -756,6 +763,7 @@ export interface FileRoutesByTo {
   '/england-athletics-permitted-races': typeof EnglandAthleticsPermittedRacesRoute
   '/explore': typeof ExploreRoute
   '/fell-races': typeof FellRacesRoute
+  '/flat-half-marathons': typeof FlatHalfMarathonsRoute
   '/for-clubs': typeof ForClubsRoute
   '/for-organisers': typeof ForOrganisersRoute
   '/for-runners': typeof ForRunnersRoute
@@ -858,6 +866,7 @@ export interface FileRoutesById {
   '/england-athletics-permitted-races': typeof EnglandAthleticsPermittedRacesRoute
   '/explore': typeof ExploreRoute
   '/fell-races': typeof FellRacesRoute
+  '/flat-half-marathons': typeof FlatHalfMarathonsRoute
   '/for-clubs': typeof ForClubsRoute
   '/for-organisers': typeof ForOrganisersRoute
   '/for-runners': typeof ForRunnersRoute
@@ -960,6 +969,7 @@ export interface FileRouteTypes {
     | '/england-athletics-permitted-races'
     | '/explore'
     | '/fell-races'
+    | '/flat-half-marathons'
     | '/for-clubs'
     | '/for-organisers'
     | '/for-runners'
@@ -1060,6 +1070,7 @@ export interface FileRouteTypes {
     | '/england-athletics-permitted-races'
     | '/explore'
     | '/fell-races'
+    | '/flat-half-marathons'
     | '/for-clubs'
     | '/for-organisers'
     | '/for-runners'
@@ -1161,6 +1172,7 @@ export interface FileRouteTypes {
     | '/england-athletics-permitted-races'
     | '/explore'
     | '/fell-races'
+    | '/flat-half-marathons'
     | '/for-clubs'
     | '/for-organisers'
     | '/for-runners'
@@ -1263,6 +1275,7 @@ export interface RootRouteChildren {
   EnglandAthleticsPermittedRacesRoute: typeof EnglandAthleticsPermittedRacesRoute
   ExploreRoute: typeof ExploreRoute
   FellRacesRoute: typeof FellRacesRoute
+  FlatHalfMarathonsRoute: typeof FlatHalfMarathonsRoute
   ForClubsRoute: typeof ForClubsRoute
   ForOrganisersRoute: typeof ForOrganisersRoute
   ForRunnersRoute: typeof ForRunnersRoute
@@ -1491,6 +1504,13 @@ declare module '@tanstack/react-router' {
       path: '/for-clubs'
       fullPath: '/for-clubs'
       preLoaderRoute: typeof ForClubsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/flat-half-marathons': {
+      id: '/flat-half-marathons'
+      path: '/flat-half-marathons'
+      fullPath: '/flat-half-marathons'
+      preLoaderRoute: typeof FlatHalfMarathonsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/fell-races': {
@@ -2118,6 +2138,7 @@ const rootRouteChildren: RootRouteChildren = {
   EnglandAthleticsPermittedRacesRoute: EnglandAthleticsPermittedRacesRoute,
   ExploreRoute: ExploreRoute,
   FellRacesRoute: FellRacesRoute,
+  FlatHalfMarathonsRoute: FlatHalfMarathonsRoute,
   ForClubsRoute: ForClubsRoute,
   ForOrganisersRoute: ForOrganisersRoute,
   ForRunnersRoute: ForRunnersRoute,

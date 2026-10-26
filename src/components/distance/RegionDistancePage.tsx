@@ -34,6 +34,8 @@ import {
 } from "@/lib/month-filter";
 import { featuredFirst } from "@/lib/featured";
 import { CURRENT_YEAR } from "@/lib/site";
+import { countByMonth } from "@/lib/month-summary";
+import { NearYouBox } from "./NearYouBox";
 
 function toEventCardData(e: DistanceEvent): EventCardData {
   return {
@@ -70,6 +72,7 @@ export function RegionDistancePage({
   const navigate = useNavigate();
   const month = search.month;
   const months = availableMonths(events);
+  const monthCounts = countByMonth(events, new Date().toISOString().slice(0, 7));
   const filtered = featuredFirst(filterByMonth(events, month));
   const showing = filtered.length;
   const h1 = `${headingDistance(cfg)} in ${region.name} ${CURRENT_YEAR}`;
@@ -141,12 +144,31 @@ export function RegionDistancePage({
           <div className="mt-6">
             <DistanceNav active={cfg.key} regionSlug={region.slug} />
           </div>
+          <NearYouBox distanceKey={cfg.key} label={noun} />
         </section>
 
         <section className="mx-auto max-w-6xl px-4 pb-12">
           {months.length >= 2 && (
             <div className="mb-4">
               <MonthFilter months={months} value={month} onChange={setMonth} />
+            </div>
+          )}
+          {!month && monthCounts.length >= 2 && (
+            <div className="mb-6">
+              <h2 className="text-sm font-semibold text-foreground">{headingDistance(cfg)} in {region.name} by month</h2>
+              <ul className="mt-2 flex flex-wrap gap-2">
+                {monthCounts.map((m) => (
+                  <li key={m.label}>
+                    <button
+                      type="button"
+                      onClick={() => setMonth(m.label as MonthKey)}
+                      className="rounded-full border border-border bg-card px-3 py-1 text-sm text-foreground hover:border-primary transition-colors"
+                    >
+                      {formatMonthLabelLong(m.label as MonthKey)} <span className="text-muted-foreground">· {m.count}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
           {month && (

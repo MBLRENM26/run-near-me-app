@@ -121,6 +121,11 @@ export const Route = createFileRoute("/sitemap.xml")({
             changefreq: "monthly",
           },
           {
+            loc: `${SITE_URL}/flat-half-marathons`,
+            priority: "0.7",
+            changefreq: "weekly",
+          },
+          {
             loc: `${SITE_URL}/about`,
             priority: "0.5",
             changefreq: "monthly",

@@ -24,3 +24,4 @@
 - [ ] Search snippet test (shipped 24 Oct 2026): race pages now show checked facts in Google title/description. Baseline: Great Bentley Half 2027 462 impr / 1 click (pos 9.2); Petts Wood 10K query 374 impr / 1 click (pos 7.8); Carnethy Skyloop 181 / 1. Compare at ~31 Oct and ~7 Nov.
 
 - [ ] Smaller search engines (24 Oct 2026): Brave finds the site for "runningeventsnearme" but not for 4 race-name searches (Great Bentley, Adnams, Petts Wood, Carnethy); Mojeek showed nothing (may be blocking automated checks). Robots file allows all crawlers. Recheck ~31 Oct. Yandex Webmaster: waiting on Mike's verification code.
+- [x] Region × distance month breakdown + postcode box; flat half marathons page (26 Oct)
