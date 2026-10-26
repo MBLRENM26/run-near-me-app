@@ -70,3 +70,14 @@ describe("month summary", () => {
     expect(shiftMonth("2026-12", 1)).toBe("2027-01");
   });
 });
+
+import { countByMonth } from "./month-summary";
+describe("countByMonth", () => {
+  it("counts per month from the current month, ignoring past and undated", () => {
+    const r = countByMonth(
+      [{ sort_date: "2026-09-01" }, { sort_date: "2026-11-02" }, { sort_date: "2026-11-20" }, { sort_date: "2027-01-31" }, { sort_date: null }],
+      "2026-10",
+    );
+    expect(r).toEqual([{ label: "2026-11", count: 2 }, { label: "2027-01", count: 1 }]);
+  });
+});

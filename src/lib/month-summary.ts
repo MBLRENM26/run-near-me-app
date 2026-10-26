@@ -154,3 +154,21 @@ export function shiftMonth(monthKey: string, delta: number): string {
   const d = new Date(Date.UTC(y, m - 1 + delta, 1));
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
 }
+
+/** Upcoming event counts per month ("YYYY-MM"), from fromMonth onward, oldest first. */
+export function countByMonth(
+  events: { sort_date: string | null }[],
+  fromMonth: string,
+  maxMonths = 12,
+): LabelCount[] {
+  const m = new Map<string, number>();
+  for (const e of events) {
+    const k = e.sort_date?.slice(0, 7);
+    if (!k || !/^\d{4}-\d{2}$/.test(k) || k < fromMonth) continue;
+    m.set(k, (m.get(k) ?? 0) + 1);
+  }
+  return [...m.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .slice(0, maxMonths)
+    .map(([label, count]) => ({ label, count }));
+}
