@@ -1,3 +1,4 @@
+import { NearYouBox } from "@/components/distance/NearYouBox";
 import { useEffect } from "react";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { ArrowLeft, ChevronRight, X } from "lucide-react";
