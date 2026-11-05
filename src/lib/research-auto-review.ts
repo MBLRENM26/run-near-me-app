@@ -97,7 +97,13 @@ export function resolveGroup(facts: GroupFact[]): GroupDecision {
   const latest = facts.filter((f) => f.batch_created_at === newest);
   const values = new Set(latest.map((f) => norm(f.raw_value)));
   if (values.size === 1) {
-    const winner = latest.find((f) => !f.reviewed && triageFact(without(f, [DIFFERS, SECOND_QUOTE])).kind === "auto");
+    // Import marks a differing newer value as quarantined *because* it differs; when that is the
+    // only reason, lift the flag. Any other quarantine cause leaves its own caveat, which still blocks.
+    const liftDiffers = (f: GroupFact) => {
+      const g = without(f, [DIFFERS, SECOND_QUOTE]);
+      return caveatsOf(f).includes(DIFFERS) && f.match_state === "quarantined" ? { ...g, match_state: "matched" } : g;
+    };
+    const winner = latest.find((f) => !f.reviewed && triageFact(liftDiffers(f)).kind === "auto");
     const older = open.filter((f) => f.batch_created_at < newest && norm(f.raw_value) !== norm(winner?.raw_value ?? ""));
     if (winner && older.length) {
       if (!out.accept.includes(winner.id)) out.accept.push(winner.id);
