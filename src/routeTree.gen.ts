@@ -57,7 +57,6 @@ import { Route as ParkrunEventsSlugRouteImport } from './routes/parkrun-events.$
 import { Route as MarathonsMonthRouteImport } from './routes/marathons_.$month'
 import { Route as HalfMarathonsMonthRouteImport } from './routes/half-marathons_.$month'
 import { Route as EventsSlugRouteImport } from './routes/events.$slug'
-import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as R5kRacesMonthRouteImport } from './routes/5k-races_.$month'
 import { Route as R10kRacesMonthRouteImport } from './routes/10k-races_.$month'
@@ -66,7 +65,6 @@ import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]
 import { Route as RunningEventsSlugDistanceRouteImport } from './routes/running-events.$slug_.$distance'
 import { Route as RunningClubsSlugClaimRouteImport } from './routes/running-clubs.$slug.claim'
 import { Route as ParkrunEventsRegionRegionRouteImport } from './routes/parkrun-events.region.$region'
-import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as LovableEmailEventsRouteImport } from './routes/lovable/email/events'
 import { Route as EventsSlugReportRouteImport } from './routes/events_.$slug.report'
 import { Route as ApiPublicTrackSearchClickRouteImport } from './routes/api/public/track-search-click'
@@ -88,9 +86,7 @@ import { Route as AdminShellAdminChangeReportsRouteImport } from './routes/_admi
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as AdminShellAdminEventsIndexRouteImport } from './routes/_adminShell.admin.events.index'
 import { Route as AdminShellAdminClubsIndexRouteImport } from './routes/_adminShell.admin.clubs.index'
-import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
-import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicIngestWatchlistRouteImport } from './routes/api/public/ingest/watchlist'
@@ -358,11 +354,6 @@ const EventsSlugRoute = EventsSlugRouteImport.update({
   path: '/events/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
-const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
-  id: '/email/unsubscribe',
-  path: '/email/unsubscribe',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AdminLoginRoute = AdminLoginRouteImport.update({
   id: '/admin/login',
   path: '/admin/login',
@@ -407,11 +398,6 @@ const ParkrunEventsRegionRegionRoute =
     path: '/parkrun-events/region/$region',
     getParentRoute: () => rootRouteImport,
   } as any)
-const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
-  id: '/lovable/email/suppression',
-  path: '/lovable/email/suppression',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LovableEmailEventsRoute = LovableEmailEventsRouteImport.update({
   id: '/lovable/email/events',
   path: '/lovable/email/events',
@@ -529,22 +515,10 @@ const AdminShellAdminClubsIndexRoute =
     path: '/admin/clubs/',
     getParentRoute: () => AdminShellRoute,
   } as any)
-const LovableEmailTransactionalSendRoute =
-  LovableEmailTransactionalSendRouteImport.update({
-    id: '/lovable/email/transactional/send',
-    path: '/lovable/email/transactional/send',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const LovableEmailTransactionalPreviewRoute =
   LovableEmailTransactionalPreviewRouteImport.update({
     id: '/lovable/email/transactional/preview',
     path: '/lovable/email/transactional/preview',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableEmailQueueProcessRoute =
-  LovableEmailQueueProcessRouteImport.update({
-    id: '/lovable/email/queue/process',
-    path: '/lovable/email/queue/process',
     getParentRoute: () => rootRouteImport,
   } as any)
 const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
@@ -709,7 +683,6 @@ export interface FileRoutesByFullPath {
   '/10k-races/$month': typeof R10kRacesMonthRoute
   '/5k-races/$month': typeof R5kRacesMonthRoute
   '/admin/login': typeof AdminLoginRoute
-  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/events/$slug': typeof EventsSlugRoute
   '/half-marathons/$month': typeof HalfMarathonsMonthRoute
   '/marathons/$month': typeof MarathonsMonthRoute
@@ -741,7 +714,6 @@ export interface FileRoutesByFullPath {
   '/api/public/track-search-click': typeof ApiPublicTrackSearchClickRoute
   '/events/$slug/report': typeof EventsSlugReportRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
-  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/parkrun-events/region/$region': typeof ParkrunEventsRegionRegionRoute
   '/running-clubs/$slug/claim': typeof RunningClubsSlugClaimRoute
   '/running-events/$slug/$distance': typeof RunningEventsSlugDistanceRoute
@@ -766,9 +738,7 @@ export interface FileRoutesByFullPath {
   '/api/public/ingest/watchlist': typeof ApiPublicIngestWatchlistRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
-  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
-  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/admin/clubs/': typeof AdminShellAdminClubsIndexRoute
   '/admin/events/': typeof AdminShellAdminEventsIndexRoute
 }
@@ -813,7 +783,6 @@ export interface FileRoutesByTo {
   '/10k-races/$month': typeof R10kRacesMonthRoute
   '/5k-races/$month': typeof R5kRacesMonthRoute
   '/admin/login': typeof AdminLoginRoute
-  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/events/$slug': typeof EventsSlugRoute
   '/half-marathons/$month': typeof HalfMarathonsMonthRoute
   '/marathons/$month': typeof MarathonsMonthRoute
@@ -845,7 +814,6 @@ export interface FileRoutesByTo {
   '/api/public/track-search-click': typeof ApiPublicTrackSearchClickRoute
   '/events/$slug/report': typeof EventsSlugReportRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
-  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/parkrun-events/region/$region': typeof ParkrunEventsRegionRegionRoute
   '/running-clubs/$slug/claim': typeof RunningClubsSlugClaimRoute
   '/running-events/$slug/$distance': typeof RunningEventsSlugDistanceRoute
@@ -870,9 +838,7 @@ export interface FileRoutesByTo {
   '/api/public/ingest/watchlist': typeof ApiPublicIngestWatchlistRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
-  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
-  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/admin/clubs': typeof AdminShellAdminClubsIndexRoute
   '/admin/events': typeof AdminShellAdminEventsIndexRoute
 }
@@ -919,7 +885,6 @@ export interface FileRoutesById {
   '/10k-races_/$month': typeof R10kRacesMonthRoute
   '/5k-races_/$month': typeof R5kRacesMonthRoute
   '/admin/login': typeof AdminLoginRoute
-  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/events/$slug': typeof EventsSlugRoute
   '/half-marathons_/$month': typeof HalfMarathonsMonthRoute
   '/marathons_/$month': typeof MarathonsMonthRoute
@@ -951,7 +916,6 @@ export interface FileRoutesById {
   '/api/public/track-search-click': typeof ApiPublicTrackSearchClickRoute
   '/events_/$slug/report': typeof EventsSlugReportRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
-  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/parkrun-events/region/$region': typeof ParkrunEventsRegionRegionRoute
   '/running-clubs/$slug/claim': typeof RunningClubsSlugClaimRoute
   '/running-events/$slug_/$distance': typeof RunningEventsSlugDistanceRoute
@@ -976,9 +940,7 @@ export interface FileRoutesById {
   '/api/public/ingest/watchlist': typeof ApiPublicIngestWatchlistRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
-  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
-  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/_adminShell/admin/clubs/': typeof AdminShellAdminClubsIndexRoute
   '/_adminShell/admin/events/': typeof AdminShellAdminEventsIndexRoute
 }
@@ -1025,7 +987,6 @@ export interface FileRouteTypes {
     | '/10k-races/$month'
     | '/5k-races/$month'
     | '/admin/login'
-    | '/email/unsubscribe'
     | '/events/$slug'
     | '/half-marathons/$month'
     | '/marathons/$month'
@@ -1057,7 +1018,6 @@ export interface FileRouteTypes {
     | '/api/public/track-search-click'
     | '/events/$slug/report'
     | '/lovable/email/events'
-    | '/lovable/email/suppression'
     | '/parkrun-events/region/$region'
     | '/running-clubs/$slug/claim'
     | '/running-events/$slug/$distance'
@@ -1082,9 +1042,7 @@ export interface FileRouteTypes {
     | '/api/public/ingest/watchlist'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
-    | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
-    | '/lovable/email/transactional/send'
     | '/admin/clubs/'
     | '/admin/events/'
   fileRoutesByTo: FileRoutesByTo
@@ -1129,7 +1087,6 @@ export interface FileRouteTypes {
     | '/10k-races/$month'
     | '/5k-races/$month'
     | '/admin/login'
-    | '/email/unsubscribe'
     | '/events/$slug'
     | '/half-marathons/$month'
     | '/marathons/$month'
@@ -1161,7 +1118,6 @@ export interface FileRouteTypes {
     | '/api/public/track-search-click'
     | '/events/$slug/report'
     | '/lovable/email/events'
-    | '/lovable/email/suppression'
     | '/parkrun-events/region/$region'
     | '/running-clubs/$slug/claim'
     | '/running-events/$slug/$distance'
@@ -1186,9 +1142,7 @@ export interface FileRouteTypes {
     | '/api/public/ingest/watchlist'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
-    | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
-    | '/lovable/email/transactional/send'
     | '/admin/clubs'
     | '/admin/events'
   id:
@@ -1234,7 +1188,6 @@ export interface FileRouteTypes {
     | '/10k-races_/$month'
     | '/5k-races_/$month'
     | '/admin/login'
-    | '/email/unsubscribe'
     | '/events/$slug'
     | '/half-marathons_/$month'
     | '/marathons_/$month'
@@ -1266,7 +1219,6 @@ export interface FileRouteTypes {
     | '/api/public/track-search-click'
     | '/events_/$slug/report'
     | '/lovable/email/events'
-    | '/lovable/email/suppression'
     | '/parkrun-events/region/$region'
     | '/running-clubs/$slug/claim'
     | '/running-events/$slug_/$distance'
@@ -1291,9 +1243,7 @@ export interface FileRouteTypes {
     | '/api/public/ingest/watchlist'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
-    | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
-    | '/lovable/email/transactional/send'
     | '/_adminShell/admin/clubs/'
     | '/_adminShell/admin/events/'
   fileRoutesById: FileRoutesById
@@ -1340,7 +1290,6 @@ export interface RootRouteChildren {
   R10kRacesMonthRoute: typeof R10kRacesMonthRoute
   R5kRacesMonthRoute: typeof R5kRacesMonthRoute
   AdminLoginRoute: typeof AdminLoginRoute
-  EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   EventsSlugRoute: typeof EventsSlugRoute
   HalfMarathonsMonthRoute: typeof HalfMarathonsMonthRoute
   MarathonsMonthRoute: typeof MarathonsMonthRoute
@@ -1360,7 +1309,6 @@ export interface RootRouteChildren {
   ApiPublicTrackSearchClickRoute: typeof ApiPublicTrackSearchClickRoute
   EventsSlugReportRoute: typeof EventsSlugReportRoute
   LovableEmailEventsRoute: typeof LovableEmailEventsRoute
-  LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ParkrunEventsRegionRegionRoute: typeof ParkrunEventsRegionRegionRoute
   RunningEventsSlugDistanceRoute: typeof RunningEventsSlugDistanceRoute
   ApiPublicAdminBackfillOrganiserMatchRoute: typeof ApiPublicAdminBackfillOrganiserMatchRoute
@@ -1377,9 +1325,7 @@ export interface RootRouteChildren {
   ApiPublicIngestWatchlistRoute: typeof ApiPublicIngestWatchlistRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
-  LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
-  LovableEmailTransactionalSendRoute: typeof LovableEmailTransactionalSendRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1720,13 +1666,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EventsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/email/unsubscribe': {
-      id: '/email/unsubscribe'
-      path: '/email/unsubscribe'
-      fullPath: '/email/unsubscribe'
-      preLoaderRoute: typeof EmailUnsubscribeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/admin/login': {
       id: '/admin/login'
       path: '/admin/login'
@@ -1781,13 +1720,6 @@ declare module '@tanstack/react-router' {
       path: '/parkrun-events/region/$region'
       fullPath: '/parkrun-events/region/$region'
       preLoaderRoute: typeof ParkrunEventsRegionRegionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/email/suppression': {
-      id: '/lovable/email/suppression'
-      path: '/lovable/email/suppression'
-      fullPath: '/lovable/email/suppression'
-      preLoaderRoute: typeof LovableEmailSuppressionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lovable/email/events': {
@@ -1937,25 +1869,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminShellAdminClubsIndexRouteImport
       parentRoute: typeof AdminShellRoute
     }
-    '/lovable/email/transactional/send': {
-      id: '/lovable/email/transactional/send'
-      path: '/lovable/email/transactional/send'
-      fullPath: '/lovable/email/transactional/send'
-      preLoaderRoute: typeof LovableEmailTransactionalSendRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/lovable/email/transactional/preview': {
       id: '/lovable/email/transactional/preview'
       path: '/lovable/email/transactional/preview'
       fullPath: '/lovable/email/transactional/preview'
       preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/email/queue/process': {
-      id: '/lovable/email/queue/process'
-      path: '/lovable/email/queue/process'
-      fullPath: '/lovable/email/queue/process'
-      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lovable/email/auth/webhook': {
@@ -2228,7 +2146,6 @@ const rootRouteChildren: RootRouteChildren = {
   R10kRacesMonthRoute: R10kRacesMonthRoute,
   R5kRacesMonthRoute: R5kRacesMonthRoute,
   AdminLoginRoute: AdminLoginRoute,
-  EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   EventsSlugRoute: EventsSlugRoute,
   HalfMarathonsMonthRoute: HalfMarathonsMonthRoute,
   MarathonsMonthRoute: MarathonsMonthRoute,
@@ -2248,7 +2165,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicTrackSearchClickRoute: ApiPublicTrackSearchClickRoute,
   EventsSlugReportRoute: EventsSlugReportRoute,
   LovableEmailEventsRoute: LovableEmailEventsRoute,
-  LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ParkrunEventsRegionRegionRoute: ParkrunEventsRegionRegionRoute,
   RunningEventsSlugDistanceRoute: RunningEventsSlugDistanceRoute,
   ApiPublicAdminBackfillOrganiserMatchRoute:
@@ -2270,9 +2186,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicIngestWatchlistRoute: ApiPublicIngestWatchlistRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
-  LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
-  LovableEmailTransactionalSendRoute: LovableEmailTransactionalSendRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
