@@ -39,6 +39,8 @@ def validate(config, policy, now):
         monitor.validate_url(s['url'])
         if type(s['enabled']) is not bool or type(s['interval_hours']) is not int or not 24 <= s['interval_hours'] <= 2160:
             raise ValueError('invalid_local_source_controls')
+    if policy.get('review_counter', 'raw') not in {'raw', 'verified_actionable_v1'}:
+        raise ValueError('unsupported_review_counter')
     return 'not_started' if now < start else 'complete' if now >= end else 'active'
 
 
@@ -88,7 +90,10 @@ def run(config, policy, state, secret_path, now=None):
                     raise ValueError('storage_budget_or_free_space_limit')
                 secret=Path(secret_path).read_text().strip()
                 if len(secret)<32:raise ValueError('missing_or_short_signing_secret')
-                sources,queue=monitor.source_controls(policy['endpoint'],secret,config)
+                controls_audit={}
+                sources,queue=monitor.source_controls(policy['endpoint'],secret,config,policy,controls_audit) if 'review_counter' in policy else monitor.source_controls(policy['endpoint'],secret,config)
+                report.update(controls_audit)
+                report['review_counter']=policy.get('review_counter','raw')
                 report['pending_review']=queue
                 # Always attempt existing evidence delivery first; no new collection during backlog pressure.
                 report['delivered']=monitor.deliver(db,policy['endpoint'],secret)

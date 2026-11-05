@@ -16,7 +16,7 @@ Each observation contains UUID `id`, `source_id`, `run_id`; `evidence` with `sou
 
 Proposal variants:
 
-- `page_change`: evidence only; no projection.
+- `page_change`: new intake requires bounded structured extraction (facts, missing_fields and issues); evidence only, no projection. Historical evidence remains readable with the historical schema.
 - `new_occurrence`: `name`, nullable ISO `date`, `location`, nullable `schedule`, nullable `entry_url`. A recurring schedule can remain undated. Discovery always requires separate duplicate/occurrence review and never creates an event on intake or Apply.
 - `event_change`: existing `event_id`, `expected_date`, `field` (`entry_url` or `organiser_url`), nullable `expected_value`, HTTP(S) `proposed_value`.
 - `club_relationship`: existing `event_id`, `expected_date`, `organisation_id`, `club_id`, nullable `expected_organiser`, nullable `expected_club_id`.

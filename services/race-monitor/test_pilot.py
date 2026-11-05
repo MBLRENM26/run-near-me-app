@@ -49,6 +49,19 @@ class PilotTests(unittest.TestCase):
         with patch('monitor.source_controls',return_value=([SOURCE],30)),patch('monitor.observe') as observe:
             report=pilot.run(self.config,self.policy,self.root,self.secret,self.now)
         self.assertEqual(report['status'],'review_backlog_paused');observe.assert_not_called()
+    def test_new_policy_uses_verified_counter_and_retains_raw_workload(self):
+        self.policy['review_counter']='verified_actionable_v1'
+        def controls(endpoint,secret,config,policy,audit):
+            audit.update(raw_pending_review=45,review_workload={'version':1,'raw_outstanding':45,'verified_completed_support':18,'actionable_review':27})
+            return [SOURCE],27
+        with patch('monitor.source_controls',side_effect=controls),patch('monitor.observe',return_value='not_due'),patch('pilot.time.sleep'):
+            report=pilot.run(self.config,self.policy,self.root,self.secret,self.now)
+        self.assertEqual(report['status'],'ok')
+        self.assertEqual(report['review_counter'],'verified_actionable_v1')
+        self.assertEqual(report['pending_review'],27)
+        self.assertEqual(report['raw_pending_review'],45)
+        self.assertEqual(report['review_workload']['verified_completed_support'],18)
+
     def test_local_pause_and_expiry_make_no_network_calls(self):
         (self.root/'PAUSED').touch()
         with patch('monitor.source_controls') as controls:

@@ -22,6 +22,7 @@ from urllib.parse import urljoin, urlsplit
 from urllib.robotparser import RobotFileParser
 from uuid import UUID, uuid4
 from event_extractor import extract_event_facts, VERSION
+from research_payload import validate_observation
 
 AGENT = "RENMResearch/1.0 (+https://runningeventsnearme.com)"
 MAX_BODY = 2_000_000
@@ -223,6 +224,7 @@ def observe(db, source, fetch=fetch_page, now=None):
                     "content_sha256": digest, "extractor": EXTRACTOR,
                     "summary": f"{'Initial mapped baseline' if not previous else 'Mapped facts changed'}: {len(extraction['facts'])} candidates. Confirm race, edition and destination roles before preparing a correction. Missing fields do not clear existing data."},
                     "proposal": {"kind": "page_change", "extraction": extraction}, "conflicts": extraction["issues"]}
+                validate_observation(item)
                 db.execute("insert into outbox(id,payload) values(?,?)", (oid, json.dumps(item, ensure_ascii=False)))
             db.execute("insert into source_extractions(source_id,facts_hash) values(?,?) on conflict(source_id) do update set facts_hash=excluded.facts_hash", (sid, facts_hash))
             db.execute("insert into sources(id,url,last_hash,last_attempt,last_success,next_due,failures,error) values(?,?,?,?,?,?,0,null) on conflict(id) do update set last_hash=excluded.last_hash,last_attempt=excluded.last_attempt,last_success=excluded.last_success,next_due=excluded.next_due,failures=0,error=null", (sid,source["url"],digest,now,now,now+interval*3600))
@@ -262,15 +264,25 @@ def deliver(db, endpoint, secret):
     return len(observations)
 
 
-def source_controls(endpoint, secret, config):
+def source_controls(endpoint, secret, config, policy=None, audit=None):
     """Fresh remote pause state; a missing/mismatched source fails closed."""
     ts = str(int(time.time()))
-    sig = hmac.new(secret.encode(), (ts+".sources").encode(), hashlib.sha256).hexdigest()
+    mode = (policy or {}).get("review_counter", "raw")
+    if mode not in {"raw", "verified_actionable_v1"}:
+        raise ValueError("unsupported_review_counter")
+    scoped = mode == "verified_actionable_v1"
+    ids = sorted(source["id"] for source in config["sources"])
+    if scoped and (not 1 <= len(ids) <= 30 or len(set(ids)) != len(ids)):
+        raise ValueError("invalid_source_selection")
+    purpose = "sources.v2." + ",".join(ids) if scoped else "sources"
+    sig = hmac.new(secret.encode(), (ts+"."+purpose).encode(), hashlib.sha256).hexdigest()
+    if scoped:
+        endpoint += "?version=2&sources=" + ",".join(ids)
     status, _, raw = request(endpoint, headers={"x-renm-timestamp":ts,"x-renm-signature":sig})
     if status != 200:
         raise ValueError(f"source_controls_failed_{status}")
     manifest = json.loads(raw)
-    if manifest.get("version") != 1 or not isinstance(manifest.get("sources"),list) or len(manifest["sources"]) > 1000:
+    if manifest.get("version") != (2 if scoped else 1) or not isinstance(manifest.get("sources"),list) or len(manifest["sources"]) > 1000:
         raise ValueError("invalid_source_manifest")
     rows = {s["id"]:s for s in manifest["sources"]}
     if len(rows) != len(manifest["sources"]):
@@ -278,6 +290,21 @@ def source_controls(endpoint, secret, config):
     pending_review = manifest.get("pending_review")
     if type(pending_review) is not int or pending_review < 0:
         raise ValueError("invalid_review_count")
+    if scoped:
+        workload = manifest.get("review_workload")
+        if (manifest.get("sources_complete") is not True or
+                manifest.get("requested_source_ids") != ids or set(rows) != set(ids) or
+                not isinstance(workload, dict) or type(workload.get("version")) is not int or workload["version"] != 1):
+            raise ValueError("incomplete_or_unversioned_controls")
+        raw_count = workload.get("raw_outstanding")
+        support = workload.get("verified_completed_support")
+        actionable = workload.get("actionable_review")
+        if (any(type(x) is not int or x < 0 for x in [raw_count, support, actionable]) or
+                raw_count != pending_review or support > raw_count or actionable != raw_count - support):
+            raise ValueError("invalid_actionable_review_count")
+        if audit is not None:
+            audit.update(raw_pending_review=raw_count, review_workload=workload)
+        pending_review = actionable
     sources = []
     for source in config["sources"]:
         remote = rows.get(source["id"])

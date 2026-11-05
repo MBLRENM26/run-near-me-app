@@ -29,6 +29,13 @@
       "when": 1793887254233,
       "tag": "0003_admin_set_event_lifecycle",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793906314391,
+      "tag": "0004_research_monitor_controls",
+      "breakpoints": true
     }
   ]
 }

@@ -5,3 +5,5 @@
 - Rich race-research review is exception-only: `src/lib/research-auto-review.ts` (pure, tested) decides auto-accept vs needs-review; auto acceptances are append-only review rows tagged with a rule version so a whole rule can be revoked — keeps the admin from re-doing verified research while staying reversible.
 - Scottish event-page fetches use the tested bounded retry helper in `src/lib/scottish-request-retry.ts`; retry only transient read failures, never replay database writes, to recover safely from provider timeouts.
 - App email feature helpers call the managed template sender through an append-only receipt adapter; retained legacy email tables are audit-only, never suppression gates, so delivery remains platform-owned and notification failure cannot block the triggering feature.
+
+- Research monitoring keeps the raw backlog count and uses the separately versioned verified-support workload only when a new worker policy explicitly opts in; signed v2 controls bind an exact source set and fail closed on incomplete controls. See docs/renm/RENM-monitor-operations-2026-11-05.md.
