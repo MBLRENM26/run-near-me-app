@@ -1,7 +1,7 @@
 // Pure: does an accepted course_profile fact say the course is flat?
 // Only explicit organiser wording counts; anything mentioning hills/climbs is out.
 
-const NEGATIVE = /\b(not flat|hill|hilly|climb|climbs|undulat|rolling|steep|ascent|technical)\b/;
+const NEGATIVE = /\b(not flat|hill|hilly|climb|climbs|undulat\w*|rolling|steep|ascent|technical)\b/;
 
 export function isFlatCourseValue(value: string | null | undefined): boolean {
   const v = (value ?? "").toLowerCase().trim();
