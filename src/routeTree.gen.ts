@@ -67,6 +67,7 @@ import { Route as RunningEventsSlugDistanceRouteImport } from './routes/running-
 import { Route as RunningClubsSlugClaimRouteImport } from './routes/running-clubs.$slug.claim'
 import { Route as ParkrunEventsRegionRegionRouteImport } from './routes/parkrun-events.region.$region'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
+import { Route as LovableEmailEventsRouteImport } from './routes/lovable/email/events'
 import { Route as EventsSlugReportRouteImport } from './routes/events_.$slug.report'
 import { Route as ApiPublicTrackSearchClickRouteImport } from './routes/api/public/track-search-click'
 import { Route as ApiPublicTrackSearchRouteImport } from './routes/api/public/track-search'
@@ -411,6 +412,11 @@ const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   path: '/lovable/email/suppression',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LovableEmailEventsRoute = LovableEmailEventsRouteImport.update({
+  id: '/lovable/email/events',
+  path: '/lovable/email/events',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EventsSlugReportRoute = EventsSlugReportRouteImport.update({
   id: '/events_/$slug/report',
   path: '/events/$slug/report',
@@ -734,6 +740,7 @@ export interface FileRoutesByFullPath {
   '/api/public/track-search': typeof ApiPublicTrackSearchRoute
   '/api/public/track-search-click': typeof ApiPublicTrackSearchClickRoute
   '/events/$slug/report': typeof EventsSlugReportRoute
+  '/lovable/email/events': typeof LovableEmailEventsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/parkrun-events/region/$region': typeof ParkrunEventsRegionRegionRoute
   '/running-clubs/$slug/claim': typeof RunningClubsSlugClaimRoute
@@ -837,6 +844,7 @@ export interface FileRoutesByTo {
   '/api/public/track-search': typeof ApiPublicTrackSearchRoute
   '/api/public/track-search-click': typeof ApiPublicTrackSearchClickRoute
   '/events/$slug/report': typeof EventsSlugReportRoute
+  '/lovable/email/events': typeof LovableEmailEventsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/parkrun-events/region/$region': typeof ParkrunEventsRegionRegionRoute
   '/running-clubs/$slug/claim': typeof RunningClubsSlugClaimRoute
@@ -942,6 +950,7 @@ export interface FileRoutesById {
   '/api/public/track-search': typeof ApiPublicTrackSearchRoute
   '/api/public/track-search-click': typeof ApiPublicTrackSearchClickRoute
   '/events_/$slug/report': typeof EventsSlugReportRoute
+  '/lovable/email/events': typeof LovableEmailEventsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/parkrun-events/region/$region': typeof ParkrunEventsRegionRegionRoute
   '/running-clubs/$slug/claim': typeof RunningClubsSlugClaimRoute
@@ -1047,6 +1056,7 @@ export interface FileRouteTypes {
     | '/api/public/track-search'
     | '/api/public/track-search-click'
     | '/events/$slug/report'
+    | '/lovable/email/events'
     | '/lovable/email/suppression'
     | '/parkrun-events/region/$region'
     | '/running-clubs/$slug/claim'
@@ -1150,6 +1160,7 @@ export interface FileRouteTypes {
     | '/api/public/track-search'
     | '/api/public/track-search-click'
     | '/events/$slug/report'
+    | '/lovable/email/events'
     | '/lovable/email/suppression'
     | '/parkrun-events/region/$region'
     | '/running-clubs/$slug/claim'
@@ -1254,6 +1265,7 @@ export interface FileRouteTypes {
     | '/api/public/track-search'
     | '/api/public/track-search-click'
     | '/events_/$slug/report'
+    | '/lovable/email/events'
     | '/lovable/email/suppression'
     | '/parkrun-events/region/$region'
     | '/running-clubs/$slug/claim'
@@ -1347,6 +1359,7 @@ export interface RootRouteChildren {
   ApiPublicTrackSearchRoute: typeof ApiPublicTrackSearchRoute
   ApiPublicTrackSearchClickRoute: typeof ApiPublicTrackSearchClickRoute
   EventsSlugReportRoute: typeof EventsSlugReportRoute
+  LovableEmailEventsRoute: typeof LovableEmailEventsRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ParkrunEventsRegionRegionRoute: typeof ParkrunEventsRegionRegionRoute
   RunningEventsSlugDistanceRoute: typeof RunningEventsSlugDistanceRoute
@@ -1775,6 +1788,13 @@ declare module '@tanstack/react-router' {
       path: '/lovable/email/suppression'
       fullPath: '/lovable/email/suppression'
       preLoaderRoute: typeof LovableEmailSuppressionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/events': {
+      id: '/lovable/email/events'
+      path: '/lovable/email/events'
+      fullPath: '/lovable/email/events'
+      preLoaderRoute: typeof LovableEmailEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/events_/$slug/report': {
@@ -2227,6 +2247,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicTrackSearchRoute: ApiPublicTrackSearchRoute,
   ApiPublicTrackSearchClickRoute: ApiPublicTrackSearchClickRoute,
   EventsSlugReportRoute: EventsSlugReportRoute,
+  LovableEmailEventsRoute: LovableEmailEventsRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ParkrunEventsRegionRegionRoute: ParkrunEventsRegionRegionRoute,
   RunningEventsSlugDistanceRoute: RunningEventsSlugDistanceRoute,
