@@ -19,6 +19,5 @@ export default defineConfig({
   },
   vite: {
     plugins: [mcpPlugin()],
-    },
   },
 });
