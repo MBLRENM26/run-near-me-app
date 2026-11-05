@@ -7,7 +7,7 @@
 - [ ] 3. Google long game, race by race: course maps (agent data), confirmed 2027 editions, verified organisers
 
 ## Other open work
-- [ ] Email update: preserve feature templates and reminder containment, convert sends and outcome receipts, verify without sending to subscribers; publication remains Mike's decision.
+- [x] Email update prepared 5 Nov: feature templates preserved, sends and outcome receipts converted, 22 tests passed; previews and unsigned-request rejection verified, reminders return 503. No real email sent; publication remains Mike's decision.
 - [x] Approved stale-edition corrections (24 Oct): Brecons start 8 Jan 2027; York December held as unconfirmed; only Exeter Sunday duplicate redirected, Saturday preserved. Audit, rollback and browser acceptance: docs/renm/RENM-stale-edition-corrections-2026-10-24.md.
 - [x] Archive six untouched September pilot notices through audited rejection; original evidence retained. Ten structured and 27 later supporting notices preserved.
 - [x] Validate uploaded research: 212 evidence rows across 39 races; 73 club matches are plausible candidates, not accepted identities. See docs/renm/RENM-research-staging-preflight-2026-10-19.md.
