@@ -142,6 +142,41 @@ export const researchEnvelope = z
     (b) => new Set(b.observations.map((o) => o.id)).size === b.observations.length,
     "Duplicate observation IDs",
   );
+
+// New intake must be usable without retaining whole page bodies. Keep the
+// historical schema above for immutable evidence/readback, not new submissions.
+export const researchIntakeEnvelope = researchEnvelope.superRefine((body, ctx) => {
+  body.observations.forEach((observation, index) => {
+    if (observation.proposal.kind !== "page_change") return;
+    const path = ["observations", index];
+    if (!observation.proposal.extraction)
+      ctx.addIssue({
+        code: "custom",
+        path: [...path, "proposal", "extraction"],
+        message: "Page research requires structured extraction, including unknowns and issues",
+      });
+    const extraction = observation.proposal.extraction;
+    if (
+      extraction &&
+      ((!extraction.facts.length && !extraction.issues.length) ||
+        extraction.issues.some((issue) => !observation.conflicts.includes(issue)))
+    )
+      ctx.addIssue({
+        code: "custom",
+        path: [...path, "proposal", "extraction", "issues"],
+        message: "Explain empty extractions and retain extraction issues in conflicts",
+      });
+    if (
+      observation.evidence.summary.length > 400 ||
+      /<\/?[a-z][^>]*>/i.test(observation.evidence.summary)
+    )
+      ctx.addIssue({
+        code: "custom",
+        path: [...path, "evidence", "summary"],
+        message: "Use a plain-text summary of at most 400 characters; keep evidence in facts",
+      });
+  });
+});
 export type ResearchObservation = z.infer<typeof observationSchema>;
 export type ResearchSource = z.infer<typeof sourceSchema>;
 export type ResearchRow = Omit<ResearchObservation, "proposal" | "evidence"> & {
