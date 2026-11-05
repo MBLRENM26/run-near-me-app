@@ -90,6 +90,8 @@ import { Route as AdminShellAdminClubsIndexRouteImport } from './routes/_adminSh
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
+import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
+import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicIngestWatchlistRouteImport } from './routes/api/public/ingest/watchlist'
 import { Route as ApiPublicIngestResearchRouteImport } from './routes/api/public/ingest/research'
 import { Route as ApiPublicIngestChangeReportRouteImport } from './routes/api/public/ingest/change-report'
@@ -539,6 +541,16 @@ const LovableEmailQueueProcessRoute =
     path: '/lovable/email/queue/process',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
+  id: '/lovable/email/auth/webhook',
+  path: '/lovable/email/auth/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
+  id: '/lovable/email/auth/preview',
+  path: '/lovable/email/auth/preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicIngestWatchlistRoute =
   ApiPublicIngestWatchlistRouteImport.update({
     id: '/api/public/ingest/watchlist',
@@ -745,6 +757,8 @@ export interface FileRoutesByFullPath {
   '/api/public/ingest/change-report': typeof ApiPublicIngestChangeReportRoute
   '/api/public/ingest/research': typeof ApiPublicIngestResearchRoute
   '/api/public/ingest/watchlist': typeof ApiPublicIngestWatchlistRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
@@ -846,6 +860,8 @@ export interface FileRoutesByTo {
   '/api/public/ingest/change-report': typeof ApiPublicIngestChangeReportRoute
   '/api/public/ingest/research': typeof ApiPublicIngestResearchRoute
   '/api/public/ingest/watchlist': typeof ApiPublicIngestWatchlistRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
@@ -949,6 +965,8 @@ export interface FileRoutesById {
   '/api/public/ingest/change-report': typeof ApiPublicIngestChangeReportRoute
   '/api/public/ingest/research': typeof ApiPublicIngestResearchRoute
   '/api/public/ingest/watchlist': typeof ApiPublicIngestWatchlistRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
@@ -1052,6 +1070,8 @@ export interface FileRouteTypes {
     | '/api/public/ingest/change-report'
     | '/api/public/ingest/research'
     | '/api/public/ingest/watchlist'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
@@ -1153,6 +1173,8 @@ export interface FileRouteTypes {
     | '/api/public/ingest/change-report'
     | '/api/public/ingest/research'
     | '/api/public/ingest/watchlist'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
@@ -1255,6 +1277,8 @@ export interface FileRouteTypes {
     | '/api/public/ingest/change-report'
     | '/api/public/ingest/research'
     | '/api/public/ingest/watchlist'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
@@ -1338,6 +1362,8 @@ export interface RootRouteChildren {
   ApiPublicIngestChangeReportRoute: typeof ApiPublicIngestChangeReportRoute
   ApiPublicIngestResearchRoute: typeof ApiPublicIngestResearchRoute
   ApiPublicIngestWatchlistRoute: typeof ApiPublicIngestWatchlistRoute
+  LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
+  LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
   LovableEmailTransactionalSendRoute: typeof LovableEmailTransactionalSendRoute
@@ -1912,6 +1938,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/email/auth/webhook': {
+      id: '/lovable/email/auth/webhook'
+      path: '/lovable/email/auth/webhook'
+      fullPath: '/lovable/email/auth/webhook'
+      preLoaderRoute: typeof LovableEmailAuthWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/auth/preview': {
+      id: '/lovable/email/auth/preview'
+      path: '/lovable/email/auth/preview'
+      fullPath: '/lovable/email/auth/preview'
+      preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/ingest/watchlist': {
       id: '/api/public/ingest/watchlist'
       path: '/api/public/ingest/watchlist'
@@ -2207,6 +2247,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicIngestChangeReportRoute: ApiPublicIngestChangeReportRoute,
   ApiPublicIngestResearchRoute: ApiPublicIngestResearchRoute,
   ApiPublicIngestWatchlistRoute: ApiPublicIngestWatchlistRoute,
+  LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
+  LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
   LovableEmailTransactionalSendRoute: LovableEmailTransactionalSendRoute,
