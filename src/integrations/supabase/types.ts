@@ -2394,6 +2394,10 @@ export type Database = {
         Args: { _link_id: string; _note?: string; _reviewer_identity?: string }
         Returns: Json
       }
+      admin_set_event_lifecycle: {
+        Args: { _clear_duplicate?: boolean; _id: string; _status: string }
+        Returns: string
+      }
       approve_research_club_identity: {
         Args: {
           _club_id: string

@@ -30,6 +30,14 @@ describe("resolveGroup (rule v2)", () => {
     const r = resolveGroup([g("old", "09:00", "2026-10-19"), g("new", "09:30", "2026-10-20", { caveats: ["Differs from an earlier research batch"] })]);
     expect(r).toEqual({ accept: ["new"], supersede: ["old"] });
   });
+  it("newer pass wins when import quarantined it only for differing", () => {
+    const r = resolveGroup([g("old", "09:00", "2026-10-19"), g("new", "09:30", "2026-10-20", { match_state: "quarantined", caveats: ["Differs from an earlier research batch"] })]);
+    expect(r).toEqual({ accept: ["new"], supersede: ["old"] });
+  });
+  it("a differing newer value with another problem still comes to Mike", () => {
+    const r = resolveGroup([g("old", "09:00", "2026-10-19"), g("new", "09:30", "2026-10-20", { match_state: "quarantined", caveats: ["Differs from an earlier research batch", "Contradictory assertions"] })]);
+    expect(r.accept).toEqual([]);
+  });
   it("a newer value for the wrong year does not win", () => {
     const r = resolveGroup([g("old", "09:00", "2026-10-19"), g("new", "09:30", "2026-10-20", { caveats: ["Slug year differs from stored edition"] })]);
     expect(r.accept).toEqual([]);

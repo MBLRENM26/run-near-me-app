@@ -490,11 +490,13 @@ export const setAdminEventStatus = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     await requireAdminOrThrow();
-    const { error } = await supabaseAdmin
-      .from("events")
-      .update({ status: data.status })
-      .eq("id", data.id);
+    // Goes through the audited lifecycle function so the reviewed-lifecycle guard
+    // does not silently drop deliberate admin changes (e.g. restoring a duplicate).
+    const { data: applied, error } = await (
+      supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient
+    ).rpc("admin_set_event_lifecycle", { _id: data.id, _status: data.status, _clear_duplicate: false });
     if (error) throw new Error(error.message);
+    if (applied !== data.status) throw new Error(`Status was not changed (still ${applied})`);
     await supabaseAdmin.from("event_edits").insert({
       event_id: data.id,
       changes: { status: { to: data.status } } as never,
@@ -889,11 +891,11 @@ export const unmergeDuplicateEvent = createServerFn({ method: "POST" })
       throw new Error("Only DUPLICATE rows can be unmerged");
     }
     const previousSurvivor = row.duplicate_of;
-    const { error: upErr } = await supabaseAdmin
-      .from("events")
-      .update({ status: "ACTIVE", duplicate_of: null })
-      .eq("id", data.id);
+    const { data: applied, error: upErr } = await (
+      supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient
+    ).rpc("admin_set_event_lifecycle", { _id: data.id, _status: "ACTIVE", _clear_duplicate: true });
     if (upErr) throw new Error(upErr.message);
+    if (applied !== "ACTIVE") throw new Error("Unmerge did not take effect");
     await supabaseAdmin.from("event_edits").insert({
       event_id: data.id,
       changes: {
