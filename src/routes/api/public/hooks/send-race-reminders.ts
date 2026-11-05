@@ -2,7 +2,6 @@
 // Triggered by pg_cron via pg_net at 09:00 UTC. Auth: x-admin-secret == IMPORT_SECRET.
 
 import { createFileRoute } from "@tanstack/react-router";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { sendRaceEmail } from "@/lib/race-email.server";
 import { formatEventDate } from "@/lib/date";
 import { SITE_URL } from "@/lib/site";
@@ -61,6 +60,7 @@ export const Route = createFileRoute(
         target.setUTCDate(target.getUTCDate() + 7);
         const targetDate = target.toISOString().slice(0, 10);
 
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const supabase: any = supabaseAdmin;
         const { data, error } = await supabase
           .from("email_subscriptions")
@@ -88,7 +88,8 @@ export const Route = createFileRoute(
         let failed = 0;
 
         for (const row of due) {
-          const event = row.events!;
+          const event = row.events;
+          if (!event) continue;
           const dateLabel = formatEventDate({
             date_from: event.date_from,
             date_to: event.date_to,
@@ -113,13 +114,14 @@ export const Route = createFileRoute(
             },
           });
 
-          // Always mark as sent so we don't retry the same row tomorrow,
-          // even when the recipient is suppressed or the queue failed
-          // (the email_send_log captures failures separately).
-          await supabase
-            .from("email_subscriptions")
-            .update({ reminder_sent_at: new Date().toISOString() })
-            .eq("id", row.id);
+          // A receipt is success only after the managed sender confirms dispatch.
+          if (res.ok) {
+            const { error: receiptError } = await supabase
+              .from("email_subscriptions")
+              .update({ reminder_sent_at: new Date().toISOString() })
+              .eq("id", row.id);
+            if (receiptError) console.error("[reminder] receipt failed", { code: receiptError.code, message: receiptError.message });
+          }
 
           if (res.ok) sent++;
           else if (res.reason === "suppressed" || res.reason === "previously_unsubscribed")
