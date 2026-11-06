@@ -1,5 +1,10 @@
 # Roadmap (19 Oct 2026)
 
+## Current priority (agreed 6 Nov 2026)
+- [ ] Evidence-backed coverage audit: Kent first; missing map locations nationwide; stale dates and missing organiser calendars. Prepare corrections before live changes; do not bulk-import held regional research.
+- [ ] Design ongoing automated coverage/freshness checks from the audit: distinguish missing pins, stale editions, broken destinations, source changes and missing races. Reuse existing ingestion/monitoring; public changes and monitor expansion remain separately gated.
+- [ ] Reconcile older backlog entries with current evidence before treating them as unfinished work; recent Plausible/Bing traffic review is complete, but individual snippet/channel experiments need separate verification.
+
 ## Search recovery (agreed 19 Oct, from Plausible weekly report 18 Oct)
 - [x] 1. Bing first: property verified + sitemap submitted 19 Oct (query/traffic data empty until Bing crawls — check back in ~1 week); IndexNow ping on new/changed pages (separate approval)
 - [x] 2a. Month pages: shared month summary + new layout (weekend strip, region/type filters, weekend groups, related links, <3 races = noindex) — built 19 Oct, needs publish
