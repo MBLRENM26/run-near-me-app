@@ -80,6 +80,7 @@ import { Route as AdminShellAdminRecurrenceRouteImport } from './routes/_adminSh
 import { Route as AdminShellAdminOrganiserIdentitiesRouteImport } from './routes/_adminShell.admin.organiser-identities'
 import { Route as AdminShellAdminOrganiserGapRouteImport } from './routes/_adminShell.admin.organiser-gap'
 import { Route as AdminShellAdminFactPreviewRouteImport } from './routes/_adminShell.admin.fact-preview'
+import { Route as AdminShellAdminCoverageRouteImport } from './routes/_adminShell.admin.coverage'
 import { Route as AdminShellAdminClubClaimsRouteImport } from './routes/_adminShell.admin.club-claims'
 import { Route as AdminShellAdminClaimsRouteImport } from './routes/_adminShell.admin.claims'
 import { Route as AdminShellAdminChangeReportsRouteImport } from './routes/_adminShell.admin.change-reports'
@@ -481,6 +482,11 @@ const AdminShellAdminFactPreviewRoute =
     path: '/admin/fact-preview',
     getParentRoute: () => AdminShellRoute,
   } as any)
+const AdminShellAdminCoverageRoute = AdminShellAdminCoverageRouteImport.update({
+  id: '/admin/coverage',
+  path: '/admin/coverage',
+  getParentRoute: () => AdminShellRoute,
+} as any)
 const AdminShellAdminClubClaimsRoute =
   AdminShellAdminClubClaimsRouteImport.update({
     id: '/admin/club-claims',
@@ -706,6 +712,7 @@ export interface FileRoutesByFullPath {
   '/admin/change-reports': typeof AdminShellAdminChangeReportsRoute
   '/admin/claims': typeof AdminShellAdminClaimsRoute
   '/admin/club-claims': typeof AdminShellAdminClubClaimsRoute
+  '/admin/coverage': typeof AdminShellAdminCoverageRoute
   '/admin/fact-preview': typeof AdminShellAdminFactPreviewRoute
   '/admin/organiser-gap': typeof AdminShellAdminOrganiserGapRoute
   '/admin/organiser-identities': typeof AdminShellAdminOrganiserIdentitiesRouteWithChildren
@@ -807,6 +814,7 @@ export interface FileRoutesByTo {
   '/admin/change-reports': typeof AdminShellAdminChangeReportsRoute
   '/admin/claims': typeof AdminShellAdminClaimsRoute
   '/admin/club-claims': typeof AdminShellAdminClubClaimsRoute
+  '/admin/coverage': typeof AdminShellAdminCoverageRoute
   '/admin/fact-preview': typeof AdminShellAdminFactPreviewRoute
   '/admin/organiser-gap': typeof AdminShellAdminOrganiserGapRoute
   '/admin/organiser-identities': typeof AdminShellAdminOrganiserIdentitiesRouteWithChildren
@@ -910,6 +918,7 @@ export interface FileRoutesById {
   '/_adminShell/admin/change-reports': typeof AdminShellAdminChangeReportsRoute
   '/_adminShell/admin/claims': typeof AdminShellAdminClaimsRoute
   '/_adminShell/admin/club-claims': typeof AdminShellAdminClubClaimsRoute
+  '/_adminShell/admin/coverage': typeof AdminShellAdminCoverageRoute
   '/_adminShell/admin/fact-preview': typeof AdminShellAdminFactPreviewRoute
   '/_adminShell/admin/organiser-gap': typeof AdminShellAdminOrganiserGapRoute
   '/_adminShell/admin/organiser-identities': typeof AdminShellAdminOrganiserIdentitiesRouteWithChildren
@@ -1013,6 +1022,7 @@ export interface FileRouteTypes {
     | '/admin/change-reports'
     | '/admin/claims'
     | '/admin/club-claims'
+    | '/admin/coverage'
     | '/admin/fact-preview'
     | '/admin/organiser-gap'
     | '/admin/organiser-identities'
@@ -1114,6 +1124,7 @@ export interface FileRouteTypes {
     | '/admin/change-reports'
     | '/admin/claims'
     | '/admin/club-claims'
+    | '/admin/coverage'
     | '/admin/fact-preview'
     | '/admin/organiser-gap'
     | '/admin/organiser-identities'
@@ -1216,6 +1227,7 @@ export interface FileRouteTypes {
     | '/_adminShell/admin/change-reports'
     | '/_adminShell/admin/claims'
     | '/_adminShell/admin/club-claims'
+    | '/_adminShell/admin/coverage'
     | '/_adminShell/admin/fact-preview'
     | '/_adminShell/admin/organiser-gap'
     | '/_adminShell/admin/organiser-identities'
@@ -1841,6 +1853,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminShellAdminFactPreviewRouteImport
       parentRoute: typeof AdminShellRoute
     }
+    '/_adminShell/admin/coverage': {
+      id: '/_adminShell/admin/coverage'
+      path: '/admin/coverage'
+      fullPath: '/admin/coverage'
+      preLoaderRoute: typeof AdminShellAdminCoverageRouteImport
+      parentRoute: typeof AdminShellRoute
+    }
     '/_adminShell/admin/club-claims': {
       id: '/_adminShell/admin/club-claims'
       path: '/admin/club-claims'
@@ -2066,6 +2085,7 @@ interface AdminShellRouteChildren {
   AdminShellAdminChangeReportsRoute: typeof AdminShellAdminChangeReportsRoute
   AdminShellAdminClaimsRoute: typeof AdminShellAdminClaimsRoute
   AdminShellAdminClubClaimsRoute: typeof AdminShellAdminClubClaimsRoute
+  AdminShellAdminCoverageRoute: typeof AdminShellAdminCoverageRoute
   AdminShellAdminFactPreviewRoute: typeof AdminShellAdminFactPreviewRoute
   AdminShellAdminOrganiserGapRoute: typeof AdminShellAdminOrganiserGapRoute
   AdminShellAdminOrganiserIdentitiesRoute: typeof AdminShellAdminOrganiserIdentitiesRouteWithChildren
@@ -2089,6 +2109,7 @@ const AdminShellRouteChildren: AdminShellRouteChildren = {
   AdminShellAdminChangeReportsRoute: AdminShellAdminChangeReportsRoute,
   AdminShellAdminClaimsRoute: AdminShellAdminClaimsRoute,
   AdminShellAdminClubClaimsRoute: AdminShellAdminClubClaimsRoute,
+  AdminShellAdminCoverageRoute: AdminShellAdminCoverageRoute,
   AdminShellAdminFactPreviewRoute: AdminShellAdminFactPreviewRoute,
   AdminShellAdminOrganiserGapRoute: AdminShellAdminOrganiserGapRoute,
   AdminShellAdminOrganiserIdentitiesRoute:
