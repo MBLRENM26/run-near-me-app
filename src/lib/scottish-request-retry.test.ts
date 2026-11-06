@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, type Mock } from "vitest";
+import { afterEach, describe, expect, it, vi, type Mock } from "vitest";
 import { requestScottishPage } from "./scottish-request-retry";
 
 function setup(fetcher: Mock<typeof fetch>) {
@@ -10,6 +10,18 @@ function setup(fetcher: Mock<typeof fetch>) {
 }
 
 describe("Scottish page retries", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("calls the runtime fetch with its global receiver", async () => {
+    const fetcher = vi.fn(function (this: unknown) {
+      if (this !== globalThis) throw new TypeError("Illegal invocation");
+      return Promise.resolve(new Response('[{"event":"race"}]'));
+    });
+    vi.stubGlobal("fetch", fetcher);
+    await expect(requestScottishPage("https://example.org", {}))
+      .resolves.toEqual([{ event: "race" }]);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
   it("allows 30 seconds per attempt", async () => {
     const deps = setup(vi.fn().mockResolvedValue(new Response("[]")));
     await requestScottishPage("https://example.org", {}, deps);

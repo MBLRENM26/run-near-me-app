@@ -306,6 +306,30 @@ export type Database = {
           },
         ]
       }
+      coverage_reports: {
+        Row: {
+          audit_day: string
+          calendars: Json
+          created_at: string
+          id: string
+          snapshot: Json
+        }
+        Insert: {
+          audit_day: string
+          calendars?: Json
+          created_at?: string
+          id?: string
+          snapshot: Json
+        }
+        Update: {
+          audit_day?: string
+          calendars?: Json
+          created_at?: string
+          id?: string
+          snapshot?: Json
+        }
+        Relationships: []
+      }
       ea_sync_state: {
         Row: {
           chunks: number
@@ -2408,6 +2432,7 @@ export type Database = {
         }
         Returns: string
       }
+      collect_coverage_report: { Args: never; Returns: Json }
       consume_login_rate: {
         Args: { _key_hash: string }
         Returns: {

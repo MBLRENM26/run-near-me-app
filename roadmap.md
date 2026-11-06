@@ -3,9 +3,11 @@
 ## Current priority (agreed 6 Nov 2026)
 - [x] Evidence-backed initial coverage audit: seven official sources / 15 Kent leads, four absent 2027 edition candidates, eight national missing-pin rows, two Kent duplicate clusters and geography/destination corrections. Read-only results and reusable SQL: docs/current/RENM-coverage-audit-2026-11-06.md. No live changes or old regional imports.
 - [x] Design ongoing automated coverage/freshness checks: separate receipt health, national integrity exceptions and Kent calendar discovery, with delta-only private reports and a proposed four-week trial. Design recorded in the audit; no schedule enabled.
-- [ ] Approve/apply bounded coverage correction package: four new Kent editions; Canterbury/Turkey Run reconciliation; Bedgebury county/town and Chatham Christmas Dash destination; evidence-first missing pins. Blocker: separate data-mutation approval and unresolved venue evidence.
-- [ ] Repair Scottish importer 2 Nov illegal-invocation failure, regression-test and verify published run. Blocker: separate app/publish approval; no live writing run used as a test.
-- [ ] Approve ongoing coverage-check implementation and explicit calendar allowlist/trial expiry. Blocker: monitoring expansion/schedule approval; existing expired collector stays disabled.
+- [x] Approved 6 Nov: four Kent editions added, Canterbury/Turkey duplicates audited, Bedgebury/Chatham corrected and Blast venue pinned. Dates/pages/redirects read back; evidence and assertions retained. See docs/current/RENM-coverage-release-2026-11-06.md.
+- [x] Scottish runtime fetch binding repaired; regression tests and real 50-row provider read passed, no database writes. Full published importer acceptance is pending publication/next scheduled run.
+- [x] Private coverage page and daily-idempotent snapshots implemented; four-calendar weekly Kent lead trial, job 316 daily 08:00 UTC, expiry 4 Dec 2026. Real signed-in first report verified; no automatic event edits or old collector revival.
+- [ ] Publish coverage/Scottish/duplicate-fact app changes and verify scheduled coverage receipt plus next Scottish run. Blocker: Mike's publication; schedule points to published app.
+- [ ] Resolve seven remaining future missing pins (six originals plus ellenor). Blocker: confirmed usable venue evidence; no approximate town pins.
 - [ ] Reconcile older backlog entries with current evidence before treating them as unfinished work; recent Plausible/Bing traffic review is complete, but individual snippet/channel experiments need separate verification.
 
 ## Search recovery (agreed 19 Oct, from Plausible weekly report 18 Oct)

@@ -80,6 +80,7 @@ import { Route as AdminShellAdminRecurrenceRouteImport } from './routes/_adminSh
 import { Route as AdminShellAdminOrganiserIdentitiesRouteImport } from './routes/_adminShell.admin.organiser-identities'
 import { Route as AdminShellAdminOrganiserGapRouteImport } from './routes/_adminShell.admin.organiser-gap'
 import { Route as AdminShellAdminFactPreviewRouteImport } from './routes/_adminShell.admin.fact-preview'
+import { Route as AdminShellAdminCoverageRouteImport } from './routes/_adminShell.admin.coverage'
 import { Route as AdminShellAdminClubClaimsRouteImport } from './routes/_adminShell.admin.club-claims'
 import { Route as AdminShellAdminClaimsRouteImport } from './routes/_adminShell.admin.claims'
 import { Route as AdminShellAdminChangeReportsRouteImport } from './routes/_adminShell.admin.change-reports'
@@ -95,6 +96,7 @@ import { Route as ApiPublicIngestChangeReportRouteImport } from './routes/api/pu
 import { Route as ApiPublicHooksSendRaceRemindersRouteImport } from './routes/api/public/hooks/send-race-reminders'
 import { Route as ApiPublicHooksNotifyMissedSubmissionsRouteImport } from './routes/api/public/hooks/notify-missed-submissions'
 import { Route as ApiPublicHooksIndexnowPingRouteImport } from './routes/api/public/hooks/indexnow-ping'
+import { Route as ApiPublicHooksCheckCoverageRouteImport } from './routes/api/public/hooks/check-coverage'
 import { Route as ApiPublicAdminSyncScottishAthleticsClubsRouteImport } from './routes/api/public/admin/sync-scottish-athletics-clubs'
 import { Route as ApiPublicAdminSyncScottishAthleticsRouteImport } from './routes/api/public/admin/sync-scottish-athletics'
 import { Route as ApiPublicAdminSyncEnglandAthleticsRouteImport } from './routes/api/public/admin/sync-england-athletics'
@@ -480,6 +482,11 @@ const AdminShellAdminFactPreviewRoute =
     path: '/admin/fact-preview',
     getParentRoute: () => AdminShellRoute,
   } as any)
+const AdminShellAdminCoverageRoute = AdminShellAdminCoverageRouteImport.update({
+  id: '/admin/coverage',
+  path: '/admin/coverage',
+  getParentRoute: () => AdminShellRoute,
+} as any)
 const AdminShellAdminClubClaimsRoute =
   AdminShellAdminClubClaimsRouteImport.update({
     id: '/admin/club-claims',
@@ -564,6 +571,12 @@ const ApiPublicHooksIndexnowPingRoute =
   ApiPublicHooksIndexnowPingRouteImport.update({
     id: '/api/public/hooks/indexnow-ping',
     path: '/api/public/hooks/indexnow-ping',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksCheckCoverageRoute =
+  ApiPublicHooksCheckCoverageRouteImport.update({
+    id: '/api/public/hooks/check-coverage',
+    path: '/api/public/hooks/check-coverage',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicAdminSyncScottishAthleticsClubsRoute =
@@ -699,6 +712,7 @@ export interface FileRoutesByFullPath {
   '/admin/change-reports': typeof AdminShellAdminChangeReportsRoute
   '/admin/claims': typeof AdminShellAdminClaimsRoute
   '/admin/club-claims': typeof AdminShellAdminClubClaimsRoute
+  '/admin/coverage': typeof AdminShellAdminCoverageRoute
   '/admin/fact-preview': typeof AdminShellAdminFactPreviewRoute
   '/admin/organiser-gap': typeof AdminShellAdminOrganiserGapRoute
   '/admin/organiser-identities': typeof AdminShellAdminOrganiserIdentitiesRouteWithChildren
@@ -730,6 +744,7 @@ export interface FileRoutesByFullPath {
   '/api/public/admin/sync-england-athletics': typeof ApiPublicAdminSyncEnglandAthleticsRoute
   '/api/public/admin/sync-scottish-athletics': typeof ApiPublicAdminSyncScottishAthleticsRoute
   '/api/public/admin/sync-scottish-athletics-clubs': typeof ApiPublicAdminSyncScottishAthleticsClubsRoute
+  '/api/public/hooks/check-coverage': typeof ApiPublicHooksCheckCoverageRoute
   '/api/public/hooks/indexnow-ping': typeof ApiPublicHooksIndexnowPingRoute
   '/api/public/hooks/notify-missed-submissions': typeof ApiPublicHooksNotifyMissedSubmissionsRoute
   '/api/public/hooks/send-race-reminders': typeof ApiPublicHooksSendRaceRemindersRoute
@@ -799,6 +814,7 @@ export interface FileRoutesByTo {
   '/admin/change-reports': typeof AdminShellAdminChangeReportsRoute
   '/admin/claims': typeof AdminShellAdminClaimsRoute
   '/admin/club-claims': typeof AdminShellAdminClubClaimsRoute
+  '/admin/coverage': typeof AdminShellAdminCoverageRoute
   '/admin/fact-preview': typeof AdminShellAdminFactPreviewRoute
   '/admin/organiser-gap': typeof AdminShellAdminOrganiserGapRoute
   '/admin/organiser-identities': typeof AdminShellAdminOrganiserIdentitiesRouteWithChildren
@@ -830,6 +846,7 @@ export interface FileRoutesByTo {
   '/api/public/admin/sync-england-athletics': typeof ApiPublicAdminSyncEnglandAthleticsRoute
   '/api/public/admin/sync-scottish-athletics': typeof ApiPublicAdminSyncScottishAthleticsRoute
   '/api/public/admin/sync-scottish-athletics-clubs': typeof ApiPublicAdminSyncScottishAthleticsClubsRoute
+  '/api/public/hooks/check-coverage': typeof ApiPublicHooksCheckCoverageRoute
   '/api/public/hooks/indexnow-ping': typeof ApiPublicHooksIndexnowPingRoute
   '/api/public/hooks/notify-missed-submissions': typeof ApiPublicHooksNotifyMissedSubmissionsRoute
   '/api/public/hooks/send-race-reminders': typeof ApiPublicHooksSendRaceRemindersRoute
@@ -901,6 +918,7 @@ export interface FileRoutesById {
   '/_adminShell/admin/change-reports': typeof AdminShellAdminChangeReportsRoute
   '/_adminShell/admin/claims': typeof AdminShellAdminClaimsRoute
   '/_adminShell/admin/club-claims': typeof AdminShellAdminClubClaimsRoute
+  '/_adminShell/admin/coverage': typeof AdminShellAdminCoverageRoute
   '/_adminShell/admin/fact-preview': typeof AdminShellAdminFactPreviewRoute
   '/_adminShell/admin/organiser-gap': typeof AdminShellAdminOrganiserGapRoute
   '/_adminShell/admin/organiser-identities': typeof AdminShellAdminOrganiserIdentitiesRouteWithChildren
@@ -932,6 +950,7 @@ export interface FileRoutesById {
   '/api/public/admin/sync-england-athletics': typeof ApiPublicAdminSyncEnglandAthleticsRoute
   '/api/public/admin/sync-scottish-athletics': typeof ApiPublicAdminSyncScottishAthleticsRoute
   '/api/public/admin/sync-scottish-athletics-clubs': typeof ApiPublicAdminSyncScottishAthleticsClubsRoute
+  '/api/public/hooks/check-coverage': typeof ApiPublicHooksCheckCoverageRoute
   '/api/public/hooks/indexnow-ping': typeof ApiPublicHooksIndexnowPingRoute
   '/api/public/hooks/notify-missed-submissions': typeof ApiPublicHooksNotifyMissedSubmissionsRoute
   '/api/public/hooks/send-race-reminders': typeof ApiPublicHooksSendRaceRemindersRoute
@@ -1003,6 +1022,7 @@ export interface FileRouteTypes {
     | '/admin/change-reports'
     | '/admin/claims'
     | '/admin/club-claims'
+    | '/admin/coverage'
     | '/admin/fact-preview'
     | '/admin/organiser-gap'
     | '/admin/organiser-identities'
@@ -1034,6 +1054,7 @@ export interface FileRouteTypes {
     | '/api/public/admin/sync-england-athletics'
     | '/api/public/admin/sync-scottish-athletics'
     | '/api/public/admin/sync-scottish-athletics-clubs'
+    | '/api/public/hooks/check-coverage'
     | '/api/public/hooks/indexnow-ping'
     | '/api/public/hooks/notify-missed-submissions'
     | '/api/public/hooks/send-race-reminders'
@@ -1103,6 +1124,7 @@ export interface FileRouteTypes {
     | '/admin/change-reports'
     | '/admin/claims'
     | '/admin/club-claims'
+    | '/admin/coverage'
     | '/admin/fact-preview'
     | '/admin/organiser-gap'
     | '/admin/organiser-identities'
@@ -1134,6 +1156,7 @@ export interface FileRouteTypes {
     | '/api/public/admin/sync-england-athletics'
     | '/api/public/admin/sync-scottish-athletics'
     | '/api/public/admin/sync-scottish-athletics-clubs'
+    | '/api/public/hooks/check-coverage'
     | '/api/public/hooks/indexnow-ping'
     | '/api/public/hooks/notify-missed-submissions'
     | '/api/public/hooks/send-race-reminders'
@@ -1204,6 +1227,7 @@ export interface FileRouteTypes {
     | '/_adminShell/admin/change-reports'
     | '/_adminShell/admin/claims'
     | '/_adminShell/admin/club-claims'
+    | '/_adminShell/admin/coverage'
     | '/_adminShell/admin/fact-preview'
     | '/_adminShell/admin/organiser-gap'
     | '/_adminShell/admin/organiser-identities'
@@ -1235,6 +1259,7 @@ export interface FileRouteTypes {
     | '/api/public/admin/sync-england-athletics'
     | '/api/public/admin/sync-scottish-athletics'
     | '/api/public/admin/sync-scottish-athletics-clubs'
+    | '/api/public/hooks/check-coverage'
     | '/api/public/hooks/indexnow-ping'
     | '/api/public/hooks/notify-missed-submissions'
     | '/api/public/hooks/send-race-reminders'
@@ -1317,6 +1342,7 @@ export interface RootRouteChildren {
   ApiPublicAdminSyncEnglandAthleticsRoute: typeof ApiPublicAdminSyncEnglandAthleticsRoute
   ApiPublicAdminSyncScottishAthleticsRoute: typeof ApiPublicAdminSyncScottishAthleticsRoute
   ApiPublicAdminSyncScottishAthleticsClubsRoute: typeof ApiPublicAdminSyncScottishAthleticsClubsRoute
+  ApiPublicHooksCheckCoverageRoute: typeof ApiPublicHooksCheckCoverageRoute
   ApiPublicHooksIndexnowPingRoute: typeof ApiPublicHooksIndexnowPingRoute
   ApiPublicHooksNotifyMissedSubmissionsRoute: typeof ApiPublicHooksNotifyMissedSubmissionsRoute
   ApiPublicHooksSendRaceRemindersRoute: typeof ApiPublicHooksSendRaceRemindersRoute
@@ -1827,6 +1853,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminShellAdminFactPreviewRouteImport
       parentRoute: typeof AdminShellRoute
     }
+    '/_adminShell/admin/coverage': {
+      id: '/_adminShell/admin/coverage'
+      path: '/admin/coverage'
+      fullPath: '/admin/coverage'
+      preLoaderRoute: typeof AdminShellAdminCoverageRouteImport
+      parentRoute: typeof AdminShellRoute
+    }
     '/_adminShell/admin/club-claims': {
       id: '/_adminShell/admin/club-claims'
       path: '/admin/club-claims'
@@ -1930,6 +1963,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/indexnow-ping'
       fullPath: '/api/public/hooks/indexnow-ping'
       preLoaderRoute: typeof ApiPublicHooksIndexnowPingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/check-coverage': {
+      id: '/api/public/hooks/check-coverage'
+      path: '/api/public/hooks/check-coverage'
+      fullPath: '/api/public/hooks/check-coverage'
+      preLoaderRoute: typeof ApiPublicHooksCheckCoverageRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/admin/sync-scottish-athletics-clubs': {
@@ -2045,6 +2085,7 @@ interface AdminShellRouteChildren {
   AdminShellAdminChangeReportsRoute: typeof AdminShellAdminChangeReportsRoute
   AdminShellAdminClaimsRoute: typeof AdminShellAdminClaimsRoute
   AdminShellAdminClubClaimsRoute: typeof AdminShellAdminClubClaimsRoute
+  AdminShellAdminCoverageRoute: typeof AdminShellAdminCoverageRoute
   AdminShellAdminFactPreviewRoute: typeof AdminShellAdminFactPreviewRoute
   AdminShellAdminOrganiserGapRoute: typeof AdminShellAdminOrganiserGapRoute
   AdminShellAdminOrganiserIdentitiesRoute: typeof AdminShellAdminOrganiserIdentitiesRouteWithChildren
@@ -2068,6 +2109,7 @@ const AdminShellRouteChildren: AdminShellRouteChildren = {
   AdminShellAdminChangeReportsRoute: AdminShellAdminChangeReportsRoute,
   AdminShellAdminClaimsRoute: AdminShellAdminClaimsRoute,
   AdminShellAdminClubClaimsRoute: AdminShellAdminClubClaimsRoute,
+  AdminShellAdminCoverageRoute: AdminShellAdminCoverageRoute,
   AdminShellAdminFactPreviewRoute: AdminShellAdminFactPreviewRoute,
   AdminShellAdminOrganiserGapRoute: AdminShellAdminOrganiserGapRoute,
   AdminShellAdminOrganiserIdentitiesRoute:
@@ -2177,6 +2219,7 @@ const rootRouteChildren: RootRouteChildren = {
     ApiPublicAdminSyncScottishAthleticsRoute,
   ApiPublicAdminSyncScottishAthleticsClubsRoute:
     ApiPublicAdminSyncScottishAthleticsClubsRoute,
+  ApiPublicHooksCheckCoverageRoute: ApiPublicHooksCheckCoverageRoute,
   ApiPublicHooksIndexnowPingRoute: ApiPublicHooksIndexnowPingRoute,
   ApiPublicHooksNotifyMissedSubmissionsRoute:
     ApiPublicHooksNotifyMissedSubmissionsRoute,
