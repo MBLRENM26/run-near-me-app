@@ -55,8 +55,8 @@ function AdminLayout() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
-        <div className="mx-auto max-w-6xl px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-6">
+        <div className="mx-auto max-w-6xl px-4 py-3 flex items-start justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3 min-w-0">
             <Link to="/" className="text-sm font-semibold text-foreground hover:text-primary">
               Running Events Near Me
             </Link>
@@ -99,6 +99,7 @@ function AdminLayout() {
             >
               Sync runs
             </Link>
+            <Link to="/admin/coverage" className="text-sm font-medium text-foreground hover:text-primary">Coverage checks</Link>
             <Link
               to="/admin/source-research"
               className="text-sm font-medium text-foreground hover:text-primary"

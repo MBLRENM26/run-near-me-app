@@ -1298,10 +1298,16 @@ export const getEventPageData = createServerFn({ method: "GET" })
     // isPublicRaceFact). Provenance (source_url, evidence quotes) stays in
     // the private research tables.
     const raceFacts: EventPageData["raceFacts"] = { facts: [], lastChecked: "" };
+    // Reviewed duplicate aliases are the same dated occurrence. Keep their
+    // append-only evidence intact while resolving accepted facts on the survivor.
+    const { data: factAliases } = await supabaseAdmin.from("events")
+      .select("slug").eq("status", "DUPLICATE").eq("duplicate_of", event.id)
+      .eq("sort_date", event.sort_date ?? "0001-01-01");
+    const factSlugs = [event.slug, ...(factAliases ?? []).flatMap((r) => r.slug ? [r.slug] : [])];
     const { data: factRows, error: factsErr } = await supabaseAdmin
       .from("race_research_assertions")
       .select("id, field, raw_value, checked_at")
-      .eq("slug", event.slug);
+      .in("slug", factSlugs);
     if (!factsErr && factRows?.length) {
       const { data: factReviews } = await supabaseAdmin
         .from("race_research_fact_reviews")
@@ -1312,7 +1318,9 @@ export const getEventPageData = createServerFn({ method: "GET" })
         .limit(10000);
       const latestFactReview = new Map<string, string>();
       for (const r of factReviews ?? []) latestFactReview.set(r.assertion_id as string, r.action as string);
-      for (const r of factRows) {
+      const { latestAliasFacts } = await import("./coverage-monitor");
+      const acceptedRows = factRows.filter((r) => ["accept", "auto_accept"].includes(latestFactReview.get(r.id as string) ?? ""));
+      for (const r of latestAliasFacts(acceptedRows as { id: string; field: string; raw_value: string; checked_at: string }[])) {
         const action = latestFactReview.get(r.id as string);
         if (action !== "accept" && action !== "auto_accept") continue;
         if (!isPublicRaceFact(r.field as string)) continue;

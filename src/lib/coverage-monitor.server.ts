@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { boundedResearchBody } from "./source-research-auth.server";
+import robotsParser from "robots-parser";
 import { calendarDelta, COVERAGE_CALENDARS, extractCalendarLinks, trialActive, type CalendarLink } from "./coverage-monitor";
 
 type CalendarReceipt = {
@@ -49,8 +50,8 @@ export async function runCoverageCheck() {
       // Fail closed when robots is unavailable or forbids this collector.
       const robots = await globalThis.fetch(new URL("/robots.txt", source.url), { redirect: "error", signal: AbortSignal.timeout(10_000) });
       if (!robots.ok) throw new Error("Robots permission could not be checked");
-      const policy = await robots.text();
-      if (/Disallow:\s*\/(?:\s|$)/i.test(policy)) throw new Error("Robots restriction requires review");
+      const policy = await boundedResearchBody(new Request("https://local.invalid", { method: "POST", body: robots.body, duplex: "half" } as RequestInit), 100_000);
+      if (robotsParser(new URL("/robots.txt", source.url).href, policy).isAllowed(source.url, "RENM-Coverage") !== true) throw new Error("Robots restriction requires review");
       const html = await fetchCalendar(source.url);
       const links = extractCalendarLinks(html, source.url);
       receipts.push({ label: source.label, url: source.url, checkedAt: now.toISOString(), status: links.length ? "checked" : "No readable event links; manual check needed", links, leads: calendarDelta(links, knownUrls, old?.links.map((l) => l.url) ?? []) });

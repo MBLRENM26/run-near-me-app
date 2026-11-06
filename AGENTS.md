@@ -7,3 +7,5 @@
 - App email feature helpers call the managed template sender through an append-only receipt adapter; retained legacy email tables are audit-only, never suppression gates, so delivery remains platform-owned and notification failure cannot block the triggering feature.
 
 - Research monitoring keeps the raw backlog count and uses the separately versioned verified-support workload only when a new worker policy explicitly opts in; signed v2 controls bind an exact source set and fail closed on incomplete controls. See docs/renm/RENM-monitor-operations-2026-11-05.md.
+- Coverage reports are private, daily-idempotent snapshots plus weekly allowlisted calendar leads; never project leads into event facts, and expire the approved trial rather than silently expanding the old monitor.
+- Public accepted race details include same-date reviewed duplicate aliases, selecting the newest accepted field without moving or rewriting append-only evidence; redirects must not discard accepted facts.
