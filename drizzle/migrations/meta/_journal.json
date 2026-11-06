@@ -36,6 +36,13 @@
       "when": 1793906314391,
       "tag": "0004_research_monitor_controls",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794003253702,
+      "tag": "0005_private_coverage_reports",
+      "breakpoints": true
     }
   ]
 }
