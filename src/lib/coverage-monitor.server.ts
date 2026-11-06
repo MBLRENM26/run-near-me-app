@@ -1,7 +1,7 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { boundedResearchBody } from "./source-research-auth.server";
 import robotsParser from "robots-parser";
-import { calendarDelta, COVERAGE_CALENDARS, extractCalendarLinks, trialActive, type CalendarLink } from "./coverage-monitor";
+import { calendarDelta, COVERAGE_CALENDARS, extractCalendarLinks, kentCalendarLead, trialActive, type CalendarLink } from "./coverage-monitor";
 
 type CalendarReceipt = {
   label: string; url: string; checkedAt: string; status: string;
@@ -10,10 +10,15 @@ type CalendarReceipt = {
 
 async function fetchCalendar(url: string): Promise<string> {
   // No arbitrary URL, redirects, script execution, credentials or forms.
-  const response = await globalThis.fetch(url, {
+  let response = await globalThis.fetch(url, {
     headers: { "User-Agent": "RENM-Coverage/1.0 (+https://runningeventsnearme.com/contact)" },
-    redirect: "error", signal: AbortSignal.timeout(20_000),
+    redirect: "manual", signal: AbortSignal.timeout(20_000),
   });
+  if (response.status >= 300 && response.status < 400) {
+    const next = new URL(response.headers.get("location") ?? "", url);
+    if (url !== "https://www.nice-work.org.uk/races" || next.href !== "https://www.nice-work.org.uk/calendars/sport-events") throw new Error("Calendar redirect requires review");
+    response = await globalThis.fetch(next, { redirect: "error", signal: AbortSignal.timeout(20_000) });
+  }
   if (!response.ok) throw new Error(`Website returned ${response.status}`);
   if (!response.headers.get("content-type")?.includes("text/html")) throw new Error("Website did not return HTML");
   return boundedResearchBody(new Request("https://local.invalid", { method: "POST", body: response.body, duplex: "half" } as RequestInit), 1_000_000);
@@ -53,7 +58,7 @@ export async function runCoverageCheck() {
       const policy = await boundedResearchBody(new Request("https://local.invalid", { method: "POST", body: robots.body, duplex: "half" } as RequestInit), 100_000);
       if (robotsParser(new URL("/robots.txt", source.url).href, policy).isAllowed(source.url, "RENM-Coverage") !== true) throw new Error("Robots restriction requires review");
       const html = await fetchCalendar(source.url);
-      const links = extractCalendarLinks(html, source.url);
+      const links = extractCalendarLinks(html, source.url).filter(kentCalendarLead);
       receipts.push({ label: source.label, url: source.url, checkedAt: now.toISOString(), status: links.length ? "checked" : "No readable event links; manual check needed", links, leads: calendarDelta(links, knownUrls, old?.links.map((l) => l.url) ?? []) });
     } catch (e) {
       receipts.push({ label: source.label, url: source.url, checkedAt: now.toISOString(), status: e instanceof Error ? e.message : "Website unavailable", links: [], leads: [] });

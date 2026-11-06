@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calendarDelta, COVERAGE_CALENDARS, extractCalendarLinks, latestAliasFacts, trialActive } from "./coverage-monitor";
+import { calendarDelta, COVERAGE_CALENDARS, extractCalendarLinks, kentCalendarLead, latestAliasFacts, trialActive } from "./coverage-monitor";
 
 describe("approved coverage monitoring boundaries", () => {
   it("expires the four-week trial on 4 December 2026", () => {
@@ -25,5 +25,10 @@ describe("approved coverage monitoring boundaries", () => {
       { id: "3", field: "surface", raw_value: "Trail", checked_at: "2026-10-19" },
     ];
     expect(latestAliasFacts(rows).map((r) => r.raw_value)).toEqual(["New", "Trail"]);
+  });
+  it("keeps Kent calendar leads bounded rather than adding nationwide or overseas races", () => {
+    expect(kentCalendarLead({ title: "Dartford Half", url: "https://www.runthrough.co.uk/event/dartford-half" })).toBe(true);
+    expect(kentCalendarLead({ title: "San Francisco Half", url: "https://www.runthrough.co.uk/event/san-francisco-half" })).toBe(false);
+    expect(kentCalendarLead({ title: "Manchester 10K", url: "https://www.runthrough.co.uk/event/manchester" })).toBe(false);
   });
 });

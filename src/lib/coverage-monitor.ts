@@ -20,6 +20,9 @@ export function canonicalCoverageUrl(value: string): string {
 }
 
 export type CalendarLink = { url: string; title: string };
+export function kentCalendarLead(link: CalendarLink): boolean {
+  return /\b(kent|medway|dartford|gravesend|ellenor|chatham|swanley|ashford|woodchurch|bedgebury|tonbridge|canterbury|lydd|ramsgate|margate|thanet|folkestone|deal|maidstone|bewl|paddock wood|new ash green|coastbuster)\b/i.test(`${link.title} ${new URL(link.url).pathname.replace(/-/g, " ")}`);
+}
 
 /** Parse only bounded same-host event links; never execute HTML or retain it. */
 export function extractCalendarLinks(html: string, calendarUrl: string): CalendarLink[] {
@@ -46,7 +49,12 @@ export function extractCalendarLinks(html: string, calendarUrl: string): Calenda
       if ((name === "script" || name === "style") && ignoredDepth) ignoredDepth--;
       if (name !== "a" || !current) return;
       const title = current.title.replace(/\s+/g, " ").trim().slice(0, 180);
-      if (title && links.size < 500) links.set(canonicalCoverageUrl(current.url), { url: current.url, title });
+      const key = canonicalCoverageUrl(current.url);
+      const old = links.get(key);
+      if (links.size < 500 && (!old || (!/^(View Info|Enter Now|View Event)$/i.test(title) && title))) {
+        const fallback = new URL(current.url).pathname.split("/").pop()?.replace(/-/g, " ") ?? "Event";
+        links.set(key, { url: current.url, title: title && !/^(View Info|Enter Now|View Event)$/i.test(title) ? title : fallback });
+      }
       current = null;
     },
   });
