@@ -16,7 +16,7 @@ export async function requestScottishPage(
     sleep: (ms: number) => Promise<void>;
     timeout: (ms: number) => AbortSignal;
   } = {
-    fetch: globalThis.fetch,
+    fetch: (input, init) => globalThis.fetch(input, init),
     sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
     timeout: (ms) => AbortSignal.timeout(ms),
   },
