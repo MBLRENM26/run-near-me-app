@@ -3,9 +3,11 @@
 ## Current priority (agreed 6 Nov 2026)
 - [x] Evidence-backed initial coverage audit: seven official sources / 15 Kent leads, four absent 2027 edition candidates, eight national missing-pin rows, two Kent duplicate clusters and geography/destination corrections. Read-only results and reusable SQL: docs/current/RENM-coverage-audit-2026-11-06.md. No live changes or old regional imports.
 - [x] Design ongoing automated coverage/freshness checks: separate receipt health, national integrity exceptions and Kent calendar discovery, with delta-only private reports and a proposed four-week trial. Design recorded in the audit; no schedule enabled.
-- [ ] Approved 6 Nov: apply four Kent editions, duplicate/geography/destination corrections and evidence-first pins; leave unverified locations unresolved.
-- [ ] Approved 6 Nov: repair Scottish importer runtime fetch binding; regression-test and verify without using a writing run as a test.
-- [ ] Approved 6 Nov: implement private ongoing integrity reports and four-calendar Kent trial, daily receipt checks/weekly calendar checks, expiry 4 Dec 2026; no automatic event edits or old collector revival.
+- [x] Approved 6 Nov: four Kent editions added, Canterbury/Turkey duplicates audited, Bedgebury/Chatham corrected and Blast venue pinned. Dates/pages/redirects read back; evidence and assertions retained. See docs/current/RENM-coverage-release-2026-11-06.md.
+- [x] Scottish runtime fetch binding repaired; regression tests and real 50-row provider read passed, no database writes. Full published importer acceptance is pending publication/next scheduled run.
+- [x] Private coverage page and daily-idempotent snapshots implemented; four-calendar weekly Kent lead trial, job 316 daily 08:00 UTC, expiry 4 Dec 2026. Real signed-in first report verified; no automatic event edits or old collector revival.
+- [ ] Publish coverage/Scottish/duplicate-fact app changes and verify scheduled coverage receipt plus next Scottish run. Blocker: Mike's publication; schedule points to published app.
+- [ ] Resolve seven remaining future missing pins (six originals plus ellenor). Blocker: confirmed usable venue evidence; no approximate town pins.
 - [ ] Reconcile older backlog entries with current evidence before treating them as unfinished work; recent Plausible/Bing traffic review is complete, but individual snippet/channel experiments need separate verification.
 
 ## Search recovery (agreed 19 Oct, from Plausible weekly report 18 Oct)
