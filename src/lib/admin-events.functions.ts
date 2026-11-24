@@ -259,8 +259,12 @@ export const listAdminEvents = createServerFn({ method: "POST" })
       );
 
     if (data.q) {
-      const like = `%${data.q.replace(/[%_]/g, "")}%`;
-      query = query.or(`name.ilike.${like},slug.ilike.${like},town.ilike.${like}`);
+      const { sanitizeAdminSearch } = await import("@/lib/admin-security");
+      const term = sanitizeAdminSearch(data.q);
+      if (term) {
+        const like = `%${term}%`;
+        query = query.or(`name.ilike.${like},slug.ilike.${like},town.ilike.${like}`);
+      }
     }
     if (data.region) query = query.eq("region", data.region);
     if (data.status && data.status !== "ANY")

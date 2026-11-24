@@ -41,6 +41,24 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_session_state: {
+        Row: {
+          id: number
+          not_before: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          not_before?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          not_before?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       club_claims: {
         Row: {
           admin_note: string | null

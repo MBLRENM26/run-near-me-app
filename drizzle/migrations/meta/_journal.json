@@ -43,6 +43,13 @@
       "when": 1794003253702,
       "tag": "0005_private_coverage_reports",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795510623830,
+      "tag": "0006_harden_admin_session_and_view",
+      "breakpoints": true
     }
   ]
 }

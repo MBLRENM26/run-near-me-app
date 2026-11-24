@@ -10,6 +10,13 @@
 - [ ] Resolve seven remaining future missing pins (six originals plus ellenor). Blocker: confirmed usable venue evidence; no approximate town pins.
 - [ ] Reconcile older backlog entries with current evidence before treating them as unfinished work; recent Plausible/Bing traffic review is complete, but individual snippet/channel experiments need separate verification.
 
+## Project review 24 Nov 2026 (docs/current/RENM-project-review-2026-11-24.md)
+- [x] Warning fixes: admin search escaping, sign-out revokes sessions server-side, public view runs as caller, linked-record indexes.
+- [ ] Low-maintenance mode (2–4 h/week, data correctness only) until the January gate.
+- [ ] January 2027 gate: continue/narrow/stop on search visits (~1,100/mo now, target ~2,000), race click-throughs (~400/mo) and one real organiser/club conversation.
+- [ ] January gate: widget / calendar-feed pilot (embeddable club/race widget first, calendar feed second); no full pivot.
+- Parked to January: enrichment slices, organiser TBC review, Scottish club sites, 233 hidden records, month-summary reuse, course maps, small-engine checks, homelab checker. Snippet test and search check-in closed as superseded.
+
 ## Search recovery (agreed 19 Oct, from Plausible weekly report 18 Oct)
 - [x] 1. Bing first: property verified + sitemap submitted 19 Oct (query/traffic data empty until Bing crawls — check back in ~1 week); IndexNow ping on new/changed pages (separate approval)
 - [x] 2a. Month pages: shared month summary + new layout (weekend strip, region/type filters, weekend groups, related links, <3 races = noindex) — built 19 Oct, needs publish
@@ -25,7 +32,7 @@
 - [x] Add monthly host-club links from existing accepted verified relationships — tested and preview-checked (24 clubs in Nov 2026); needs publish.
 - [x] Scottish Athletics import (approved 26 Oct): three bounded page retries with 30-second timeouts; existing active Monday job moved to 05:30 UTC and read back. Retry code requires publish; no maintenance-window cause asserted.
 - [x] Publish pending changes — published 21 Oct: race facts box on live event pages, month-page layout, host-club links, IndexNow daily ping verified live
-- [ ] Review flagged older security-definer view
+- [x] Review flagged older security-definer view (now security_invoker, 24 Nov)
 - [ ] Homelab checker script — Mike's homelab; needs CHANGE_FEED_SECRET
 - [ ] Stage enrichment-agent results (dead sites, club-hosted races, verified organisers, course maps) slice by slice
 - [ ] Organiser TBC/Unknown review; Scottish club websites; 233 hidden records

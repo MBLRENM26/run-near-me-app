@@ -1,5 +1,14 @@
 import { setCookie, deleteCookie, getCookie, getRequestUrl } from "@tanstack/react-start/server";
 import { createHmac, timingSafeEqual } from "crypto";
+import { isAdminPayloadValid, parseAdminPayload } from "@/lib/admin-security";
+
+async function loadNotBeforeMs(): Promise<number | null> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin
+    .from("admin_session_state").select("not_before").eq("id", 1).maybeSingle();
+  if (error || !data) return null;
+  return new Date(data.not_before).getTime();
+}
 
 const COOKIE_NAME = "admin_session";
 const MAX_AGE_SECONDS = 60 * 60 * 24 * 14; // 14 days
@@ -23,7 +32,7 @@ async function sign(payload: string): Promise<string> {
 
 export async function issueAdminSession(): Promise<void> {
   const expMs = Date.now() + MAX_AGE_SECONDS * 1000;
-  const payload = String(expMs);
+  const payload = `${Date.now()}-${expMs}`;
   const sig = await sign(payload);
   const requestUrl = getRequestUrl();
   const secure = requestUrl.protocol === "https:";
@@ -37,6 +46,11 @@ export async function issueAdminSession(): Promise<void> {
 }
 
 export async function clearAdminSession(): Promise<void> {
+  // Revoke every session issued up to now, server-side.
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  await supabaseAdmin.from("admin_session_state")
+    .update({ not_before: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .eq("id", 1);
   const requestUrl = getRequestUrl();
   deleteCookie(COOKIE_NAME, {
     path: "/",
@@ -63,9 +77,11 @@ export async function isAdminAuthenticated(): Promise<boolean> {
   if (a.length !== b.length || a.length === 0) return false;
   if (!timingSafeEqual(a, b)) return false;
 
-  const expMs = Number(payload);
-  if (!Number.isFinite(expMs) || expMs < Date.now()) return false;
-  return true;
+  const parsed = parseAdminPayload(payload);
+  if (!parsed) return false;
+  const notBefore = await loadNotBeforeMs();
+  if (notBefore === null) return false; // fail closed
+  return isAdminPayloadValid(parsed, Date.now(), notBefore);
 }
 
 export async function verifyAdminPassword(input: string): Promise<boolean> {
