@@ -43,10 +43,21 @@ Park until the January review:
 3. Database: the public events view runs with its creator's permissions. Switch it to run as the caller, and grant read access on only the public columns it exposes, so public pages keep working.
 4. Database info notes: tables with security on but no rules are intentionally private (server-only). No change. Missing indexes on linked records: add them (low risk, performance only).
 
+## Other ways to make it useful (pivot options)
+What is actually valuable: a checked, up-to-date UK race calendar with correct official links. That can be delivered in places other than the website. Ranked by effort versus likely value:
+
+1. Embeddable race widget for clubs and organisers (best first test). A club or race pastes one line on its own site and shows "upcoming races near us" or its own race card, always current. It needs a small public widget page plus a copy-paste snippet, with a "powered by" link back to the site. That also builds trust links, which helps search. Effort: about 1–2 weeks. Test it with the 5-organisation manual pilot.
+2. AI assistant access (already partly built). The site already has an MCP connection that AI assistants can use to answer "races near me". Listing it in AI tool directories costs little, but demand there is unproven (1 AI visit this month).
+3. Calendar feed. Runners subscribe in Google or Apple Calendar to "half marathons in the South East", and races appear and update automatically. Effort: a few days. It gives repeat use without sending emails.
+4. Data feed or API for clubs, running shops and apps. This could earn money, but it needs licence clarity from the sources (England Athletics and others) first. Not before the January review.
+5. Browser extension or WordPress plugin. A WordPress plugin is really option 1 packaged for club sites, so worth doing only if the widget gets uptake. A browser extension has little reason to exist.
+
+A full pivot is not recommended. The widget and calendar feed reuse the same data and can run alongside the site. Treat them as the January-gate experiment, not new work now. Requirements before any of them: stable public event IDs (already in place), a public read-only endpoint limited to the safe public columns, rate limits, and "check the official page" wording in every embed.
+
 ## Technical details
 - `src/lib/admin-events.functions.ts` listAdminEvents: escape `q` for PostgREST `.or()`. Remove `,()*\` and quote it, or switch to separate filtered queries. Cap the length. Add a unit test that a comma in the search does not add filters.
 - Admin session: add a server-side revocation record (session id or issued-at "not before"). The logout server function writes it, and the session check in the admin middleware rejects revoked or older sessions. Add a test.
 - Migration: `ALTER VIEW public.events_public_v1 SET (security_invoker = true)`. Before applying, confirm that anon/authenticated have column-level SELECT on the `events` columns used by the view, plus a narrow RLS policy matching the view's own filter, without exposing `source`/`source_url`. Verify public pages and the Explorer with Playwright, and check that anon cannot read private columns. If grants cannot be made safely narrow, keep definer mode and record the reason instead.
 - Migration: add covering indexes for the 21 unindexed foreign keys.
-- Update roadmap.md with the triage and the January decision gate. Save the review as `docs/current/RENM-project-review-2026-11-24.md`.
+- Update roadmap.md with the triage and the January decision gate. Add "January gate: widget / calendar-feed pilot" to roadmap.md. Save the review as `docs/current/RENM-project-review-2026-11-24.md`.
 - Rerun the security scan and the linter afterwards. Run the admin and event tests.
