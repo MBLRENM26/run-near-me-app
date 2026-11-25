@@ -18,6 +18,7 @@ import { SITE_URL, SITE_NAME } from "@/lib/site";
 import { formatEventDate } from "@/lib/date";
 import { track } from "@/lib/analytics";
 import { fromSearchValidator } from "@/lib/from-search";
+import { EmbedCodeBox } from "@/components/site/EmbedCodeBox";
 import { BackToSearchBar } from "@/components/site/BackToSearchBar";
 
 
@@ -302,6 +303,8 @@ function ClubDetailPage() {
           </>
         )}
       </section>
+
+      {races && races.length > 0 && <EmbedCodeBox kind="club" slug={c.slug} label={`${c.name}'s upcoming races`} />}
 
       {!c.is_claimed && (
         <aside className="mt-6 rounded-xl border border-border bg-muted/30 p-5">

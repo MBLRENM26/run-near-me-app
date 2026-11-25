@@ -1,6 +1,7 @@
 import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
 import { Calendar, MapPin, Tag, ExternalLink, Mountain } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ShareRace } from "@/components/site/ShareRace";
 import { RaceFactsSection, RaceFactsContactLine, formatLastChecked } from "@/components/event/RaceFactsBox";
 import {
   Breadcrumb,
@@ -1136,6 +1137,8 @@ function EventDetailPage() {
               </ul>
             </nav>
           )}
+
+          {e.slug && <ShareRace url={`${SITE_URL}/events/${e.slug}`} name={e.name} slug={e.slug} />}
 
           {raceFacts.facts.length > 0 && (
             <div className="mt-8">

@@ -1,3 +1,4 @@
+import { EmbedCodeBox } from "@/components/site/EmbedCodeBox";
 import { createFileRoute, notFound, Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { getEventsForCounty } from "@/lib/county.functions";
@@ -144,6 +145,7 @@ function CountyPage() {
               ))}
             </div>
           )}
+          <EmbedCodeBox kind="county" slug={countySlug} label={`upcoming races in ${countyLabel}`} />
         </section>
       </main>
       <Footer />
